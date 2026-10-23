@@ -25,15 +25,16 @@ import { sound } from "@/lib/sound/sound";
 import { AdBanner } from "@/components/ads/AdBanner";
 
 export default function HomePage() {
-  const [heroCode, setHeroCode] = useState<string>(`# Interactive Python Test Drive
-def calculate_quantum_payload(energy_level: float, pulses: int) -> float:
-    efficiency = 0.942
-    return round((energy_level ** 1.5) * pulses * efficiency, 3)
+  const [heroCode, setHeroCode] = useState<string>(`# Artemis Mission Control v3.12 (Live Telemetry Sweep)
+spacecraft = "ORION-II"
+velocity_km_s = 10.92
+subsystems = {"PROPULSION": "NOMINAL", "LIFE_SUPPORT": "99.2%", "COMMS": "ONLINE"}
 
-# Test run in WebAssembly
-result = calculate_quantum_payload(12.5, 8)
-print(f"Calculated Quantum Payload: {result} Terajoules")
-print("Python 3.12 WebAssembly is running at native browser speeds!")
+print(f"=== {spacecraft} MISSION CONTROL TELEMETRY ===")
+print(f"Current Velocity: {velocity_km_s} km/s (Escape Trajectory)")
+for system, status in subsystems.items():
+    print(f"  > Subsystem [{system}]: {status}")
+print("STATUS: Trans-Lunar Injection Verified in WebAssembly!")
 `);
 
   const [heroOutput, setHeroOutput] = useState<string>("");
@@ -121,7 +122,7 @@ print("Python 3.12 WebAssembly is running at native browser speeds!")
                 <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
                 <span className="ml-2 font-bold text-slate-300">
-                  interactive_demo.py
+                  mission_control.py
                 </span>
                 <span className="hidden sm:inline-block text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
                   Try it right here

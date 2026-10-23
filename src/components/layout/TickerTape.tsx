@@ -6,9 +6,10 @@ import { Terminal, Flame, Zap, ShieldCheck, Code2, Globe2 } from "lucide-react";
 export function TickerTape() {
   const items = [
     { icon: Zap, label: "100% FREE CODE EDUCATION", highlight: "ZERO PAYWALLS" },
+    { icon: Terminal, label: "GROUND TRUTH MASTERCLASS", highlight: "DATA WITH BARAA" },
+    { icon: ShieldCheck, label: "CAPSTONE GROUNDING PROJECT", highlight: "mission_control.py" },
     { icon: Terminal, label: "PYTHON 3.12 KERNEL", highlight: "IN-BROWSER WEBASSEMBLY" },
     { icon: Flame, label: "GAMIFIED PROGRESSION", highlight: "STREAKS & XP" },
-    { icon: ShieldCheck, label: "ENTERPRISE SYLLABUS", highlight: "BEGINNER TO PRO" },
     { icon: Code2, label: "NEXT LANGUAGE TRACKS", highlight: "TYPESCRIPT & RUST" },
     { icon: Globe2, label: "COMMUNITY REACH", highlight: "GLOBAL ACCESS" },
   ];

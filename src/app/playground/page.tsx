@@ -11,6 +11,65 @@ import { AdBanner } from "@/components/ads/AdBanner";
 
 const PRESET_SCRIPTS: { label: string; code: string }[] = [
   {
+    label: "Artemis Mission Control Suite (mission_control.py)",
+    code: `# ==========================================================
+# ARTEMIS MISSION CONTROL SUITE (mission_control.py)
+# Ground truth capstone project inspired by Data with Baraa
+# ==========================================================
+
+class ArtemisMissionControl:
+    def __init__(self, mission_name="ARTEMIS II", commander="Wiseman"):
+        self.mission_name = mission_name
+        self.commander = commander
+        self.telemetry = {
+            "CABIN_PRESSURE_PSI": 14.7,
+            "OXYGEN_PURITY_PCT": 99.2,
+            "MAIN_BUS_VOLTAGE_V": 28.4,
+            "VELOCITY_KM_S": 10.92,
+            "DIST_TO_MOON_KM": 384400.0,
+        }
+        self.passcode = "MC-ARTEMIS2026"
+        self.authenticated = False
+
+    def authenticate(self, key):
+        clean_key = key.strip()
+        if clean_key == self.passcode:
+            self.authenticated = True
+            print(f"[AUTH] Access granted for Flight Director / Commander {self.commander}")
+            return True
+        print("[AUTH] REJECTED: Invalid security clearance key.")
+        return False
+
+    def display_banner(self):
+        print("=" * 60)
+        print(f"       NASA ARTEMIS MISSION CONTROL TERMINAL v3.12")
+        print(f"       MISSION: {self.mission_name} | COMMANDER: {self.commander}")
+        print("=" * 60)
+
+    def run_subsystem_diagnostics(self):
+        print("\\n--- INITIATING SUBSYSTEM DIAGNOSTICS SWEEP ---")
+        for system, value in self.telemetry.items():
+            status = "NOMINAL"
+            if "PRESSURE" in system and (value < 13.0 or value > 16.0):
+                status = "WARNING"
+            print(f"  [+] {system:<24}: {value:>10} --> [{status}]")
+        print("--- ALL 5 CRITICAL SUBSYSTEMS REPORTING ONLINE ---\\n")
+
+    def execute_burn_calculation(self, burn_duration_s=120.0):
+        print(f"Calculating trans-lunar injection burn ({burn_duration_s}s)...")
+        delta_v = round(burn_duration_s * 9.81 * 0.45, 2)
+        print(f"Projected Delta-V: {delta_v} m/s")
+        print("Trajectory solution verified. Flight Computer Ready for Execution.")
+
+# Run demonstration
+mc = ArtemisMissionControl()
+mc.display_banner()
+mc.authenticate("MC-ARTEMIS2026")
+mc.run_subsystem_diagnostics()
+mc.execute_burn_calculation(180)
+`,
+  },
+  {
     label: "Monte Carlo Pi Estimation",
     code: `# Monte Carlo Pi Estimation Simulation
 import random
