@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -16,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pockett-Learn | 100% Free Interactive Programming Academy",
+  title: "Pockett Learn | 100% Free Interactive Programming Academy",
   description:
     "Master Python, TypeScript, and Rust with in-browser WebAssembly execution, automated test suites, and gamified engineering challenges. Zero paywalls forever.",
   keywords: [
@@ -43,7 +44,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#07090e] text-slate-100 font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
         <TickerTape />
-        <Navbar />
+        <Suspense fallback={<div className="h-16 border-b border-slate-800 bg-[#07090e]" />}>
+          <Navbar />
+        </Suspense>
         <div className="flex-1 flex flex-col">{children}</div>
         <Footer />
       </body>

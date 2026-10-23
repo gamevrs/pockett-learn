@@ -21,7 +21,7 @@ export function Footer() {
                 <Terminal className="w-3.5 h-3.5" />
               </div>
               <span className="font-bold text-slate-200 tracking-wider">
-                POCKETT<span className="text-emerald-400">//</span>LEARN
+                POCKETT LEARN
               </span>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed max-w-md">

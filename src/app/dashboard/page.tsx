@@ -237,7 +237,7 @@ export default function DashboardPage() {
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-2 font-mono text-xs text-emerald-400">
                 <Terminal className="w-4 h-4" />
-                <span>POCKETT//LEARN ACADEMY VERIFIED CERTIFICATE</span>
+                <span>POCKETT LEARN VERIFIED CERTIFICATE</span>
               </div>
               <button
                 onClick={handlePrintCertificate}
