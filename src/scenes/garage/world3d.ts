@@ -29,6 +29,7 @@ export interface GarageView {
 const toX = (x: number) => x - WORLD_W / 2;
 const toZ = (y: number) => y - WORLD_H / 2;
 const WALL_OFFSET = 12; // sim wall is at halfWidth + 12
+const ROAD_TOP = 1.2; // height of the painted road layers; the car sits on it
 
 export interface GarageWorld {
   update(view: GarageView, dt: number, time: number): void;
@@ -196,6 +197,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
     new THREE.MeshStandardMaterial({ color: "#0c0d12", roughness: 1, metalness: 0 }),
   );
   ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -1;
   ground.receiveShadow = true;
   scene.add(ground);
   const grid = new THREE.GridHelper(2400, 80, BRAND, BRAND);
@@ -203,7 +205,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   gridMat.transparent = true;
   gridMat.opacity = 0.07;
   gridMat.depthWrite = false;
-  grid.position.y = 0.05;
+  grid.position.y = -0.4;
   scene.add(grid);
 
   // ── circuit ──
@@ -219,6 +221,18 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   const wallMat = new THREE.MeshStandardMaterial({ color: "#2c2c36", roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide });
   const neonMat = new THREE.MeshStandardMaterial({ color: BRAND, emissive: BRAND, emissiveIntensity: 1.25, roughness: 0.4 });
   const checkerMat = new THREE.MeshStandardMaterial({ map: checkerTexture(), roughness: 0.6 });
+  // Each road layer sits on its own height AND pulls forward in the depth buffer.
+  const layer = (m: THREE.Material, level: number) => {
+    m.polygonOffset = true;
+    m.polygonOffsetFactor = -level;
+    m.polygonOffsetUnits = -level * 2;
+  };
+  layer(runoffMat, 1);
+  layer(asphaltMat, 2);
+  layer(lineMat, 3);
+  layer(kerbLightMat, 3);
+  layer(kerbDarkMat, 3);
+  layer(checkerMat, 4);
 
   const N = track.pts.length;
   const corner = Array.from({ length: N }, (_, i) => curvatureRadius(track, i) < 190);
@@ -232,24 +246,24 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
     trackParts.push({ mesh: m, lit: mat });
     return m;
   };
-  addPart(ribbon(track, -hw - 12, hw + 12, 0.15), runoffMat);
-  addPart(ribbon(track, -hw, hw, 0.3, undefined, 1 / 60), asphaltMat);
-  addPart(ribbon(track, -hw + 2.5, -hw + 4.2, 0.45), lineMat);
-  addPart(ribbon(track, hw - 4.2, hw - 2.5, 0.45), lineMat);
-  addPart(ribbon(track, -0.9, 0.9, 0.45, (i) => i % 8 < 4), lineMat);
+  addPart(ribbon(track, -hw - 12, hw + 12, 0.2), runoffMat);
+  addPart(ribbon(track, -hw, hw, 0.7, undefined, 1 / 60), asphaltMat);
+  addPart(ribbon(track, -hw + 2.5, -hw + 4.2, 1.2), lineMat);
+  addPart(ribbon(track, hw - 4.2, hw - 2.5, 1.2), lineMat);
+  addPart(ribbon(track, -0.9, 0.9, 1.2, (i) => i % 8 < 4), lineMat);
   for (const side of [-1, 1]) {
     const a = side < 0 ? -hw - 9 : hw;
     const b = side < 0 ? -hw : hw + 9;
-    addPart(ribbon(track, a, b, 0.55, (i) => corner[i] && Math.floor(i / 3) % 2 === 0), kerbLightMat);
-    addPart(ribbon(track, a, b, 0.55, (i) => corner[i] && Math.floor(i / 3) % 2 === 1), kerbDarkMat);
+    addPart(ribbon(track, a, b, 1.2, (i) => corner[i] && Math.floor(i / 3) % 2 === 0), kerbLightMat);
+    addPart(ribbon(track, a, b, 1.2, (i) => corner[i] && Math.floor(i / 3) % 2 === 1), kerbDarkMat);
     const wa = side < 0 ? -hw - WALL_OFFSET - 3 : hw + WALL_OFFSET;
     const wb = side < 0 ? -hw - WALL_OFFSET : hw + WALL_OFFSET + 3;
     addPart(wall(track, wa, wb, 6), wallMat, true);
-    addPart(ribbon(track, (wa + wb) / 2 - 0.7, (wa + wb) / 2 + 0.7, 6.15), neonMat);
+    addPart(ribbon(track, (wa + wb) / 2 - 0.7, (wa + wb) / 2 + 0.7, 6.5), neonMat);
   }
   // start / finish: checker band + gantry
   const startIdx = (i: number) => i < 2 || i > N - 3;
-  addPart(ribbon(track, -hw, hw, 0.5, startIdx, 1 / 19), checkerMat);
+  addPart(ribbon(track, -hw, hw, 1.7, startIdx, 1 / 19), checkerMat);
   const gantry = new THREE.Group();
   const p0 = track.pts[0];
   gantry.position.set(toX(p0.x), 0, toZ(p0.y));
@@ -511,7 +525,8 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
       // car transform
       car.position.set(x, 0, z);
       car.rotation.y = -c.heading;
-      car.position.y = view.lit ? Math.sin(time * 30) * 0.08 * Math.min(1, c.kmh / 60 + 0.2) : 0;
+      // wheels rest on the painted layer (y≈1.2); a tiny engine shimmy when running
+      car.position.y = ROAD_TOP + (view.lit ? Math.sin(time * 30) * 0.08 * Math.min(1, c.kmh / 60 + 0.2) : 0);
       for (const p of steerPivots) p.rotation.y = THREE.MathUtils.degToRad(-c.wheel);
       const roll = ((c.kmh * 1.55) / 4.6) * dt;
       for (const s of spinners) s.rotation.z -= roll;
@@ -582,7 +597,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
 
       // celebration ring
       ringT = Math.min(1, ringT + dt * 0.8);
-      ring.position.set(x, 1, z);
+      ring.position.set(x, ROAD_TOP + 1, z);
       ring.scale.setScalar(20 + ringT * 160);
       ringMat.opacity = (1 - ringT) * 0.9;
 

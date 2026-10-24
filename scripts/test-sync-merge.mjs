@@ -6,7 +6,7 @@ import { mergeProgress } from "../src/data/progress/merge.ts";
 
 const XP = { a: 50, b: 60, c: 80 };
 const xpOf = (id) => XP[id] ?? 0;
-const base = { version: 2, xp: 0, streak: 0, bestStreak: 0, lastActiveDate: null, completed: {}, drafts: {}, attempts: {}, hintsSeen: {}, soundEnabled: true };
+const base = { version: 2, xp: 0, streak: 0, bestStreak: 0, lastActiveDate: null, completed: {}, drafts: {}, draftsAt: {}, attempts: {}, hintsSeen: {}, soundEnabled: true };
 const done = (at, code, attempts = 1) => ({ at, code, attempts });
 let n = 0;
 const check = (name, fn) => { fn(); n++; console.log("ok  ", name); };
@@ -46,6 +46,25 @@ check("this device's draft beats the cloud draft", () => {
 check("older cloud activity keeps the local streak", () => {
   const m = mergeProgress({ ...base, streak: 4, bestStreak: 4, lastActiveDate: "2026-10-24" }, { xp: 0, streak: 9, best_streak: 9, last_active_date: "2026-09-01" }, [], [], xpOf);
   assert.equal(m.streak, 4); assert.equal(m.bestStreak, 9); assert.equal(m.lastActiveDate, "2026-10-24");
+});
+
+check("re-passed lesson: the newest pass wins, first-pass date and attempts are kept", () => {
+  const local = { ...base, completed: { a: { at: "2026-10-01T00:00:00Z", updatedAt: "2026-10-01T00:00:00Z", code: "old", attempts: 1 } } };
+  const m = mergeProgress(local, null,
+    [{ lesson_id: "a", project_slug: "garage", code: "improved", attempts: 4, completed_at: "2026-10-05T00:00:00Z", updated_at: "2026-10-20T00:00:00Z" }], [], xpOf);
+  assert.equal(m.completed.a.code, "improved"); assert.equal(m.completed.a.at, "2026-10-01T00:00:00Z"); assert.equal(m.completed.a.attempts, 1);
+});
+
+check("stale device can't overwrite a newer cloud draft", () => {
+  const local = { ...base, drafts: { a: "stale" }, draftsAt: { a: "2026-10-01T00:00:00Z" } };
+  const m = mergeProgress(local, null, [], [{ lesson_id: "a", code: "newer", hints_seen: 0, updated_at: "2026-10-23T00:00:00Z" }], xpOf);
+  assert.equal(m.drafts.a, "newer"); assert.equal(m.draftsAt.a, "2026-10-23T00:00:00Z");
+});
+
+check("newer local draft beats an older cloud draft", () => {
+  const local = { ...base, drafts: { a: "fresh" }, draftsAt: { a: "2026-10-24T00:00:00Z" } };
+  const m = mergeProgress(local, null, [], [{ lesson_id: "a", code: "old", hints_seen: 0, updated_at: "2026-10-02T00:00:00Z" }], xpOf);
+  assert.equal(m.drafts.a, "fresh");
 });
 
 console.log(`\n${n} merge checks passed`);

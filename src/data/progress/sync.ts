@@ -6,7 +6,7 @@ import { PROJECTS } from "@/content";
 import { flattenLessons } from "@/engine/types";
 import { getSupabase } from "../supabase/client";
 import { getAuth, subscribeAuth } from "../auth/store";
-import { getProgress, replaceProgress, subscribeProgress } from "./store";
+import { getProgress, replaceProgress, resetAllProgress, subscribeProgress } from "./store";
 import type { ProgressState } from "./types";
 import { mergeProgress, type CompletionRow, type DraftRow, type ProfileRow } from "./merge";
 
@@ -59,8 +59,8 @@ async function pull(sb: SupabaseClient, uid: string) {
   setSync({ status: "syncing", error: null });
   const [p, c, d] = await Promise.all([
     sb.from("profiles").select("xp, streak, best_streak, last_active_date").eq("id", uid).maybeSingle(),
-    sb.from("lesson_completions").select("lesson_id, project_slug, code, attempts, completed_at").eq("user_id", uid),
-    sb.from("lesson_drafts").select("lesson_id, code, hints_seen").eq("user_id", uid),
+    sb.from("lesson_completions").select("lesson_id, project_slug, code, attempts, completed_at, updated_at").eq("user_id", uid),
+    sb.from("lesson_drafts").select("lesson_id, code, hints_seen, updated_at").eq("user_id", uid),
   ]);
   const err = p.error || c.error || d.error;
   if (err) throw err;
@@ -79,13 +79,21 @@ async function push(sb: SupabaseClient, uid: string) {
 
   const completionRows = Object.entries(now.completed)
     .filter(([id, c]) => before?.completed[id] !== c && LESSONS.has(id))
-    .map(([id, c]) => ({ user_id: uid, lesson_id: id, project_slug: LESSONS.get(id)!.slug, code: c.code, attempts: Math.max(1, c.attempts), completed_at: c.at }));
+    .map(([id, c]) => ({
+      user_id: uid,
+      lesson_id: id,
+      project_slug: LESSONS.get(id)!.slug,
+      code: c.code,
+      attempts: Math.max(1, c.attempts),
+      completed_at: c.at,
+      updated_at: c.updatedAt ?? c.at,
+    }));
   const removedCompletions = before ? Object.keys(before.completed).filter((id) => !(id in now.completed)) : [];
 
   const draftIds = new Set([...Object.keys(now.drafts), ...Object.keys(now.hintsSeen).filter((id) => id in now.drafts)]);
   const draftRows = [...draftIds]
     .filter((id) => !before || before.drafts[id] !== now.drafts[id] || before.hintsSeen[id] !== now.hintsSeen[id])
-    .map((id) => ({ user_id: uid, lesson_id: id, code: now.drafts[id], hints_seen: now.hintsSeen[id] ?? 0 }));
+    .map((id) => ({ user_id: uid, lesson_id: id, code: now.drafts[id], hints_seen: now.hintsSeen[id] ?? 0, updated_at: now.draftsAt[id] ?? new Date().toISOString() }));
   const removedDrafts = before ? Object.keys(before.drafts).filter((id) => !(id in now.drafts)) : [];
 
   const profileChanged =
@@ -140,12 +148,16 @@ function schedulePush() {
 function onAuth() {
   const next = getAuth().user?.id ?? null;
   if (next === userId) return;
+  const signedOut = userId !== null && next === null;
   userId = next;
   ready = false;
   synced = null;
   if (timer) clearTimeout(timer);
   if (!next) {
     setSync(OFF);
+    // The progress on this device belonged to the account that just left (and is safe in the
+    // cloud), so clear it: the next person to sign in here must not inherit it.
+    if (signedOut) resetAllProgress();
     return;
   }
   // defer: Supabase recommends not awaiting other auth calls inside the auth callback
@@ -162,7 +174,7 @@ export function startCloudSync(): () => void {
     const offAuth = subscribeAuth(onAuth);
     const offProgress = subscribeProgress(schedulePush);
     const retry = () => {
-      if (syncState.status === "error") schedulePush();
+      if (syncState.status === "error") syncNow();
     };
     window.addEventListener("online", retry);
     onAuth();
@@ -186,4 +198,45 @@ export function syncNow() {
   if (!userId) return;
   if (!ready) run(pull);
   else run(push);
+}
+
+/** Push anything still waiting in the debounce right now (call before signing out). */
+export async function flushSync() {
+  const sb = getSupabase();
+  const uid = userId;
+  if (!sb || !uid || !ready) return;
+  if (timer) {
+    clearTimeout(timer);
+    timer = null;
+  }
+  try {
+    await push(sb, uid);
+  } catch {
+    /* best effort: the account keeps its last synced state */
+  }
+}
+
+/**
+ * Reset everything: the account's cloud rows first (so another device or a reload can't merge them
+ * back), then this device.
+ */
+export async function resetEverywhere() {
+  const sb = getSupabase();
+  const uid = userId;
+  if (sb && uid) {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    const results = await Promise.all([
+      sb.from("lesson_completions").delete().eq("user_id", uid),
+      sb.from("lesson_drafts").delete().eq("user_id", uid),
+      sb.from("profiles").update({ xp: 0, streak: 0, best_streak: 0, last_active_date: null }).eq("id", uid),
+    ]);
+    const failed = results.find((r) => r.error);
+    if (failed) throw new Error(failed.error!.message);
+  }
+  resetAllProgress();
+  synced = getProgress();
+  if (uid) setSync({ status: "synced", lastSyncedAt: Date.now(), error: null });
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Award, Flame, RotateCcw, Trophy, Zap } from "lucide-react";
 import { flattenLessons, type Project } from "@/engine/types";
 import { currentStreak, levelFor, resetAllProgress, useProgress } from "@/data/progress/store";
+import { resetEverywhere } from "@/data/progress/sync";
 import type { ProgressState } from "@/data/progress/types";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { useAuth } from "@/data/auth/store";
@@ -19,7 +20,7 @@ interface Badge {
 
 const BADGES: Badge[] = [
   { id: "boot", emoji: "🔑", title: "First boot", how: "Pass your first lesson", earned: (p) => Object.keys(p.completed).length >= 1 },
-  { id: "first-try", emoji: "🎯", title: "First try", how: "Pass a lesson on your first run", earned: (p) => Object.keys(p.completed).some((id) => (p.attempts[id] ?? 1) <= 1) },
+  { id: "first-try", emoji: "🎯", title: "First try", how: "Pass a lesson on your first run", earned: (p) => Object.values(p.completed).some((c) => c.attempts <= 1) },
   { id: "streak3", emoji: "🔥", title: "On a roll", how: "3-day streak", earned: (p) => p.bestStreak >= 3 },
   { id: "xp500", emoji: "⚡", title: "Power user", how: "Earn 500 XP", earned: (p) => p.xp >= 500 },
   {
@@ -34,6 +35,7 @@ const BADGES: Badge[] = [
 export function Dashboard({ projects }: { projects: Project[] }) {
   const progress = useProgress();
   const [confirming, setConfirming] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
   const auth = useAuth();
   const lvl = levelFor(progress.xp);
   const streak = currentStreak(progress);
@@ -133,8 +135,23 @@ export function Dashboard({ projects }: { projects: Project[] }) {
         {confirming ? (
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="font-semibold">{auth.status === "signed-in" ? "This deletes all your progress and code, on this device and in your account." : "This deletes all progress and code on this device."}</span>
-            <button className="btn btn-sm !border-bad !text-bad" onClick={() => { resetAllProgress(); setConfirming(false); }}>Yes, reset everything</button>
+            <button
+              className="btn btn-sm !border-bad !text-bad"
+              onClick={async () => {
+                setResetError(null);
+                try {
+                  if (auth.status === "signed-in") await resetEverywhere();
+                  else resetAllProgress();
+                  setConfirming(false);
+                } catch (err) {
+                  setResetError(`Couldn't reset your account: ${(err as Error).message}`);
+                }
+              }}
+            >
+              Yes, reset everything
+            </button>
             <button className="btn btn-sm btn-ghost" onClick={() => setConfirming(false)}>Cancel</button>
+            {resetError && <span className="w-full text-sm font-semibold text-bad">{resetError}</span>}
           </div>
         ) : (
           <button className="flex items-center gap-2 text-xs font-semibold text-ink-3 hover:text-ink" onClick={() => setConfirming(true)}>

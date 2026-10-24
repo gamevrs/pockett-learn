@@ -1,8 +1,11 @@
 export interface CompletedLesson {
-  /** ISO timestamp */
+  /** ISO timestamp of the first pass */
   at: string;
+  /** ISO timestamp of the latest pass (newest wins when syncing devices) */
+  updatedAt?: string;
   /** The learner's whole file at the moment they passed */
   code: string;
+  /** Submissions it took to pass the first time (frozen afterwards) */
   attempts: number;
 }
 
@@ -15,6 +18,8 @@ export interface ProgressState {
   lastActiveDate: string | null;
   completed: Record<string, CompletedLesson>;
   drafts: Record<string, string>;
+  /** ISO time each draft was last edited on this device (newest wins when syncing) */
+  draftsAt: Record<string, string>;
   attempts: Record<string, number>;
   hintsSeen: Record<string, number>;
   soundEnabled: boolean;
@@ -40,6 +45,7 @@ export const EMPTY_PROGRESS: ProgressState = {
   lastActiveDate: null,
   completed: {},
   drafts: {},
+  draftsAt: {},
   attempts: {},
   hintsSeen: {},
   soundEnabled: true,

@@ -19,6 +19,7 @@ interface CodeEditorProps {
   value: string;
   onChange: (value: string) => void;
   onRun: () => void;
+  onSubmit: () => void;
   /** 1-based line of a Python error to underline */
   errorLine: number | null;
   errorMessage?: string;
@@ -65,14 +66,16 @@ const defineThemes: BeforeMount = (monaco) => {
   });
 };
 
-export function CodeEditor({ value, onChange, onRun, errorLine, errorMessage, revealKey }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorMessage, revealKey }: CodeEditorProps) {
   const { theme } = useTheme();
   const editorRef = useRef<EditorInstance | null>(null);
   const monacoRef = useRef<MonacoInstance | null>(null);
   const onRunRef = useRef(onRun);
+  const onSubmitRef = useRef(onSubmit);
 
   useEffect(() => {
     onRunRef.current = onRun;
+    onSubmitRef.current = onSubmit;
   });
 
   const reveal = () => {
@@ -94,6 +97,7 @@ export function CodeEditor({ value, onChange, onRun, errorLine, errorMessage, re
     editorRef.current = editor;
     monacoRef.current = monaco;
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => onRunRef.current());
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => onSubmitRef.current());
     reveal();
   };
 

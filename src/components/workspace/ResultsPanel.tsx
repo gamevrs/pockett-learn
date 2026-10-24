@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, CircleDashed, Terminal, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, CircleDashed, Terminal, XCircle } from "lucide-react";
 import type { RunError, TestCase, TestResult } from "@/engine/types";
 
 export type ResultTab = "checks" | "console";
@@ -34,9 +34,13 @@ interface ResultsPanelProps {
   error: RunError | null;
   running: boolean;
   statusText: string;
+  /** Desktop: only the tab bar is shown. */
+  collapsed?: boolean;
+  /** Desktop only: collapse/expand control. */
+  onToggleCollapsed?: () => void;
 }
 
-export function ResultsPanel({ tab, onTab, tests, results, stdout, error, running, statusText }: ResultsPanelProps) {
+export function ResultsPanel({ tab, onTab, tests, results, stdout, error, running, statusText, collapsed = false, onToggleCollapsed }: ResultsPanelProps) {
   const passed = results.filter((r) => r.passed).length;
   const hasRun = results.length > 0 || error !== null;
   const allPassed = results.length > 0 && passed === results.length;
@@ -64,15 +68,27 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
           Console
           {error && <span className="h-2 w-2 rounded-full bg-bad" />}
         </button>
-        {running && (
-          <span className="ml-auto flex items-center gap-2 pr-2 text-xs font-semibold text-ink-3">
-            <span className="h-3 w-3 animate-spin rounded-full border-2 border-line border-t-brand" />
-            {statusText}
-          </span>
-        )}
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {running && (
+            <span className="flex min-w-0 items-center gap-2 text-xs font-semibold text-ink-3">
+              <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-line border-t-brand" />
+              <span className="truncate">{statusText}</span>
+            </span>
+          )}
+          {onToggleCollapsed && (
+            <button
+              onClick={onToggleCollapsed}
+              aria-label={collapsed ? "Expand panel" : "Collapse panel"}
+              title={collapsed ? "Expand (or drag the divider)" : "Collapse"}
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
+            >
+              {collapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div className={`min-h-0 flex-1 overflow-y-auto p-3 ${collapsed ? "hidden" : ""}`}>
         {tab === "checks" && (
           <ul className="space-y-1.5">
             {tests.map((t) => {
@@ -93,7 +109,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
                 </li>
               );
             })}
-            {!hasRun && <li className="px-1 pt-1 text-xs text-ink-3">Press Run (Ctrl/⌘ + Enter) to check your code.</li>}
+            {!hasRun && <li className="px-1 pt-1 text-xs text-ink-3"><strong className="text-ink-2">Run</strong> (Ctrl/⌘ + Enter) to try your code. <strong className="text-ink-2">Submit</strong> (Ctrl/⌘ + Shift + Enter) to check it and finish the lesson.</li>}
           </ul>
         )}
 

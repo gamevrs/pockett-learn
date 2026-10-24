@@ -24,9 +24,10 @@ export function ProjectHub({ project }: { project: Project }) {
 
   // Boot the learner's own latest build on the stage.
   const build = useMemo(() => latestBuild(project, submittedCode(progress)), [project, progress]);
-  const buildKey = build ? `${build.lessonId}:${build.code.length}` : null;
+  const buildKey = build ? `${build.lessonId}:${hashCode(build.code)}` : null;
   const [program, setProgram] = useState<ProgramHandle | null>(null);
   const [bootedKey, setBootedKey] = useState<string | null>(null);
+  const [bootFailed, setBootFailed] = useState(false);
   const status: StageStatus = buildKey !== null && bootedKey !== buildKey ? "loading" : "idle";
   const live = useRef<ProgramHandle | null>(null);
 
@@ -46,23 +47,24 @@ export function ProjectHub({ project }: { project: Project }) {
         live.current?.dispose();
         live.current = out.program;
         setProgram(out.program);
+        setBootFailed(false);
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!cancelled) setBootFailed(true);
+      })
       .finally(() => {
         if (!cancelled) setBootedKey(buildKey);
       });
     return () => {
+      // also runs when the route is hidden: drop the program so nothing calls a disposed one
       cancelled = true;
+      live.current?.dispose();
+      live.current = null;
+      setProgram(null);
+      setBootedKey(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buildKey]);
-
-  useEffect(
-    () => () => {
-      live.current?.dispose();
-    },
-    [],
-  );
 
   const cta = nextLesson ?? lessons[0];
   const ctaLabel = finished ? "Replay from the start" : doneIds.length === 0 ? "Start building" : `Continue: ${nextLesson?.title}`;
@@ -111,7 +113,7 @@ export function ProjectHub({ project }: { project: Project }) {
               unlocked={unlocked}
               status={status}
               statusText="Booting your build…"
-              emptyHint={doneIds.length === 0 ? "Pass lesson 1 to power it up" : undefined}
+              emptyHint={bootFailed ? "Couldn't load Python. Check your connection and reload." : doneIds.length === 0 ? "Pass lesson 1 to power it up" : undefined}
             />
           </div>
         </div>
@@ -202,4 +204,11 @@ export function ProjectHub({ project }: { project: Project }) {
       </section>
     </div>
   );
+}
+
+/** Small, fast string hash (djb2) so a re-passed lesson with different code re-boots the stage. */
+function hashCode(text: string): string {
+  let h = 5381;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) + h + text.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
 }

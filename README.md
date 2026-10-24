@@ -1,6 +1,6 @@
 # pockett.
 
-Free, interactive Python. You pick a **project** (a car, a rocket, a drum machine) and your code makes it *come alive*: every lesson you pass bolts a new part onto a live demo. Python runs entirely in the browser (Pyodide / WebAssembly); there is no code-execution server and no account.
+Free, interactive Python. You pick a **project** (a car, a rocket, a drum machine) and your code makes it *come alive*: every lesson you pass bolts a new part onto a live demo. Python runs entirely in the browser (Pyodide / WebAssembly); there is no code-execution server, and no account is needed (an optional free account syncs progress).
 
 ```bash
 pnpm install

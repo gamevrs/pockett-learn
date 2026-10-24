@@ -70,6 +70,9 @@ interface Hud {
   mode: Mode;
   w: number;
   h: number;
+  tiny: boolean;
+  compact: boolean;
+  portrait: boolean;
   consoleOn: boolean;
   lines: string[];
   clock: string;
@@ -85,9 +88,22 @@ interface Hud {
   warp: number;
 }
 
+type HookName = "throttle" | "pitch" | "abort";
+interface HookSlot {
+  t: number;
+  v: unknown;
+  cool: number;
+}
+type RocketData = ReturnType<typeof readRocket>;
+const TINY_ROWS = new Set(["ALT", "SPEED", "FUEL", "THROTTLE", "PITCH", "TWR", "STAGE", "PERIGEE"]);
+const GHOST_FOCUS = new Set(["rocket", "engines", "safety", "staging"]);
+/** Learner hooks are called at most this often (ms); in between the last answer is reused. */
+const HOOK_INTERVAL = 33;
+
 interface Sim {
   gen: number;
   unlockKey: string;
+  lastKey: string;
   mode: Mode;
   modeT: number;
   spec: RocketSpec | null;
@@ -98,7 +114,13 @@ interface Sim {
   result: ResultCard | null;
   celeb: number;
   fuelAnim: number;
-  coolUntil: Record<string, number>;
+  hookCache: Record<HookName, HookSlot>;
+  hooks: Hooks | null;
+  hooksProgram: ProgramHandle | null;
+  hooksUnlocked: ReadonlySet<string> | null;
+  unlockedSeen: ReadonlySet<string> | null;
+  data: RocketData | null;
+  dataGen: number;
   resetLatch: boolean;
   skipLatch: boolean;
   restartReq: boolean;
@@ -111,10 +133,15 @@ interface Sim {
   size: { w: number; h: number };
 }
 
+function freshHookCache(): Record<HookName, HookSlot> {
+  return { throttle: { t: -1e9, v: undefined, cool: 0 }, pitch: { t: -1e9, v: undefined, cool: 0 }, abort: { t: -1e9, v: undefined, cool: 0 } };
+}
+
 function freshSim(): Sim {
   return {
     gen: -2,
     unlockKey: "",
+    lastKey: "",
     mode: "idle",
     modeT: 0,
     spec: null,
@@ -125,7 +152,13 @@ function freshSim(): Sim {
     result: null,
     celeb: -1,
     fuelAnim: 0,
-    coolUntil: {},
+    hookCache: freshHookCache(),
+    hooks: null,
+    hooksProgram: null,
+    hooksUnlocked: null,
+    unlockedSeen: null,
+    data: null,
+    dataGen: -3,
     resetLatch: false,
     skipLatch: false,
     restartReq: false,
@@ -252,16 +285,25 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
 
   // ── learner hooks (a failing hook backs off for a moment instead of stalling frames) ──
   const makeHooks = (s: Sim): Hooks => {
-    if (!program) return {};
-    const guard = (name: string, fn: () => unknown): unknown => {
+    if (s.hooks && s.hooksProgram === program && s.hooksUnlocked === unlocked) return s.hooks;
+    s.hooksProgram = program;
+    s.hooksUnlocked = unlocked;
+    if (!program) {
+      s.hooks = {};
+      return s.hooks;
+    }
+    const guard = (name: HookName, fn: () => unknown): unknown => {
+      const slot = s.hookCache[name];
       const now = performance.now();
-      if ((s.coolUntil[name] ?? 0) > now) return undefined;
-      const out = fn();
-      if (out === undefined) s.coolUntil[name] = now + 1200;
-      return out;
+      if (now - slot.t < HOOK_INTERVAL) return slot.v; // reuse the last answer between calls
+      if (slot.cool > now) return undefined;
+      slot.t = now;
+      slot.v = fn();
+      if (slot.v === undefined) slot.cool = now + 1200;
+      return slot.v;
     };
     const round = (v: number, d = 3) => Math.round(v * 10 ** d) / 10 ** d;
-    return {
+    s.hooks = {
       throttle:
         alive("throttle") && program.hasHook("throttle_program")
           ? (t) => {
@@ -284,6 +326,7 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
             }
           : undefined,
     };
+    return s.hooks;
   };
 
   // ── sequence control ──
@@ -299,6 +342,7 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
     s.warp = 1;
     s.restartReq = false;
     s.skipReq = false;
+    s.hookCache = freshHookCache();
     worldRef.current?.event("reset");
     if (!program) {
       setMode(s, "idle");
@@ -415,11 +459,15 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
     }
 
     // fresh program (Run pressed) or new unlock: restart the whole sequence
-    const key = Array.from(unlocked).sort().join(",");
+    if (s.unlockedSeen !== unlocked) {
+      s.unlockedSeen = unlocked;
+      s.unlockKey = Array.from(unlocked).sort().join(",");
+    }
+    const key = s.unlockKey;
     const gen = program ? program.generation : -1;
-    if (s.gen !== gen || s.unlockKey !== key) {
+    if (s.gen !== gen || s.lastKey !== key) {
+      s.lastKey = key;
       s.gen = gen;
-      s.unlockKey = key;
       beginSequence(s);
     }
 
@@ -467,10 +515,12 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
     const f = s.flight;
     const spec = s.spec;
     if (s.mode === "flight" && f && spec && program) {
-      const warp = reducedMotion.current ? Math.max(1, suggestWarp(f) * 0.6) : suggestWarp(f);
-      s.warp = warp;
-      advance(f, spec, makeHooks(s), dt * warp);
-      for (const e of f.events.splice(0)) onFlightEvent(s, e);
+      const target = reducedMotion.current ? Math.max(1, suggestWarp(f) * 0.6) : suggestWarp(f);
+      // ease time-warp changes so the motion never jumps (frame-rate independent)
+      s.warp += (target - s.warp) * (1 - Math.exp(-3 * dt));
+      advance(f, spec, makeHooks(s), dt * s.warp);
+      for (let i = 0; i < f.events.length; i++) onFlightEvent(s, f.events[i]);
+      f.events.length = 0;
       if (f.phase === "orbit") {
         setMode(s, "outro");
         s.outroT = 0;
@@ -482,8 +532,8 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
       }
     } else if (s.mode === "outro" && f && spec) {
       s.outroT += dt;
-      s.warp = 1;
-      advance(f, spec, {}, dt * 2);
+      s.warp += (2 - s.warp) * (1 - Math.exp(-3 * dt));
+      advance(f, spec, {}, dt * s.warp);
       f.events.length = 0;
       const moon = f.outcome?.kind === "moon";
       if (moon && s.outroT > 2.6 && s.banner?.title !== "Trans-lunar injection" && s.outroT < 3.2) {
@@ -503,7 +553,7 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
   };
 
   // ───────── view + HUD ─────────
-  const fillView = (s: Sim, data: ReturnType<typeof readRocket>) => {
+  const fillView = (s: Sim, data: RocketData) => {
     const v = view.current;
     const f = s.flight;
     const spec = s.spec;
@@ -528,17 +578,19 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
     v.boosterAttached = !v.staged || !f || f.jettisoned === 0;
     v.hidden = s.boomed;
     v.outro = !moon ? 0 : s.mode === "outro" ? smooth((s.outroT - 2.6) / 5.2) : s.mode === "over" ? 1 : 0;
-    v.pulseGhost = interactive && !!focus && ["rocket", "engines", "safety", "staging"].includes(focus) && !alive(focus);
+    v.pulseGhost = interactive && !!focus && GHOST_FOCUS.has(focus) && !alive(focus);
     v.reduced = reducedMotion.current;
     v.trail = alive("engines") && !!f;
   };
 
-  const buildHud = (s: Sim, data: ReturnType<typeof readRocket>): Hud => {
+  const buildHud = (s: Sim, data: RocketData): Hud => {
     const f = s.flight;
     const spec = s.spec;
-    const compact = s.size.h < 420;
-    const portrait = s.size.h > s.size.w * 1.15;
-    const maxLines = portrait ? 6 : compact ? 3 : 4;
+    const { w, h } = s.size;
+    const tiny = h < 430 || w < 340 || (w < 430 && h < 560);
+    const compact = tiny || h < 560;
+    const portrait = h > w * 1.15;
+    const maxLines = tiny ? 2 : portrait ? 5 : compact ? 3 : 4;
     const lines = alive("console") && program ? program.stdout.split("\n").filter((l) => l.length > 0).slice(-maxLines) : [];
 
     let countdown: string | null = null;
@@ -586,18 +638,25 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
       }
     }
 
+    // small stages keep only the most useful readouts
+    const shown = tiny ? rows.filter((r) => TINY_ROWS.has(r.label.split(" ")[0])).slice(0, 5) : compact ? rows.slice(0, 8) : rows;
+
     return {
       mode: s.mode,
-      w: s.size.w,
-      h: s.size.h,
+      w,
+      h,
+      tiny,
+      compact,
+      portrait,
       consoleOn: alive("console") && !!program,
       lines,
       clock: alive("countdown") ? clockText(s, tick) : "",
       countdown,
       countKey,
-      rows,
+      rows: shown,
       banner: s.banner ? { ...s.banner } : null,
-      result: s.mode === "over" ? s.result : null,
+      // after an abort or crash, let the escape / explosion play before the card covers it
+      result: s.mode === "over" && (!s.boomed || s.modeT > 1.8) ? s.result : null,
       mission: data.mission,
       rocket: data.name,
       crew: data.crew,
@@ -611,7 +670,11 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
     stepRef.current = (dt: number, time: number) => {
       const s = sim.current;
       update(dt);
-      const data = readRocket(program);
+      if (!s.data || s.dataGen !== s.gen) {
+        s.data = readRocket(program); // learner values only change on a new run
+        s.dataGen = s.gen;
+      }
+      const data = s.data;
       fillView(s, data);
       worldRef.current?.frame(view.current, dt, time);
       s.hudT += dt;
@@ -664,11 +727,19 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
 
   const uiMode = hud?.mode ?? "idle";
   const canLaunch = interactive && !!program;
-  const compact = (hud?.h ?? 600) < 420;
-  const portrait = (hud?.h ?? 600) > (hud?.w ?? 400) * 1.15;
+  const W = hud?.w ?? 400;
+  const H = hud?.h ?? 600;
+  const tiny = hud?.tiny ?? false;
+  const compact = hud?.compact ?? false;
+  const portrait = hud?.portrait ?? false;
+  const hasTele = (hud?.rows.length ?? 0) > 0;
+  const teleW = Math.round(tiny ? Math.min(138, W / 2 - 18) : compact ? 142 : 156);
+  const consoleW = Math.round(Math.max(110, Math.min(portrait ? 270 : 300, hasTele ? W - teleW - 36 : W - 24)));
+  const countSize = Math.round(clamp(Math.min(W, H) * 0.17, 34, 92));
   const ringConsole = interactive && (focus === "console" || focus === "countdown") && !alive(focus) ? "ring-2 ring-[#8f74ff]/70" : "";
   const ringTele = interactive && (focus === "throttle" || focus === "guidance") && !alive(focus) ? "ring-2 ring-[#8f74ff]/70" : "";
   const glass = "rounded-xl border border-white/10 bg-black/45 backdrop-blur";
+  const bannerTop = portrait && !compact;
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#07070c]">
@@ -680,14 +751,14 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
       />
 
       {hud && (
-        <div className="pointer-events-none absolute inset-0 font-mono text-[11px] leading-snug text-white">
-          {/* console */}
-          <div className={`absolute left-3 top-11 ${glass} px-3 py-2 ${ringConsole}`} style={{ width: portrait ? "min(62%, 260px)" : "min(42%, 290px)" }}>
+        <div className={`pointer-events-none absolute inset-0 font-mono leading-snug text-white ${tiny ? "text-[10.5px]" : "text-[11px]"}`}>
+          {/* console (top-left, below the stage header) */}
+          <div className={`absolute left-3 top-11 ${glass} ${tiny ? "px-2 py-1.5" : "px-3 py-2"} ${ringConsole}`} style={{ width: consoleW }}>
             {hud.consoleOn ? (
               <>
-                <div className="mb-1 flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-violet-200/70">
-                  <span>Launch console</span>
-                  {hud.clock && <span className="font-bold text-violet-200">{hud.clock}</span>}
+                <div className="mb-0.5 flex items-center justify-between gap-2 text-[9.5px] uppercase tracking-[0.12em] text-violet-200/70">
+                  <span className="truncate">{tiny && hud.showPlate ? hud.mission : "Launch console"}</span>
+                  {hud.clock && <span className="shrink-0 font-bold text-violet-200">{hud.clock}</span>}
                 </div>
                 {hud.lines.length ? (
                   hud.lines.map((l, i) => (
@@ -697,20 +768,20 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
                     </div>
                   ))
                 ) : (
-                  <div className="text-white/45">› (nothing printed yet)</div>
+                  <div className="truncate text-white/45">› (nothing printed yet)</div>
                 )}
               </>
             ) : (
               <>
-                <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200">{program ? "Console offline" : "Blueprint"}</div>
-                <div className="text-white/50">{program ? "print() something to power it on" : "press Run to power up"}</div>
+                <div className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200">{program ? "Console offline" : "Blueprint"}</div>
+                <div className="truncate text-white/50">{program ? "print() to power it on" : "press Run to power up"}</div>
               </>
             )}
           </div>
 
-          {/* telemetry */}
-          {hud.rows.length > 0 && (
-            <div className={`absolute right-3 top-11 ${glass} px-3 py-2 ${ringTele}`} style={{ width: compact ? 132 : 150 }}>
+          {/* telemetry (top-right) */}
+          {hasTele && (
+            <div className={`absolute right-3 top-11 ${glass} ${tiny ? "px-2 py-1.5" : "px-3 py-2"} ${ringTele}`} style={{ width: teleW }}>
               {hud.rows.map((r) => (
                 <div key={r.label} className="py-[1px]">
                   <div className="flex min-w-0 items-baseline justify-between gap-2">
@@ -724,13 +795,18 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
                   )}
                 </div>
               ))}
+              {hud.warp > 1.5 && <div className="mt-1 text-right text-[9.5px] font-bold text-violet-200/80">TIME ×{Math.round(hud.warp)}</div>}
             </div>
           )}
 
           {/* countdown */}
-          {hud.countdown && (
-            <div className="absolute inset-x-0 flex justify-center" style={{ top: portrait ? "30%" : "26%" }}>
-              <div key={hud.countKey} className={`pop-in font-sans font-black tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)] ${hud.countdown.length > 3 ? (compact ? "text-3xl" : "text-4xl") : compact ? "text-5xl" : "text-7xl"}`}>
+          {hud.countdown && !hud.result && (
+            <div className="absolute inset-x-0 flex justify-center" style={{ top: portrait ? "30%" : "24%" }}>
+              <div
+                key={hud.countKey}
+                className="pop-in font-sans font-black leading-none tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)]"
+                style={{ fontSize: hud.countdown.length > 3 ? Math.round(countSize * 0.5) : countSize }}
+              >
                 {hud.countdown}
               </div>
             </div>
@@ -738,28 +814,28 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
 
           {/* banner */}
           {hud.banner && !hud.result && (
-            <div className="absolute inset-x-0 flex justify-center px-4" style={portrait && !compact ? { top: "40%" } : { bottom: "3.25rem" }}>
-              {portrait && !compact ? (
-                <div key={hud.banner.id} className={`pop-in ${glass} px-4 py-2 text-center`}>
-                  <div className={`font-sans text-sm font-extrabold uppercase tracking-[0.18em] ${toneText[hud.banner.tone]}`}>{hud.banner.title}</div>
-                  <div className="text-[10.5px] text-white/70">{hud.banner.sub}</div>
+            <div className="absolute inset-x-0 flex justify-center px-3" style={bannerTop ? { top: "40%" } : { bottom: tiny ? "2.9rem" : "3.4rem" }}>
+              {bannerTop ? (
+                <div key={hud.banner.id} className={`pop-in ${glass} max-w-full px-4 py-2 text-center`}>
+                  <div className={`truncate font-sans text-sm font-extrabold uppercase tracking-[0.18em] ${toneText[hud.banner.tone]}`}>{hud.banner.title}</div>
+                  <div className="truncate text-[10.5px] text-white/70">{hud.banner.sub}</div>
                 </div>
               ) : (
-                <div key={hud.banner.id} className={`pop-in rounded-full border border-white/10 bg-black/45 px-3 py-1 backdrop-blur`}>
-                  <span className={`font-sans text-[11px] font-extrabold uppercase tracking-[0.16em] ${toneText[hud.banner.tone]}`}>{hud.banner.title}</span>
-                  <span className="ml-2 text-[10.5px] text-white/65">{hud.banner.sub}</span>
+                <div key={hud.banner.id} className="pop-in flex min-w-0 max-w-full items-baseline gap-2 rounded-full border border-white/10 bg-black/45 px-3 py-1 backdrop-blur">
+                  <span className={`shrink-0 font-sans text-[11px] font-extrabold uppercase tracking-[0.14em] ${toneText[hud.banner.tone]}`}>{hud.banner.title}</span>
+                  {!tiny && <span className="truncate text-[10.5px] text-white/65">{hud.banner.sub}</span>}
                 </div>
               )}
             </div>
           )}
 
-          {/* outcome card */}
+          {/* outcome card (centred, above everything) */}
           {hud.result && (
-            <div className="absolute inset-x-0 flex justify-center px-3" style={{ top: compact ? "22%" : "24%" }}>
-              <div className={`pop-in w-full max-w-[340px] ${glass} bg-black/60 px-4 py-3`}>
-                <div className={`font-sans text-lg font-black uppercase tracking-[0.12em] ${toneText[hud.result.tone]}`}>{hud.result.title}</div>
-                {hud.result.lines.map((l) => (
-                  <div key={l} className="mt-1 text-[11px] text-white/85">
+            <div className="absolute inset-0 z-[5] flex items-center justify-center px-3">
+              <div className={`pop-in ${glass} bg-black/65 ${tiny ? "px-3 py-2" : "px-4 py-3"}`} style={{ width: Math.min(340, W - 24) }}>
+                <div className={`font-sans font-black uppercase tracking-[0.12em] ${tiny ? "text-sm" : "text-lg"} ${toneText[hud.result.tone]}`}>{hud.result.title}</div>
+                {(tiny ? hud.result.lines.slice(0, 2) : hud.result.lines).map((l) => (
+                  <div key={l} className="mt-1 text-white/85">
                     {l}
                   </div>
                 ))}
@@ -767,10 +843,10 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
             </div>
           )}
 
-          {/* mission plate */}
-          {hud.showPlate && (
-            <div className={`absolute bottom-3 left-3 ${glass} px-3 py-1.5`}>
-              <div className="font-bold text-white/90">
+          {/* mission plate (bottom-left; on small stages the name moves into the console header) */}
+          {hud.showPlate && !tiny && (
+            <div className={`absolute bottom-3 left-3 ${glass} px-3 py-1.5`} style={{ maxWidth: Math.max(120, W - 210) }}>
+              <div className="truncate font-bold text-white/90">
                 {hud.mission} <span className="text-violet-200/70">· {hud.rocket}</span>
               </div>
               {hud.crew > 0 && (
@@ -784,34 +860,28 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
             </div>
           )}
 
-          {/* time warp */}
-          {hud.warp > 1.05 && (
-            <div className="absolute inset-x-0 bottom-3 flex justify-center">
-              <span className="rounded-full border border-white/10 bg-black/45 px-2 py-0.5 text-[10px] font-bold text-violet-200 backdrop-blur">TIME ×{Math.round(hud.warp)}</span>
+          {!compact && !hud.banner && !focused && canLaunch && (uiMode === "over" || uiMode === "held") && (
+            <div className="absolute inset-x-0 bottom-14 flex justify-center [@media(pointer:coarse)]:hidden">
+              <span className="rounded-full border border-white/10 bg-black/45 px-3 py-1.5 font-sans text-[11px] font-semibold text-white/80 backdrop-blur">Click the stage, then press R to relaunch</span>
             </div>
           )}
         </div>
       )}
 
       {canLaunch && (
-        <>
-          {!focused && (uiMode === "over" || uiMode === "held") && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-14 flex justify-center [@media(pointer:coarse)]:hidden">
-              <span className="rounded-full border border-white/10 bg-black/45 px-3 py-1.5 text-[11px] font-semibold text-white/80 backdrop-blur">Click the stage, then press R to relaunch</span>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              const s = sim.current;
-              if (s.mode === "countdown") s.skipReq = true;
-              else s.restartReq = true;
-            }}
-            className="absolute bottom-3 right-3 z-10 rounded-full border border-[#8f74ff]/60 bg-black/55 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur transition-colors hover:bg-[#8f74ff]/25"
-          >
-            {uiMode === "countdown" ? "Skip countdown" : uiMode === "idle" ? "Launch" : "Launch again"} <span className="text-violet-200/70">({uiMode === "countdown" ? "Space" : "R"})</span>
-          </button>
-        </>
+        <button
+          type="button"
+          aria-label={uiMode === "countdown" ? "Skip countdown" : "Launch again"}
+          onClick={() => {
+            const s = sim.current;
+            if (s.mode === "countdown") s.skipReq = true;
+            else s.restartReq = true;
+          }}
+          className={`absolute bottom-3 right-3 z-10 rounded-full border border-[#8f74ff]/60 bg-black/55 font-mono font-bold uppercase tracking-wider text-white backdrop-blur transition-colors hover:bg-[#8f74ff]/25 ${tiny ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-[11px]"}`}
+        >
+          {uiMode === "countdown" ? (tiny ? "Skip" : "Skip countdown") : uiMode === "idle" ? "Launch" : tiny ? "Relaunch" : "Launch again"}
+          {!tiny && <span className="text-violet-200/70"> ({uiMode === "countdown" ? "Space" : "R"})</span>}
+        </button>
       )}
     </div>
   );

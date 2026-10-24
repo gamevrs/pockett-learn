@@ -79,7 +79,7 @@ Browsers keep sound off until you click something. Press **Run**, then the **Pla
             "Print BEAT LAB ONLINE",
             "Print KICK. SNARE. HATS.",
             "Print DROP THE BEAT",
-            "Press Run and watch the machine power up",
+            "Run to watch the machine power up, then Submit to lock it in",
           ],
           starterAdd: py`# ─── ✏️ YOUR TURN ───────────────────────────
 # Lesson 1: boot the drum machine.

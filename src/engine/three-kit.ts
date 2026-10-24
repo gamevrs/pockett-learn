@@ -49,7 +49,8 @@ export function useThreeStage(canvasRef: RefObject<HTMLCanvasElement | null>, cr
     } catch {
       return; // no WebGL: the scene simply stays blank
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    // 1.5 keeps edges crisp while costing ~45% fewer pixels than 2x on retina/4K screens
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
@@ -57,7 +58,8 @@ export function useThreeStage(canvasRef: RefObject<HTMLCanvasElement | null>, cr
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 1, 1, 5000);
+    // near=4 (not 1) gives far better depth precision: no z-fighting between stacked surfaces
+    const camera = new THREE.PerspectiveCamera(38, 1, 4, 6000);
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
     const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.75, 0.55, 0.78);
@@ -85,7 +87,12 @@ export function useThreeStage(canvasRef: RefObject<HTMLCanvasElement | null>, cr
       visible = e.isIntersecting;
     });
     io.observe(canvas);
-    const ro = new ResizeObserver(resize);
+    // Resizing reallocates the bloom render targets, so apply it at most once per frame
+    // (dragging a panel splitter fires the observer continuously).
+    let resizePending = false;
+    const ro = new ResizeObserver(() => {
+      resizePending = true;
+    });
     ro.observe(canvas);
     resize();
 
@@ -94,7 +101,12 @@ export function useThreeStage(canvasRef: RefObject<HTMLCanvasElement | null>, cr
     const loop = () => {
       raf = requestAnimationFrame(loop);
       const dt = Math.min(clock.getDelta(), 0.05);
-      if (!visible || document.hidden || ctx.size.width < 2) return;
+      if (!visible || document.hidden) return;
+      if (resizePending) {
+        resizePending = false;
+        resize();
+      }
+      if (ctx.size.width < 2) return;
       app.frame(dt, clock.elapsedTime);
       composer.render();
     };

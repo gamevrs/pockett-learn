@@ -92,7 +92,7 @@ function SandboxInner() {
             </div>
           </div>
           <div className="min-h-0 flex-1">
-            <CodeEditor value={code} onChange={setCode} onRun={() => void run()} errorLine={error?.line ?? null} errorMessage={error ? `${error.type}: ${error.message}` : undefined} revealKey="sandbox" />
+            <CodeEditor value={code} onChange={setCode} onRun={() => void run()} onSubmit={() => void run()} errorLine={error?.line ?? null} errorMessage={error ? `${error.type}: ${error.message}` : undefined} revealKey="sandbox" />
           </div>
         </div>
 

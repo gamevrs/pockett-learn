@@ -34,7 +34,7 @@ export default function HomePage() {
               </Link>
             </div>
             <p className="mt-5 flex items-center gap-2 text-sm text-ink-3">
-              <Lock className="h-3.5 w-3.5" /> No account. Nothing to install. Your progress stays on your device.
+              <Lock className="h-3.5 w-3.5" /> No account needed and nothing to install. Sign up free to sync across devices.
             </p>
           </div>
 

@@ -38,8 +38,8 @@ export type WorldEvent = "reset" | "liftoff" | "stage_sep" | "abort" | "crash" |
 
 const VIOLET_DEEP = new THREE.Color("#6440f0");
 const BG = new THREE.Color("#07070c");
-const SKY_TOP = new THREE.Color("#0b0c18");
-const SKY_LOW = new THREE.Color("#22253a");
+const SKY_TOP = new THREE.Color("#141831");
+const SKY_LOW = new THREE.Color("#3a4062");
 const SKY_BLUEPRINT = new THREE.Color("#0e0b1c");
 const RE = 4200; // planet radius in world units
 const PAD_TOP = 1;
@@ -291,6 +291,7 @@ export class LaunchWorld {
   private readonly padGroup = new THREE.Group();
   private readonly grid: THREE.GridHelper;
   private readonly groundMat: THREE.MeshStandardMaterial;
+  private readonly ground: THREE.Mesh;
   private readonly arms: THREE.Group[] = [];
   private readonly beacon = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), new THREE.MeshBasicMaterial({ color: BRAND, toneMapped: false }));
   private readonly padLights: THREE.PointLight[] = [];
@@ -342,13 +343,16 @@ export class LaunchWorld {
   private readonly tmp2 = new THREE.Vector3();
   private readonly target = new THREE.Vector3();
   private readonly camPos = new THREE.Vector3();
+  private readonly wantTarget = new THREE.Vector3();
+  private readonly wantPos = new THREE.Vector3();
+  private camInit = false;
   private readonly lastRocket = new THREE.Vector3(0, PAD_TOP + ROCKET_CENTER, 0);
   private readonly rocketVel = new THREE.Vector3();
   private readonly shake = new THREE.Vector3();
   private readonly colorCache = new THREE.Color();
   private liftAge = -1;
   private flash = 0;
-  private styleKey = "";
+  private styleKey = -1;
   private colorKey = "";
   private emit = 0;
 
@@ -356,8 +360,9 @@ export class LaunchWorld {
     this.ctx = ctx;
     this.scene = ctx.scene;
     this.camera = ctx.camera;
-    this.camera.near = 0.5;
-    this.camera.far = 14000;
+    // nothing is ever closer than ~40 units to the camera; the sky dome sits at 9000
+    this.camera.near = 3;
+    this.camera.far = 12500;
     this.camera.fov = 38;
     this.camera.updateProjectionMatrix();
     ctx.bloom.strength = 0.7;
@@ -411,7 +416,7 @@ export class LaunchWorld {
     earthGeo.rotateX(Math.PI / 2); // equator through the pad, so spinning about Z rolls the ground away
     const earth = new THREE.Mesh(earthGeo, new THREE.MeshStandardMaterial({ map: earthTexture(), roughness: 0.95, metalness: 0 }));
     earth.receiveShadow = false;
-    this.earthPivot.position.set(0, -RE - 0.2, 0);
+    this.earthPivot.position.set(0, -RE - 1.5, 0); // planet surface sits 1.5 below the pad ground
     this.earthPivot.add(earth);
     this.atmosphere = new THREE.Mesh(
       new THREE.SphereGeometry(RE * 1.035, 96, 48),
@@ -430,20 +435,21 @@ export class LaunchWorld {
     scene.add(this.earthPivot);
 
     // ── pad (rides on the planet) ──
-    this.padGroup.position.set(0, RE + 0.2, 0);
+    this.padGroup.position.set(0, RE + 1.5, 0);
     this.earthPivot.add(this.padGroup);
-    this.groundMat = new THREE.MeshStandardMaterial({ color: 0x0e0f17, roughness: 1, metalness: 0, transparent: true });
-    const ground = new THREE.Mesh(new THREE.CircleGeometry(420, 64), this.groundMat);
+    this.groundMat = new THREE.MeshStandardMaterial({ color: 0x0e0f17, roughness: 1, metalness: 0, transparent: true, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(170, 64), this.groundMat);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0.02;
+    ground.position.y = 0;
+    this.ground = ground;
     ground.receiveShadow = true;
     this.padGroup.add(ground);
-    this.grid = new THREE.GridHelper(400, 100, BRAND, BRAND);
+    this.grid = new THREE.GridHelper(320, 80, BRAND, BRAND);
     const gridMat = this.grid.material as THREE.Material;
     gridMat.transparent = true;
     gridMat.opacity = 0.14;
     gridMat.depthWrite = false;
-    this.grid.position.y = 0.06;
+    this.grid.position.y = 0.12;
     this.padGroup.add(this.grid);
     this.buildPad();
 
@@ -743,6 +749,7 @@ export class LaunchWorld {
   event(kind: WorldEvent) {
     switch (kind) {
       case "reset":
+        this.camInit = false; // snap the camera back to the pad instead of sweeping through the planet
         this.smoke.clear();
         this.fire.clear();
         this.trailCount = 0;
@@ -814,7 +821,7 @@ export class LaunchWorld {
   }
 
   private applyStyle(v: LaunchView, time: number) {
-    const key = `${v.lit}|${v.painted}|${v.engines}|${v.staged}|${v.tower}`;
+    const key = (v.lit ? 1 : 0) | (v.painted ? 2 : 0) | (v.engines ? 4 : 0) | (v.staged ? 8 : 0) | (v.tower << 4);
     if (key !== this.styleKey) {
       this.styleKey = key;
       for (const s of this.swap) {
@@ -828,8 +835,6 @@ export class LaunchWorld {
       this.collar.visible = !v.staged;
       this.upperPart.scale.set(v.staged ? 1 : 0.75 / 0.62, 1, v.staged ? 1 : 0.75 / 0.62);
       this.upperNozzle.visible = v.staged;
-      (this.grid.material as THREE.Material).opacity = v.lit ? 0.035 : 0.3;
-      this.groundMat.opacity = v.lit ? 1 : 0.85;
     }
     if (v.color !== this.colorKey) {
       this.colorKey = v.color;
@@ -908,7 +913,7 @@ export class LaunchWorld {
           const a = Math.random() * Math.PI * 2;
           const sp = 8 + Math.random() * 14;
           this.smoke.spawn(this.tmp2.x + j, PAD_TOP + 0.6, this.tmp2.z + k, Math.cos(a) * sp, 1 + Math.random() * 3, Math.sin(a) * sp * 0.6 + 4, 3 + Math.random() * 2.5, 2.4, 3.2, 0.62, 0.62, 0.66, 0.55, 0.6, 0.4);
-        } else {
+        } else if (v.vacuum < 0.55) {
           const sp = 10 + Math.random() * 6;
           this.smoke.spawn(this.tmp2.x + j * 0.4, this.tmp2.y, this.tmp2.z + k * 0.4, ex * sp + j * 1.5, ey * sp, k * 1.5, 2.5 + Math.random() * 2, 1.6, 4, 0.55, 0.55, 0.6, 0.5 * (1 - v.vacuum * 0.9), 0.4, 0);
         }
@@ -965,7 +970,8 @@ export class LaunchWorld {
         this.trail.geometry.attributes.position.needsUpdate = true;
       }
     }
-    this.trail.visible = v.trail;
+    this.trail.visible = v.trail && v.outro < 0.98;
+    (this.trail.material as THREE.LineBasicMaterial).opacity = 0.75 * (1 - v.outro);
 
     // ── environment by altitude ──
     const lowSky = v.lit ? 1 - space : 0;
@@ -984,7 +990,13 @@ export class LaunchWorld {
     const outside = smooth((this.camera.position.distanceTo(this.earthPivot.position) - RE * 1.035) / 300);
     am.uniforms.uStrength.value = outside * smooth((alt - 8) / 40) * (0.3 + 0.35 * space);
     this.cloudMat.opacity = v.lit ? 0.22 * (1 - smooth(alt / 14)) : 0;
-    this.hemi.intensity = v.lit ? 0.55 : 0.25;
+    // the flat pad disk and grid only matter near the ground; fade them before the curvature shows
+    const near = 1 - smooth(alt / 6);
+    this.groundMat.opacity = (v.lit ? 1 : 0.85) * near;
+    this.ground.visible = near > 0.01;
+    (this.grid.material as THREE.Material).opacity = (v.lit ? 0.035 : 0.3) * near;
+    this.grid.visible = near > 0.01;
+    this.hemi.intensity = v.lit ? 0.75 : 0.25;
     this.key.intensity = v.lit ? 2.2 : 0.6;
     const blink = Math.sin(time * 3.5) > 0 ? 1 : 0.25;
     (this.beacon.material as THREE.MeshBasicMaterial).color.copy(BRAND).multiplyScalar(v.lit ? 1.6 * blink : 0.3);
@@ -1004,18 +1016,26 @@ export class LaunchWorld {
     const aspectBoost = cam.aspect < 0.62 ? 0.62 / cam.aspect : 1; // keep the gantry in narrow portraits
     const D = baseD * Math.min(1.5, aspectBoost) * lerp(1, 1.2, smooth(alt / 70)) * lerp(1, 2.6, v.outro);
     const viewAtD = 2 * D * Math.tan((cam.fov * Math.PI) / 360);
-    this.target.copy(this.rocket.position);
-    this.target.y += 0.15 * viewAtD * (1 - v.outro);
+    this.wantTarget.copy(this.rocket.position);
+    this.wantTarget.y += 0.15 * viewAtD * (1 - v.outro);
     const sway = v.reduced ? 0 : 0.1 * Math.sin(time * 0.07) + 0.04 * Math.sin(time * 0.19);
     const az = 0.5 + sway + v.outro * 0.6;
     const el = lerp(0.09, 0.62, smooth(alt / 60)) - v.outro * 0.25;
-    this.camPos.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(D).add(this.target);
+    this.wantPos.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).multiplyScalar(D).add(this.wantTarget);
+    if (!this.camInit || dt <= 0) {
+      this.target.copy(this.wantTarget);
+      this.camPos.copy(this.wantPos);
+      this.camInit = true;
+    } else {
+      // frame-rate independent smoothing
+      this.target.lerp(this.wantTarget, 1 - Math.exp(-12 * dt));
+      this.camPos.lerp(this.wantPos, 1 - Math.exp(-6 * dt));
+    }
     if (!v.reduced && fire && alt < 3) {
       const a = 0.12 * v.throttle * (1 - alt / 3);
       this.shake.set((Math.random() - 0.5) * a, (Math.random() - 0.5) * a, 0);
-      this.camPos.add(this.shake);
-    }
-    cam.position.copy(this.camPos);
+    } else this.shake.set(0, 0, 0);
+    cam.position.copy(this.camPos).add(this.shake);
     cam.lookAt(this.target);
 
     // sky dome, stars and moon follow the camera
@@ -1043,6 +1063,6 @@ export class LaunchWorld {
 
   dispose() {
     // geometry/material cleanup is done by useThreeStage (disposeScene); nothing else is held
-    this.styleKey = "";
+    this.styleKey = -1;
   }
 }

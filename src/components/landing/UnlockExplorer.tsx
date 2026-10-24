@@ -67,7 +67,13 @@ export function UnlockExplorer() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button className="btn btn-sm" onClick={() => setPlaying((p) => !p)}>
+          <button
+            className="btn btn-sm"
+            onClick={() => {
+              if (!playing && step >= lessons.length) go(0);
+              setPlaying((p) => !p);
+            }}
+          >
             {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" fill="currentColor" />}
             {playing ? "Pause" : step >= lessons.length ? "Replay" : "Auto-build"}
           </button>

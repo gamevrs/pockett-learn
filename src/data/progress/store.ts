@@ -100,14 +100,16 @@ export function currentStreak(state: ProgressState): number {
 
 export function saveDraft(lessonId: string, code: string) {
   const s = read();
-  commit({ ...s, drafts: { ...s.drafts, [lessonId]: code } });
+  commit({ ...s, drafts: { ...s.drafts, [lessonId]: code }, draftsAt: { ...s.draftsAt, [lessonId]: new Date().toISOString() } });
 }
 
 export function clearDraft(lessonId: string) {
   const s = read();
   const drafts = { ...s.drafts };
+  const draftsAt = { ...s.draftsAt };
   delete drafts[lessonId];
-  commit({ ...s, drafts });
+  delete draftsAt[lessonId];
+  commit({ ...s, drafts, draftsAt });
 }
 
 export function recordAttempt(lessonId: string) {
@@ -147,6 +149,7 @@ export function completeLesson(lessonId: string, xp: number, code: string): Comp
   }
 
   const xpGained = firstTime ? xp : 0;
+  const now = new Date().toISOString();
   const next: ProgressState = {
     ...s,
     xp: s.xp + xpGained,
@@ -155,7 +158,13 @@ export function completeLesson(lessonId: string, xp: number, code: string): Comp
     lastActiveDate: day,
     completed: {
       ...s.completed,
-      [lessonId]: { at: s.completed[lessonId]?.at ?? new Date().toISOString(), code, attempts: s.attempts[lessonId] ?? 1 },
+      [lessonId]: {
+        at: s.completed[lessonId]?.at ?? now,
+        updatedAt: now,
+        code,
+        // frozen at the first pass, so re-running later can't revoke a "first try" badge
+        attempts: s.completed[lessonId]?.attempts ?? s.attempts[lessonId] ?? 1,
+      },
     },
   };
   commit(next);

@@ -70,7 +70,7 @@ Boot the on-board computer by printing three startup lines. The moment they run,
             "Print BOOT SEQUENCE START",
             "Print ENGINE: OK",
             "Print SYSTEMS GO",
-            "Press Run and watch the car wake up",
+            "Run to watch the car wake up, then Submit to lock it in",
           ],
           starterAdd: py`# ─── ✏️ YOUR TURN ───────────────────────────
 # Lesson 1: boot the car's computer.

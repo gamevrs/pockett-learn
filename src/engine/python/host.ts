@@ -107,15 +107,20 @@ export async function runProgram(source: string, onStatus?: StatusListener): Pro
   const py = await loadPyodideOnce(onStatus);
   onStatus?.("Running your code…");
   const mod = createNamespace(py);
-  const res = JSON.parse(mod.run_user(source)) as { stdout: string; error: RunError | null };
-  const durationMs = Math.round(performance.now() - started);
-
-  if (res.error) {
+  try {
+    const res = JSON.parse(mod.run_user(source)) as { stdout: string; error: RunError | null };
+    const durationMs = Math.round(performance.now() - started);
+    if (res.error) {
+      mod.dispose();
+      return { stdout: res.stdout, error: res.error, durationMs, program: null };
+    }
+    const snapshot = JSON.parse(mod.snapshot());
+    return { stdout: res.stdout, error: null, durationMs, program: createPythonProgram(mod, res.stdout, snapshot) };
+  } catch (err) {
+    // never leak the namespace's Python proxies if the engine itself throws
     mod.dispose();
-    return { stdout: res.stdout, error: res.error, durationMs, program: null };
+    throw err;
   }
-  const snapshot = JSON.parse(mod.snapshot());
-  return { stdout: res.stdout, error: null, durationMs, program: createPythonProgram(mod, res.stdout, snapshot) };
 }
 
 export interface GradeOutcome {

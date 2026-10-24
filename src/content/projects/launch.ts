@@ -81,7 +81,7 @@ Wake the console by printing three status lines. The moment they run, the pad li
             "Print LAUNCH CONTROL ONLINE",
             "Print ALL SYSTEMS NOMINAL",
             "Print PAD A READY",
-            "Press Run and watch the pad power up",
+            "Run to watch the pad power up, then Submit to lock it in",
           ],
           starterAdd: py`# ─── ✏️ YOUR TURN ───────────────────────────
 # Lesson 1: wake the launch console.

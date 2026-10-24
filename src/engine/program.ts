@@ -62,6 +62,8 @@ class Program implements ProgramHandle {
   }
 
   hasHook(path: string) {
+    // A disposed program (e.g. its route was hidden) must answer safely, never touch Pyodide.
+    if (this.disposed) return false;
     if (this.staticHooks) return path in this.staticHooks;
     if (!path.includes(".")) return this.callables.has(path);
     const cached = this.hookCache.get(path);

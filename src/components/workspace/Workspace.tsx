@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, ChevronLeft, ChevronRight, Code2, Flame, ListChecks, MonitorPlay, Play, RotateCcw, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronLeft, ChevronRight, Code2, Flame, ListChecks, MonitorPlay, Play, RotateCcw, Send, Volume2, VolumeX, X, Zap } from "lucide-react";
 import { featuresUnlockedBy, flattenLessons, type RunError, type TestResult } from "@/engine/types";
 import type { Celebration } from "@/engine/scene";
 import type { ProgramHandle } from "@/engine/program";
@@ -11,6 +11,7 @@ import { solutionThrough, starterFor } from "@/engine/compose";
 import type { LessonContext } from "@/content";
 import {
   completeLesson,
+  currentStreak,
   levelFor,
   recordAttempt,
   recordHint,
@@ -28,8 +29,10 @@ import { useHydrated } from "@/lib/hooks";
 import { CodeEditor } from "./CodeEditor";
 import { LessonPanel } from "./LessonPanel";
 import { ResultsPanel, type ResultTab } from "./ResultsPanel";
+import { WorkspaceLayout, useLayoutMode, type PanelId } from "./WorkspaceLayout";
 
 type MobileTab = "learn" | "code" | "stage" | "checks";
+const MOBILE_PANEL: Record<MobileTab, PanelId> = { learn: "lesson", code: "editor", stage: "stage", checks: "results" };
 
 export function Workspace({ ctx }: { ctx: LessonContext }) {
   const hydrated = useHydrated();
@@ -55,9 +58,15 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
   const lessons = flattenLessons(project);
   const done = Boolean(progress.completed[lesson.id]);
 
-  const [code, setCode] = useState(
-    () => progress.drafts[lesson.id] ?? progress.completed[lesson.id]?.code ?? starterFor(project, index, submittedCode(progress)),
-  );
+  const savedCode = progress.drafts[lesson.id] ?? progress.completed[lesson.id]?.code ?? null;
+  const [code, setCode] = useState(() => savedCode ?? starterFor(project, index, submittedCode(progress)));
+  // Untouched editors adopt saved code that arrives later (e.g. the cloud pull on a new device).
+  const [pristine, setPristine] = useState(true);
+  const [seenSaved, setSeenSaved] = useState(savedCode);
+  if (savedCode !== seenSaved) {
+    setSeenSaved(savedCode);
+    if (pristine && savedCode !== null && savedCode !== code) setCode(savedCode);
+  }
   // With earlier work saved we boot it on arrival, so the stage starts out "loading".
   const [status, setStatus] = useState<StageStatus>(() => (index > 0 || done ? "loading" : "idle"));
   const [statusText, setStatusText] = useState("");
@@ -69,14 +78,24 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
   const [mobileTab, setMobileTab] = useState<MobileTab>("learn");
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const [completion, setCompletion] = useState<CompletionResult | null>(null);
+  const [resultsCollapsed, setResultsCollapsed] = useState(false);
+  const layoutMode = useLayoutMode();
 
   const programRef = useRef<ProgramHandle | null>(null);
-  const mounted = useRef(true);
+  // Bumped whenever the panel is hidden/unmounted (Next keeps routes alive hidden), so async
+  // work that started earlier can tell it must not touch the UI any more.
+  const epoch = useRef(0);
   const booted = useRef(false);
-  const initialCode = useRef(code);
+  const codeRef = useRef(code);
+  /** Features previewed by the last successful Run (Submit makes them permanent). */
+  const [preview, setPreview] = useState<string[]>([]);
   const busy = useRef(false);
 
-  const unlocked = useMemo(() => featuresUnlockedBy(project, Object.keys(progress.completed)), [project, progress.completed]);
+  const unlocked = useMemo(() => {
+    const set = featuresUnlockedBy(project, Object.keys(progress.completed));
+    preview.forEach((f) => set.add(f));
+    return set;
+  }, [project, progress.completed, preview]);
   const feature = project.features.find((f) => f.id === lesson.unlocks[0]) ?? null;
   const featureAlive = feature ? unlocked.has(feature.id) : false;
 
@@ -87,13 +106,19 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
   }
 
   useEffect(() => {
-    mounted.current = true;
+    const showsBoot = index > 0 || done;
+    const epochRef = epoch;
     return () => {
-      mounted.current = false;
+      // hidden or unmounted: drop the live program and let the boot run again when shown
+      epochRef.current++;
       programRef.current?.dispose();
       programRef.current = null;
+      booted.current = false;
+      busy.current = false;
+      setProgram(null);
+      setStatus(showsBoot ? "loading" : "idle");
     };
-  }, []);
+  }, [index, done]);
 
   // Start downloading Python right away; if there is earlier work, boot it so the stage is alive on arrival.
   useEffect(() => {
@@ -101,9 +126,10 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     if (booted.current) return;
     booted.current = true;
     if (index === 0 && !done) return;
-    void runProgram(initialCode.current, setStatusText)
+    const my = epoch.current;
+    void runProgram(codeRef.current, setStatusText)
       .then((out) => {
-        if (!mounted.current) {
+        if (my !== epoch.current) {
           out.program?.dispose();
           return;
         }
@@ -116,35 +142,50 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
       })
       .catch(() => {})
       .finally(() => {
-        if (mounted.current) setStatus("idle");
+        if (my === epoch.current) setStatus("idle");
       });
   }, [index, done]);
 
   // autosave the draft shortly after typing stops
   useEffect(() => {
-    if (code === initialCode.current) return;
+    if (pristine) return; // only real edits become drafts
     const t = setTimeout(() => saveDraft(lesson.id, code), 500);
     return () => clearTimeout(t);
-  }, [code, lesson.id]);
+  }, [code, lesson.id, pristine]);
 
-  async function run() {
+  /** Run = try the code (output + live stage). Submit = also grade it and complete the lesson. */
+  async function execute(mode: "run" | "submit") {
     if (busy.current) return;
     busy.current = true;
+    const my = epoch.current;
     sound.playClick();
-    recordAttempt(lesson.id);
+    if (mode === "submit") recordAttempt(lesson.id);
     setStatus("loading");
-    setResultTab("checks");
+    setResultTab(mode === "submit" ? "checks" : "console");
+    setResultsCollapsed(false);
     setCompletion(null);
 
     try {
       const out = await runProgram(code, setStatusText);
-      if (!mounted.current) {
+      if (my !== epoch.current) {
         out.program?.dispose();
         return;
       }
       setStdout(out.stdout);
       setRunError(out.error);
       swapProgram(out.program);
+
+      if (mode === "run") {
+        if (out.error) {
+          sound.playError();
+          setMobileTab("checks");
+        } else {
+          // let the learner see what this lesson's part would do; Submit makes it permanent
+          setPreview(lesson.unlocks);
+          setMobileTab("stage");
+        }
+        return;
+      }
 
       let nextResults: TestResult[];
       if (out.error) {
@@ -161,7 +202,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
         const graded = await gradeProgram(code, lesson.tests, setStatusText);
         nextResults = graded.results;
       }
-      if (!mounted.current) return;
+      if (my !== epoch.current) return;
       setResults(nextResults);
 
       const allPassed = nextResults.length > 0 && nextResults.every((r) => r.passed);
@@ -175,33 +216,34 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
         }
         setCompletion(res);
         setMobileTab("stage");
-      } else if (!out.error) {
-        sound.playError();
-        setMobileTab("checks");
       } else {
+        if (!out.error) sound.playError();
         setMobileTab("checks");
       }
     } catch (err) {
-      if (!mounted.current) return;
+      if (my !== epoch.current) return;
       setRunError({ type: "EngineError", message: (err as Error)?.message ?? String(err), line: null });
       setResultTab("console");
       sound.playError();
     } finally {
-      busy.current = false;
-      if (mounted.current) setStatus("idle");
+      if (my === epoch.current) {
+        busy.current = false;
+        setStatus("idle");
+      }
     }
   }
 
-  const runRef = useRef(run);
+  const runRef = useRef(execute);
   useEffect(() => {
-    runRef.current = run;
+    runRef.current = execute;
+    codeRef.current = code;
   });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
-        void runRef.current();
+        void runRef.current(e.shiftKey ? "submit" : "run");
       }
     };
     window.addEventListener("keydown", onKey);
@@ -212,7 +254,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     sound.playClick();
     const fresh = starterFor(project, index, submittedCode(progress));
     setCode(fresh);
-    initialCode.current = fresh;
+    setPristine(false);
     clearDraft(lesson.id);
     setResults([]);
     setRunError(null);
@@ -231,7 +273,6 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     { id: "stage", label: "Live", icon: <MonitorPlay className="h-4 w-4" /> },
     { id: "checks", label: "Checks", icon: <ListChecks className="h-4 w-4" /> },
   ];
-  const show = (tab: MobileTab) => (mobileTab === tab ? "flex" : "hidden lg:flex");
 
   return (
     <div
@@ -261,7 +302,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
         <div className="flex shrink-0 items-center gap-2">
           <span className="hidden items-center gap-2 rounded-full border border-line px-3 py-1.5 text-xs font-bold md:flex" title={`${rank.rank} · level ${rank.level}`}>
             <span className="flex items-center gap-1 text-brand"><Zap className="h-3.5 w-3.5" fill="currentColor" />{progress.xp}</span>
-            <span className="flex items-center gap-1 text-brand"><Flame className="h-3.5 w-3.5" fill="currentColor" />{progress.streak}</span>
+            <span className="flex items-center gap-1 text-brand"><Flame className="h-3.5 w-3.5" fill="currentColor" />{currentStreak(progress)}</span>
           </span>
           <button
             onClick={() => setSoundEnabled(!progress.soundEnabled)}
@@ -271,72 +312,120 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
             {progress.soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </button>
           {prev && (
-            <Link href={lessonPath(prev.id)} aria-label={`Previous: ${prev.title}`} className="grid h-9 w-9 place-items-center rounded-full border border-line hover:bg-surface-2">
+            <Link href={lessonPath(prev.id)} aria-label={`Previous: ${prev.title}`} className="hidden h-9 w-9 place-items-center rounded-full border border-line hover:bg-surface-2 sm:grid">
               <ChevronLeft className="h-4 w-4" />
             </Link>
           )}
           {next && (
-            <Link href={lessonPath(next.id)} aria-label={`Next: ${next.title}`} className="grid h-9 w-9 place-items-center rounded-full border border-line hover:bg-surface-2">
+            <Link href={lessonPath(next.id)} aria-label={`Next: ${next.title}`} className="hidden h-9 w-9 place-items-center rounded-full border border-line hover:bg-surface-2 sm:grid">
               <ChevronRight className="h-4 w-4" />
             </Link>
           )}
-          <button onClick={() => void run()} disabled={running} className="btn btn-primary btn-sm">
+          <button
+            onClick={() => void execute("run")}
+            disabled={running}
+            title="Run your code and watch the stage (Ctrl/⌘ + Enter)"
+            className="btn btn-sm"
+          >
             <Play className="h-3.5 w-3.5" fill="currentColor" />
             Run
-            <kbd className="ml-1 hidden rounded bg-black/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold lg:inline">Ctrl ↵</kbd>
+            <kbd className="ml-1 hidden rounded bg-ink/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold xl:inline">Ctrl ↵</kbd>
+          </button>
+          <button
+            onClick={() => void execute("submit")}
+            disabled={running}
+            title="Check your work and complete the lesson (Ctrl/⌘ + Shift + Enter)"
+            className="btn btn-primary btn-sm"
+          >
+            <Send className="h-3.5 w-3.5" />
+            Submit
+            <kbd className="ml-1 hidden rounded bg-black/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold xl:inline">Ctrl ⇧ ↵</kbd>
           </button>
         </div>
       </header>
 
       {/* panels */}
-      <div className="ws-grid min-h-0 flex-1 gap-3 p-2 sm:p-3">
-        <section className={`ws-lesson ${show("learn")} card min-h-0 flex-col overflow-hidden`}>
-          <LessonPanel
-            key={lesson.id}
-            ctx={ctx}
-            feature={feature}
-            alreadyDone={featureAlive}
-            attempts={progress.attempts[lesson.id] ?? 0}
-            hintsSeen={progress.hintsSeen[lesson.id] ?? 0}
-            onRevealHint={(n) => recordHint(lesson.id, n)}
-            onUseSolution={() => {
-              setCode(solution);
-              setMobileTab("code");
-            }}
-          />
-        </section>
-
-        <section className={`ws-editor ${show("code")} card min-h-0 flex-col overflow-hidden`}>
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-line px-3">
-            <span className="flex items-center gap-2 font-mono text-xs font-bold">
-              <span className="h-2 w-2 rounded-full bg-brand" /> main.py
-              <span className="hidden font-sans font-medium text-ink-3 sm:inline">· your whole {project.title} program</span>
-            </span>
-            <button onClick={reset} className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold text-ink-3 hover:bg-surface-2 hover:text-ink">
-              <RotateCcw className="h-3.5 w-3.5" /> Reset lesson
-            </button>
-          </div>
-          <div className="min-h-0 flex-1">
-            <CodeEditor value={code} onChange={setCode} onRun={() => void runRef.current()} errorLine={errorLine} errorMessage={runError ? `${runError.type}: ${runError.message}` : undefined} revealKey={lesson.id} />
-          </div>
-        </section>
-
-        <section className={`ws-results ${show("checks")} card min-h-0 flex-col overflow-hidden`}>
-          <ResultsPanel tab={resultTab} onTab={setResultTab} tests={lesson.tests} results={results} stdout={stdout} error={runError} running={running} statusText={statusText} />
-        </section>
-
-        <section className={`ws-stage ${show("stage")} min-h-[300px] min-w-0 flex-col`}>
-          <StageShell
-            project={project}
-            program={program}
-            unlocked={unlocked}
-            focus={lesson.unlocks[0] ?? null}
-            celebration={celebration}
-            status={status}
-            statusText={statusText}
-            emptyHint="Press Run to boot your code"
-          />
-        </section>
+      <div className="flex min-h-0 flex-1 flex-col p-2 sm:p-3">
+        <WorkspaceLayout
+          mode={layoutMode}
+          active={MOBILE_PANEL[mobileTab]}
+          resultsCollapsed={resultsCollapsed}
+          onExpandResults={() => setResultsCollapsed(false)}
+          panels={{
+            lesson: (
+              <section className="card flex h-full min-h-0 flex-col overflow-hidden">
+                <LessonPanel
+                  key={lesson.id}
+                  ctx={ctx}
+                  feature={feature}
+                  alreadyDone={featureAlive}
+                  attempts={progress.attempts[lesson.id] ?? 0}
+                  hintsSeen={progress.hintsSeen[lesson.id] ?? 0}
+                  onRevealHint={(n) => recordHint(lesson.id, n)}
+                  onUseSolution={() => {
+                    setCode(solution);
+                    setPristine(false);
+                    setMobileTab("code");
+                  }}
+                />
+              </section>
+            ),
+            editor: (
+              <section className="card flex h-full min-h-0 flex-col overflow-hidden">
+                <div className="flex h-10 shrink-0 items-center justify-between border-b border-line px-3">
+                  <span className="flex min-w-0 items-center gap-2 font-mono text-xs font-bold">
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-brand" /> main.py
+                    <span className="hidden truncate font-sans font-medium text-ink-3 sm:inline">· your whole {project.title} program</span>
+                  </span>
+                  <button onClick={reset} className="flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold text-ink-3 hover:bg-surface-2 hover:text-ink">
+                    <RotateCcw className="h-3.5 w-3.5" /> Reset lesson
+                  </button>
+                </div>
+                <div className="min-h-0 flex-1">
+                  <CodeEditor
+                    value={code}
+                    onChange={(v) => {
+                      setCode(v);
+                      setPristine(false);
+                    }} onRun={() => void runRef.current("run")} onSubmit={() => void runRef.current("submit")} errorLine={errorLine} errorMessage={runError ? `${runError.type}: ${runError.message}` : undefined} revealKey={lesson.id} />
+                </div>
+              </section>
+            ),
+            results: (
+              <section className="card flex h-full min-h-0 flex-col overflow-hidden">
+                <ResultsPanel
+                  tab={resultTab}
+                  onTab={(t) => {
+                    setResultTab(t);
+                    setResultsCollapsed(false);
+                  }}
+                  tests={lesson.tests}
+                  results={results}
+                  stdout={stdout}
+                  error={runError}
+                  running={running}
+                  statusText={statusText}
+                  collapsed={layoutMode !== "phone" && resultsCollapsed}
+                  onToggleCollapsed={layoutMode === "phone" ? undefined : () => setResultsCollapsed((c) => !c)}
+                />
+              </section>
+            ),
+            stage: (
+              <section className="flex h-full min-h-0 min-w-0 flex-col">
+                <StageShell
+                  project={project}
+                  program={program}
+                  unlocked={unlocked}
+                  focus={lesson.unlocks[0] ?? null}
+                  celebration={celebration}
+                  status={status}
+                  statusText={statusText}
+                  emptyHint="Press Run to boot your code"
+                />
+              </section>
+            ),
+          }}
+        />
       </div>
 
       {/* mobile tab bar */}

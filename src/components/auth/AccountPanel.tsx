@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Cloud, CloudOff, KeyRound, Loader2, LogOut, Mail, RefreshCw } from "lucide-react";
 import { displayNameOf, sendPasswordReset, signIn, signOut, signUp, updatePassword, useAuth } from "@/data/auth/store";
-import { syncNow, useSyncStatus } from "@/data/progress/sync";
+import { flushSync, syncNow, useSyncStatus } from "@/data/progress/sync";
 import { levelFor, useProgress } from "@/data/progress/store";
 
 type Mode = "signin" | "signup" | "forgot";
@@ -197,6 +197,7 @@ function SignedIn() {
           onClick={async () => {
             setBusy(true);
             try {
+              await flushSync();
               await signOut();
             } finally {
               setBusy(false);
@@ -206,7 +207,7 @@ function SignedIn() {
           <LogOut className="h-4 w-4" /> Sign out
         </button>
       </div>
-      <p className="mt-4 text-xs text-ink-3">Signing out keeps a copy of your progress on this device.</p>
+      <p className="mt-4 text-xs text-ink-3">Your progress is saved to your account. Signing out clears it from this device.</p>
     </div>
   );
 }

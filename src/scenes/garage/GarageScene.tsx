@@ -34,9 +34,10 @@ interface Hud {
   splitVisible: boolean;
   autopilot: boolean;
   width: number;
+  height: number;
 }
 
-const EMPTY_HUD: Hud = { kmh: 0, topSpeed: 120, pedal: 0, power: 0, lap: 0, lapTime: 0, bestLap: null, split: "", splitVisible: false, autopilot: false, width: 600 };
+const EMPTY_HUD: Hud = { kmh: 0, topSpeed: 120, pedal: 0, power: 0, lap: 0, lapTime: 0, bestLap: null, split: "", splitVisible: false, autopilot: false, width: 600, height: 400 };
 
 export default function GarageScene({ program, unlocked, celebration, interactive, autoplay = false }: SceneProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -134,6 +135,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
             splitVisible: controller.splitTimer > 0,
             autopilot: controller.autopilotActive,
             width: ctx.size.width,
+            height: ctx.size.height,
           });
         }
       },
@@ -158,9 +160,11 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
   const alive = (id: string) => unlocked.has(id);
   const lit = alive("ignition") && !!program;
   const canDrive = alive("engine") && !!program;
-  const compact = hud.width < 440;
+  // Small stages drop secondary readouts so panels never overlap.
+  const compact = hud.width < 440 || hud.height < 340;
+  const tiny = hud.height < 260;
   const name = alive("paint") && program ? program.str("car_name", "") : "";
-  const lines = program ? program.stdout.split("\n").filter(Boolean).slice(compact ? -3 : -5) : [];
+  const lines = program ? program.stdout.split("\n").filter(Boolean).slice(tiny ? -1 : compact ? -3 : -5) : [];
   const hasAutopilot = alive("autopilot") && !!program?.hasHook("autopilot.steer");
   const toggleAutopilot = () => {
     requests.current.toggleAutopilot = true;
@@ -264,8 +268,8 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
         )}
       </div>
 
-      {interactive && canDrive && !focused && !hud.autopilot && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-14 flex justify-center [@media(pointer:coarse)]:hidden">
+      {interactive && canDrive && !focused && !hud.autopilot && !compact && (
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center [@media(pointer:coarse)]:hidden">
           <span className="rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white/80 backdrop-blur">
             Click the stage, then drive with W A S D · C switches camera
           </span>
