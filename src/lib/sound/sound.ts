@@ -1,4 +1,4 @@
-import { getUserStats } from "../storage/progress";
+import { getProgress } from "@/data/progress/store";
 
 class SoundSynthesizer {
   private ctx: AudioContext | null = null;
@@ -6,7 +6,7 @@ class SoundSynthesizer {
   private getContext(): AudioContext | null {
     if (typeof window === "undefined") return null;
     if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
       }
@@ -18,7 +18,7 @@ class SoundSynthesizer {
   }
 
   public playSuccess() {
-    const stats = getUserStats();
+    const stats = getProgress();
     if (!stats.soundEnabled) return;
 
     const ctx = this.getContext();
@@ -47,7 +47,7 @@ class SoundSynthesizer {
   }
 
   public playLevelUp() {
-    const stats = getUserStats();
+    const stats = getProgress();
     if (!stats.soundEnabled) return;
 
     const ctx = this.getContext();
@@ -76,7 +76,7 @@ class SoundSynthesizer {
   }
 
   public playClick() {
-    const stats = getUserStats();
+    const stats = getProgress();
     if (!stats.soundEnabled) return;
 
     const ctx = this.getContext();
@@ -101,7 +101,7 @@ class SoundSynthesizer {
   }
 
   public playError() {
-    const stats = getUserStats();
+    const stats = getProgress();
     if (!stats.soundEnabled) return;
 
     const ctx = this.getContext();

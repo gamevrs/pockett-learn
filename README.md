@@ -1,115 +1,34 @@
-# Pockett-Learn ⚡
-> **100% Free, Interactive Programming Academy powered by In-Browser WebAssembly.**
+# pockett.
 
-Inspired by the gamified, unit-tested feedback loops of **Boot.dev**, the visual bold editorial energy of **The Verge**, and the structured academic progression of **Coursera**.
-
----
-
-## 🌟 Key Features
-
-1. **Client-Side WebAssembly Python Engine (Pyodide 3.12)**
-   - Zero remote server execution cost or queue latency.
-   - Code runs securely inside the user's browser with real-time `sys.stdout` and `sys.stderr` capture.
-   - Automated unit test assertion suites evaluated directly in the Python runtime.
-
-2. **Gamified Engineering Progression (Boot.dev-style)**
-   - Mission narratives with real-world scenarios.
-   - XP system, Daily Streaks 🔥, Leveling up (Lv. 1 to Lv. 10+), and achievement badges.
-   - Tiered progressive hints with reference solutions and explanations.
-   - Celebratory triumph fanfare synthesized via browser Web Audio API + confetti particle bursts.
-
-3. **Modern Cyber-Editorial Design (The Verge + Coursera)**
-   - Neon Emerald / Cyan / Amber / Violet accents on Obsidian `#07090e`.
-   - Real-time ticker tape and active terminal preview directly on the homepage.
-   - Coursera-grade syllabus breakdown with completion tracking, estimated durations, and skill tags.
-   - Printable / downloadable Certificate of Completion with verification hash.
-
-4. **100% Free & AdSense-Ready**
-   - Zero paywalls or credit card requirements.
-   - Pre-styled, non-intrusive Google AdSense slots (Leaderboard, Sidebar Rectangle, and In-Feed) engineered with zero Cumulative Layout Shift (CLS).
-
-5. **Local-First with Cloud Scaling Path**
-   - **Local Mode (Default)**: Instant progress persistence in `localStorage`.
-   - **Cloud Scaling (Supabase + Vercel)**: Modular adapter ready to plug into `@supabase/supabase-js` for user accounts, Postgres profiles, and cloud code backups.
-
----
-
-## 🐍 Python Curriculum (Intro Basics to Professional)
-
-| Module | Title | Key Concepts |
-| :--- | :--- | :--- |
-| **01** | **The Genesis Byte** | `print()`, dynamic typing, numbers, arithmetic, integer division `//`, modulo `%` |
-| **02** | **Logic & Control Flow** | Booleans, comparison operators, `if`/`elif`/`else`, compound logic, short-circuiting |
-| **03** | **Loops & Iterations** | `range()` sequences, `for` loops, accumulator patterns, convergent `while` loops |
-| **04** | **Functions & Scope** | Function definitions, return signatures, dynamic `*args` and `**kwargs`, lexical scope |
-| **05** | **Core Data Structures** | O(1) hash map dictionaries, list transformations, portfolio aggregators |
-| **06** | **Object-Oriented Python** | Classes, `__init__`, state encapsulation, instance methods, resource allocators |
-| **07** | **Error Handling & Resilience** | Defensive programming, `try`/`except`/`finally`, custom exceptions |
-| **08** | **Pythonic Paradigms** | List comprehensions, higher-order functions, function decorators & closures |
-| **09** | **Professional Python** | Modern `@dataclass` domain modeling, type contracts, financial packet settlement |
-
----
-
-## 🚀 Getting Started Locally
+Free, interactive Python. You pick a **project** (a car, a rocket, a drum machine) and your code makes it *come alive*: every lesson you pass bolts a new part onto a live demo. Python runs entirely in the browser (Pyodide / WebAssembly); there is no code-execution server and no account.
 
 ```bash
-# Clone and enter the repository
-cd pockett-learn
-
-# Install dependencies
 pnpm install
-
-# Start development server
-pnpm dev
-# Open http://localhost:3000
-
-# Build and start production server
+pnpm dev          # http://localhost:3000
+pnpm typecheck    # tsc
+pnpm validate     # runs every lesson's solution + starter through the real Python engine
 pnpm build
-pnpm start
 ```
 
----
+## What's in the box
 
-## ☁️ Scaling to Supabase & Vercel
+| Project | Python concepts | Comes alive |
+| --- | --- | --- |
+| 🏎️ **Turbo Garage** | print, variables, math, functions, if/else, loops, lists, dicts, classes | a car you can drive, then an autopilot you write |
+| 🚀 **Launch Control** | loops, math, functions, conditionals, dicts, classes | a rocket flight to orbit |
+| 🥁 **Beat Lab** | strings, lists, loops, functions, dicts, classes | a synthesized drum machine |
 
-### 1. Supabase Postgres Schema
-When ready to enable cloud user profiles and leaderboard sync, run the following SQL inside your Supabase SQL Editor:
+Plus a dashboard (XP, streak, badges) and a free-play Python sandbox.
 
-```sql
-create table public.profiles (
-  id uuid references auth.users not null primary key,
-  username text unique,
-  xp integer default 0,
-  level integer default 1,
-  streak integer default 1,
-  completed_lessons text[] default '{}',
-  updated_at timestamp with time zone default timezone('utc'::text, now())
-);
+## How a "living project" works
 
-create table public.lesson_submissions (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references public.profiles(id),
-  lesson_id text not null,
-  code text not null,
-  passed boolean default false,
-  created_at timestamp with time zone default timezone('utc'::text, now())
-);
-```
+1. The learner edits **one growing `main.py`** per project. Each lesson appends a TODO to what they already wrote.
+2. **Run** executes it in Pyodide, then grades it with the lesson's `assert` tests.
+3. The result is a `ProgramHandle`: the scene reads plain values (`program.num("top_speed", 120)`) and calls the learner's functions (`program.call("steer", left, right)`) every frame.
+4. Passing a lesson **unlocks features** (`lesson.unlocks`). Scenes render locked features as blueprints and unlocked ones fully alive.
 
-### 2. Environment Variables
-Add to `.env.local` or Vercel Project Settings:
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-NEXT_PUBLIC_ADSENSE_CLIENT_ID=ca-pub-xxxxxxxxxxxxxxxx
-```
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full picture, and [docs/ADDING_A_PROJECT.md](docs/ADDING_A_PROJECT.md) to build a new one.
 
----
+## Local-first, cloud-ready
 
-## 🛠 Tech Stack
-- **Framework**: Next.js 16 (App Router, Turbopack, Partial Prerendering)
-- **UI & Styling**: React 19, Tailwind CSS v4, Lucide Icons
-- **Code Editor**: Monaco Editor (`@monaco-editor/react`)
-- **Python Execution Engine**: Pyodide 0.26 WebAssembly (CPython 3.12)
-- **Audio Synthesizer**: Zero-dependency Web Audio API oscillator synthesis
-- **Celebration**: Canvas-Confetti
+Progress lives in `localStorage` behind a `ProgressRepository` interface (`src/data/progress`). `supabase/migrations/0001_init.sql` is the matching Postgres schema with row-level security, ready for when accounts and Vercel/Supabase deployment are switched on. Nothing in the UI imports storage directly.

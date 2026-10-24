@@ -1,82 +1,45 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { sound } from "@/lib/sound/sound";
+import React, { createContext, useCallback, useContext, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
-  setTheme: (theme: Theme) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType>({
-  theme: "light",
-  toggleTheme: () => {},
-  setTheme: () => {},
-});
+const STORAGE_KEY = "pockett_theme_mode";
+const listeners = new Set<() => void>();
 
-const THEME_STORAGE_KEY = "pockett_theme_mode";
+// The <html> class is set before first paint by the inline script in layout.tsx;
+// we treat that class as the source of truth so there is never a theme flash.
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+const getSnapshot = (): Theme => (document.documentElement.classList.contains("dark") ? "dark" : "light");
+const getServerSnapshot = (): Theme => "dark";
+
+const ThemeContext = createContext<ThemeContextType>({ theme: "dark", toggleTheme: () => {} });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    // Check saved preference or system preference
+  const toggleTheme = useCallback(() => {
+    const next: Theme = document.documentElement.classList.contains("dark") ? "light" : "dark";
+    document.documentElement.classList.toggle("dark", next === "dark");
     try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      if (saved === "light" || saved === "dark") {
-        setThemeState(saved);
-        applyThemeClass(saved);
-      } else {
-        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        const initial = prefersDark ? "dark" : "light";
-        setThemeState(initial);
-        applyThemeClass(initial);
-      }
+      localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      // Default to light
+      /* private mode: theme just won't persist */
     }
-    setMounted(true);
+    listeners.forEach((l) => l());
   }, []);
 
-  const applyThemeClass = (nextTheme: Theme) => {
-    if (typeof document !== "undefined") {
-      const root = document.documentElement;
-      if (nextTheme === "dark") {
-        root.classList.add("dark");
-      } else {
-        root.classList.remove("dark");
-      }
-    }
-  };
-
-  const setTheme = (nextTheme: Theme) => {
-    setThemeState(nextTheme);
-    applyThemeClass(nextTheme);
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-    } catch (e) {
-      console.error("Failed to save theme preference", e);
-    }
-    window.dispatchEvent(
-      new CustomEvent("pockett_theme_changed", { detail: { theme: nextTheme } })
-    );
-  };
-
-  const toggleTheme = () => {
-    sound.playClick();
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-  };
-
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

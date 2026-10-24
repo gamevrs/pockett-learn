@@ -1,0 +1,117 @@
+"use client";
+
+import React from "react";
+import { CheckCircle2, CircleDashed, Terminal, XCircle } from "lucide-react";
+import type { RunError, TestCase, TestResult } from "@/engine/types";
+
+export type ResultTab = "checks" | "console";
+
+function friendly(err: RunError): string {
+  switch (err.type) {
+    case "SyntaxError":
+      return "Python couldn't read this line. Look for a missing quote, bracket or colon.";
+    case "IndentationError":
+      return "The spacing at the start of a line is off. Lines inside def/if/for must be indented the same amount.";
+    case "NameError":
+      return "A name isn't defined yet. Check the spelling, and that it's created above the line that uses it.";
+    case "TypeError":
+      return "A value is the wrong type for this operation (for example adding text to a number).";
+    case "TimeoutError":
+      return "Your code ran for too long. A loop may never end.";
+    case "ZeroDivisionError":
+      return "Dividing by zero isn't allowed.";
+    default:
+      return "";
+  }
+}
+
+interface ResultsPanelProps {
+  tab: ResultTab;
+  onTab: (t: ResultTab) => void;
+  tests: TestCase[];
+  results: TestResult[];
+  stdout: string;
+  error: RunError | null;
+  running: boolean;
+  statusText: string;
+}
+
+export function ResultsPanel({ tab, onTab, tests, results, stdout, error, running, statusText }: ResultsPanelProps) {
+  const passed = results.filter((r) => r.passed).length;
+  const hasRun = results.length > 0 || error !== null;
+  const allPassed = results.length > 0 && passed === results.length;
+
+  return (
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center gap-1 border-b border-line p-2">
+        <button
+          onClick={() => onTab("checks")}
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold ${tab === "checks" ? "bg-ink text-bg" : "text-ink-2 hover:bg-surface-2"}`}
+        >
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          Checks
+          {hasRun && (
+            <span className={`rounded-full px-1.5 text-[10px] ${allPassed ? "bg-good text-[#06140f]" : "bg-bad/20 text-bad"}`}>
+              {passed}/{tests.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => onTab("console")}
+          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold ${tab === "console" ? "bg-ink text-bg" : "text-ink-2 hover:bg-surface-2"}`}
+        >
+          <Terminal className="h-3.5 w-3.5" />
+          Console
+          {error && <span className="h-2 w-2 rounded-full bg-bad" />}
+        </button>
+        {running && (
+          <span className="ml-auto flex items-center gap-2 pr-2 text-xs font-semibold text-ink-3">
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-line border-t-brand" />
+            {statusText}
+          </span>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        {tab === "checks" && (
+          <ul className="space-y-1.5">
+            {tests.map((t) => {
+              const r = results.find((x) => x.testId === t.id);
+              return (
+                <li key={t.id} className={`flex items-start gap-2.5 rounded-xl border px-3 py-2 text-sm ${r ? (r.passed ? "border-good/30 bg-good/10" : "border-bad/30 bg-bad/10") : "border-line bg-surface-2"}`}>
+                  {!r ? (
+                    <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-ink-3" />
+                  ) : r.passed ? (
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-good" />
+                  ) : (
+                    <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-bad" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-semibold leading-snug">{t.description}</p>
+                    {r && !r.passed && r.error && <p className="mt-1 font-mono text-xs leading-relaxed text-bad">{r.error}</p>}
+                  </div>
+                </li>
+              );
+            })}
+            {!hasRun && <li className="px-1 pt-1 text-xs text-ink-3">Press Run (Ctrl/⌘ + Enter) to check your code.</li>}
+          </ul>
+        )}
+
+        {tab === "console" && (
+          <div className="font-mono text-[13px] leading-relaxed">
+            {error && (
+              <div className="mb-2 rounded-xl border border-bad/40 bg-bad/10 p-3">
+                <p className="font-bold text-bad">
+                  {error.line ? `Line ${error.line} · ` : ""}
+                  {error.type}: {error.message}
+                </p>
+                {friendly(error) && <p className="mt-1 font-sans text-xs text-ink-2">{friendly(error)}</p>}
+              </div>
+            )}
+            {stdout ? <pre className="whitespace-pre-wrap text-ink">{stdout}</pre> : !error && <p className="text-ink-3">Nothing printed yet. print() output shows up here (and on the car&apos;s dashboard).</p>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

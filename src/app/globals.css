@@ -2,82 +2,442 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ───────────── Design tokens ─────────────
+   Light = warm paper + black ink. Dark = deep ink + neon.
+   Components use semantic tokens (bg-surface, text-ink-2, border-line) so both themes
+   come for free. Each project overrides --accent-from / --accent-to on its wrapper. */
 :root {
-  --background: #ffffff;
-  --foreground: #1e293b;
-  --coursera-blue: #0056d2;
-  --coursera-blue-hover: #0041b8;
-  --coursera-blue-light: #ebf3ff;
-  --coursera-surface: #f8fafc;
-  --coursera-border: #e2e8f0;
+  --bg: #f3efe6;
+  --bg-2: #eae5d8;
+  --surface: #fffdf8;
+  --surface-2: #f6f2e8;
+  --ink: #0e0e14;
+  --ink-2: #4a4a5a;
+  --ink-3: #7b7b8b;
+  --line: rgba(14, 14, 20, 0.14);
+  --line-strong: #0e0e14;
+  --brand: #5b2cff;
+  --brand-light: #8a66ff;
+  --brand-deep: #3d17c4;
+  --brand-ink: #ffffff;
+  --brand-soft: rgba(91, 44, 255, 0.1);
+  /* One accent colour. mint/hot/sun stay as aliases so nothing reintroduces a second hue. */
+  --mint: var(--brand);
+  --hot: var(--brand);
+  --sun: var(--brand);
+  --good: #0f9f6e;
+  --bad: #d92d4a;
+  --shadow: 0 1px 0 rgba(14, 14, 20, 0.05), 0 18px 40px -18px rgba(14, 14, 20, 0.28);
+  --pop-shadow: 4px 4px 0 var(--line-strong);
+  --accent-from: var(--brand);
+  --accent-to: var(--brand);
+  --stage-bg: #0b0b12;
+}
+
+.dark {
+  --bg: #07070c;
+  --bg-2: #0d0d15;
+  --surface: #11111a;
+  --surface-2: #181824;
+  --ink: #f5f5fb;
+  --ink-2: #b6b6ca;
+  --ink-3: #7d7d93;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: #f5f5fb;
+  --brand: #8f74ff;
+  --brand-light: #c4b5ff;
+  --brand-deep: #6440f0;
+  --brand-ink: #0a0a10;
+  --brand-soft: rgba(143, 116, 255, 0.16);
+  --good: #34d399;
+  --bad: #f87171;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 22px 50px -20px rgba(0, 0, 0, 0.8);
+  --pop-shadow: 4px 4px 0 rgba(245, 245, 251, 0.9);
+  --stage-bg: #05050a;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-light: var(--brand-light);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-mint: var(--mint);
+  --color-hot: var(--hot);
+  --color-sun: var(--sun);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-accent-from: var(--accent-from);
+  --color-accent-to: var(--accent-to);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: var(--font-display-face), var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --shadow-card: var(--shadow);
+  --shadow-pop: var(--pop-shadow);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: #f8fafc;
-  color: #1e293b;
-  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  overflow-x: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-.dark body {
-  background: #0b0f19;
-  color: #f1f5f9;
+::selection {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ───────────── Type ───────────── */
+.font-display {
+  font-family: var(--font-display-face), var(--font-geist-sans), sans-serif;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+  line-height: 0.95;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+
+/* Single-hue gradient: light to deep violet, never a second colour. */
+.text-gradient {
+  background-image: linear-gradient(100deg, var(--brand-light), var(--brand) 55%, var(--brand-deep));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.bg-brand-gradient {
+  background-image: linear-gradient(135deg, var(--brand-light), var(--brand) 50%, var(--brand-deep));
+}
+
+/* ───────────── Surfaces & controls ───────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.pop-card {
+  background: var(--surface);
+  border: 2px solid var(--line-strong);
+  border-radius: 1.25rem;
+  box-shadow: var(--pop-shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.pop-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--line-strong);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.7rem 1.25rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1;
+  border: 2px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--line-strong);
+}
+.btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: linear-gradient(180deg, var(--brand-light), var(--brand) 60%, var(--brand-deep));
+  color: var(--brand-ink);
+  border-color: var(--line-strong);
+}
+.btn-brand {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+.btn-sm {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.8rem;
+}
+.btn-ghost {
+  border-color: var(--line);
+  background: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  box-shadow: none;
+  background: var(--surface-2);
+  transform: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.sticker {
+  display: inline-block;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ───────────── Atmosphere ───────────── */
+.bg-grid {
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.glow {
+  background: radial-gradient(closest-side, var(--brand), transparent);
+  filter: blur(80px);
+  opacity: 0.12;
 }
 
 @keyframes marquee {
-  0% {
-    transform: translateX(0%);
-  }
-  100% {
+  to {
     transform: translateX(-50%);
   }
 }
-
-.animate-marquee {
+.marquee-track {
   display: flex;
   width: max-content;
-  animation: marquee 40s linear infinite;
+  animation: marquee 38s linear infinite;
 }
-
-.animate-marquee:hover {
+.marquee:hover .marquee-track {
   animation-play-state: paused;
 }
 
-/* Coursera Clean Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+@keyframes float {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.float {
+  animation: float 5s ease-in-out infinite;
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-from) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+.pulse-ring {
+  animation: pulse-ring 1.6s ease-out infinite;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 9999px;
+@keyframes pop-in {
+  0% {
+    transform: scale(0.7) translateY(12px);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.pop-in {
+  animation: pop-in 0.5s cubic-bezier(0.2, 1.2, 0.3, 1) both;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-.dark ::-webkit-scrollbar-track {
-  background: #0f172a;
+@keyframes eq {
+  0%, 100% {
+    transform: scaleY(0.25);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #334155;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+/* ───────────── Lesson prose (mini-markdown output) ───────────── */
+.prose-lesson {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+.prose-lesson h3 {
+  font-family: var(--font-display-face), var(--font-geist-sans), sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: 1.1rem;
+  color: var(--ink);
+  margin: 1.2rem 0 0.4rem;
+}
+.prose-lesson p {
+  margin: 0.55rem 0;
+}
+.prose-lesson strong {
+  color: var(--ink);
+}
+.prose-lesson ul {
+  margin: 0.5rem 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+.prose-lesson li {
+  margin: 0.2rem 0;
+}
+.prose-lesson code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--brand-soft);
+  color: var(--ink);
+  padding: 0.12em 0.4em;
+  border-radius: 0.4rem;
+}
+.prose-lesson pre {
+  margin: 0.7rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: #0b0b12;
+  color: #e8e8f4;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.prose-lesson pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+/* ───────────── Scrollbars ───────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+/* ───────────── Lesson workspace layout ─────────────
+   Phone: one panel at a time (tab bar). lg: lesson | stage over editor over checks.
+   xl: lesson | editor + checks | stage. Panels place themselves via grid-area. */
+.ws-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+.ws-lesson,
+.ws-editor,
+.ws-results,
+.ws-stage {
+  grid-area: 1 / 1;
+}
+@media (min-width: 1024px) {
+  .ws-lesson { grid-area: lesson; }
+  .ws-editor { grid-area: editor; }
+  .ws-results { grid-area: results; }
+  .ws-stage { grid-area: stage; }
+}
+@media (min-width: 1024px) {
+  .ws-grid {
+    grid-template-columns: 330px minmax(0, 1fr);
+    grid-template-rows: minmax(250px, 38%) minmax(0, 1fr) 180px;
+    grid-template-areas:
+      "lesson stage"
+      "lesson editor"
+      "lesson results";
+  }
+}
+@media (min-width: 1360px) {
+  .ws-grid {
+    grid-template-columns: 360px minmax(0, 1.05fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) 200px;
+    grid-template-areas:
+      "lesson editor stage"
+      "lesson results stage";
+  }
 }

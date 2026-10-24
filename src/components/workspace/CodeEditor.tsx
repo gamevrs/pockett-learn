@@ -1,0 +1,157 @@
+"use client";
+
+import React, { useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+import type { OnMount, BeforeMount } from "@monaco-editor/react";
+import { useTheme } from "@/lib/theme/ThemeProvider";
+import { YOUR_TURN_MARKER } from "@/engine/types";
+
+const Editor = dynamic(() => import("@monaco-editor/react"), {
+  ssr: false,
+  loading: () => (
+    <div className="grid h-full place-items-center bg-[#0b0b12] font-mono text-xs text-white/50">
+      <span className="animate-pulse">loading editor…</span>
+    </div>
+  ),
+});
+
+interface CodeEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  onRun: () => void;
+  /** 1-based line of a Python error to underline */
+  errorLine: number | null;
+  errorMessage?: string;
+  /** Changes when a new lesson opens, so the editor scrolls to the YOUR TURN marker */
+  revealKey: string;
+}
+
+type EditorInstance = Parameters<OnMount>[0];
+type MonacoInstance = Parameters<OnMount>[1];
+
+const defineThemes: BeforeMount = (monaco) => {
+  monaco.editor.defineTheme("pockett-dark", {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "comment", foreground: "7a8099", fontStyle: "italic" },
+      { token: "keyword", foreground: "c4a5ff" },
+      { token: "string", foreground: "a5e075" },
+      { token: "number", foreground: "ffb86b" },
+    ],
+    colors: {
+      "editor.background": "#0b0b12",
+      "editorLineNumber.foreground": "#4a4d63",
+      "editorLineNumber.activeForeground": "#b6b6ca",
+      "editor.lineHighlightBackground": "#14141f",
+      "editorCursor.foreground": "#8f74ff",
+      "editor.selectionBackground": "#3b2f7a99",
+    },
+  });
+  monaco.editor.defineTheme("pockett-light", {
+    base: "vs",
+    inherit: true,
+    rules: [
+      { token: "comment", foreground: "8a8a98", fontStyle: "italic" },
+      { token: "keyword", foreground: "6a35ff" },
+      { token: "string", foreground: "1f8a4c" },
+      { token: "number", foreground: "c2570c" },
+    ],
+    colors: {
+      "editor.background": "#fffdf8",
+      "editor.lineHighlightBackground": "#f6f2e8",
+      "editorLineNumber.foreground": "#b5b1a5",
+    },
+  });
+};
+
+export function CodeEditor({ value, onChange, onRun, errorLine, errorMessage, revealKey }: CodeEditorProps) {
+  const { theme } = useTheme();
+  const editorRef = useRef<EditorInstance | null>(null);
+  const monacoRef = useRef<MonacoInstance | null>(null);
+  const onRunRef = useRef(onRun);
+
+  useEffect(() => {
+    onRunRef.current = onRun;
+  });
+
+  const reveal = () => {
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    if (!editor || !model) return;
+    const lines = model.getLinesContent();
+    let target = lines.length;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].includes(YOUR_TURN_MARKER)) {
+        target = i + 1;
+        break;
+      }
+    }
+    editor.revealLineNearTop(Math.max(1, target - 1));
+  };
+
+  const handleMount: OnMount = (editor, monaco) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => onRunRef.current());
+    reveal();
+  };
+
+  useEffect(() => {
+    // jump to the learner's next task whenever a new lesson opens
+    const t = setTimeout(reveal, 60);
+    return () => clearTimeout(t);
+  }, [revealKey]);
+
+  useEffect(() => {
+    const monaco = monacoRef.current;
+    const model = editorRef.current?.getModel();
+    if (!monaco || !model) return;
+    if (!errorLine || errorLine > model.getLineCount()) {
+      monaco.editor.setModelMarkers(model, "pockett", []);
+      return;
+    }
+    monaco.editor.setModelMarkers(model, "pockett", [
+      {
+        severity: monaco.MarkerSeverity.Error,
+        message: errorMessage ?? "Error",
+        startLineNumber: errorLine,
+        endLineNumber: errorLine,
+        startColumn: 1,
+        endColumn: model.getLineMaxColumn(errorLine),
+      },
+    ]);
+  }, [errorLine, errorMessage]);
+
+  return (
+    <Editor
+      height="100%"
+      language="python"
+      value={value}
+      onChange={(v) => onChange(v ?? "")}
+      beforeMount={defineThemes}
+      onMount={handleMount}
+      theme={theme === "dark" ? "pockett-dark" : "pockett-light"}
+      options={{
+        minimap: { enabled: false },
+        fontSize: 14,
+        fontFamily: "var(--font-geist-mono), ui-monospace, Menlo, Consolas, monospace",
+        fontLigatures: true,
+        lineNumbers: "on",
+        scrollBeyondLastLine: false,
+        automaticLayout: true,
+        tabSize: 4,
+        insertSpaces: true,
+        cursorBlinking: "smooth",
+        cursorSmoothCaretAnimation: "on",
+        renderLineHighlight: "line",
+        overviewRulerBorder: false,
+        padding: { top: 12, bottom: 12 },
+        smoothScrolling: true,
+        wordWrap: "on",
+        quickSuggestions: false,
+        suggestOnTriggerCharacters: false,
+      }}
+    />
+  );
+}
