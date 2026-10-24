@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { BRAND, BRAND_LIGHT, type ThreeApp, type ThreeContext } from "@/engine/three-kit";
-import { STEPS, TRACK_IDS, clamp, midiName, sectionLevel, type TrackId } from "./sequencer";
+import { STEPS, TRACK_IDS, clamp, sectionLevel, type TrackId } from "./sequencer";
 import { trackAlive, type PatternId, type Runtime } from "./runtime";
 
 /**
@@ -11,13 +11,19 @@ import { trackAlive, type PatternId, type Runtime } from "./runtime";
  * the machine, bass notes rise as glowing orbs, and the mixer is a strip of real faders.
  * All text is HTML: the stage only positions the label elements it is handed.
  *
- * Landscape: one block of 16 columns. Portrait: two blocks of 8 (steps 1-8 above 9-16).
+ * Landscape: one block of 16 columns, a fader at the end of each row.
+ * Portrait: two blocks of 8 (steps 1-8 above 9-16) with the mixer strip behind them.
+ *
+ * Hardening notes: stacked surfaces have real gaps (plus polygonOffset on the flat overlays),
+ * additive layers never write depth and draw after the solids, every smoothing is
+ * frame-rate independent, nothing is allocated per frame, instance buffers are only
+ * re-uploaded for the pads that actually changed, and label positioning only writes
+ * transforms (and only when they move).
  */
 
 export interface StageLabels {
   rows: (HTMLElement | null)[];
   mixer: (HTMLElement | null)[];
-  orbs: (HTMLElement | null)[];
 }
 
 export interface BeatStage extends ThreeApp {
@@ -27,8 +33,34 @@ export interface BeatStage extends ThreeApp {
   rowSpacing(): number;
 }
 
+// ───────────────────────── HUD sizing shared with the React overlay ─────────────────────────
+
+export type HudMode = "tiny" | "small" | "full";
+
+/** How much HUD fits: tiny = one-line panels, small = title + one console line, full = three console lines. */
+export function hudMode(width: number, height: number): HudMode {
+  if (height < 360) return "tiny";
+  if (height < 520 || width < 440) return "small";
+  return "full";
+}
+
+/** Pixels from the top of the stage that the HUD panels occupy (the 3D machine is framed below this). */
+export function hudTopPx(mode: HudMode): number {
+  return mode === "tiny" ? 82 : mode === "small" ? 118 : 148;
+}
+
+/** Room left of the pads for the HTML row labels. */
+export function rowLabelPx(mode: HudMode): number {
+  return mode === "full" ? 100 : 52;
+}
+
+const HUD_BOTTOM_PX = 48; // Play button + sound chip
+
+// ───────────────────────── dimensions ─────────────────────────
+
 const PAD = 0.9;
 const PAD_H = 0.3;
+const PAD_LIFT = 0.02; // pads float a hair above the deck: no coplanar faces
 const PITCH = 1.1;
 const ROW_PITCH = 1.1;
 const GROUP_GAP = 0.34;
@@ -39,7 +71,11 @@ const PLINTH_H = 0.55;
 const DECK_H = 0.45;
 const TOP = PLINTH_H + DECK_H;
 const ORBS = 8;
+const ORB_LIFE = 1.4;
+const ORB_RISE = 1.9;
 const RING_BARS = 72;
+const RING_MAX_H = 1.5;
+const RING_GAP = 1.2;
 const N_PADS = TRACK_IDS.length * STEPS;
 
 const DEEP = new THREE.Color("#6440f0");
@@ -83,19 +119,7 @@ function makeLayout(portrait: boolean): Layout {
   const w = left + padsW + side + 0.7;
   const d = 0.7 + back + padsD + 0.8;
   const x0 = -w / 2 + left;
-  return {
-    portrait,
-    cols,
-    blocks,
-    w,
-    d,
-    x0,
-    z0: -d / 2 + 0.7 + back,
-    blockD,
-    padsW,
-    mixZ: -d / 2 + 0.7 + MIX_D / 2,
-    mixX: x0 + padsW + 0.4,
-  };
+  return { portrait, cols, blocks, w, d, x0, z0: -d / 2 + 0.7 + back, blockD, padsW, mixZ: -d / 2 + 0.7 + MIX_D / 2, mixX: x0 + padsW + 0.4 };
 }
 
 function padX(L: Layout, step: number): number {
@@ -111,10 +135,37 @@ function rowZ(L: Layout, row: number, block: number): number {
   return L.z0 + block * (L.blockD + BLOCK_GAP) + row * ROW_PITCH + ROW_PITCH / 2;
 }
 
+/** Points that must stay on screen: machine box, spectrum ring footprint + height, rising orbs. */
+function framePoints(L: Layout): Float32Array {
+  const pts: number[] = [];
+  const hx = L.w / 2 + 0.45;
+  const hz = L.d / 2 + 0.45;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (const y of [0, TOP + 0.4]) pts.push(sx * hx, y, sz * hz);
+  const rx = L.w / 2 + RING_GAP + 0.15;
+  const rz = L.d / 2 + RING_GAP + 0.15;
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    pts.push(Math.cos(a) * rx, 0, Math.sin(a) * rz, Math.cos(a) * rx, RING_MAX_H, Math.sin(a) * rz);
+  }
+  const bassZ = rowZ(L, TRACK_IDS.indexOf("bass"), L.blocks - 1);
+  const orbTop = TOP + PAD_H + 0.3 + ORB_RISE + 0.3;
+  pts.push(L.x0, orbTop, bassZ, L.x0 + L.padsW, orbTop, bassZ, L.x0, orbTop, rowZ(L, TRACK_IDS.indexOf("bass"), 0));
+  return new Float32Array(pts);
+}
+
+/** Frame-rate independent exponential smoothing factor. */
+const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
+
+function bandAt(f: number, c: number, w: number, a: number): number {
+  const x = (f - c) / w;
+  return a * Math.exp(-x * x);
+}
+
 export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLabels): BeatStage {
   const { scene, camera, renderer } = ctx;
 
   // ───── per-frame scratch (no allocations in the loop) ─────
+  const m4 = new THREE.Matrix4();
   const dummy = new THREE.Object3D();
   const col = new THREE.Color();
   const glow = new THREE.Color();
@@ -123,10 +174,14 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   const ndc = new THREE.Vector2();
   const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -TOP);
   const hitPoint = new THREE.Vector3();
+  const target = new THREE.Vector3(0, TOP * 0.6, 0);
   const ringRadius = new THREE.Vector2(10, 6);
-  let celebScale = 20;
   const aliveFn = (f: string) => rt.isAlive(f);
+  let celebScale = 20;
   let rowSpacingPx = 30;
+  let dist = 30;
+  let elev = 0.85;
+  let azim = -0.3;
 
   // ───── world ─────
   scene.background = new THREE.Color("#07070c");
@@ -136,14 +191,13 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   scene.environment = envTex;
   scene.environmentIntensity = 0.35;
 
-  const hemi = new THREE.HemisphereLight("#cfc8ff", "#08080d", 0.55);
-  scene.add(hemi);
+  scene.add(new THREE.HemisphereLight("#cfc8ff", "#08080d", 0.55));
   const key = new THREE.DirectionalLight("#ffffff", 1.8);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.radius = 5;
   key.shadow.bias = -0.0004;
-  key.shadow.normalBias = 0.02;
+  key.shadow.normalBias = 0.03;
   scene.add(key, key.target);
   const rim = new THREE.PointLight(BRAND, 0, 0, 0);
   scene.add(rim);
@@ -157,25 +211,30 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   gridMat.transparent = true;
   gridMat.opacity = 0.1;
   gridMat.depthWrite = false;
-  grid.position.y = 0.002;
+  grid.position.y = 0.02; // lines can't use polygonOffset: lift them clear of the floor
+  grid.renderOrder = 1;
   scene.add(grid);
 
   // ───── materials ─────
-  const ghostMat = new THREE.MeshBasicMaterial({ color: BRAND, wireframe: true, transparent: true, opacity: 0.5, depthWrite: false });
+  const additive = (color: THREE.ColorRepresentation, extra: THREE.MeshBasicMaterialParameters = {}) =>
+    new THREE.MeshBasicMaterial({ color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, ...extra });
+  const ghostLineMat = new THREE.LineBasicMaterial({ color: BRAND, transparent: true, opacity: 0.55, depthWrite: false });
+  const ghostFillMat = new THREE.MeshBasicMaterial({ color: BRAND, transparent: true, opacity: 0.22, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
   const plinthMat = new THREE.MeshPhysicalMaterial({ color: "#101017", roughness: 0.5, metalness: 0.25, clearcoat: 0.5, clearcoatRoughness: 0.4 });
   const deckMat = new THREE.MeshPhysicalMaterial({ color: "#17171f", roughness: 0.32, metalness: 0.35, clearcoat: 1, clearcoatRoughness: 0.18 });
   const padMat = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0.36, metalness: 0.05, clearcoat: 0.8, clearcoatRoughness: 0.25 });
-  const glowMat = new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
-  const ghostPadMat = new THREE.MeshBasicMaterial({ color: "#ffffff", wireframe: true, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
+  const glowMat = additive("#ffffff", { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+  const ghostPadMat = additive("#ffffff", { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
   const lineMat = new THREE.MeshBasicMaterial({ color: BRAND_LIGHT.clone().multiplyScalar(1.6), toneMapped: false });
-  const playMat = new THREE.MeshBasicMaterial({ color: BRAND_LIGHT.clone().multiplyScalar(2.2), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
-  const bandMat = new THREE.MeshBasicMaterial({ color: BRAND.clone().multiplyScalar(0.22), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
-  const ringMat = new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
-  const celebMat = new THREE.MeshBasicMaterial({ color: BRAND_LIGHT.clone().multiplyScalar(2), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
+  const playMat = additive(BRAND_LIGHT.clone().multiplyScalar(2.2));
+  const bandMat = additive(BRAND.clone().multiplyScalar(0.22), { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+  const ringMat = additive("#ffffff");
+  const celebMat = additive(BRAND_LIGHT.clone().multiplyScalar(2), { side: THREE.DoubleSide });
   const slotMat = new THREE.MeshStandardMaterial({ color: "#050508", roughness: 0.8 });
   const faderMat = new THREE.MeshPhysicalMaterial({ color: "#d9d6e8", roughness: 0.3, metalness: 0.6, clearcoat: 1 });
   const knobMat = new THREE.MeshPhysicalMaterial({ color: "#1d1d27", roughness: 0.4, metalness: 0.5, clearcoat: 0.8 });
   const tickMat = new THREE.MeshBasicMaterial({ color: "#ffffff" });
+  const orbMats: THREE.MeshBasicMaterial[] = [];
 
   // ───── machine ─────
   const machine = new THREE.Group();
@@ -184,26 +243,43 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   plinth.castShadow = plinth.receiveShadow = true;
   const deck = new THREE.Mesh(new THREE.BufferGeometry(), deckMat);
   deck.castShadow = deck.receiveShadow = true;
-  const ghostBody = new THREE.Mesh(new THREE.BufferGeometry(), ghostMat);
+  // blueprint body: just the outline edges of plinth and deck (a full wireframe was far too busy)
+  const ghostBody = new THREE.LineSegments(new THREE.BufferGeometry(), ghostLineMat);
+  ghostBody.renderOrder = 2;
   const frontLine = new THREE.Mesh(new THREE.BoxGeometry(1, 0.05, 0.05), lineMat);
   machine.add(plinth, deck, ghostBody, frontLine);
 
-  const padGeo = new RoundedBoxGeometry(PAD, PAD_H, PAD, 2, 0.09);
-  const pads = new THREE.InstancedMesh(padGeo, padMat, N_PADS);
+  const pads = new THREE.InstancedMesh(new RoundedBoxGeometry(PAD, PAD_H, PAD, 2, 0.09), padMat, N_PADS);
   pads.castShadow = true;
   pads.receiveShadow = true;
-  pads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  const capGeo = new THREE.PlaneGeometry(PAD * 0.8, PAD * 0.8);
+  const capGeo = new THREE.PlaneGeometry(PAD * 0.78, PAD * 0.78);
   capGeo.rotateX(-Math.PI / 2);
   const caps = new THREE.InstancedMesh(capGeo, glowMat, N_PADS);
-  caps.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  const ghostPads = new THREE.InstancedMesh(new THREE.BoxGeometry(PAD, PAD_H, PAD), ghostPadMat, N_PADS);
-  // instance matrices change every frame, so the cached bounding spheres would cull them wrongly
-  pads.frustumCulled = caps.frustumCulled = ghostPads.frustumCulled = false;
+  caps.renderOrder = 3;
+  // locked pads: a flat outline frame on the deck (clean blueprint look, no triangle diagonals)
+  const frameShape = new THREE.Shape();
+  const hp = PAD / 2;
+  frameShape.moveTo(-hp, -hp).lineTo(hp, -hp).lineTo(hp, hp).lineTo(-hp, hp).lineTo(-hp, -hp);
+  const hole = new THREE.Path();
+  const inner = hp - 0.05;
+  hole.moveTo(-inner, -inner).lineTo(-inner, inner).lineTo(inner, inner).lineTo(inner, -inner).lineTo(-inner, -inner);
+  frameShape.holes.push(hole);
+  const frameGeo = new THREE.ShapeGeometry(frameShape);
+  frameGeo.rotateX(-Math.PI / 2);
+  const ghostPads = new THREE.InstancedMesh(frameGeo, ghostPadMat, N_PADS);
+  ghostPads.renderOrder = 2;
+  for (const im of [pads, caps, ghostPads]) {
+    im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    im.frustumCulled = false; // instances move; a cached bounding sphere would cull them wrongly
+    for (let i = 0; i < N_PADS; i++) im.setColorAt(i, col.setRGB(0, 0, 0));
+    if (im.instanceColor) im.instanceColor.setUsage(THREE.DynamicDrawUsage);
+  }
   machine.add(pads, caps, ghostPads);
 
   const playhead = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), playMat);
-  const band = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), bandMat);
+  playhead.renderOrder = 4;
+  const band = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), bandMat);
+  band.renderOrder = 3;
   machine.add(playhead, band);
 
   // spectrum ring on the floor around the plinth
@@ -212,22 +288,26 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   const ring = new THREE.InstancedMesh(barGeo, ringMat, RING_BARS);
   ring.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   ring.frustumCulled = false;
+  ring.renderOrder = 3;
+  for (let i = 0; i < RING_BARS; i++) ring.setColorAt(i, col.setRGB(0, 0, 0));
   scene.add(ring);
   const ringLevels = new Float32Array(RING_BARS);
 
   // bass orbs
   const orbGeo = new THREE.SphereGeometry(0.2, 20, 14);
   const orbs = Array.from({ length: ORBS }, () => {
-    const mat = new THREE.MeshBasicMaterial({ color: BRAND_LIGHT.clone().multiplyScalar(2.4), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    const mat = additive(BRAND_LIGHT.clone().multiplyScalar(2.4));
+    orbMats.push(mat);
     const mesh = new THREE.Mesh(orbGeo, mat);
     mesh.visible = false;
+    mesh.renderOrder = 5;
     machine.add(mesh);
     return { mesh, mat, life: 0, x: 0, z: 0, active: false };
   });
   let orbNext = 0;
   let lastBassSerial = rt.bassSerial;
 
-  // mixer strip
+  // mixer
   const slotGeo = new THREE.BoxGeometry(0.16, 0.04, 1.6);
   const faderGeo = new RoundedBoxGeometry(0.62, 0.24, 0.32, 2, 0.06);
   const knobGeo = new THREE.CylinderGeometry(0.22, 0.24, 0.2, 28);
@@ -236,72 +316,117 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   const ledGeo = new THREE.SphereGeometry(0.08, 14, 10);
   const channels = TRACK_IDS.map(() => {
     const slot = new THREE.Mesh<THREE.BufferGeometry, THREE.Material>(slotGeo, slotMat);
-    const fader = new THREE.Mesh<THREE.BufferGeometry, THREE.Material>(faderGeo, faderMat);
+    const fader = new THREE.Mesh(faderGeo, faderMat);
     fader.castShadow = true;
-    const knob = new THREE.Mesh<THREE.BufferGeometry, THREE.Material>(knobGeo, knobMat);
+    const knob = new THREE.Mesh(knobGeo, knobMat);
     knob.castShadow = true;
-    const tick = new THREE.Mesh(tickGeo, tickMat);
-    knob.add(tick);
+    knob.add(new THREE.Mesh(tickGeo, tickMat));
     const ledMat = new THREE.MeshBasicMaterial({ color: BRAND.clone().multiplyScalar(1.5), toneMapped: false });
     const led = new THREE.Mesh(ledGeo, ledMat);
     machine.add(slot, fader, knob, led);
-    return { slot, fader, knob, tick, led, ledMat, vol: 1, pan: 0 };
+    return { slot, fader, knob, led, ledMat, vol: 0.75, pan: 0 };
   });
 
   const celebRing = new THREE.Mesh(new THREE.RingGeometry(0.94, 1, 96), celebMat);
   celebRing.rotation.x = -Math.PI / 2;
-  celebRing.position.y = 0.03;
+  celebRing.position.y = 0.05;
+  celebRing.renderOrder = 6;
   scene.add(celebRing);
+
+  // ───── per-instance change tracking (upload only what moved) ─────
+  const padY = new Float32Array(N_PADS).fill(NaN);
+  const padSY = new Float32Array(N_PADS).fill(NaN);
+  const padRGB = new Float32Array(N_PADS * 3).fill(NaN);
+  const capRGB = new Float32Array(N_PADS * 3).fill(NaN);
+  const ghostRGB = new Float32Array(N_PADS * 3).fill(NaN);
+  const range = { pm: [Infinity, -1], pc: [Infinity, -1], cm: [Infinity, -1], cc: [Infinity, -1], gc: [Infinity, -1] };
+  const touch = (r: number[], i: number) => {
+    if (i < r[0]) r[0] = i;
+    if (i > r[1]) r[1] = i;
+  };
+  const flush = (attr: THREE.BufferAttribute | null, r: number[], itemSize: number) => {
+    if (!attr || r[1] < 0) return;
+    // ranges accumulate until the renderer uploads them (three clears them after each upload)
+    attr.addUpdateRange(r[0] * itemSize, (r[1] - r[0] + 1) * itemSize);
+    attr.needsUpdate = true;
+    r[0] = Infinity;
+    r[1] = -1;
+  };
+  const colorChanged = (store: Float32Array, i: number, c: THREE.Color) => {
+    const j = i * 3;
+    if (Math.abs(store[j] - c.r) < 0.002 && Math.abs(store[j + 1] - c.g) < 0.002 && Math.abs(store[j + 2] - c.b) < 0.002) return false;
+    store[j] = c.r;
+    store[j + 1] = c.g;
+    store[j + 2] = c.b;
+    return true;
+  };
+  const resetTracking = () => {
+    padY.fill(NaN);
+    padSY.fill(NaN);
+    padRGB.fill(NaN);
+    capRGB.fill(NaN);
+    ghostRGB.fill(NaN);
+  };
 
   // ───── layout ─────
   let L = makeLayout(false);
   let built = false;
 
   const rebuild = (portrait: boolean) => {
-    elev = portrait ? 1.12 : 0.7;
-    azim = portrait ? -0.12 : -0.28;
     if (built && L.portrait === portrait) return;
     built = true;
     L = makeLayout(portrait);
+    resetTracking();
     plinth.geometry.dispose();
     plinth.geometry = new RoundedBoxGeometry(L.w + 0.9, PLINTH_H, L.d + 0.9, 3, 0.12);
     plinth.position.y = PLINTH_H / 2;
     deck.geometry.dispose();
     deck.geometry = new RoundedBoxGeometry(L.w, DECK_H, L.d, 3, 0.2);
-    deck.position.y = PLINTH_H + DECK_H / 2;
+    deck.position.y = PLINTH_H + DECK_H / 2 - 0.01; // sunk 1cm into the plinth: no shared face
     ghostBody.geometry.dispose();
-    ghostBody.geometry = new THREE.BoxGeometry(L.w, TOP, L.d, Math.round(L.w / 1.5), 2, Math.round(L.d / 1.5));
-    ghostBody.position.y = TOP / 2;
+    const plinthEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(L.w + 0.9, PLINTH_H, L.d + 0.9));
+    const deckEdges = new THREE.EdgesGeometry(new THREE.BoxGeometry(L.w, DECK_H, L.d));
+    const merged: number[] = [];
+    const pa = plinthEdges.getAttribute("position");
+    for (let i = 0; i < pa.count; i++) merged.push(pa.getX(i), pa.getY(i) + PLINTH_H / 2, pa.getZ(i));
+    const da = deckEdges.getAttribute("position");
+    for (let i = 0; i < da.count; i++) merged.push(da.getX(i), da.getY(i) + PLINTH_H + DECK_H / 2, da.getZ(i));
+    plinthEdges.dispose();
+    deckEdges.dispose();
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(merged, 3));
+    ghostBody.geometry = g;
     frontLine.scale.set(L.w - 0.5, 1, 1);
-    frontLine.position.set(0, TOP - 0.06, L.d / 2 + 0.01);
+    frontLine.position.set(0, TOP - 0.07, L.d / 2 + 0.05); // stands proud of the deck face
 
-    // ghost pads never move: set them once per layout
-    TRACK_IDS.forEach((_, row) => {
+    // ghost frames never move: set them once per layout, just above the deck
+    for (let row = 0; row < TRACK_IDS.length; row++) {
       for (let s = 0; s < STEPS; s++) {
-        dummy.position.set(padX(L, s), TOP + PAD_H / 2, rowZ(L, row, blockOf(L, s)));
-        dummy.scale.set(1, 1, 1);
-        dummy.updateMatrix();
-        ghostPads.setMatrixAt(row * STEPS + s, dummy.matrix);
+        m4.makeTranslation(padX(L, s), TOP + 0.012, rowZ(L, row, blockOf(L, s)));
+        ghostPads.setMatrixAt(row * STEPS + s, m4);
       }
-    });
+    }
+    ghostPads.instanceMatrix.addUpdateRange(0, N_PADS * 16);
     ghostPads.instanceMatrix.needsUpdate = true;
 
-    TRACK_IDS.forEach((_, i) => {
+    for (let i = 0; i < channels.length; i++) {
       const c = channels[i];
-      const x = L.x0 + ((i + 0.5) * L.padsW) / 5;
       if (L.portrait) {
+        const x = L.x0 + ((i + 0.5) * L.padsW) / 5;
         c.slot.rotation.y = 0;
-        c.slot.position.set(x, TOP + 0.02, L.mixZ);
-        c.knob.position.set(x + 0.75, TOP + 0.1, L.mixZ - 0.45);
-        c.led.position.set(x + 0.75, TOP + 0.08, L.mixZ + 0.4);
+        c.slot.position.set(x, TOP + 0.022, L.mixZ);
+        c.knob.position.set(x + 0.75, TOP + 0.105, L.mixZ - 0.45);
+        c.led.position.set(x + 0.75, TOP + 0.085, L.mixZ + 0.4);
+        c.fader.rotation.y = 0;
       } else {
         const z = rowZ(L, i, 0);
         c.slot.rotation.y = Math.PI / 2;
-        c.slot.position.set(L.mixX + 1.25, TOP + 0.02, z);
-        c.knob.position.set(L.mixX + 2.6, TOP + 0.1, z);
-        c.led.position.set(L.mixX + 0.15, TOP + 0.08, z);
+        c.slot.position.set(L.mixX + 1.25, TOP + 0.022, z);
+        c.knob.position.set(L.mixX + 2.6, TOP + 0.105, z);
+        c.led.position.set(L.mixX + 0.15, TOP + 0.085, z);
+        c.fader.rotation.y = Math.PI / 2;
       }
-    });
+    }
 
     const span = Math.max(L.w, L.d);
     key.position.set(-span * 0.35, span * 0.9 + 6, span * 0.55 + 4);
@@ -314,15 +439,12 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
     cam.far = span * 3 + 20;
     cam.updateProjectionMatrix();
     rim.position.set(0, 5, -L.d / 2 - 5);
+    ringRadius.set(L.w / 2 + RING_GAP, L.d / 2 + RING_GAP);
+    celebScale = (Math.max(L.w, L.d) * 0.62 + 2) * 1.6;
+    ringLevels.fill(0);
   };
 
   // ───── camera framing ─────
-  const target = new THREE.Vector3(0, TOP * 0.6, 0);
-  let dist = 30;
-  let elev = 0.85;
-  let azim = -0.3;
-  const corner = new THREE.Vector3();
-
   const placeCamera = (d: number, az: number) => {
     camera.position.set(target.x + d * Math.cos(elev) * Math.sin(az), target.y + d * Math.sin(elev), target.z + d * Math.cos(elev) * Math.cos(az));
     camera.lookAt(target);
@@ -331,171 +453,204 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
 
   const fit = (width: number, height: number) => {
     camera.clearViewOffset();
-    const measure = (lay: Layout, d: number) => {
-      placeCamera(d, azim);
-      const hx = lay.w / 2 + 0.6;
-      const hxLeft = lay.w / 2 + 2.2; // room for the HTML row labels
-      const hz = lay.d / 2 + 0.6;
-      let minX = Infinity;
-      let maxX = -Infinity;
-      let minY = Infinity;
-      let maxY = -Infinity;
-      for (const sx of [-1, 1])
-        for (const sz of [-1, 1])
-          for (const y of [0, TOP + 0.5]) {
-            corner.set(sx < 0 ? -hxLeft : hx, y, sz * hz).project(camera);
-            minX = Math.min(minX, corner.x);
-            maxX = Math.max(maxX, corner.x);
-            minY = Math.min(minY, corner.y);
-            maxY = Math.max(maxY, corner.y);
-          }
-      return { minX, maxX, minY, maxY };
-    };
-    // Frame one layout: the closest camera distance that keeps the machine inside the free area.
+    const mode = hudMode(width, height);
+    // free screen area in NDC: below the HUD panels, above the Play button, right of the row labels
+    const yTop = 1 - (2 * hudTopPx(mode)) / height;
+    const yBot = -1 + (2 * HUD_BOTTOM_PX) / height;
+    const xL = -1 + (2 * rowLabelPx(mode)) / width;
+
     const solve = (portrait: boolean) => {
       const lay = makeLayout(portrait);
-      elev = portrait ? 1.12 : 0.7;
+      const pts = framePoints(lay);
+      const xR = 1 - (2 * (portrait ? 10 : 34)) / width; // landscape: volume tags right of each fader
+      // tall stages look down more steeply so the 8+8 grid uses the height
+      elev = portrait ? (height > width * 1.6 ? 1.3 : 1.12) : 0.7;
       azim = portrait ? -0.12 : -0.28;
-      // the glass HUD panels may overlap the back of the machine a little; keep the Play button clear
-      const topPx = 44 + (portrait ? Math.min(70, height * 0.12) : height < 380 ? 18 : 40);
-      const yTop = 1 - (2 * topPx) / height;
-      const yBot = -1 + (2 * 46) / height;
-      let lo = 4;
-      let hi = 400;
-      for (let i = 0; i < 28; i++) {
+      let minX = 0;
+      let maxX = 0;
+      let minY = 0;
+      let maxY = 0;
+      const measure = (d: number) => {
+        placeCamera(d, azim);
+        minX = minY = Infinity;
+        maxX = maxY = -Infinity;
+        for (let i = 0; i < pts.length; i += 3) {
+          tmp.set(pts[i], pts[i + 1], pts[i + 2]).project(camera);
+          if (tmp.x < minX) minX = tmp.x;
+          if (tmp.x > maxX) maxX = tmp.x;
+          if (tmp.y < minY) minY = tmp.y;
+          if (tmp.y > maxY) maxY = tmp.y;
+        }
+      };
+      let lo = 6;
+      let hi = 600;
+      for (let i = 0; i < 30; i++) {
         const mid = (lo + hi) / 2;
-        const m = measure(lay, mid);
-        if (m.maxX - m.minX <= 1.9 && m.maxY - m.minY <= (yTop - yBot) * 0.97) hi = mid;
+        measure(mid);
+        // 4% slack so the slow camera drift never pushes anything out of frame
+        if (maxX - minX <= (xR - xL) * 0.96 && maxY - minY <= (yTop - yBot) * 0.96) hi = mid;
         else lo = mid;
       }
-      const m = measure(lay, hi);
-      return { portrait, d: hi, offX: ((m.minX + m.maxX) / 2) * (width / 2), offY: ((yTop + yBot) / 2 - (m.minY + m.maxY) / 2) * (height / 2) };
+      measure(hi);
+      return {
+        portrait,
+        d: hi,
+        offX: ((minX + maxX) / 2 - (xL + xR) / 2) * (width / 2),
+        offY: ((yTop + yBot) / 2 - (minY + maxY) / 2) * (height / 2),
+      };
     };
-    // Pick whichever layout shows the pads bigger; prefer the classic 16-wide row when it is close.
+    // whichever layout shows the pads bigger; prefer the classic 16-wide row when it is close
     const wide = solve(false);
     const tall = solve(true);
     const best = wide.d <= tall.d * 1.12 ? wide : tall;
-    if (best === wide) solve(false);
+    solve(best.portrait); // leaves elev / azim set for the chosen layout
     rebuild(best.portrait);
     dist = best.d;
-    camera.setViewOffset(width, height, best.offX, best.offY, width, height);
+    // tightest depth range that holds the whole scene: better depth precision, no flicker
+    const radius = Math.hypot(L.w / 2 + RING_GAP + 1, L.d / 2 + RING_GAP + 1, 6);
+    camera.near = Math.max(1, dist - radius - 2);
+    camera.far = dist * 2.8 + radius;
+    camera.setViewOffset(width, height, best.offX, best.offY, width, height); // also updates the projection
     if (scene.fog instanceof THREE.Fog) {
       scene.fog.near = dist * 0.9;
       scene.fog.far = dist * 2.6;
     }
-    const r = Math.max(L.w, L.d) * 0.62 + 2;
-    for (let i = 0; i < RING_BARS; i++) ringLevels[i] = 0;
-    ringRadius.set(L.w / 2 + 1.6, L.d / 2 + 1.6);
-    celebScale = r * 1.6;
+    placeCamera(dist, azim);
   };
 
-
-  const place = (el: HTMLElement | null, x: number, y: number, z: number, opacity: number, anchor: string) => {
+  // ───── HTML labels: write transforms only, and only when they moved ─────
+  const lastLabel = new Float32Array(16 * 3).fill(NaN);
+  const place = (slot: number, el: HTMLElement | null, x: number, y: number, z: number, opacity: number, anchor: string) => {
     if (!el) return;
+    const j = slot * 3;
     tmp.set(x, y, z).project(camera);
-    if (tmp.z > 1 || opacity <= 0.01) {
-      el.style.opacity = "0";
-      return;
+    const o = tmp.z > 1 || opacity <= 0.01 ? 0 : Math.round(opacity * 20) / 20;
+    if (o !== lastLabel[j + 2]) {
+      el.style.opacity = String(o);
+      lastLabel[j + 2] = o;
     }
-    const px = (tmp.x * 0.5 + 0.5) * ctx.size.width;
-    const py = (-tmp.y * 0.5 + 0.5) * ctx.size.height;
-    el.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) ${anchor}`;
-    el.style.opacity = opacity.toFixed(2);
+    if (o === 0) return;
+    const px = Math.round((tmp.x * 0.5 + 0.5) * ctx.size.width * 2) / 2;
+    const py = Math.round((-tmp.y * 0.5 + 0.5) * ctx.size.height * 2) / 2;
+    if (px === lastLabel[j] && py === lastLabel[j + 1]) return;
+    lastLabel[j] = px;
+    lastLabel[j + 1] = py;
+    el.style.transform = `translate3d(${px}px,${py}px,0) ${anchor}`;
   };
 
+  // ───── frame ─────
   const frame = (dt: number, time: number) => {
     rt.update(dt);
     const model = rt.model;
     const powered = !!rt.props.program && rt.isAlive("power");
     const playing = rt.playing && rt.step >= 0 && powered;
-    const arranger = rt.isAlive("arranger");
+    const showSection = playing && rt.isAlive("arranger");
     const focus = rt.props.focus && !rt.isAlive(rt.props.focus) ? rt.props.focus : null;
     const pulse = 0.5 + 0.5 * Math.sin(time * 5);
 
-    // gentle camera drift
-    placeCamera(dist, azim + Math.sin(time * 0.13) * 0.05);
+    // gentle drift: a function of time, so it is identical at 60, 120 or 144 Hz
+    placeCamera(dist, azim + Math.sin(time * 0.13) * 0.045);
 
-    // blueprint vs. built
-    plinth.visible = deck.visible = powered;
+    plinth.visible = deck.visible = frontLine.visible = powered;
     ghostBody.visible = !powered;
-    frontLine.visible = powered;
     lineMat.color.copy(BRAND_LIGHT).multiplyScalar(0.8 + rt.beat * 1.6);
-    gridMat.opacity = powered ? 0.07 : 0.22;
-    ghostMat.opacity = 0.35 + (focus === "power" ? 0.35 * pulse : 0);
-
+    gridMat.opacity = powered ? 0.07 : 0.2;
+    ghostLineMat.opacity = 0.45 + (focus === "power" ? 0.4 * pulse : 0);
     rim.intensity = powered ? 0.25 + rt.beat * 0.5 + rt.crashFlash * 1.2 : 0;
     ctx.bloom.strength = 0.5 + rt.crashFlash * 0.4 + rt.celebrate * 0.6;
 
     // ── pads ──
-    const showSection = playing && arranger;
-    TRACK_IDS.forEach((id, row) => {
+    for (let row = 0; row < TRACK_IDS.length; row++) {
+      const id = TRACK_IDS[row];
       const on = powered && trackAlive(id, aliveFn);
-      const mix = model?.mix[id];
-      const muted = on && !!mix?.mute;
+      const muted = on && !!model && model.mix[id].mute;
       const base = ROW_COLOR[id];
       const focused = !on && (focus === id || (focus === "snare" && id === "clap"));
+      const flashes = rt.flash[id];
       for (let s = 0; s < STEPS; s++) {
         const i = row * STEPS + s;
         const x = padX(L, s);
         const z = rowZ(L, row, blockOf(L, s));
+
+        // ghost frame (locked) — black is invisible with additive blending
+        if (on) col.setRGB(0, 0, 0);
+        else col.copy(BRAND).multiplyScalar(focused ? 0.5 + 0.6 * pulse : powered ? 0.4 : 0.6);
+        if (colorChanged(ghostRGB, i, col)) {
+          ghostPads.setColorAt(i, col);
+          touch(range.gc, i);
+        }
+
         if (!on) {
-          dummy.position.set(x, -50, z);
-          dummy.scale.set(0.001, 0.001, 0.001);
-          dummy.updateMatrix();
-          pads.setMatrixAt(i, dummy.matrix);
-          caps.setMatrixAt(i, dummy.matrix);
-          ghostPads.setColorAt(i, col.copy(BRAND).multiplyScalar(focused ? 0.45 + 0.55 * pulse : powered ? 0.32 : 0.45));
+          if (padSY[i] !== 0) {
+            padSY[i] = 0;
+            padY[i] = NaN;
+            m4.makeScale(0, 0, 0);
+            pads.setMatrixAt(i, m4);
+            caps.setMatrixAt(i, m4);
+            touch(range.pm, i);
+            touch(range.cm, i);
+          }
           continue;
         }
-        ghostPads.setColorAt(i, col.setRGB(0, 0, 0));
+
         const raw = id === "bass" ? ((model?.notes[s] ?? 0) > 0 ? 1 : 0) : (model?.patterns[id as PatternId][s] ?? 0);
         const level = showSection ? sectionLevel(rt.section, id, s, raw) : raw;
-        const fl = muted ? 0 : rt.flash[id][s];
+        const fl = muted ? 0 : flashes[s];
         const isNow = playing && rt.step === s;
 
-        dummy.position.set(x, TOP + PAD_H / 2 - fl * 0.11, z);
-        dummy.scale.set(1, 1 - fl * 0.35, 1);
-        dummy.updateMatrix();
-        pads.setMatrixAt(i, dummy.matrix);
+        // pressed pad: shorter and lower, top face tracked exactly by the glow cap
+        const sy = 1 - fl * 0.35;
+        const y = TOP + PAD_LIFT + (PAD_H * sy) / 2;
+        if (!(Math.abs(y - padY[i]) <= 1e-4 && Math.abs(sy - padSY[i]) <= 1e-4)) { // NaN (never set) counts as changed
+          padY[i] = y;
+          padSY[i] = sy;
+          m4.makeScale(1, sy, 1).setPosition(x, y, z);
+          pads.setMatrixAt(i, m4);
+          m4.makeTranslation(x, TOP + PAD_LIFT + PAD_H * sy + 0.012, z);
+          caps.setMatrixAt(i, m4);
+          touch(range.pm, i);
+          touch(range.cm, i);
+        }
 
         if (level > 0) col.copy(DEEP).lerp(base, clamp(level / 1.2, 0, 1)).lerp(BRAND_LIGHT, clamp((level - 1.2) / 0.8, 0, 1) * 0.45).multiplyScalar(0.8);
         else col.copy(s % 4 === 0 ? PAD_OFF_BEAT : PAD_OFF);
         if (level > 0 && level < 0.6) col.multiplyScalar(0.55 + level * 0.6);
         if (muted) col.multiplyScalar(0.35);
-        pads.setColorAt(i, col);
+        if (colorChanged(padRGB, i, col)) {
+          pads.setColorAt(i, col);
+          touch(range.pc, i);
+        }
 
         let k = fl * 2.4 * (level > 0 ? 0.6 + Math.min(level, 2) * 0.35 : 0.4);
         if (isNow) k += level > 0 ? 0.55 : 0.12;
         if (level > 0 && !muted) k += 0.06 + level * 0.04;
         if (muted) k *= 0.3;
         glow.copy(level > 0 ? base : BRAND_LIGHT).multiplyScalar(k);
-        dummy.position.set(x, TOP + PAD_H - fl * 0.22 + 0.006, z);
-        dummy.scale.set(1, 1, 1);
-        dummy.updateMatrix();
-        caps.setMatrixAt(i, dummy.matrix);
-        caps.setColorAt(i, glow);
+        if (colorChanged(capRGB, i, glow)) {
+          caps.setColorAt(i, glow);
+          touch(range.cc, i);
+        }
       }
-    });
-    pads.instanceMatrix.needsUpdate = true;
-    caps.instanceMatrix.needsUpdate = true;
-    if (pads.instanceColor) pads.instanceColor.needsUpdate = true;
-    if (caps.instanceColor) caps.instanceColor.needsUpdate = true;
-    if (ghostPads.instanceColor) ghostPads.instanceColor.needsUpdate = true;
+    }
+    flush(pads.instanceMatrix, range.pm, 16);
+    flush(caps.instanceMatrix, range.cm, 16);
+    flush(pads.instanceColor, range.pc, 3);
+    flush(caps.instanceColor, range.cc, 3);
+    flush(ghostPads.instanceColor, range.gc, 3);
 
-    // ── playhead ──
+    // ── playhead: position comes from the audio clock (step + phase), so it glides at any frame rate ──
     playhead.visible = band.visible = playing;
     if (playing) {
       const s = rt.step;
       const next = (s + 1) % STEPS;
-      const phase = rt.stepPhase();
       const b = blockOf(L, s);
       let x = padX(L, s);
-      if (blockOf(L, next) === b && next > s) x += (padX(L, next) - x) * phase;
+      if (blockOf(L, next) === b && next > s) x += (padX(L, next) - x) * rt.stepPhase();
       const zc = L.z0 + b * (L.blockD + BLOCK_GAP) + L.blockD / 2;
-      playhead.position.set(x + PITCH * 0.5, TOP + PAD_H + 0.06, zc);
+      playhead.position.set(x + PITCH * 0.5, TOP + PAD_LIFT + PAD_H + 0.08, zc);
       playhead.scale.set(0.07, 0.05, L.blockD + 0.3);
-      band.position.set(padX(L, s), TOP + PAD_H + 0.02, zc);
-      band.scale.set(PITCH * 0.98, 0.02, L.blockD + 0.2);
+      band.position.set(padX(L, s), TOP + 0.008, zc);
+      band.scale.set(PITCH * 0.98, 1, L.blockD + 0.2);
       playMat.color.copy(BRAND_LIGHT).multiplyScalar(1.2 + rt.beat * 0.8);
     }
 
@@ -505,6 +660,8 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
       const live = rt.readSpectrum();
       const e = rt.energy;
       const half = RING_BARS / 2;
+      const up = ease(38, dt);
+      const down = ease(7, dt);
       for (let i = 0; i < RING_BARS; i++) {
         const f = i < half ? i / half : (RING_BARS - i) / half; // mirrored so the ring is symmetric
         let v: number;
@@ -512,111 +669,91 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
           const bin = Math.min(100, Math.floor(Math.pow(f, 1.6) * 90));
           v = Math.pow((rt.spectrum[bin] ?? 0) / 255, 1.3);
         } else {
-          const bandAt = (c: number, w: number, a: number) => a * Math.exp(-(((f - c) / w) ** 2));
-          v = bandAt(0.08, 0.12, e.kick) + bandAt(0.18, 0.1, e.bass * 0.9) + bandAt(0.45, 0.14, e.snare) + bandAt(0.58, 0.14, e.clap * 0.9) + bandAt(0.86, 0.2, e.hats * 0.8);
+          v = bandAt(f, 0.08, 0.12, e.kick) + bandAt(f, 0.18, 0.1, e.bass * 0.9) + bandAt(f, 0.45, 0.14, e.snare) + bandAt(f, 0.58, 0.14, e.clap * 0.9) + bandAt(f, 0.86, 0.2, e.hats * 0.8);
           v = clamp(v * (0.8 + 0.2 * Math.sin(time * 13 + i * 1.7)) + 0.04 + 0.03 * Math.sin(time * 1.7 + i * 0.5), 0, 1);
         }
         const prev = ringLevels[i];
-        const cur = v > prev ? prev + (v - prev) * 0.6 : prev + (v - prev) * 0.15;
+        const cur = prev + (v - prev) * (v > prev ? up : down);
         ringLevels[i] = cur;
         const a = (i / RING_BARS) * Math.PI * 2;
-        dummy.position.set(Math.cos(a) * ringRadius.x, 0, Math.sin(a) * ringRadius.y);
+        dummy.position.set(Math.cos(a) * ringRadius.x, 0.012, Math.sin(a) * ringRadius.y);
         dummy.rotation.set(0, -a, 0);
-        dummy.scale.set(1, 0.05 + cur * 2.4, 1);
+        dummy.scale.set(1, 0.05 + cur * (RING_MAX_H - 0.05), 1);
         dummy.updateMatrix();
         ring.setMatrixAt(i, dummy.matrix);
         ring.setColorAt(i, col.copy(DEEP).lerp(BRAND_LIGHT, cur).multiplyScalar(0.25 + cur * 1.3));
       }
-      dummy.rotation.set(0, 0, 0);
       ring.instanceMatrix.needsUpdate = true;
       if (ring.instanceColor) ring.instanceColor.needsUpdate = true;
     }
 
-    // ── bass orbs ──
+    // ── bass orbs (the note name + Hz lives in the BASS row label, so no floating tags to collide) ──
     if (rt.bassSerial !== lastBassSerial) {
       lastBassSerial = rt.bassSerial;
       if (powered && rt.isAlive("bass")) {
         const o = orbs[orbNext];
         orbNext = (orbNext + 1) % ORBS;
-        const bassRow = TRACK_IDS.indexOf("bass");
         o.active = true;
         o.life = 0;
         o.x = padX(L, rt.bassStep);
-        o.z = rowZ(L, bassRow, blockOf(L, rt.bassStep));
-        const el = labels.orbs[orbs.indexOf(o)];
-        const m = rt.model;
-        if (el && m) {
-          const n = m.notes[rt.bassStep];
-          el.textContent = n > 0 ? `${midiName(n)} · ${formatHz(m.hz[rt.bassStep])}` : "";
-        }
+        o.z = rowZ(L, TRACK_IDS.indexOf("bass"), blockOf(L, rt.bassStep));
       }
     }
-    orbs.forEach((o, idx) => {
-      const el = labels.orbs[idx];
-      if (!o.active) {
-        o.mesh.visible = false;
-        if (el) el.style.opacity = "0";
-        return;
-      }
+    for (let i = 0; i < ORBS; i++) {
+      const o = orbs[i];
+      if (!o.active) continue;
       o.life += dt;
-      const k = o.life / 1.6;
-      if (k >= 1) {
+      const k = o.life / ORB_LIFE;
+      if (k >= 1 || !powered) {
         o.active = false;
         o.mesh.visible = false;
-        if (el) el.style.opacity = "0";
-        return;
+        continue;
       }
-      const y = TOP + PAD_H + 0.3 + k * 3.2;
       o.mesh.visible = true;
-      o.mesh.position.set(o.x, y, o.z);
-      o.mesh.scale.setScalar(1 + k * 0.8);
+      o.mesh.position.set(o.x, TOP + PAD_H + 0.3 + (1 - (1 - k) * (1 - k)) * ORB_RISE, o.z);
+      o.mesh.scale.setScalar(1 + k * 0.7);
       o.mat.opacity = 1 - k;
-      place(el, o.x, y + 0.45, o.z, k < 0.45 ? 1 - k / 0.45 : 0, "translate(-50%, -100%)");
-    });
+    }
 
     // ── mixer ──
     const mixerOn = powered && rt.isAlive("mixer");
-    channels.forEach((c, i) => {
+    const mixEase = ease(8, dt);
+    // landscape volume tags sit one per row at the far end: only when the rows there are far enough apart
+    tmp.set(L.mixX + 3, TOP, rowZ(L, 0, 0)).project(camera);
+    const ty = tmp.y;
+    tmp.set(L.mixX + 3, TOP, rowZ(L, 1, 0)).project(camera);
+    const tagsOk = L.portrait || Math.abs(tmp.y - ty) * 0.5 * ctx.size.height >= 17;
+    for (let i = 0; i < channels.length; i++) {
+      const c = channels[i];
       const id = TRACK_IDS[i];
       const mix = model?.mix[id];
-      const vol = mixerOn && mix ? mix.volume : 0.75;
-      const pan = mixerOn && mix ? mix.pan : 0;
-      c.vol += (vol - c.vol) * Math.min(1, dt * 8);
-      c.pan += (pan - c.pan) * Math.min(1, dt * 8);
-      const mat = mixerOn ? null : ghostMat;
-      c.fader.material = mat ?? faderMat;
-      c.knob.material = mat ?? knobMat;
-      c.slot.material = mat ?? slotMat;
-      c.tick.visible = mixerOn;
-      c.led.visible = mixerOn;
-      c.fader.rotation.y = L.portrait ? 0 : Math.PI / 2;
-      if (L.portrait) c.fader.position.set(c.slot.position.x, TOP + 0.13, L.mixZ + 0.7 - c.vol * 1.4);
-      else c.fader.position.set(L.mixX + 0.55 + c.vol * 1.4, TOP + 0.13, c.slot.position.z);
+      c.vol += ((mixerOn && mix ? mix.volume : 0.75) - c.vol) * mixEase;
+      c.pan += ((mixerOn && mix ? mix.pan : 0) - c.pan) * mixEase;
+      // locked: only a translucent slot remains (no busy wireframe faders)
+      c.slot.material = mixerOn ? slotMat : ghostFillMat;
+      c.fader.visible = c.knob.visible = c.led.visible = mixerOn;
+      if (L.portrait) c.fader.position.set(c.slot.position.x, TOP + 0.135, L.mixZ + 0.7 - c.vol * 1.4);
+      else c.fader.position.set(L.mixX + 0.55 + c.vol * 1.4, TOP + 0.135, c.slot.position.z);
       c.knob.rotation.y = -c.pan * 2.3;
-      if (mixerOn && mix) {
-        const lit = mix.mute ? 1 : 0.6 + rt.energy[id] * 1.8;
-        c.ledMat.color.copy(mix.mute ? DANGER : BRAND_LIGHT).multiplyScalar(lit * 1.4);
-      }
-      const ghostPulse = !mixerOn && focus === "mixer";
-      if (ghostPulse) ghostMat.opacity = 0.35 + 0.35 * pulse;
-      if (L.portrait) place(labels.mixer[i], c.slot.position.x, TOP + 0.1, L.mixZ - 0.95, powered ? 1 : 0.5, "translate(-50%, -100%)");
-      else place(labels.mixer[i], L.mixX + 3.05, TOP + 0.1, c.slot.position.z, mixerOn ? 1 : 0, "translate(0, -50%)");
-    });
+      if (mixerOn && mix) c.ledMat.color.copy(mix.mute ? DANGER : BRAND_LIGHT).multiplyScalar(mix.mute ? 1.4 : 0.85 + rt.energy[id] * 2.5);
+      if (L.portrait) place(5 + i, labels.mixer[i], c.slot.position.x, TOP + 0.1, L.mixZ - 0.95, mixerOn ? 1 : 0, "translate(-50%,-100%)");
+      else place(5 + i, labels.mixer[i], L.mixX + 3.0, TOP + 0.1, c.slot.position.z, mixerOn && tagsOk ? 1 : 0, "translate(0,-50%)");
+    }
+    if (!mixerOn) ghostFillMat.opacity = focus === "mixer" ? 0.2 + 0.3 * pulse : 0.22;
 
     // ── row labels ──
     tmp.set(L.x0, TOP, rowZ(L, 0, 0)).project(camera);
     const y0 = tmp.y;
     tmp.set(L.x0, TOP, rowZ(L, 1, 0)).project(camera);
     rowSpacingPx = Math.abs(tmp.y - y0) * 0.5 * ctx.size.height;
-    TRACK_IDS.forEach((_, row) => {
-      place(labels.rows[row], L.x0 - 0.15, TOP + 0.2, rowZ(L, row, 0), rowSpacingPx >= 12 ? 1 : 0, "translate(-100%, -50%)");
-    });
+    for (let row = 0; row < TRACK_IDS.length; row++) {
+      place(row, labels.rows[row], L.x0 - 0.2, TOP + 0.2, rowZ(L, row, 0), rowSpacingPx >= 11 ? 1 : 0, "translate(-100%,-50%)");
+    }
 
     // ── celebration ──
     celebRing.visible = rt.celebrate > 0;
     if (rt.celebrate > 0) {
-      const k = 1 - rt.celebrate;
-      celebRing.scale.setScalar(2 + k * celebScale);
+      celebRing.scale.setScalar(2 + (1 - rt.celebrate) * celebScale);
       celebMat.opacity = rt.celebrate;
     }
   };
@@ -643,7 +780,8 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
     dispose() {
       envTex.dispose();
       pmrem.dispose();
-      for (const m of [ghostMat, plinthMat, deckMat, padMat, glowMat, ghostPadMat, lineMat, playMat, bandMat, ringMat, celebMat, slotMat, faderMat, knobMat, tickMat]) m.dispose();
+      for (const m of [ghostLineMat, ghostFillMat, plinthMat, deckMat, padMat, glowMat, ghostPadMat, lineMat, playMat, bandMat, ringMat, celebMat, slotMat, faderMat, knobMat, tickMat, ...orbMats]) m.dispose();
+      for (const c of channels) c.ledMat.dispose();
     },
   };
 }

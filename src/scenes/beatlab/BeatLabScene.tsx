@@ -5,7 +5,7 @@ import type { SceneProps } from "@/engine/scene";
 import { useThreeStage } from "@/engine/three-kit";
 import { STEPS, TRACK_IDS, midiName, midiToHzReference } from "./sequencer";
 import { Runtime, TRACKS, trackAlive, type PatternId, type Ui } from "./runtime";
-import { createBeatStage, formatHz, type BeatStage, type StageLabels } from "./stage3d";
+import { createBeatStage, formatHz, hudMode, type BeatStage, type StageLabels } from "./stage3d";
 
 // ───────────────────────── HUD (HTML, refreshed ~10x per second) ─────────────────────────
 
@@ -110,11 +110,11 @@ const TONE: Record<Tone, string> = {
 export default function BeatLabScene({ program, unlocked, focus, celebration, interactive, autoplay = false }: SceneProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stageRef = useRef<BeatStage | null>(null);
-  const labelsRef = useRef<StageLabels>({ rows: [], mixer: [], orbs: [] });
+  const labelsRef = useRef<StageLabels>({ rows: [], mixer: [] });
   const [rt] = useState(() => new Runtime());
   const [ui, setUi] = useState<Ui>({ playing: false, audio: "off" });
   const [hud, setHud] = useState<Hud>(EMPTY_HUD);
-  const [compact, setCompact] = useState(false);
+  const [size, setSize] = useState({ w: 800, h: 500 });
   const [roomy, setRoomy] = useState(true);
 
   // hand the latest props to the runtime (declared before the effect that starts the scheduler)
@@ -153,7 +153,11 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
   useEffect(() => {
     const el = canvasRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(([e]) => setCompact(e.contentRect.height < 380 || e.contentRect.width < 380));
+    const ro = new ResizeObserver(([e]) => {
+      const w = Math.round(e.contentRect.width);
+      const h = Math.round(e.contentRect.height);
+      setSize((prev) => (prev.w === w && prev.h === h ? prev : { w, h }));
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -193,8 +197,27 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
     }
   };
 
-  const lines = compact ? hud.lines.slice(-1) : hud.lines;
+  // HUD density follows the stage size; stage3d frames the machine below hudTopPx(mode) to match
+  const mode = hudMode(size.w, size.h);
+  const narrow = size.w < 420;
+  const lines = mode === "full" ? hud.lines : hud.lines.slice(-1);
+  const subs = mode === "full" && roomy;
   const beatIdx = hud.step >= 0 ? Math.floor(hud.step / 4) : -1;
+  const lamps = (
+    <div className="flex shrink-0 items-center gap-1.5">
+      {[0, 1, 2, 3].map((b) => (
+        <span
+          key={b}
+          className={`h-2 w-2 rounded-full ${hud.powered && beatIdx === b ? "bg-violet-300 shadow-[0_0_10px_2px_rgba(143,116,255,0.8)]" : "border border-violet-300/40"}`}
+        />
+      ))}
+    </div>
+  );
+  const barText = hud.arranger ? `BAR ${hud.playing ? String(hud.bar).padStart(2, "0") : "--"}` : `STEP ${hud.step >= 0 ? String(hud.step + 1).padStart(2, "0") : "--"}/16`;
+  const sectionText = hud.arranger ? (hud.playing ? hud.section : "-") : "";
+  const sectionClass = hud.section === "groove" ? "text-violet-300" : hud.section === "break" ? "text-white/70" : "text-violet-100";
+  const panel = mode === "tiny" ? "rounded-xl border border-white/10 bg-black/45 px-2.5 py-1.5 backdrop-blur" : GLASS;
+  const shortInfo = hud.info.split(" · ");
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -207,7 +230,7 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
         onKeyDown={onKeyDown}
       />
 
-      {/* 3D-anchored labels: positioned every frame by the stage */}
+      {/* 3D-anchored labels: the stage writes their transform every frame (no layout reads) */}
       <div className="pointer-events-none absolute inset-0 z-[5] font-mono">
         {hud.rows.map((r, i) => (
           <div
@@ -215,11 +238,13 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
             ref={(el) => {
               labelsRef.current.rows[i] = el;
             }}
-            className="absolute left-0 top-0 whitespace-nowrap pr-2 text-right leading-tight"
+            className="absolute left-0 top-0 whitespace-nowrap pr-2 text-right will-change-transform"
             style={{ opacity: 0 }}
           >
-            <div className={`${roomy ? "text-[11px]" : "text-[10px] leading-none"} font-bold tracking-wide ${r.tone === "off" ? "text-white/40" : r.muted ? "text-white/45 line-through" : "text-white"}`}>{r.label}</div>
-            {roomy && r.sub && <div className={`text-[10px] ${TONE[r.tone]}`}>{r.sub}</div>}
+            <div className={`${subs ? "text-[11px] leading-tight" : "text-[10px] leading-none"} font-bold tracking-wide ${r.tone === "off" ? "text-white/40" : r.muted ? "text-white/45 line-through" : "text-white"}`}>
+              {r.label}
+            </div>
+            {subs && r.sub && <div className={`max-w-[90px] truncate text-[10px] leading-tight ${TONE[r.tone]}`}>{r.sub}</div>}
           </div>
         ))}
         {TRACK_IDS.map((id, i) => {
@@ -230,44 +255,38 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
               ref={(el) => {
                 labelsRef.current.mixer[i] = el;
               }}
-              className={`absolute left-0 top-0 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-bold ${hud.mixerOn ? "bg-black/45 text-violet-100" : "text-violet-300/50"}`}
+              className="absolute left-0 top-0 whitespace-nowrap rounded-md bg-black/45 px-1 py-px text-[10px] font-bold leading-tight text-violet-100 will-change-transform"
               style={{ opacity: 0 }}
             >
-              {hud.mixerOn && m ? (
-                <>
-                  {m.vol}
-                  {m.mute && <span className="ml-1 text-[#f87171]">M</span>}
-                </>
-              ) : (
-                TRACKS[id].label
-              )}
+              {m ? m.vol : ""}
+              {m?.mute && <span className="ml-1 text-[#f87171]">M</span>}
             </div>
           );
         })}
-        {Array.from({ length: 8 }, (_, i) => (
-          <span
-            key={i}
-            ref={(el) => {
-              labelsRef.current.orbs[i] = el;
-            }}
-            className="absolute left-0 top-0 whitespace-nowrap rounded-md border border-white/10 bg-black/45 px-1.5 py-0.5 text-[10px] font-bold text-violet-100 backdrop-blur"
-            style={{ opacity: 0 }}
-          />
-        ))}
       </div>
 
-      {/* display: title, tempo and what print() said */}
-      {/* (with no program at all, StageShell shows its own "press Run" hint here) */}
-      <div className={`pointer-events-none absolute left-3 top-12 z-10 max-w-[min(60%,340px)] ${GLASS} ${displayFocus ? "pulse-ring" : ""} ${hud.hasProgram ? "" : "hidden"}`}>
-        {!hud.hasProgram || !hud.powered ? (
-          <div className="font-mono text-[11px] leading-snug">
-            <div className="font-bold tracking-wider text-violet-200">{hud.hasProgram ? "NO POWER" : "BLUEPRINT"}</div>
-            <div className="text-white/55">{hud.hasProgram ? "print() something to boot" : "press Run to power it up"}</div>
+      {/* display: title, tempo and what print() said (with no program, StageShell shows its own hint here) */}
+      <div className={`pointer-events-none absolute left-3 top-12 z-10 max-w-[min(58%,340px)] ${panel} ${displayFocus ? "pulse-ring" : ""} ${hud.hasProgram ? "" : "hidden"}`}>
+        {!hud.powered ? (
+          mode === "tiny" ? (
+            <div className="truncate font-mono text-[11px] leading-4">
+              <span className="font-bold text-violet-200">NO POWER</span> <span className="text-white/55">· print() to boot</span>
+            </div>
+          ) : (
+            <div className="font-mono text-[11px] leading-snug">
+              <div className="font-bold tracking-wider text-violet-200">NO POWER</div>
+              <div className="truncate text-white/55">print() something to boot</div>
+            </div>
+          )
+        ) : mode === "tiny" ? (
+          <div className="truncate font-mono text-[11px] leading-4">
+            <span className={`font-sans text-[12px] font-semibold ${hud.tempo ? "text-white" : "text-white/35"}`}>{hud.tempo ? hud.title : "UNTITLED"}</span>
+            {hud.tempo && <span className="text-violet-200"> · {shortInfo[0]}</span>}
           </div>
         ) : (
           <div className="min-w-0 font-mono text-[11px] leading-snug">
             <div className={`truncate font-sans text-[13px] font-semibold ${hud.tempo ? "text-white" : "text-white/35"}`}>{hud.tempo ? hud.title : "UNTITLED"}</div>
-            <div className={`truncate ${hud.tempo ? "text-violet-200" : "text-white/35"}`}>{hud.tempo ? hud.info : "tempo: locked"}</div>
+            <div className={`truncate ${hud.tempo ? "text-violet-200" : "text-white/35"}`}>{hud.tempo ? (narrow ? shortInfo.slice(0, 2).join(" · ") : hud.info) : "tempo: locked"}</div>
             {lines.length === 0 ? (
               <div className="truncate text-white/40">› (nothing printed yet)</div>
             ) : (
@@ -281,50 +300,52 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
         )}
       </div>
 
-      {/* LED panel: bar counter and the arranger's decision */}
-      <div className={`pointer-events-none absolute right-3 top-12 z-10 ${GLASS} ${ledFocus ? "pulse-ring" : ""}`}>
-        <div className="flex items-center justify-end gap-1.5">
-          {[0, 1, 2, 3].map((b) => (
-            <span
-              key={b}
-              className={`h-2 w-2 rounded-full ${hud.powered && beatIdx === b ? "bg-violet-300 shadow-[0_0_10px_2px_rgba(143,116,255,0.8)]" : "border border-violet-300/40"}`}
-            />
-          ))}
-        </div>
-        <div className="mt-1 text-right font-mono text-[11px] leading-snug">
-          {hud.arranger ? (
-            <>
-              <div className="text-white/80">BAR {hud.playing ? String(hud.bar).padStart(2, "0") : "--"}</div>
-              <div className={`font-bold uppercase tracking-wider ${hud.section === "groove" ? "text-violet-300" : hud.section === "break" ? "text-white/70" : "text-violet-100"}`}>
-                {hud.playing ? hud.section : "-"}
-              </div>
-            </>
-          ) : (
-            <div className="text-white/55">STEP {hud.step >= 0 ? String(hud.step + 1).padStart(2, "0") : "--"}/16</div>
-          )}
-        </div>
+      {/* LED panel: beat lamps, bar counter and the arranger's decision */}
+      <div className={`pointer-events-none absolute right-3 top-12 z-10 ${panel} ${ledFocus ? "pulse-ring" : ""}`}>
+        {mode === "tiny" ? (
+          <div className="flex items-center gap-2 font-mono text-[11px] leading-4">
+            {lamps}
+            <span className="text-white/75">{barText}</span>
+            {sectionText && <span className={`font-bold uppercase ${sectionClass}`}>{sectionText}</span>}
+          </div>
+        ) : (
+          <>
+            <div className="flex justify-end">{lamps}</div>
+            <div className="mt-1 text-right font-mono text-[11px] leading-snug">
+              <div className="text-white/75">{barText}</div>
+              {sectionText && <div className={`font-bold uppercase tracking-wider ${sectionClass}`}>{sectionText}</div>}
+            </div>
+          </>
+        )}
       </div>
 
-      {silent && interactive && (
-        <div className="pointer-events-none absolute bottom-3 left-3 z-10 whitespace-nowrap rounded-full border border-white/10 bg-black/45 px-3 py-1.5 font-mono text-[11px] text-white/80 backdrop-blur">
-          🔇 {autoplay ? "Tap for sound" : "Sound is off"}
-        </div>
-      )}
-      {canPlay && (
-        <button
-          type="button"
-          onClick={() => void rt.toggle()}
-          className={`absolute bottom-3 right-3 z-10 rounded-full border-2 px-3.5 py-1.5 text-[11px] font-extrabold uppercase tracking-wider transition-colors ${
-            silent
-              ? "pulse-ring border-black bg-[#c4b5ff] text-black"
-              : ui.playing
-                ? "border-white/30 bg-black/55 text-white backdrop-blur hover:bg-white/15"
-                : "border-black bg-[#8f74ff] text-black"
-          }`}
-        >
-          {silent ? "🔊 Sound on" : ui.playing ? "■ Stop" : "▶ Play"} <span className="opacity-60 [@media(pointer:coarse)]:hidden">(Space)</span>
-        </button>
-      )}
+      {/* bottom-right cluster (the row labels live on the left, so nothing here can collide with them) */}
+      <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex items-center gap-2">
+        {silent && interactive && (
+          <div
+            className="whitespace-nowrap rounded-full border border-white/10 bg-black/45 px-3 py-1.5 font-mono text-[11px] leading-4 text-white/80 backdrop-blur"
+            title={autoplay ? "Tap for sound" : "Sound is off"}
+          >
+            🔇{narrow ? "" : autoplay ? " Tap for sound" : " Sound is off"}
+          </div>
+        )}
+        {canPlay && (
+          <button
+            type="button"
+            onClick={() => void rt.toggle()}
+            className={`pointer-events-auto rounded-full border-2 px-3.5 py-1.5 text-[11px] font-extrabold uppercase leading-4 tracking-wider transition-colors ${
+              silent
+                ? "pulse-ring border-black bg-[#c4b5ff] text-black"
+                : ui.playing
+                  ? "border-white/30 bg-black/55 text-white backdrop-blur hover:bg-white/15"
+                  : "border-black bg-[#8f74ff] text-black"
+            }`}
+          >
+            {silent ? "🔊 Sound on" : ui.playing ? "■ Stop" : "▶ Play"}
+            {!narrow && <span className="ml-1 opacity-60 [@media(pointer:coarse)]:hidden">(Space)</span>}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

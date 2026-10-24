@@ -539,13 +539,17 @@ export class Runtime {
     return false;
   }
 
-  /** 0..1 progress from the current step to the next (for a smooth playhead). */
+  /** 0..1 progress from the current step to the next, on the audio clock (for a smooth playhead). */
   stepPhase(): number {
     const m = this.model;
     if (!this.playing || this.step < 0 || !m) return 0;
     const s = this.synth;
     const now = s && s.running ? s.ctx.currentTime - s.latency : performance.now() / 1000;
-    const p = (now - this.stepAt) / stepSeconds(m.bpm);
+    // aim at the next scheduled step (so swung steps don't make the playhead stall), else one plain step
+    const next = this.queue.length > 0 ? this.queue[0].time : this.stepAt + stepSeconds(m.bpm);
+    const span = next - this.stepAt;
+    if (!(span > 0)) return 1;
+    const p = (now - this.stepAt) / span;
     return p < 0 ? 0 : p > 1 ? 1 : p;
   }
 
