@@ -154,22 +154,22 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 flex flex-col transition-colors duration-150">
       {/* Top Banner / Breadcrumb */}
-      <div className="h-14 border-b border-slate-200 bg-white px-4 sm:px-6 flex items-center justify-between gap-4 shadow-2xs">
+      <div className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 sm:px-6 flex items-center justify-between gap-4 shadow-2xs">
         <div className="flex items-center gap-3">
           <Link
             href="/"
             onClick={() => sound.playClick()}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#0056d2] transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-[#0056d2] dark:hover:text-blue-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Home</span>
           </Link>
-          <span className="text-slate-300">/</span>
+          <span className="text-slate-300 dark:text-slate-700">/</span>
           <div className="flex items-center gap-2">
-            <Code2 className="w-4 h-4 text-[#0056d2]" />
-            <h1 className="text-sm font-bold text-slate-900">
+            <Code2 className="w-4 h-4 text-[#0056d2] dark:text-blue-400" />
+            <h1 className="text-sm font-bold text-slate-900 dark:text-white">
               Interactive Python 3 Sandbox on pockett.ai
             </h1>
           </div>
@@ -189,15 +189,15 @@ export default function PlaygroundPage() {
       </div>
 
       {/* Preset Pills */}
-      <div className="px-4 sm:px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2 overflow-x-auto text-xs">
-        <span className="text-slate-500 font-semibold uppercase tracking-wider text-[11px] shrink-0">
+      <div className="px-4 sm:px-6 py-2.5 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 overflow-x-auto text-xs">
+        <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px] shrink-0">
           Load Presets:
         </span>
         {PRESET_SCRIPTS.map((preset) => (
           <button
             key={preset.label}
             onClick={() => handleSelectPreset(preset.code)}
-            className="shrink-0 px-3 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[#0056d2] hover:border-[#0056d2] transition-colors font-medium shadow-2xs"
+            className="shrink-0 px-3 py-1 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:text-[#0056d2] dark:hover:text-blue-400 hover:border-[#0056d2] dark:hover:border-blue-400 transition-colors font-medium shadow-2xs"
           >
             {preset.label}
           </button>

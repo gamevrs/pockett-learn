@@ -32,10 +32,10 @@ export function ConsoleOutput({
 
   return (
     <div
-      className={`flex flex-col bg-slate-900 border border-slate-300 rounded-xl overflow-hidden font-mono text-xs shadow-xs ${className}`}
+      className={`flex flex-col bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden font-mono text-xs shadow-xs transition-colors ${className}`}
     >
       {/* Console Header */}
-      <div className="h-9 bg-slate-800 border-b border-slate-700/80 px-4 flex items-center justify-between text-slate-300 select-none">
+      <div className="h-9 bg-slate-800/90 border-b border-slate-700/80 px-4 flex items-center justify-between text-slate-300 select-none">
         <div className="flex items-center gap-2">
           <Terminal className="w-3.5 h-3.5 text-blue-400" />
           <span className="font-semibold text-white">Execution Console</span>

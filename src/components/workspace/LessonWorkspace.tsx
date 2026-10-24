@@ -183,22 +183,22 @@ export function LessonWorkspace({
     testResults.length > 0 && testResults.every((t) => t.passed);
 
   return (
-    <div className="flex-1 flex flex-col w-full h-[calc(100vh-4rem)] overflow-hidden bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col w-full h-[calc(100vh-4rem)] overflow-hidden bg-[#f8fafc] dark:bg-[#0b0f19] transition-colors duration-150">
       {/* Coursera-Style Guided Lab Navigation Bar */}
-      <div className="h-12 border-b border-slate-200 bg-white px-3 sm:px-4 flex items-center justify-between gap-2 select-none shrink-0 shadow-2xs">
+      <div className="h-12 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 sm:px-4 flex items-center justify-between gap-2 select-none shrink-0 shadow-2xs">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             href={`/learn/${courseSlug}`}
             onClick={() => sound.playClick()}
-            className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-[#0056d2] transition-colors shrink-0"
+            className="flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-[#0056d2] dark:hover:text-blue-400 transition-colors shrink-0"
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Syllabus</span>
           </Link>
 
-          <span className="text-slate-300 hidden sm:inline">/</span>
+          <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">/</span>
 
-          <span className="text-xs font-bold text-slate-900 truncate">
+          <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
             {lesson.title}
           </span>
         </div>
@@ -210,7 +210,7 @@ export function LessonWorkspace({
               href={`/learn/${courseSlug}/${prevLesson.id}`}
               onClick={() => sound.playClick()}
               title={`Previous: ${prevLesson.title}`}
-              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </Link>
@@ -221,7 +221,7 @@ export function LessonWorkspace({
               href={`/learn/${courseSlug}/${nextLesson.id}`}
               onClick={() => sound.playClick()}
               title={`Next: ${nextLesson.title}`}
-              className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </Link>
@@ -231,13 +231,13 @@ export function LessonWorkspace({
           <button
             onClick={handleRunCodeOnly}
             disabled={isRunning}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 text-xs font-semibold transition-all border border-slate-300"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all border border-slate-300 dark:border-slate-700"
           >
-            <Play className="w-3.5 h-3.5 fill-slate-700" />
+            <Play className="w-3.5 h-3.5 fill-slate-700 dark:fill-slate-300" />
             <span>Run Code</span>
           </button>
 
-          {/* Test & Submit Button (Coursera Signature Blue) */}
+          {/* Test & Submit Button */}
           <button
             onClick={handleTestAndSubmit}
             disabled={isRunning}
@@ -253,7 +253,7 @@ export function LessonWorkspace({
       </div>
 
       {/* Mobile Tab View Selector (< lg screens) */}
-      <div className="lg:hidden flex items-center bg-white border-b border-slate-200 px-2 py-1.5 shrink-0 gap-1">
+      <div className="lg:hidden flex items-center bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-2 py-1.5 shrink-0 gap-1">
         <button
           onClick={() => {
             sound.playClick();
@@ -261,8 +261,8 @@ export function LessonWorkspace({
           }}
           className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
             mobileTab === "briefing"
-              ? "bg-blue-50 text-[#0056d2] border border-blue-200"
-              : "text-slate-600"
+              ? "bg-blue-50 dark:bg-blue-950/60 text-[#0056d2] dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+              : "text-slate-600 dark:text-slate-400"
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" />
@@ -276,8 +276,8 @@ export function LessonWorkspace({
           }}
           className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
             mobileTab === "editor"
-              ? "bg-blue-50 text-[#0056d2] border border-blue-200"
-              : "text-slate-600"
+              ? "bg-blue-50 dark:bg-blue-950/60 text-[#0056d2] dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+              : "text-slate-600 dark:text-slate-400"
           }`}
         >
           <Code2 className="w-3.5 h-3.5" />
@@ -291,8 +291,8 @@ export function LessonWorkspace({
           }}
           className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
             mobileTab === "results"
-              ? "bg-blue-50 text-[#0056d2] border border-blue-200"
-              : "text-slate-600"
+              ? "bg-blue-50 dark:bg-blue-950/60 text-[#0056d2] dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+              : "text-slate-600 dark:text-slate-400"
           }`}
         >
           <ListChecks className="w-3.5 h-3.5" />
@@ -330,7 +330,7 @@ export function LessonWorkspace({
               <button
                 onClick={handleRunCodeOnly}
                 disabled={isRunning}
-                className="flex-1 py-2.5 rounded-lg bg-slate-100 text-slate-800 text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-300"
+                className="flex-1 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-300 dark:border-slate-700"
               >
                 <Play className="w-3.5 h-3.5" />
                 <span>Run Output</span>
@@ -354,8 +354,8 @@ export function LessonWorkspace({
                 onClick={() => setActiveTab("tests")}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold ${
                   activeTab === "tests"
-                    ? "bg-blue-50 text-[#0056d2] border border-blue-200"
-                    : "text-slate-600"
+                    ? "bg-blue-50 dark:bg-blue-950/60 text-[#0056d2] dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-bold"
+                    : "text-slate-600 dark:text-slate-400"
                 }`}
               >
                 Automated Tests ({lesson.testCases.length})
@@ -364,8 +364,8 @@ export function LessonWorkspace({
                 onClick={() => setActiveTab("console")}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold ${
                   activeTab === "console"
-                    ? "bg-blue-50 text-[#0056d2] border border-blue-200"
-                    : "text-slate-600"
+                    ? "bg-blue-50 dark:bg-blue-950/60 text-[#0056d2] dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-bold"
+                    : "text-slate-600 dark:text-slate-400"
                 }`}
               >
                 Execution Output
@@ -428,11 +428,11 @@ export function LessonWorkspace({
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
                   activeTab === "tests"
-                    ? "bg-blue-50 text-[#0056d2] border border-blue-200 font-bold"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-blue-50 dark:bg-blue-950/60 text-[#0056d2] dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5 text-[#0056d2]" />
+                <Sparkles className="w-3.5 h-3.5 text-[#0056d2] dark:text-blue-400" />
                 <span>Test Cases ({lesson.testCases.length})</span>
                 {testResults.length > 0 && (
                   <span
@@ -450,11 +450,11 @@ export function LessonWorkspace({
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
                   activeTab === "console"
-                    ? "bg-blue-50 text-[#0056d2] border border-blue-200 font-bold"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-blue-50 dark:bg-blue-950/60 text-[#0056d2] dark:text-blue-400 border border-blue-200 dark:border-blue-800 font-bold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                <Terminal className="w-3.5 h-3.5 text-[#0056d2]" />
+                <Terminal className="w-3.5 h-3.5 text-[#0056d2] dark:text-blue-400" />
                 <span>Execution Output</span>
                 {stdout && (
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
