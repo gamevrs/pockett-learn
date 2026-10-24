@@ -29,6 +29,7 @@ Plus a dashboard (XP, streak, badges) and a free-play Python sandbox.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full picture, and [docs/ADDING_A_PROJECT.md](docs/ADDING_A_PROJECT.md) to build a new one.
 
-## Local-first, cloud-ready
+## Accounts
 
-Progress lives in `localStorage` behind a `ProgressRepository` interface (`src/data/progress`). `supabase/migrations/0001_init.sql` is the matching Postgres schema with row-level security, ready for when accounts and Vercel/Supabase deployment are switched on. Nothing in the UI imports storage directly.
+Learning needs no account: progress saves in the browser. A free account (Supabase Auth) syncs progress,
+code and streaks across devices; see `supabase/migrations/` and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

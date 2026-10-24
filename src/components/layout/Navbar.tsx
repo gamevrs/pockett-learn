@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Flame, Menu, Moon, Sun, Volume2, VolumeX, X, Zap } from "lucide-react";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { currentStreak, levelFor, setSoundEnabled, useProgress } from "@/data/progress/store";
+import { displayNameOf, useAuth } from "@/data/auth/store";
 
 const LINKS = [
   { href: "/projects", label: "Projects" },
@@ -34,6 +35,7 @@ export function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const progress = useProgress();
   const [open, setOpen] = useState(false);
+  const auth = useAuth();
   const rank = levelFor(progress.xp);
   const streak = currentStreak(progress);
 
@@ -97,7 +99,22 @@ export function Navbar() {
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
-          <Link href="/projects" className="btn btn-primary btn-sm hidden sm:inline-flex">
+          {auth.status === "signed-in" ? (
+            <Link
+              href="/account"
+              aria-label="Your account"
+              title={displayNameOf(auth.user)}
+              className="bg-brand-gradient grid h-9 w-9 place-items-center rounded-full bg-brand text-sm font-black text-brand-ink"
+            >
+              {displayNameOf(auth.user).slice(0, 1).toUpperCase()}
+            </Link>
+          ) : (
+            <Link href="/account" className="btn btn-sm hidden sm:inline-flex">
+              Sign in
+            </Link>
+          )}
+
+          <Link href="/projects" className="btn btn-primary btn-sm hidden lg:inline-flex">
             Start building
           </Link>
 
@@ -113,7 +130,7 @@ export function Navbar() {
 
       {open && (
         <nav className="border-t border-line bg-bg px-4 py-3 md:hidden">
-          {LINKS.concat([{ href: "/", label: "Home" }]).map((l) => (
+          {LINKS.concat([{ href: "/account", label: auth.status === "signed-in" ? "Account" : "Sign in" }, { href: "/", label: "Home" }]).map((l) => (
             <Link
               key={l.href}
               href={l.href}

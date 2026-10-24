@@ -20,7 +20,8 @@ src/
   scenes/<project>/     live demos: pure sim (testable in Node) + three.js world + React scene with an
                         HTML HUD + demo program
   components/           stage chrome, workspace, landing, dashboard, sandbox
-  data/progress/        ProgressRepository (local today) + React store
+  data/progress/        local store + cloud sync engine + merge
+  data/auth/            Supabase Auth session store and actions
 supabase/migrations/    Postgres schema for the future cloud mode
 scripts/                validate-content, seed-progress, tune-garage
 ```
@@ -55,15 +56,27 @@ Design choices worth knowing:
 - `pnpm validate`: every lesson's reference solution must pass all tests and its starter must fail at least one (so nothing ships pre-solved or broken), and every feature must be unlocked by some lesson.
 - `pnpm typecheck`, `pnpm build`, `eslint` (React Compiler rules are on).
 
-## Going to Supabase + Vercel
+## Accounts and cloud sync (Supabase)
 
-1. Apply `supabase/migrations/0001_init.sql`.
-2. Add a `SupabaseProgressRepository` implementing `ProgressRepository` and return it from `getRepository()` in `src/data/progress/store.ts` when the env vars are set (merge local → cloud on first sign-in).
-3. Deploy to Vercel as-is: no server-side code execution is needed, pages are prerendered, and the only dynamic surface is the two JSON routes.
+- **Auth**: Supabase email + password (`src/data/auth/store.ts`), with email confirmation and password reset.
+  The `/account` page hosts sign in, sign up, reset and "choose a new password".
+- **Database**: `supabase/migrations/` (project `pockett`). A trigger on `auth.users` creates a `profiles` row
+  for every sign-up; `lesson_completions` and `lesson_drafts` hold progress. Row level security restricts every
+  table to its owner; the trigger function is not callable through the API.
+- **Sync** (`src/data/progress/sync.ts`): localStorage stays the source of truth for the UI, so the app is instant
+  and works offline. When signed in, the engine pulls cloud rows and merges them with this device
+  (`merge.ts`, tested by `pnpm test:sync`), then pushes only what changed, debounced.
+- The Supabase URL and publishable key are public by design and default to the production project
+  (`src/data/supabase/client.ts`); env vars can override them.
+
+## Deployment
+
+Vercel project `pockett` builds `main` on every push. No server-side code execution is needed: pages are
+prerendered, Python runs in the browser, and auth/data go straight from the browser to Supabase.
 
 ## Known limits
 
 - Pyodide and Monaco load from CDNs (jsDelivr). Self-host them under `/public` for offline or locked-down environments.
-- Progress is per-device until accounts exist.
+- Without an account, progress lives only in that browser.
 - Learners' hook functions run on the main thread (guarded by the watchdog); a pathological hook can still cost a frame.
 - The lesson page ships the whole project (including reference solutions and tests) to the client, so a determined learner can read answers. Fine for a free learning site; use `toPublicProject()` + server grading if that ever matters.

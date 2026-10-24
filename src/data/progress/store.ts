@@ -54,6 +54,14 @@ export function getProgress(): ProgressState {
   return read();
 }
 
+/** Non-React subscription (used by the cloud sync engine). */
+export const subscribeProgress = subscribe;
+
+/** Replace the whole state, e.g. with the result of merging local and cloud progress. */
+export function replaceProgress(next: ProgressState) {
+  commit(next);
+}
+
 // ---------- derived helpers ----------
 
 const XP_PER_LEVEL = 200;

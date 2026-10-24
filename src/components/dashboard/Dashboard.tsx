@@ -7,6 +7,7 @@ import { flattenLessons, type Project } from "@/engine/types";
 import { currentStreak, levelFor, resetAllProgress, useProgress } from "@/data/progress/store";
 import type { ProgressState } from "@/data/progress/types";
 import { AdSlot } from "@/components/ads/AdSlot";
+import { useAuth } from "@/data/auth/store";
 
 interface Badge {
   id: string;
@@ -33,6 +34,7 @@ const BADGES: Badge[] = [
 export function Dashboard({ projects }: { projects: Project[] }) {
   const progress = useProgress();
   const [confirming, setConfirming] = useState(false);
+  const auth = useAuth();
   const lvl = levelFor(progress.xp);
   const streak = currentStreak(progress);
   const completedCount = Object.keys(progress.completed).length;
@@ -43,6 +45,18 @@ export function Dashboard({ projects }: { projects: Project[] }) {
       <h1 className="font-display mt-3 text-5xl sm:text-7xl">
         {completedCount === 0 ? "Day one." : <>You&apos;re a <span className="text-gradient">{lvl.rank}.</span></>}
       </h1>
+
+      {auth.status === "signed-out" && (
+        <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-line bg-brand-soft p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-display text-xl">Keep your progress safe.</p>
+            <p className="text-sm text-ink-2">Right now it lives only in this browser. A free account syncs it to every device.</p>
+          </div>
+          <Link href="/account" className="btn btn-primary shrink-0">
+            Create free account
+          </Link>
+        </div>
+      )}
 
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         <div className="pop-card p-6 md:col-span-2">
@@ -118,7 +132,7 @@ export function Dashboard({ projects }: { projects: Project[] }) {
       <div className="mt-10 border-t border-line pt-6">
         {confirming ? (
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="font-semibold">This deletes all progress and code on this device.</span>
+            <span className="font-semibold">{auth.status === "signed-in" ? "This deletes all your progress and code, on this device and in your account." : "This deletes all progress and code on this device."}</span>
             <button className="btn btn-sm !border-bad !text-bad" onClick={() => { resetAllProgress(); setConfirming(false); }}>Yes, reset everything</button>
             <button className="btn btn-sm btn-ghost" onClick={() => setConfirming(false)}>Cancel</button>
           </div>
