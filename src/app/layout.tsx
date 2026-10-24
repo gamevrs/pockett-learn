@@ -17,18 +17,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pockett Learn | 100% Free Interactive Programming Academy",
+  title: "pockett.ai | Free Interactive Programming & Computer Science",
   description:
-    "Master Python, TypeScript, and Rust with in-browser WebAssembly execution, automated test suites, and gamified engineering challenges. Zero paywalls forever.",
+    "Master Python 3 from scratch to professional on pockett.ai. Coursera-grade interactive curriculum with in-browser WebAssembly execution and verified credentials. 100% free forever.",
   keywords: [
-    "python",
-    "learn python free",
-    "boot.dev alternative",
-    "coursera alternative",
+    "pockett.ai",
+    "python course",
+    "free coursera alternative",
     "interactive python",
+    "learn python free",
+    "artemis mission control",
+    "data with baraa",
     "webassembly python",
-    "pyodide",
-    "coding challenges",
   ],
 };
 
@@ -40,11 +40,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full dark antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-[#07090e] text-slate-100 font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
+      <body className="min-h-full flex flex-col bg-[#f8fafc] text-slate-800 font-sans selection:bg-blue-100 selection:text-blue-900">
         <TickerTape />
-        <Suspense fallback={<div className="h-16 border-b border-slate-800 bg-[#07090e]" />}>
+        <Suspense fallback={<div className="h-16 border-b border-slate-200 bg-white" />}>
           <Navbar />
         </Suspense>
         <div className="flex-1 flex flex-col">{children}</div>

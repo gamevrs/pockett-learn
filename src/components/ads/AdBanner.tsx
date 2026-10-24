@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ExternalLink } from "lucide-react";
 
 interface AdBannerProps {
   slotType: "leaderboard" | "rectangle" | "in-feed" | "banner";
@@ -9,38 +9,36 @@ interface AdBannerProps {
 }
 
 export function AdBanner({ slotType, className = "" }: AdBannerProps) {
-  const [adLoaded, setAdLoaded] = useState(false);
-
   useEffect(() => {
-    // If real AdSense is present in window, push ad request
     try {
       if (typeof window !== "undefined" && (window as any).adsbygoogle) {
         ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-        setAdLoaded(true);
       }
     } catch {
-      // Graceful fallback to stylish internal placeholder
+      // Graceful fallback
     }
   }, []);
 
   if (slotType === "leaderboard") {
     return (
       <div
-        className={`w-full max-w-5xl mx-auto my-6 border border-white/10 bg-slate-900/60 rounded-xl p-3 text-center overflow-hidden relative backdrop-blur-sm ${className}`}
+        className={`w-full max-w-5xl mx-auto my-6 border border-slate-200 bg-white rounded-xl p-3 text-center shadow-xs ${className}`}
       >
-        <div className="flex items-center justify-between text-[10px] tracking-widest text-slate-400 uppercase font-mono mb-2 px-2">
-          <span className="flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-emerald-400" />
-            Sponsored partner
+        <div className="flex items-center justify-between text-[11px] tracking-wider text-slate-500 uppercase font-medium mb-2 px-2">
+          <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-[#0056d2]" />
+            Educational Sponsor
           </span>
-          <span>Google AdSense Ready</span>
+          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
+            Google AdSense Ready
+          </span>
         </div>
-        <div className="h-20 sm:h-24 flex flex-col items-center justify-center bg-slate-950/80 rounded-lg border border-dashed border-white/10 px-4 group hover:border-emerald-500/40 transition-colors">
-          <span className="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors">
-            Support 100% Free Coding Education for Everyone Worldwide
+        <div className="h-20 sm:h-22 flex flex-col items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300 px-4 group hover:border-[#0056d2] transition-colors">
+          <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-[#0056d2] transition-colors">
+            Support 100% Free Computer Science Education on pockett.ai
           </span>
-          <p className="text-[11px] text-slate-400 mt-1 max-w-xl">
-            We keep all courses, compilers, and sandboxes completely free through developer-friendly sponsors.
+          <p className="text-[11px] text-slate-500 mt-1 max-w-xl">
+            Sponsors and partners enable all Python & systems tracks to remain completely free for all learners worldwide.
           </p>
         </div>
       </div>
@@ -50,21 +48,21 @@ export function AdBanner({ slotType, className = "" }: AdBannerProps) {
   if (slotType === "rectangle") {
     return (
       <div
-        className={`w-full border border-white/10 bg-slate-900/70 rounded-xl p-3 text-center overflow-hidden backdrop-blur-sm ${className}`}
+        className={`w-full border border-slate-200 bg-white rounded-xl p-3.5 text-center shadow-xs ${className}`}
       >
-        <div className="flex items-center justify-between text-[10px] tracking-widest text-slate-400 uppercase font-mono mb-2">
-          <span>Ad Space</span>
-          <span>300x250</span>
+        <div className="flex items-center justify-between text-[11px] tracking-wider text-slate-500 uppercase font-medium mb-2">
+          <span className="font-semibold text-slate-600">Partner Spot</span>
+          <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">300x250</span>
         </div>
-        <div className="h-60 flex flex-col items-center justify-center bg-slate-950/80 rounded-lg border border-dashed border-white/10 p-4">
-          <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 font-bold mb-3 border border-emerald-500/20">
+        <div className="h-60 flex flex-col items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300 p-4">
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-[#0056d2] font-bold mb-3 border border-blue-200">
             Ad
           </div>
-          <span className="text-xs font-semibold text-slate-200">
-            Developer Tooling & Cloud Platforms
+          <span className="text-xs font-bold text-slate-800">
+            Developer Cloud & Tooling Partners
           </span>
-          <p className="text-[11px] text-slate-400 mt-2 text-center leading-relaxed">
-            Reserved space for high-relevance developer tooling, AI models, and cloud infrastructure sponsors.
+          <p className="text-[11px] text-slate-500 mt-2 text-center leading-relaxed">
+            Reserved placement for high-relevance developer tooling, AI models, and cloud infrastructure sponsors.
           </p>
         </div>
       </div>
@@ -73,17 +71,17 @@ export function AdBanner({ slotType, className = "" }: AdBannerProps) {
 
   return (
     <div
-      className={`w-full my-4 border border-white/10 bg-slate-900/40 rounded-xl p-3 backdrop-blur-sm ${className}`}
+      className={`w-full my-4 border border-slate-200 bg-white rounded-xl p-3 shadow-xs ${className}`}
     >
-      <div className="flex items-center justify-between text-[10px] tracking-widest text-slate-400 uppercase font-mono mb-1.5">
+      <div className="flex items-center justify-between text-[11px] tracking-wider text-slate-500 uppercase font-medium mb-1.5">
         <span>Sponsor</span>
-        <span>Free Tier Supporter</span>
+        <span>Free Tier Partner</span>
       </div>
-      <div className="py-3 px-4 bg-slate-950/60 rounded-lg border border-dashed border-white/10 flex items-center justify-between gap-4">
-        <p className="text-xs text-slate-300">
-          Supercharge your workflow with modern developer environments. Free tier available.
+      <div className="py-2.5 px-4 bg-slate-50 rounded-lg border border-dashed border-slate-300 flex items-center justify-between gap-4">
+        <p className="text-xs text-slate-700">
+          Supercharge your programming workflow with top-tier cloud and developer platforms.
         </p>
-        <span className="shrink-0 text-[10px] font-mono text-emerald-400 font-medium px-2 py-1 bg-emerald-500/10 rounded border border-emerald-500/20">
+        <span className="shrink-0 text-xs font-semibold text-[#0056d2] px-3 py-1 bg-blue-50 rounded border border-blue-200 hover:bg-blue-100 transition-colors">
           Learn More
         </span>
       </div>

@@ -92,39 +92,6 @@ print(f"Absolute Error:                          {abs(approx_pi - math.pi):.6f}"
 `,
   },
   {
-    label: "Dataclass Microservice Architecture",
-    code: `from dataclasses import dataclass, field
-from typing import List, Dict
-import time
-
-@dataclass
-class MicroserviceNode:
-    node_id: str
-    ip_address: str
-    active_connections: int = 0
-    services: List[str] = field(default_factory=list)
-
-    def route_request(self, service: str) -> bool:
-        if service in self.services:
-            self.active_connections += 1
-            print(f"[{self.node_id}] Routing traffic to {service}. Current connections: {self.active_connections}")
-            return True
-        return False
-
-# Initialize cluster
-cluster = [
-    MicroserviceNode("node-us-east-1", "10.0.1.5", services=["auth", "billing"]),
-    MicroserviceNode("node-us-west-2", "10.0.2.8", services=["ai-inference", "search"]),
-]
-
-for node in cluster:
-    print(f"Initialized cluster node {node.node_id} with services: {node.services}")
-
-cluster[0].route_request("auth")
-cluster[1].route_request("ai-inference")
-`,
-  },
-  {
     label: "Recursive Fibonacci with Memoization",
     code: `# Memoized Fibonacci sequence generator
 from functools import lru_cache
@@ -135,12 +102,12 @@ def fib(n: int) -> int:
         return n
     return fib(n - 1) + fib(n - 2)
 
-print("Calculating Fibonacci sequence up to n=40:")
-for i in range(15):
+print("Calculating Fibonacci sequence up to n=30:")
+for i in range(12):
     print(f"F({i:02d}) = {fib(i)}")
 
-print(f"\\nF(40) = {fib(40):,}")
-print(f"Cache stats: {fib.cache_info()}")
+print(f"\\nF(30) = {fib(30):,}")
+print(f"Cache statistics: {fib.cache_info()}")
 `,
   },
 ];
@@ -156,7 +123,7 @@ export default function PlaygroundPage() {
   const handleRun = async () => {
     sound.playClick();
     setIsRunning(true);
-    setStatusText("Executing Python in WebAssembly...");
+    setStatusText("Compiling Python in WebAssembly...");
 
     try {
       const res = await executePythonCode(code, [], (status) =>
@@ -187,23 +154,23 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col">
       {/* Top Banner / Breadcrumb */}
-      <div className="h-14 border-b border-slate-800 bg-[#0a0d14] px-4 sm:px-6 flex items-center justify-between gap-4">
+      <div className="h-14 border-b border-slate-200 bg-white px-4 sm:px-6 flex items-center justify-between gap-4 shadow-2xs">
         <div className="flex items-center gap-3">
           <Link
             href="/"
             onClick={() => sound.playClick()}
-            className="flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#0056d2] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Home</span>
           </Link>
-          <span className="text-slate-700">/</span>
+          <span className="text-slate-300">/</span>
           <div className="flex items-center gap-2">
-            <Code2 className="w-4 h-4 text-emerald-400" />
-            <h1 className="text-sm font-bold font-mono text-white">
-              Python 3 WebAssembly Sandbox
+            <Code2 className="w-4 h-4 text-[#0056d2]" />
+            <h1 className="text-sm font-bold text-slate-900">
+              Interactive Python 3 Sandbox on pockett.ai
             </h1>
           </div>
         </div>
@@ -213,24 +180,24 @@ export default function PlaygroundPage() {
           <button
             onClick={handleRun}
             disabled={isRunning}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(16,231,117,0.3)] hover:scale-102"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#0056d2] hover:bg-[#0041b8] disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs"
           >
-            <Play className="w-4 h-4 fill-slate-950" />
-            <span>{isRunning ? "Running..." : "Run Sandbox"}</span>
+            <Play className="w-4 h-4 fill-white" />
+            <span>{isRunning ? "Executing..." : "Run Sandbox"}</span>
           </button>
         </div>
       </div>
 
       {/* Preset Pills */}
-      <div className="px-4 sm:px-6 py-2.5 bg-[#090b10] border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto text-xs font-mono">
-        <span className="text-slate-500 uppercase tracking-wider text-[11px] shrink-0">
-          Load Templates:
+      <div className="px-4 sm:px-6 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center gap-2 overflow-x-auto text-xs">
+        <span className="text-slate-500 font-semibold uppercase tracking-wider text-[11px] shrink-0">
+          Load Presets:
         </span>
         {PRESET_SCRIPTS.map((preset) => (
           <button
             key={preset.label}
             onClick={() => handleSelectPreset(preset.code)}
-            className="shrink-0 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors"
+            className="shrink-0 px-3 py-1 rounded-md bg-white border border-slate-200 text-slate-700 hover:text-[#0056d2] hover:border-[#0056d2] transition-colors font-medium shadow-2xs"
           >
             {preset.label}
           </button>

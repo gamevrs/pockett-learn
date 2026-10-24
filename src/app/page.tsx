@@ -15,9 +15,13 @@ import {
   Cpu,
   Layers,
   CheckCircle2,
-  LockOpen,
   DollarSign,
   Globe2,
+  GraduationCap,
+  Star,
+  Users,
+  BookOpen,
+  Check,
 } from "lucide-react";
 import { pythonCourse, coursesCatalog } from "@/lib/courses/python";
 import { executePythonCode } from "@/lib/pyodide/runner";
@@ -63,115 +67,124 @@ print("STATUS: Trans-Lunar Injection Verified in WebAssembly!")
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#07090e] text-slate-100 overflow-x-hidden">
-      {/* Verge-Style Cyber Hero Section */}
-      <section className="relative pt-12 pb-20 px-4 sm:px-6 border-b border-slate-800/80 overflow-hidden">
-        {/* Subtle grid background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#13182608_1px,transparent_1px),linear-gradient(to_bottom,#13182608_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="flex-1 flex flex-col bg-[#f8fafc] text-slate-800">
+      {/* Coursera-Style Hero Section */}
+      <section className="bg-white border-b border-slate-200 pt-10 pb-16 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto space-y-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            {/* Left Column: Hero Content */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0056d2] text-xs font-semibold">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>100% Free Interactive Computer Science on pockett.ai</span>
+              </div>
 
-        <div className="max-w-6xl mx-auto relative z-10 space-y-10">
-          {/* Header Tagline & Badges */}
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold tracking-wider uppercase">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Next-Gen Interactive Coding • 100% Free</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-tight leading-[1.08]">
-              MASTER CODE. <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
-                ZERO PAYWALLS.
-              </span>
-            </h1>
-
-            <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              Experience the fast, interactive feedback loops of modern bootcamps —
-              powered by in-browser WebAssembly with automated unit test suites.
-              From your first print statement to production-grade architecture.
-            </p>
-
-            {/* CTA Group */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
-              <Link
-                href="/learn/python/py-01-hello-world"
-                onClick={() => sound.playClick()}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm uppercase tracking-wider font-mono transition-all shadow-[0_0_30px_rgba(16,231,117,0.35)] hover:scale-102"
-              >
-                <span>Start Python Track (Free)</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-
-              <Link
-                href="/playground"
-                onClick={() => sound.playClick()}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-mono text-xs font-semibold transition-colors"
-              >
-                <Code2 className="w-4 h-4 text-emerald-400" />
-                <span>Open Instant Sandbox</span>
-              </Link>
-            </div>
-          </div>
-
-          {/* Interactive Live Hero Terminal (The Verge style interactive card) */}
-          <div className="max-w-4xl mx-auto rounded-2xl bg-[#0a0d14] border border-slate-800 shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden">
-            {/* Terminal Bar */}
-            <div className="h-10 bg-[#0e121a] border-b border-slate-800 px-4 flex items-center justify-between text-xs font-mono text-slate-400 select-none">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
-                <span className="ml-2 font-bold text-slate-300">
-                  mission_control.py
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
+                Learn Without Limits. <br />
+                <span className="text-[#0056d2]">
+                  Master Python from Scratch.
                 </span>
-                <span className="hidden sm:inline-block text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                  Try it right here
+              </h1>
+
+              <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
+                Build real-world programming mastery through the Artemis Mission Control curriculum.
+                In-browser WebAssembly execution, automated test grading, and verified credentials. Zero subscriptions, completely free forever.
+              </p>
+
+              {/* Key Highlights Pill Row */}
+              <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600 pt-1">
+                <span className="flex items-center gap-1.5 text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                  <strong>4.9/5</strong> (14,200+ Learners)
+                </span>
+                <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Zero Cost / Free Forever
+                </span>
+                <span className="flex items-center gap-1.5 text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200">
+                  <Award className="w-3.5 h-3.5 text-[#0056d2]" />
+                  Verified Shareable Certificate
                 </span>
               </div>
 
-              <button
-                onClick={handleTestRun}
-                disabled={isRunning}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold text-xs uppercase tracking-wider font-mono transition-all"
-              >
-                <Play className="w-3 h-3 fill-slate-950" />
-                <span>{isRunning ? "Executing..." : "Run in WASM"}</span>
-              </button>
-            </div>
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <Link
+                  href="/learn/python/py-01-comments-print"
+                  onClick={() => sound.playClick()}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg bg-[#0056d2] hover:bg-[#0041b8] text-white font-bold text-sm tracking-wide transition-all shadow-sm hover:shadow"
+                >
+                  <span>Start Learning for Free</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
 
-            {/* Split Code & Output */}
-            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800">
-              <div className="p-4 bg-[#090b10]">
-                <div className="text-[10px] font-mono uppercase text-slate-400 mb-2 font-bold">
-                  // Python 3 Script (Editable)
-                </div>
-                <textarea
-                  value={heroCode}
-                  onChange={(e) => setHeroCode(e.target.value)}
-                  className="w-full h-48 bg-transparent font-mono text-xs text-emerald-300 resize-none outline-none leading-relaxed"
-                  spellCheck={false}
-                />
+                <Link
+                  href="/playground"
+                  onClick={() => sound.playClick()}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold text-sm transition-colors"
+                >
+                  <Code2 className="w-4 h-4 text-[#0056d2]" />
+                  <span>Interactive Sandbox</span>
+                </Link>
               </div>
 
-              <div className="p-4 bg-[#06080d] flex flex-col justify-between min-h-[160px]">
-                <div>
-                  <div className="text-[10px] font-mono uppercase text-slate-400 mb-2 font-bold flex items-center gap-1.5">
-                    <Terminal className="w-3 h-3 text-emerald-400" />
-                    <span>Real-Time Output</span>
+              {/* Ground Truth Credit */}
+              <div className="pt-2 text-xs text-slate-500 flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-[#0056d2]" />
+                <span>Curriculum grounded in Data with Baraa&apos;s 13-hour Python Masterclass</span>
+              </div>
+            </div>
+
+            {/* Right Column: Interactive Code Lab Card */}
+            <div className="lg:col-span-5">
+              <div className="rounded-xl bg-white border border-slate-200 shadow-md overflow-hidden">
+                {/* Window Header */}
+                <div className="bg-slate-100 border-b border-slate-200 px-4 py-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block" />
+                    <span className="ml-1 text-xs font-semibold text-slate-700 font-mono">
+                      mission_control.py
+                    </span>
                   </div>
-                  <pre className="font-mono text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">
+
+                  <button
+                    onClick={handleTestRun}
+                    disabled={isRunning}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-[#0056d2] hover:bg-[#0041b8] disabled:opacity-50 text-white font-semibold text-xs transition-colors"
+                  >
+                    <Play className="w-3 h-3 fill-white" />
+                    <span>{isRunning ? "Running..." : "Run"}</span>
+                  </button>
+                </div>
+
+                {/* Editor textarea */}
+                <div className="p-3 bg-slate-900">
+                  <div className="text-[10px] font-mono uppercase text-slate-400 mb-1.5">
+                    # Python 3 WebAssembly Sandbox (Live)
+                  </div>
+                  <textarea
+                    value={heroCode}
+                    onChange={(e) => setHeroCode(e.target.value)}
+                    className="w-full h-40 bg-transparent font-mono text-xs text-emerald-400 resize-none outline-none leading-relaxed"
+                    spellCheck={false}
+                  />
+                </div>
+
+                {/* Output console */}
+                <div className="p-3 bg-slate-950 border-t border-slate-800 text-xs font-mono text-slate-200 min-h-[90px] max-h-[120px] overflow-y-auto">
+                  <div className="text-[10px] uppercase text-slate-400 mb-1 flex items-center gap-1 font-semibold">
+                    <Terminal className="w-3 h-3 text-[#0056d2]" />
+                    <span>Terminal Console</span>
+                  </div>
+                  <pre className="whitespace-pre-wrap leading-relaxed text-slate-200">
                     {heroOutput || (
-                      <span className="text-slate-400 italic">
-                        Click &quot;Run in WASM&quot; to test instant in-browser compilation!
+                      <span className="text-slate-500 italic">
+                        Click &quot;Run&quot; above to compile in browser WebAssembly.
                       </span>
                     )}
                   </pre>
-                </div>
-                <div className="pt-4 border-t border-slate-900 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                  <span className="flex items-center gap-1 text-emerald-400">
-                    <Cpu className="w-3.5 h-3.5" /> Pyodide 0.26 WebAssembly
-                  </span>
-                  <span>Zero server delay</span>
                 </div>
               </div>
             </div>
@@ -182,99 +195,102 @@ print("STATUS: Trans-Lunar Injection Verified in WebAssembly!")
       {/* AdSense Placement */}
       <AdBanner slotType="leaderboard" />
 
-      {/* Course Tracks Catalog (Coursera structure + Verge aesthetic) */}
-      <section className="py-16 px-4 sm:px-6 max-w-6xl mx-auto w-full space-y-10">
+      {/* Coursera-Style Course Catalog Grid */}
+      <section className="py-14 px-4 sm:px-6 max-w-6xl mx-auto w-full space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div className="space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
-              Engineering Pathways
+          <div className="space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0056d2]">
+              Explore Learning Paths
             </span>
-            <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-              Interactive Programming Curriculums
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Featured Free Courses on pockett.ai
             </h2>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-md font-sans">
-            Every curriculum begins with first principles and progresses toward production architecture.
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md">
+            Interactive, project-grounded engineering tracks with automated unit-test grading.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           {coursesCatalog.map((course) => {
             const isAvailable = course.modules.length > 0;
             return (
               <div
                 key={course.id}
-                className={`rounded-2xl border p-6 flex flex-col justify-between transition-all relative overflow-hidden ${
-                  isAvailable
-                    ? "bg-[#0b0e17] border-emerald-500/40 shadow-[0_0_30px_rgba(16,231,117,0.1)] hover:border-emerald-400"
-                    : "bg-[#080a0f] border-slate-800/80 opacity-70"
-                }`}
+                className="rounded-xl border border-slate-200 bg-white p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition-shadow relative"
               >
-                {/* Glow bar */}
-                {isAvailable && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-cyan-400" />
-                )}
-
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-[10px] font-mono uppercase font-bold px-2.5 py-0.5 rounded border ${
+                      className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
                         isAvailable
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                          : "bg-slate-800 text-slate-400 border-slate-700"
+                          ? "bg-blue-50 text-[#0056d2] border border-blue-200"
+                          : "bg-slate-100 text-slate-500"
                       }`}
                     >
                       {course.badge}
                     </span>
-                    <span className="text-xs font-mono text-slate-400">
+                    <span className="text-xs font-medium text-slate-500">
                       {course.level}
                     </span>
                   </div>
 
-                  <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                  <h3 className="text-xl font-bold text-slate-900 tracking-tight">
                     {course.title}
                   </h3>
 
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                     {course.tagline}
                   </p>
 
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-slate-400 pt-2">
-                    <span className="flex items-center gap-1">
-                      <Zap className="w-3.5 h-3.5 text-emerald-400" />
-                      {course.totalXp} XP
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 pt-1">
+                    <span className="flex items-center gap-1 text-slate-700">
+                      <Terminal className="w-3.5 h-3.5 text-[#0056d2]" />
                       {course.estimatedHours} Hours
+                    </span>
+                    <span className="flex items-center gap-1 text-slate-700">
+                      <Zap className="w-3.5 h-3.5 text-amber-500" />
+                      {course.totalXp} XP Available
+                    </span>
+                    <span className="flex items-center gap-1 text-amber-600 font-semibold">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      4.9 (Masterclass)
                     </span>
                   </div>
                 </div>
 
-                <div className="pt-6 mt-6 border-t border-slate-800/80 flex items-center justify-between">
+                <div className="pt-6 mt-6 border-t border-slate-100 flex items-center justify-between">
                   {isAvailable ? (
                     <Link
                       href="/learn/python"
                       onClick={() => sound.playClick()}
-                      className="inline-flex items-center gap-2 text-xs font-mono font-bold text-emerald-400 hover:text-emerald-300 uppercase tracking-wider group"
+                      className="text-xs font-bold text-[#0056d2] hover:text-[#0041b8] flex items-center gap-1.5"
                     >
-                      <span>Explore Syllabus</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <span>View Full Syllabus</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   ) : (
-                    <span className="text-xs font-mono text-slate-400">
-                      In Development
+                    <span className="text-xs text-slate-400 font-medium">
+                      Curriculum In Production
                     </span>
                   )}
 
-                  {isAvailable && (
+                  {isAvailable ? (
                     <Link
-                      href="/learn/python/py-01-hello-world"
+                      href="/learn/python/py-01-comments-print"
                       onClick={() => sound.playClick()}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs font-mono uppercase tracking-wider transition-all"
+                      className="inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-[#0056d2] hover:bg-[#0041b8] text-white font-bold text-xs shadow-xs"
                     >
-                      Launch Lab 1.1
+                      <span>Enroll Free</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
+                  ) : (
+                    <button
+                      disabled
+                      className="px-3.5 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs font-medium"
+                    >
+                      Coming Soon
+                    </button>
                   )}
                 </div>
               </div>
@@ -283,75 +299,102 @@ print("STATUS: Trans-Lunar Injection Verified in WebAssembly!")
         </div>
       </section>
 
-      {/* Philosophy: Why 100% Free? (Verge Editorial Section) */}
-      <section className="py-16 px-4 sm:px-6 bg-[#05070b] border-t border-b border-slate-800/80">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <div className="space-y-3 text-center">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
-              The Manifesto
+      {/* Coursera-Grade Learning Outcomes Section */}
+      <section className="bg-white border-t border-b border-slate-200 py-14 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto space-y-8">
+          <div className="text-center space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#0056d2]">
+              Learning Outcomes
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              Why We Are Free Forever
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Skills You Will Master on pockett.ai
             </h2>
-            <p className="text-slate-400 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
-              Traditional bootcamps charge \$15,000+ for slides and quizzes.
-              Modern WebAssembly allows us to deliver interactive execution directly on your device with zero cloud server computing bills.
+            <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto">
+              Step-by-step from fundamental syntax to building the full Artemis Mission Control suite.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-            <div className="p-5 rounded-xl bg-slate-900/40 border border-slate-800 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-3">
-                <DollarSign className="w-4 h-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-[#0056d2]">
+                <Check className="w-4 h-4" />
               </div>
-              <h3 className="text-sm font-bold text-slate-200">Zero Paywalls</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                All 9 modules, test suites, and sandbox features are available to anyone in the world without requiring a credit card.
+              <h3 className="text-sm font-bold text-slate-900">Python 3 Fundamentals</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Master variables, types, mathematical expressions, user input, and string transformations.
               </p>
             </div>
 
-            <div className="p-5 rounded-xl bg-slate-900/40 border border-slate-800 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-3">
-                <Cpu className="w-4 h-4" />
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-[#0056d2]">
+                <Check className="w-4 h-4" />
               </div>
-              <h3 className="text-sm font-bold text-slate-200">Client-Side WASM</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Python runs securely inside your web browser via WebAssembly. Your code runs with zero queue times and infinite scalability.
+              <h3 className="text-sm font-bold text-slate-900">Logic & Orbital Loops</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Construct multi-sensor conditional gates, while countdown loops, and thermal sensor range sweeps.
               </p>
             </div>
 
-            <div className="p-5 rounded-xl bg-slate-900/40 border border-slate-800 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 mb-3">
-                <Globe2 className="w-4 h-4" />
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-[#0056d2]">
+                <Check className="w-4 h-4" />
               </div>
-              <h3 className="text-sm font-bold text-slate-200">Ethical Ads Model</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                We fund platform operations and course authoring through clean, non-intrusive developer tooling sponsors and Google AdSense.
+              <h3 className="text-sm font-bold text-slate-900">Data Structures & Maps</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Harness lists, comprehensions, immutable tuples, radio channel sets, and subsystem dictionaries.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-[#0056d2]">
+                <Check className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900">Modular Functions</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Write clean procedures with return values, dynamic `*args` and `**kwargs`, and scope isolation.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-[#0056d2]">
+                <Check className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900">Defensive Error Handling</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Guard telemetry feeds against invalid sensor readings using `try/except` and custom exceptions.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-[#0056d2]">
+                <Check className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-900">Artemis Mission Suite</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Integrate all components into `mission_control.py`: authentication, telemetry, and reporting.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Final Call to Action */}
-      <section className="py-20 px-4 sm:px-6 text-center relative overflow-hidden">
-        <div className="max-w-2xl mx-auto space-y-6 relative z-10">
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-            Ready to write Python?
-          </h2>
-          <p className="text-slate-300 text-xs sm:text-sm">
-            No signup forms. No credit cards. No local environment setup required.
-          </p>
-          <div>
-            <Link
-              href="/learn/python/py-01-hello-world"
-              onClick={() => sound.playClick()}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm uppercase font-mono tracking-wider transition-all shadow-[0_0_30px_rgba(16,231,117,0.4)] hover:scale-105"
-            >
-              <span>Launch Lab 1.1 Now</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+      {/* Free Model & AdSense Explanation Banner */}
+      <section className="py-14 px-4 sm:px-6 max-w-4xl mx-auto w-full text-center space-y-6">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          Why is pockett.ai 100% Free?
+        </h2>
+        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl mx-auto">
+          Unlike traditional platforms charging \$49/month or \$15,000 for bootcamps, pockett.ai runs Python code directly in your browser using WebAssembly. This eliminates costly server compute bills and allows us to offer university-grade coding education supported by ethical, non-intrusive developer sponsors.
+        </p>
+        <div className="pt-2">
+          <Link
+            href="/learn/python/py-01-comments-print"
+            onClick={() => sound.playClick()}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0056d2] hover:bg-[#0041b8] text-white font-bold text-sm tracking-wide shadow-xs transition-all"
+          >
+            <span>Begin Chapter 1 Now</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
     </div>

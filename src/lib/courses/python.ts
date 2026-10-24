@@ -12,7 +12,7 @@ export const pythonCourse: Course = {
   level: "Zero to Hero (13h Masterclass)",
   estimatedHours: 26,
   totalXp: 4200,
-  colorAccent: "emerald",
+  colorAccent: "blue",
   modules: [
     {
       id: "mod-1",

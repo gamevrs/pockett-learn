@@ -12,6 +12,10 @@ import {
   Award,
   ChevronRight,
   Code2,
+  Star,
+  BookOpen,
+  GraduationCap,
+  Users,
 } from "lucide-react";
 import { Course } from "@/lib/courses/types";
 import { getUserStats } from "@/lib/storage/progress";
@@ -44,90 +48,115 @@ export function CourseSyllabusView({ course }: CourseSyllabusViewProps) {
     allLessons.find((l) => !completedIds.includes(l.id)) || allLessons[0];
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col">
-      {/* Course Header (Coursera + Verge Style) */}
-      <section className="border-b border-slate-800 bg-gradient-to-b from-[#0b0e16] to-[#07090e] py-8 sm:py-12 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800 flex flex-col">
+      {/* Coursera-Style Course Header */}
+      <section className="bg-white border-b border-slate-200 py-10 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto space-y-6">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <Terminal className="w-3.5 h-3.5" />
-              {course.badge}
-            </span>
-            <span className="px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-xs font-mono">
-              {course.level}
-            </span>
-            <span className="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono">
-              100% Free Forever
-            </span>
+          {/* Breadcrumbs */}
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <Link href="/" className="hover:text-[#0056d2]">Home</Link>
+            <span>/</span>
+            <span className="text-slate-400">Courses</span>
+            <span>/</span>
+            <span className="text-slate-800 font-semibold">{course.title}</span>
           </div>
 
-          <div className="space-y-3">
-            <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0056d2] text-xs font-bold uppercase tracking-wider">
+                {course.badge}
+              </span>
+              <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium">
+                {course.level}
+              </span>
+              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium">
+                100% Free Forever
+              </span>
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
               {course.title}
             </h1>
-            <p className="text-sm sm:text-base text-slate-300 max-w-3xl leading-relaxed">
+
+            <p className="text-sm sm:text-base text-slate-600 max-w-3xl leading-relaxed">
               {course.description}
             </p>
+
+            {/* Instructor & Ratings line */}
+            <div className="flex flex-wrap items-center gap-6 text-xs text-slate-600 pt-1">
+              <span className="flex items-center gap-1.5 font-medium text-slate-900">
+                <GraduationCap className="w-4 h-4 text-[#0056d2]" />
+                Taught by Data with Baraa &amp; Artemis Mission Grounding
+              </span>
+              <span className="flex items-center gap-1 text-amber-600 font-semibold">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                4.9 (14,200+ ratings)
+              </span>
+              <span className="flex items-center gap-1 text-slate-500">
+                <Users className="w-4 h-4 text-slate-400" />
+                48,000+ Enrolled on pockett.ai
+              </span>
+            </div>
           </div>
 
-          {/* Key Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-2">
-            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-              <span className="text-[10px] sm:text-[11px] font-mono text-slate-400 uppercase">
+          {/* Key Metrics Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3">
+            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[11px] text-slate-500 font-medium uppercase">
                 Estimated Time
               </span>
-              <div className="text-base sm:text-lg font-bold text-white flex items-center gap-1.5 mt-1 font-mono">
-                <Clock className="w-4 h-4 text-slate-400" />
+              <div className="text-base font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
+                <Clock className="w-4 h-4 text-slate-500" />
                 <span>{course.estimatedHours} Hours</span>
               </div>
             </div>
 
-            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-              <span className="text-[10px] sm:text-[11px] font-mono text-slate-400 uppercase">
-                Total XP Available
+            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[11px] text-slate-500 font-medium uppercase">
+                Total XP Reward
               </span>
-              <div className="text-base sm:text-lg font-bold text-emerald-400 flex items-center gap-1.5 mt-1 font-mono">
-                <Zap className="w-4 h-4 text-emerald-400" />
+              <div className="text-base font-bold text-[#0056d2] flex items-center gap-1.5 mt-0.5">
+                <Zap className="w-4 h-4 text-[#0056d2]" />
                 <span>{course.totalXp} XP</span>
               </div>
             </div>
 
-            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-              <span className="text-[10px] sm:text-[11px] font-mono text-slate-400 uppercase">
+            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[11px] text-slate-500 font-medium uppercase">
                 Interactive Labs
               </span>
-              <div className="text-base sm:text-lg font-bold text-cyan-400 flex items-center gap-1.5 mt-1 font-mono">
-                <Terminal className="w-4 h-4 text-cyan-400" />
-                <span>{totalLessons} Challenges</span>
+              <div className="text-base font-bold text-slate-900 flex items-center gap-1.5 mt-0.5">
+                <Terminal className="w-4 h-4 text-slate-500" />
+                <span>{totalLessons} Guided Labs</span>
               </div>
             </div>
 
-            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-              <span className="text-[10px] sm:text-[11px] font-mono text-slate-400 uppercase">
-                Skill Level
+            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+              <span className="text-[11px] text-slate-500 font-medium uppercase">
+                Credential
               </span>
-              <div className="text-base sm:text-lg font-bold text-purple-400 flex items-center gap-1.5 mt-1 font-mono">
-                <Award className="w-4 h-4 text-purple-400" />
-                <span>Zero to Pro</span>
+              <div className="text-base font-bold text-emerald-700 flex items-center gap-1.5 mt-0.5">
+                <Award className="w-4 h-4 text-emerald-600" />
+                <span>Free Certificate</span>
               </div>
             </div>
           </div>
 
-          {/* Progress Bar & Primary CTA */}
+          {/* Progress & CTA Card */}
           {isAvailable ? (
-            <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-6">
+            <div className="p-5 rounded-xl bg-blue-50/60 border border-blue-200 flex flex-col sm:flex-row items-center justify-between gap-5 mt-4">
               <div className="w-full sm:w-1/2 space-y-2">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-300 font-semibold">Your Track Progress</span>
-                  <span className="text-emerald-400 font-bold">{progressPercent}% Completed</span>
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-slate-800">Your Progress</span>
+                  <span className="text-[#0056d2] font-bold">{progressPercent}% Completed</span>
                 </div>
-                <div className="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-blue-200 overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 transition-all duration-500"
+                    className="h-full bg-[#0056d2] transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
-                <span className="text-[11px] text-slate-400 font-mono block">
+                <span className="text-[11px] text-slate-600 block">
                   {completedCount} of {totalLessons} coding labs completed
                 </span>
               </div>
@@ -135,25 +164,25 @@ export function CourseSyllabusView({ course }: CourseSyllabusViewProps) {
               <Link
                 href={`/learn/${course.slug}/${nextUpLesson.id}`}
                 onClick={() => sound.playClick()}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm uppercase font-mono tracking-wider transition-all shadow-[0_0_25px_rgba(16,231,117,0.3)] hover:scale-102"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-[#0056d2] hover:bg-[#0041b8] text-white font-bold text-sm tracking-wide transition-all shadow-xs"
               >
-                <span>{completedCount === 0 ? "Begin First Lab" : "Resume Coding"}</span>
+                <span>{completedCount === 0 ? "Enroll & Begin Lab 1.1" : "Resume Course"}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           ) : (
-            <div className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="p-5 rounded-xl bg-slate-100 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h3 className="font-bold text-white text-sm">
+                <h3 className="font-bold text-slate-900 text-sm">
                   {course.title} is In Active Development
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-600 mt-1">
                   We are porting the WebAssembly test harness and interactive curriculum.
                 </p>
               </div>
               <Link
                 href="/learn/python"
-                className="px-5 py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-mono font-bold text-xs uppercase shadow-[0_0_15px_rgba(16,231,117,0.3)]"
+                className="px-5 py-2.5 rounded-lg bg-[#0056d2] text-white font-bold text-xs"
               >
                 Take Python Track Now
               </Link>
@@ -162,46 +191,46 @@ export function CourseSyllabusView({ course }: CourseSyllabusViewProps) {
         </div>
       </section>
 
-      {/* AdSense Placement */}
+      {/* AdSense Banner */}
       <AdBanner slotType="leaderboard" />
 
-      {/* Syllabus / Module List */}
+      {/* Syllabus Modules Breakdown */}
       {isAvailable && (
         <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6 flex-1">
           <div className="space-y-1">
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Curriculum & Practical Labs
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Syllabus &amp; Guided Projects
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400">
-              Each module culminates in production-grade challenges evaluated against unit test suites.
+            <p className="text-xs sm:text-sm text-slate-600">
+              Complete all guided labs and capstone challenges to earn your verified credential.
             </p>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             {course.modules.map((module, mIdx) => (
               <div
                 key={module.id}
-                className="rounded-2xl border border-slate-800 bg-[#090b10] overflow-hidden"
+                className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs"
               >
                 {/* Module Header */}
-                <div className="p-4 sm:p-5 bg-[#0c0f17] border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+                <div className="p-4 sm:p-5 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="space-y-0.5">
-                    <span className="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
-                      Chapter {mIdx + 1}
+                    <span className="text-[11px] uppercase tracking-wider text-[#0056d2] font-bold">
+                      Module {mIdx + 1}
                     </span>
-                    <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                    <h3 className="text-base font-bold text-slate-900">
                       {module.title}
                     </h3>
-                    <p className="text-xs text-slate-400">{module.description}</p>
+                    <p className="text-xs text-slate-600">{module.description}</p>
                   </div>
 
-                  <div className="text-xs font-mono text-slate-400 shrink-0">
-                    {module.lessons.length} Challenge{module.lessons.length > 1 ? "s" : ""}
+                  <div className="text-xs font-medium text-slate-500 shrink-0">
+                    {module.lessons.length} Guided Lab{module.lessons.length > 1 ? "s" : ""}
                   </div>
                 </div>
 
                 {/* Lessons List */}
-                <div className="divide-y divide-slate-800/60">
+                <div className="divide-y divide-slate-100">
                   {module.lessons.map((lesson) => {
                     const isCompleted = completedIds.includes(lesson.id);
 
@@ -210,16 +239,16 @@ export function CourseSyllabusView({ course }: CourseSyllabusViewProps) {
                         key={lesson.id}
                         href={`/learn/${course.slug}/${lesson.id}`}
                         onClick={() => sound.playClick()}
-                        className="group p-3.5 sm:p-5 flex items-center justify-between gap-3 sm:gap-4 hover:bg-slate-900/50 transition-all"
+                        className="group p-3.5 sm:p-4 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition-colors"
                       >
-                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="shrink-0">
                             {isCompleted ? (
-                              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
                                 <CheckCircle2 className="w-4 h-4" />
                               </div>
                             ) : (
-                              <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 group-hover:text-white group-hover:border-slate-700 transition-colors">
+                              <div className="w-8 h-8 rounded-full bg-blue-50 text-[#0056d2] flex items-center justify-center group-hover:bg-[#0056d2] group-hover:text-white transition-colors">
                                 <Terminal className="w-4 h-4" />
                               </div>
                             )}
@@ -227,26 +256,26 @@ export function CourseSyllabusView({ course }: CourseSyllabusViewProps) {
 
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <h4 className="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors truncate">
+                              <h4 className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-[#0056d2] transition-colors truncate">
                                 {lesson.title}
                               </h4>
-                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 shrink-0">
+                              <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
                                 {lesson.difficulty}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono mt-0.5">
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                               <span>{lesson.estimatedMinutes} mins</span>
                               <span>•</span>
-                              <span className="text-emerald-400">+{lesson.xpReward} XP</span>
+                              <span className="text-[#0056d2] font-medium">+{lesson.xpReward} XP</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400 group-hover:text-emerald-400 transition-colors shrink-0">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0056d2] shrink-0">
                           <span className="hidden sm:inline">
-                            {isCompleted ? "Review Lab" : "Launch Lab"}
+                            {isCompleted ? "Review Lab" : "Start Lab"}
                           </span>
-                          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                         </div>
                       </Link>
                     );

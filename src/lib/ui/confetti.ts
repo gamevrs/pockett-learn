@@ -17,8 +17,8 @@ export function fireCelebrationConfetti() {
     });
   }
 
-  // Neon electric cyber confetti colors (Verge + Emerald)
-  const colors = ["#00F59B", "#00E5FF", "#FFB800", "#FF3366", "#FFFFFF"];
+  // Coursera Blue + Academic Gold & Emerald confetti colors
+  const colors = ["#0056D2", "#2A73CC", "#FFB800", "#107C41", "#FFFFFF"];
 
   fire(0.25, {
     spread: 26,

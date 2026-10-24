@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, XCircle, ShieldAlert, Sparkles, HelpCircle } from "lucide-react";
+import { CheckCircle2, XCircle, ShieldAlert, Sparkles } from "lucide-react";
 import { TestCase, TestResult } from "@/lib/courses/types";
 
 interface TestResultsProps {
@@ -23,34 +23,34 @@ export function TestResults({
 
   return (
     <div
-      className={`flex flex-col bg-[#0a0d14] border border-slate-800 rounded-xl overflow-hidden font-mono text-xs ${className}`}
+      className={`flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden text-xs shadow-xs ${className}`}
     >
       {/* Header */}
-      <div className="h-9 bg-[#0e121c] border-b border-slate-800/80 px-4 flex items-center justify-between text-slate-400 select-none">
+      <div className="h-9 bg-slate-50 border-b border-slate-200 px-4 flex items-center justify-between text-slate-700 select-none">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="font-semibold text-slate-300">Automated Test Suites</span>
+          <Sparkles className="w-3.5 h-3.5 text-[#0056d2]" />
+          <span className="font-bold text-slate-800">Automated Test Suites</span>
         </div>
 
         {hasRun && (
           <div className="flex items-center gap-1.5 font-bold">
             <span
-              className={`px-2 py-0.5 rounded text-[11px] border ${
+              className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                 passedCount === totalCount
-                  ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                  : "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                  : "bg-rose-50 text-rose-700 border border-rose-200"
               }`}
             >
-              {passedCount} / {totalCount} Passed
+              {passedCount} of {totalCount} Passed
             </span>
           </div>
         )}
       </div>
 
       {/* List of Test Cases */}
-      <div className="p-3 divide-y divide-slate-800/60 max-h-[220px] overflow-y-auto">
+      <div className="p-3 divide-y divide-slate-100 max-h-[220px] overflow-y-auto">
         {!hasRun && !isRunning && (
-          <div className="text-slate-600 italic py-4 text-center">
+          <div className="text-slate-500 italic py-4 text-center">
             {totalCount} test case{totalCount > 1 ? "s" : ""} waiting for evaluation.
           </div>
         )}
@@ -66,11 +66,11 @@ export function TestResults({
                 <div className="flex items-start gap-2">
                   <div className="mt-0.5 shrink-0">
                     {isPassed ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     ) : isFailed ? (
-                      <XCircle className="w-4 h-4 text-rose-400" />
+                      <XCircle className="w-4 h-4 text-rose-600" />
                     ) : (
-                      <div className="w-4 h-4 rounded-full border border-slate-700 flex items-center justify-center text-[10px] text-slate-500">
+                      <div className="w-4 h-4 rounded-full border border-slate-300 flex items-center justify-center text-[10px] text-slate-500 font-medium">
                         {idx + 1}
                       </div>
                     )}
@@ -79,17 +79,17 @@ export function TestResults({
                     <span
                       className={`text-xs ${
                         isPassed
-                          ? "text-slate-200"
+                          ? "text-slate-800 font-medium"
                           : isFailed
-                          ? "text-rose-300 font-semibold"
-                          : "text-slate-400"
+                          ? "text-rose-700 font-bold"
+                          : "text-slate-600"
                       }`}
                     >
                       {tc.description}
                     </span>
                     {tc.hidden && (
-                      <span className="ml-2 text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                        Secret Challenge Test
+                      <span className="ml-2 text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium border border-slate-200">
+                        Edge Case Test
                       </span>
                     )}
                   </div>
@@ -97,12 +97,12 @@ export function TestResults({
 
                 <div className="shrink-0">
                   {isPassed && (
-                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                       PASSED
                     </span>
                   )}
                   {isFailed && (
-                    <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+                    <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
                       FAILED
                     </span>
                   )}
@@ -111,12 +111,14 @@ export function TestResults({
 
               {/* Error Detail */}
               {isFailed && result?.error && (
-                <div className="mt-2 ml-6 p-2 rounded bg-rose-950/30 border border-rose-900/40 text-[11px] text-rose-300">
-                  <div className="flex items-center gap-1 font-semibold text-rose-400 mb-0.5">
-                    <ShieldAlert className="w-3 h-3" />
-                    <span>Assertion Mismatch</span>
+                <div className="mt-2 ml-6 p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                  <div className="flex items-center gap-1 font-bold text-rose-700 mb-0.5">
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    <span>Assertion Check Failed</span>
                   </div>
-                  <div className="font-mono">{result.error}</div>
+                  <div className="font-mono text-[11px] text-rose-900 bg-white/70 p-1.5 rounded mt-1 border border-rose-100">
+                    {result.error}
+                  </div>
                 </div>
               )}
             </div>

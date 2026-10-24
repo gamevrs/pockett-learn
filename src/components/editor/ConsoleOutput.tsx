@@ -32,24 +32,24 @@ export function ConsoleOutput({
 
   return (
     <div
-      className={`flex flex-col bg-[#080a0f] border border-slate-800 rounded-xl overflow-hidden font-mono text-xs ${className}`}
+      className={`flex flex-col bg-slate-900 border border-slate-300 rounded-xl overflow-hidden font-mono text-xs shadow-xs ${className}`}
     >
       {/* Console Header */}
-      <div className="h-9 bg-[#0b0e16] border-b border-slate-800/80 px-4 flex items-center justify-between text-slate-400 select-none">
+      <div className="h-9 bg-slate-800 border-b border-slate-700/80 px-4 flex items-center justify-between text-slate-300 select-none">
         <div className="flex items-center gap-2">
-          <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="font-semibold text-slate-300">Terminal Output</span>
+          <Terminal className="w-3.5 h-3.5 text-blue-400" />
+          <span className="font-semibold text-white">Execution Console</span>
           {isRunning && (
-            <span className="flex items-center gap-1.5 text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+            <span className="flex items-center gap-1.5 text-[10px] text-amber-300 bg-amber-900/40 px-2 py-0.5 rounded border border-amber-600/40">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-              Executing...
+              Running in WebAssembly...
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-3">
           {executionTimeMs !== undefined && executionTimeMs > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-slate-500">
+            <span className="flex items-center gap-1 text-[11px] text-slate-400">
               <Clock className="w-3 h-3" />
               {executionTimeMs}ms
             </span>
@@ -57,8 +57,8 @@ export function ConsoleOutput({
           {onClear && hasContent && (
             <button
               onClick={handleClear}
-              title="Clear terminal"
-              className="text-slate-500 hover:text-slate-300 transition-colors p-1"
+              title="Clear terminal output"
+              className="text-slate-400 hover:text-white transition-colors p-1"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -69,28 +69,28 @@ export function ConsoleOutput({
       {/* Terminal Body */}
       <div className="p-3.5 min-h-[120px] max-h-[220px] overflow-y-auto leading-relaxed space-y-1 select-text">
         {isRunning && statusText && (
-          <div className="text-amber-400/90 italic flex items-center gap-2">
+          <div className="text-amber-300 italic flex items-center gap-2">
             <span className="animate-spin">⠋</span> {statusText}
           </div>
         )}
 
         {!hasContent && !isRunning && (
-          <div className="text-slate-600 italic py-3 text-center">
-            Click &quot;Run Code&quot; or &quot;Test Solution&quot; to inspect output.
+          <div className="text-slate-500 italic py-3 text-center font-sans">
+            Click &quot;Run&quot; or &quot;Submit Assignment&quot; to inspect output.
           </div>
         )}
 
         {stdout && (
-          <div className="text-slate-200 whitespace-pre-wrap font-mono">
+          <div className="text-emerald-300 whitespace-pre-wrap font-mono">
             {stdout}
           </div>
         )}
 
         {stderr && (
-          <div className="text-rose-400 bg-rose-950/20 border border-rose-900/40 rounded p-2 mt-2 whitespace-pre-wrap font-mono">
+          <div className="text-rose-300 bg-rose-950/40 border border-rose-800/60 rounded p-2.5 mt-2 whitespace-pre-wrap font-mono">
             <div className="flex items-center gap-1.5 font-bold mb-1 text-rose-300">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-              <span>Runtime Exception</span>
+              <span>Traceback (Execution Error)</span>
             </div>
             {stderr}
           </div>

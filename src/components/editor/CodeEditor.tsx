@@ -2,17 +2,16 @@
 
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import { Copy, RotateCcw, Check, Sparkles } from "lucide-react";
+import { Copy, RotateCcw, Check, FileCode } from "lucide-react";
 import { sound } from "@/lib/sound/sound";
 
-// Dynamically import Monaco Editor to avoid SSR errors
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-[#0d1017] text-slate-500 font-mono text-xs">
+    <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-400 font-mono text-xs">
       <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-        <span>Initializing Monaco Editor...</span>
+        <div className="w-2 h-2 rounded-full bg-[#0056d2] animate-ping" />
+        <span>Initializing Code Editor...</span>
       </div>
     </div>
   ),
@@ -53,18 +52,16 @@ export function CodeEditor({
 
   return (
     <div
-      className={`flex flex-col h-full bg-[#0d1017] border border-slate-800 rounded-xl overflow-hidden shadow-2xl relative ${className}`}
+      className={`flex flex-col h-full bg-slate-900 border border-slate-300 rounded-xl overflow-hidden shadow-sm relative ${className}`}
     >
       {/* Editor Header */}
-      <div className="h-10 bg-[#090b10] border-b border-slate-800/80 px-4 flex items-center justify-between text-xs text-slate-400 select-none">
-        <div className="flex items-center gap-2 font-mono">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block" />
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80 inline-block" />
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
-          <span className="ml-2 font-semibold text-slate-300">
+      <div className="h-10 bg-slate-800 border-b border-slate-700/80 px-4 flex items-center justify-between text-xs text-slate-300 select-none">
+        <div className="flex items-center gap-2">
+          <FileCode className="w-4 h-4 text-blue-400" />
+          <span className="font-semibold text-white font-mono text-xs">
             solution.{language === "python" ? "py" : language}
           </span>
-          <span className="text-[10px] text-emerald-400/80 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase">
+          <span className="text-[10px] text-blue-300 bg-blue-900/60 px-2 py-0.5 rounded font-medium">
             Active Workspace
           </span>
         </div>
@@ -73,8 +70,8 @@ export function CodeEditor({
           {onReset && (
             <button
               onClick={handleReset}
-              title="Reset to starter code"
-              className="flex items-center gap-1 px-2 py-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors text-[11px] font-mono"
+              title="Reset code template"
+              className="flex items-center gap-1 px-2.5 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-xs font-medium"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Reset</span>
@@ -84,7 +81,7 @@ export function CodeEditor({
           <button
             onClick={handleCopy}
             title="Copy code"
-            className="flex items-center gap-1 px-2 py-1 rounded text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors text-[11px] font-mono"
+            className="flex items-center gap-1 px-2.5 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition-colors text-xs font-medium"
           >
             {copied ? (
               <>
