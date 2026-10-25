@@ -11,6 +11,7 @@ import { currentStreak, levelFor, setSoundEnabled, useProgress } from "@/data/pr
 import { displayNameOf, useAuth } from "@/data/auth/store";
 
 const LINKS = [
+  { href: "/learn", label: "Foundations" },
   { href: "/projects", label: "Projects" },
   { href: "/dashboard", label: "Progress" },
   { href: "/playground", label: "Sandbox" },
@@ -40,6 +41,7 @@ export function Navbar() {
 
   // The lesson workspace is a full-screen tool; it has its own slim header.
   if (/^\/projects\/[^/]+\/[^/]+/.test(pathname) && !pathname.endsWith("/play")) return null;
+  if (/^\/learn\/[^/]+/.test(pathname)) return null;
 
   return (
     <header className="sticky top-0 z-50 px-3 pt-3 sm:px-4">

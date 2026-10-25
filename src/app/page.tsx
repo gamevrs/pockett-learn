@@ -8,6 +8,8 @@ import { UnlockExplorer } from "@/components/landing/UnlockExplorer";
 import { ProjectCard, UpcomingCard } from "@/components/projects/ProjectCard";
 import { FeatureIcon } from "@/components/ui/icons";
 import { AdSlot } from "@/components/ads/AdSlot";
+import { FOUNDATIONS } from "@/content/foundations";
+import { ModuleIcon } from "@/learn/module-icons";
 
 const LESSON_COUNT = PROJECTS.reduce((n, p) => n + flattenLessons(p).length, 0);
 const GARAGE = PROJECTS.find((p) => p.slug === "garage") ?? PROJECTS[0];
@@ -125,7 +127,7 @@ export default function HomePage() {
             Write real Python, JavaScript or SQL, one short lesson at a time. Every lesson you pass switches on part of a live 3D project, so you can see exactly what your code does.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/projects/garage/garage-1-ignition" className="btn btn-primary !h-12 !px-6 !text-base">
+            <Link href="/learn" className="btn btn-primary !h-12 !px-6 !text-base">
               Start learning <ArrowRight className="h-4 w-4" />
             </Link>
             <Link href="/projects" className="btn !h-12 !px-6 !text-base">
@@ -162,6 +164,36 @@ export default function HomePage() {
             </div>
           ))}
         </dl>
+      </section>
+
+      {/* ───────── foundations ───────── */}
+      <section className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-32">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <SectionHeader
+            eyebrow="New to code?"
+            title="Start with how code really works"
+            body="Foundations takes you from a single bit to the four pillars of OOP and design patterns. Short steps, and every one asks you to try something."
+          />
+          <Link href="/learn" className="btn btn-primary">
+            Start Foundations <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {FOUNDATIONS.modules.map((m, i) => (
+            <li key={m.id}>
+              <Link href={`/learn#${m.id}`} className="pop-card flex h-full flex-col p-5">
+                <div className="flex items-center justify-between">
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-tint text-brand">
+                    <ModuleIcon icon={m.icon} />
+                  </span>
+                  <span className="font-mono text-xs text-ink-3">0{i + 1}</span>
+                </div>
+                <p className="mt-4 font-medium leading-snug">{m.title}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink-2">{m.blurb}</p>
+              </Link>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* ───────── how it teaches ───────── */}

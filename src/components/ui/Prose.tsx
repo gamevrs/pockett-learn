@@ -57,12 +57,13 @@ const SYNTAX: Record<CodeLanguage, { keywords: Set<string>; comment: RegExp; cas
 };
 
 /** Maps a fence tag (```js, ~~~sql, …) to a highlighter. */
-function fenceLanguage(tag: string, fallback: CodeLanguage): CodeLanguage {
+function fenceLanguage(tag: string, fallback: CodeLanguage): CodeLanguage | "text" {
   const t = tag.trim().toLowerCase();
+  if (["text", "txt", "output", "console", "plain"].includes(t)) return "text";
   if (["js", "javascript", "ts", "typescript"].includes(t)) return "javascript";
   if (["py", "python"].includes(t)) return "python";
   if (t === "sql") return "sql";
-  if (["cs", "csharp", "c#"].includes(t)) return "csharp";
+  if (["cs", "csharp", "c#", "java", "kotlin"].includes(t)) return "csharp";
   if (["cpp", "c++", "cc"].includes(t)) return "cpp";
   if (t === "go") return "go";
   return fallback;
@@ -80,6 +81,11 @@ export function CodeBlock({ code, language = "python" }: { code: string; languag
       ))}
     </code>
   );
+}
+
+/** Inline mini-markdown (`code`, **bold**, *italic*) for short strings like answer options. */
+export function InlineProse({ text }: { text: string }) {
+  return <>{inline(text, "i")}</>;
 }
 
 /** Kept for existing call sites. */
@@ -145,7 +151,7 @@ export function Prose({ source, className = "", language = "python" }: { source:
       i++;
       blocks.push(
         <pre key={key++}>
-          <CodeBlock code={body.join("\n")} language={lang} />
+          {lang === "text" ? <code>{body.join("\n")}</code> : <CodeBlock code={body.join("\n")} language={lang} />}
         </pre>,
       );
       continue;

@@ -1,5 +1,5 @@
 """Runs lesson cases through the real engine prelude. Input: JSON file path. Output: JSON on stdout."""
-import json, sys
+import contextlib, io, json, sys
 
 prelude = open(sys.argv[2], encoding="utf8").read()
 cases = json.load(open(sys.argv[1], encoding="utf8"))
@@ -11,7 +11,9 @@ for case in cases:
     entry = {"label": case["label"], "error": run["error"], "results": []}
     if not run["error"]:
         for t in case["tests"]:
-            r = json.loads(ns["_run_test"](t["assertionCode"], run["stdout"]))
+            # tests may call learner functions that print; keep that out of our JSON output
+            with contextlib.redirect_stdout(io.StringIO()):
+                r = json.loads(ns["_run_test"](t["assertionCode"], run["stdout"]))
             entry["results"].append({"id": t["id"], "ok": r["ok"], "error": r.get("error")})
         # the scene snapshot must work too
         json.loads(ns["_snapshot"]())

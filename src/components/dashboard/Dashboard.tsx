@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Award, Flame, Flag, KeyRound, RotateCcw, Target, Zap, type LucideIcon } from "lucide-react";
 import { ProjectIcon } from "@/components/ui/icons";
+import { FOUNDATIONS } from "@/content/foundations";
+import { trackLessons } from "@/learn/types";
+import { GraduationCap } from "lucide-react";
 import { flattenLessons, type Project } from "@/engine/types";
 import { currentStreak, levelFor, resetAllProgress, useProgress } from "@/data/progress/store";
 import { resetEverywhere } from "@/data/progress/sync";
@@ -86,6 +89,8 @@ export function Dashboard({ projects }: { projects: Project[] }) {
         </div>
       </div>
 
+      <FoundationsCard />
+
       <h2 className="font-display mt-14 text-[1.75rem]">Your builds</h2>
       <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((p) => {
@@ -163,5 +168,29 @@ export function Dashboard({ projects }: { projects: Project[] }) {
         )}
       </div>
     </div>
+  );
+}
+
+function FoundationsCard() {
+  const progress = useProgress();
+  const lessons = trackLessons(FOUNDATIONS);
+  const done = lessons.filter((l) => progress.completed[l.id]).length;
+  const next = lessons.find((l) => !progress.completed[l.id]);
+  const pct = lessons.length ? Math.round((done / lessons.length) * 100) : 0;
+  return (
+    <Link href={next ? `/learn/${next.id}` : "/learn"} className="pop-card mt-10 flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-tint text-brand">
+        <GraduationCap className="h-[18px] w-[18px]" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold leading-tight">Foundations</p>
+        <p className="text-xs text-ink-3">
+          {done}/{lessons.length} lessons · {next ? `Next: ${next.title}` : "Complete"}
+        </p>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2">
+          <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    </Link>
   );
 }

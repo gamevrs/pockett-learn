@@ -12,6 +12,8 @@ import { solutionThrough, starterFor } from "../src/engine/compose.ts";
 import { flattenLessons, languageOf, YOUR_TURN_MARKER } from "../src/engine/types.ts";
 import { executeJs, runJsTests } from "../src/engine/runtimes/javascript/engine.ts";
 import { executeSql, runSqlTests } from "../src/engine/runtimes/sql/engine.ts";
+import { readFileSync } from "node:fs";
+import { FOUNDATIONS } from "../src/content/foundations/index.ts";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const only = process.argv[2];
@@ -49,6 +51,60 @@ for (const file of files) {
     cases.push({ label: `${tag}::starter`, language, setup, source: starterFor(project, i, {}), tests: lesson.tests, expect: "fail" });
   });
   for (const f of featureIds) if (!unlocked.has(f)) problems.push(`${project.slug}: feature "${f}" is never unlocked by any lesson`);
+}
+
+// ── Foundations (concept lessons) ──
+if (!only || only === "foundations") {
+  // widget types that exist: keys of the per-module registries
+  const widgetDir = join(here, "..", "src", "learn", "widgets");
+  const widgetTypes = new Set();
+  for (const mod of readdirSync(widgetDir, { withFileTypes: true }).filter((d) => d.isDirectory())) {
+    let src = "";
+    try {
+      src = readFileSync(join(widgetDir, mod.name, "index.ts"), "utf8");
+    } catch {
+      continue;
+    }
+    for (const m of src.matchAll(/^\s*"?([\w-]+)"?\s*:\s*\{\s*Component/gm)) {
+      // registries are merged by spread, so a repeated key would silently replace another widget
+      if (widgetTypes.has(m[1])) problems.push(`widgets: "${m[1]}" is registered by more than one module (${mod.name})`);
+      widgetTypes.add(m[1]);
+    }
+  }
+  const ids = new Set();
+  for (const mod of FOUNDATIONS.modules) {
+    for (const lesson of mod.lessons) {
+      const tag = `foundations/${lesson.id}`;
+      if (!lesson.id.startsWith("fnd-")) problems.push(`${tag}: lesson ids must start with "fnd-"`);
+      if (ids.has(lesson.id)) problems.push(`${tag}: duplicate lesson id`);
+      ids.add(lesson.id);
+      if (lesson.steps.length < 4) warn.push(`${tag}: only ${lesson.steps.length} steps`);
+      const interactive = lesson.steps.filter((st) => st.kind === "question" || st.kind === "code" || (st.kind === "explain" && st.widget)).length;
+      if (interactive < Math.ceil(lesson.steps.length / 2)) warn.push(`${tag}: fewer than half the steps are interactive`);
+      lesson.steps.forEach((st, si) => {
+        const stag = `${tag} step ${si + 1}`;
+        const widget = (st.kind === "explain" || st.kind === "question") && st.widget;
+        if (widget && !widgetTypes.has(widget.type)) problems.push(`${stag}: unknown widget "${widget.type}"`);
+        if (st.kind === "question") {
+          const q = st.question;
+          if (!st.explanation) problems.push(`${stag}: question without an explanation`);
+          if (q.type === "choice") {
+            const answers = Array.isArray(q.answer) ? q.answer : [q.answer];
+            if (q.options.length < 2) problems.push(`${stag}: choice needs at least 2 options`);
+            if (answers.some((a) => !Number.isInteger(a) || a < 0 || a >= q.options.length)) problems.push(`${stag}: choice answer out of range`);
+          }
+          if (q.type === "widget" && !widget) problems.push(`${stag}: widget question without a widget`);
+          if (q.type === "order" && q.items.length < 3) warn.push(`${stag}: order question with fewer than 3 items`);
+          if (q.type === "text" && q.answer.length === 0) problems.push(`${stag}: text question without accepted answers`);
+        }
+        if (st.kind === "code") {
+          if (st.tests.length < 2) problems.push(`${stag}: code step needs at least 2 tests`);
+          cases.push({ label: `${stag}::solution`, language: st.language, setup: "", source: st.solution, tests: st.tests, expect: "pass" });
+          cases.push({ label: `${stag}::starter`, language: st.language, setup: "", source: st.starter, tests: st.tests, expect: "fail" });
+        }
+      });
+    }
+  }
 }
 
 // Python runs in a real CPython with the engine prelude; JavaScript and SQL run in-process with
