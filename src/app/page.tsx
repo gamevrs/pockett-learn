@@ -39,10 +39,10 @@ export default function HomePage() {
           </div>
 
           <div className="rise relative min-w-0" style={{ animationDelay: "120ms" }}>
-            <div className="h-[380px] sm:h-[480px]">
+            <div className="h-[440px] sm:h-[480px]">
               <HeroStage />
             </div>
-            <div className="float absolute -bottom-5 -left-3 hidden rotate-[-4deg] rounded-2xl border-2 border-[var(--line-strong)] bg-surface px-4 py-3 font-mono text-xs shadow-[var(--pop-shadow)] sm:block">
+            <div className="float mt-5 hidden w-fit rotate-[-2deg] rounded-2xl border-2 border-[var(--line-strong)] bg-surface px-4 py-3 font-mono text-xs shadow-[var(--pop-shadow)] sm:block">
               <span className="text-ink-3">def</span> <span className="text-brand">steer</span>(left, right):
               <br />
               &nbsp;&nbsp;<span className="text-ink-3">return</span> <span className="text-brand">-30</span> <span className="text-ink-3">if</span> left …

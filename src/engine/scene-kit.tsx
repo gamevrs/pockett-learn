@@ -115,3 +115,30 @@ export function TouchControls({
     </div>
   );
 }
+
+/** An inline group of hold-to-press touch buttons (place it in your own HUD layout). */
+export function TouchButtons({ input, buttons, onTouch }: { input: InputState; buttons: TouchAction[]; onTouch?: () => void }) {
+  return (
+    <div className="flex gap-2">
+      {buttons.map((t) => (
+        <button
+          key={t.action}
+          type="button"
+          aria-label={t.action}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onTouch?.();
+            input.set(t.action, true);
+          }}
+          onPointerUp={() => input.set(t.action, false)}
+          onPointerLeave={() => input.set(t.action, false)}
+          onPointerCancel={() => input.set(t.action, false)}
+          className="grid h-12 w-12 select-none place-items-center rounded-full border-2 border-white/30 bg-white/10 text-lg font-bold text-white backdrop-blur active:bg-white/30"
+          style={{ touchAction: "none" }}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}

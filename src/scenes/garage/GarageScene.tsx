@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Bot, Video } from "lucide-react";
 import type { SceneProps } from "@/engine/scene";
-import { TouchControls, useInput } from "@/engine/scene-kit";
+import { TouchButtons, useInput } from "@/engine/scene-kit";
 import { useThreeStage } from "@/engine/three-kit";
 import { GarageController, TRACK } from "./controller";
 import { createGarageWorld, type CameraMode } from "./world3d";
@@ -46,13 +46,17 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
   // UI -> game loop requests (the controller itself lives inside the 3D app)
   const requests = useRef({ toggleAutopilot: false });
   const [hud, setHud] = useState<Hud>(EMPTY_HUD);
-  const [camera, setCamera] = useState<CameraMode>("overview");
+  // Third-person chase cam is the default view; the camera button switches to the overview.
+  const [camera, setCamera] = useState<CameraMode>("chase");
   const [focused, setFocused] = useState(false);
+  // Demos (autoplay) drive themselves until the visitor touches anything; from then on the
+  // virtual driver is off for good and only the visitor (or their autopilot) drives.
+  const [tookControl, setTookControl] = useState(false);
 
   // Latest props for the render loop (which lives outside React's render cycle).
-  const live = useRef({ program, unlocked, celebration, autoplay, camera });
+  const live = useRef({ program, unlocked, celebration, autoplay, camera, tookControl });
   useEffect(() => {
-    live.current = { program, unlocked, celebration, autoplay, camera };
+    live.current = { program, unlocked, celebration, autoplay, camera, tookControl };
   });
 
   useThreeStage(canvasRef, (ctx) => {
@@ -64,7 +68,8 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
 
     return {
       frame(dt, time) {
-        const { program: prog, unlocked: open, celebration: cel, autoplay: auto, camera: cam } = live.current;
+        const { program: prog, unlocked: open, celebration: cel, camera: cam } = live.current;
+        const auto = live.current.autoplay && !live.current.tookControl;
         const alive = (id: string) => open.has(id);
 
         // one-shot keys
@@ -105,8 +110,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
             sensors: controller.autopilotActive ? controller.sensors : null,
             power: controller.power,
             events: controller.events,
-            // demos cut between the wide shot and the chase cam like a broadcast
-            camera: auto ? (Math.floor(time / 8) % 2 ? "chase" : "overview") : cam,
+            camera: cam,
           },
           dt,
           time,
@@ -149,11 +153,16 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
     if (!el) return;
     const on = () => setFocused(true);
     const off = () => setFocused(false);
+    const take = () => setTookControl(true);
     el.addEventListener("focus", on);
     el.addEventListener("blur", off);
+    el.addEventListener("pointerdown", take);
+    el.addEventListener("keydown", take);
     return () => {
       el.removeEventListener("focus", on);
       el.removeEventListener("blur", off);
+      el.removeEventListener("pointerdown", take);
+      el.removeEventListener("keydown", take);
     };
   }, []);
 
@@ -167,9 +176,16 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
   const lines = program ? program.stdout.split("\n").filter(Boolean).slice(tiny ? -1 : compact ? -3 : -5) : [];
   const hasAutopilot = alive("autopilot") && !!program?.hasHook("autopilot.steer");
   const toggleAutopilot = () => {
+    setTookControl(true);
     requests.current.toggleAutopilot = true;
     canvasRef.current?.focus({ preventScroll: true });
   };
+  const toggleCamera = () => {
+    setTookControl(true);
+    setCamera((c) => (c === "chase" ? "overview" : "chase"));
+    canvasRef.current?.focus({ preventScroll: true });
+  };
+  const showLapBoard = canDrive && (alive("checkpoints") || alive("tires") || hud.lap > 0);
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -189,106 +205,116 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
         )}
       </div>
 
-      {/* dashboard terminal */}
-      <div className={`pointer-events-none absolute left-3 top-12 ${compact ? "max-w-[46%]" : "max-w-[min(62%,280px)]"}`}>
-        <div className="rounded-xl border border-white/10 bg-black/45 px-3 py-2 font-mono text-[11px] leading-relaxed backdrop-blur">
-          {lit ? (
-            lines.length ? (
-              lines.map((l, i) => (
-                <p key={i} className="truncate text-violet-100/90">
-                  <span className="text-[#8f74ff]">›</span> {l}
-                </p>
-              ))
+      {/* HUD: rows (top info, bottom gauges + buttons, touch pads) so panels can never overlap */}
+      <div className="pointer-events-none absolute inset-0 flex flex-col gap-2 p-3 pt-12">
+        <div className="flex items-start justify-between gap-2">
+          <div className={`min-w-0 rounded-xl border border-white/10 bg-black/45 px-3 py-2 font-mono text-[11px] leading-relaxed backdrop-blur ${compact ? "max-w-[50%]" : "max-w-[min(60%,280px)]"}`}>
+            {lit ? (
+              lines.length ? (
+                lines.map((l, i) => (
+                  <p key={i} className="truncate text-violet-100/90">
+                    <span className="text-[#8f74ff]">›</span> {l}
+                  </p>
+                ))
+              ) : (
+                <p className="text-white/45">› nothing printed yet</p>
+              )
             ) : (
-              <p className="text-white/45">› nothing printed yet</p>
-            )
-          ) : (
-            <>
-              <p className="font-bold uppercase tracking-[0.16em] text-[#b9a8ff]">{program ? "No power" : "Blueprint"}</p>
-              <p className="text-white/50">{program ? "print() something to boot the car" : "Press Run to boot the car"}</p>
-            </>
+              <>
+                <p className="font-bold uppercase tracking-[0.16em] text-[#b9a8ff]">{program ? "No power" : "Blueprint"}</p>
+                {!tiny && <p className="text-white/50">{program ? "print() something to boot the car" : "Press Run to boot the car"}</p>}
+              </>
+            )}
+          </div>
+
+          {showLapBoard && (
+            <div className="shrink-0 rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-right font-mono text-[11px] leading-relaxed text-white/60 backdrop-blur">
+              <p className="text-[13px] font-bold text-white">
+                Lap {hud.lap + 1} <span className="ml-1 text-violet-200">{hud.lapTime.toFixed(1)}s</span>
+              </p>
+              {hud.bestLap !== null && <p>Best {hud.bestLap.toFixed(2)}s</p>}
+              {alive("tires") && program?.has("tire") && !tiny && (
+                <p className="text-violet-200">
+                  {program.str("tire", "?")} tyres · grip {program.num("grip", 1).toFixed(2)}
+                </p>
+              )}
+              {alive("tires") && program?.has("best_lap") && !compact && (
+                <p>
+                  Pit: best {program.num("best_lap", 0).toFixed(1)}s · avg {program.num("average_lap", 0).toFixed(1)}s
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+          {hud.splitVisible ? (
+            <span className="pop-in rounded-full bg-[#8f74ff] px-3 py-1 font-mono text-[11px] font-bold text-[#0a0a10] shadow-[0_0_40px_rgba(143,116,255,0.6)]">
+              {hud.split}
+            </span>
+          ) : interactive && canDrive && !focused && !hud.autopilot && !compact ? (
+            <span className="rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white/80 backdrop-blur [@media(pointer:coarse)]:hidden">
+              Click the stage, then drive with W A S D · C switches camera
+            </span>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-end justify-between gap-2">
+            {canDrive ? <Speedo kmh={hud.kmh} top={hud.topSpeed} pedal={alive("throttle") ? hud.pedal : null} power={alive("throttle") ? hud.power : null} compact={compact} /> : <span />}
+
+            <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
+              {lit && interactive && (
+                <button
+                  onClick={toggleCamera}
+                  className="flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 text-[11px] font-bold text-white/85 backdrop-blur hover:bg-white/10"
+                  aria-label={camera === "chase" ? "Switch to overview camera" : "Switch to chase camera"}
+                  title="Switch camera (C)"
+                >
+                  <Video className="h-3.5 w-3.5" />
+                  {!compact && (camera === "chase" ? "Chase cam" : "Overview")}
+                </button>
+              )}
+              {hasAutopilot && interactive && (
+                <button
+                  onClick={toggleAutopilot}
+                  aria-pressed={hud.autopilot}
+                  title="Toggle autopilot (P)"
+                  className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+                    hud.autopilot ? "bg-[#8f74ff] text-[#0a0a10] shadow-[0_0_30px_rgba(143,116,255,0.55)]" : "border border-white/15 bg-black/55 text-white/85 backdrop-blur hover:bg-white/10"
+                  }`}
+                >
+                  <Bot className="h-3.5 w-3.5" />
+                  {compact ? (hud.autopilot ? "On" : "Off") : `Autopilot ${hud.autopilot ? "on" : "off"}`}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* touch screens get their own row of pads, below the gauges */}
+          {interactive && canDrive && (!autoplay || tookControl) && (
+            <div className="pointer-events-auto hidden items-center justify-between [@media(pointer:coarse)]:flex">
+              <TouchButtons
+                input={input}
+                onTouch={() => setTookControl(true)}
+                buttons={[
+                  { action: "left", label: "◀" },
+                  { action: "right", label: "▶" },
+                ]}
+              />
+              <TouchButtons
+                input={input}
+                onTouch={() => setTookControl(true)}
+                buttons={[
+                  { action: "brake", label: "■" },
+                  { action: "gas", label: "▲" },
+                ]}
+              />
+            </div>
           )}
         </div>
       </div>
 
-      {/* lap board */}
-      {canDrive && (alive("checkpoints") || alive("tires") || hud.lap > 0) && (
-        <div className="pointer-events-none absolute right-3 top-12 rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-right font-mono text-[11px] leading-relaxed text-white/60 backdrop-blur">
-          <p className="text-[13px] font-bold text-white">
-            Lap {hud.lap + 1} <span className="ml-1 text-violet-200">{hud.lapTime.toFixed(1)}s</span>
-          </p>
-          {hud.bestLap !== null && <p>Best {hud.bestLap.toFixed(2)}s</p>}
-          {alive("tires") && program?.has("tire") && (
-            <p className="text-violet-200">
-              {program.str("tire", "?")} tyres · grip {program.num("grip", 1).toFixed(2)}
-            </p>
-          )}
-          {alive("tires") && program?.has("best_lap") && !compact && (
-            <p>
-              Pit: best {program.num("best_lap", 0).toFixed(1)}s · avg {program.num("average_lap", 0).toFixed(1)}s
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* split toast */}
-      {hud.splitVisible && (
-        <div className="pointer-events-none absolute inset-x-0 top-[34%] flex justify-center">
-          <span className="pop-in rounded-full bg-[#8f74ff] px-4 py-1.5 font-mono text-xs font-bold text-[#0a0a10] shadow-[0_0_40px_rgba(143,116,255,0.6)]">
-            {hud.split}
-          </span>
-        </div>
-      )}
-
-      {/* speedometer */}
-      {canDrive && <Speedo kmh={hud.kmh} top={hud.topSpeed} pedal={alive("throttle") ? hud.pedal : null} power={alive("throttle") ? hud.power : null} compact={compact} />}
-
-      {/* controls */}
-      <div className="absolute bottom-3 right-3 z-10 flex items-center gap-2">
-        {lit && interactive && (
-          <button
-            onClick={() => setCamera((c) => (c === "chase" ? "overview" : "chase"))}
-            className="flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 text-[11px] font-bold text-white/85 backdrop-blur hover:bg-white/10"
-            aria-label="Switch camera"
-          >
-            <Video className="h-3.5 w-3.5" />
-            {!compact && (camera === "chase" ? "Chase cam" : "Overview")}
-          </button>
-        )}
-        {hasAutopilot && interactive && (
-          <button
-            onClick={toggleAutopilot}
-            className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-wide transition-colors ${
-              hud.autopilot ? "bg-[#8f74ff] text-[#0a0a10] shadow-[0_0_30px_rgba(143,116,255,0.55)]" : "border border-white/15 bg-black/55 text-white/85 backdrop-blur hover:bg-white/10"
-            }`}
-          >
-            <Bot className="h-3.5 w-3.5" />
-            Autopilot {hud.autopilot ? "on" : "off"}
-          </button>
-        )}
-      </div>
-
-      {interactive && canDrive && !focused && !hud.autopilot && !compact && (
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center [@media(pointer:coarse)]:hidden">
-          <span className="rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white/80 backdrop-blur">
-            Click the stage, then drive with W A S D · C switches camera
-          </span>
-        </div>
-      )}
-
-      {interactive && canDrive && (
-        <TouchControls
-          input={input}
-          left={[
-            { action: "left", label: "◀" },
-            { action: "right", label: "▶" },
-          ]}
-          right={[
-            { action: "brake", label: "■" },
-            { action: "gas", label: "▲" },
-          ]}
-        />
-      )}
     </div>
   );
 }
@@ -300,7 +326,7 @@ function Speedo({ kmh, top, pedal, power, compact }: { kmh: number; top: number;
   const sweep = 0.75; // 270° gauge
   const frac = Math.min(1, Math.max(0, kmh / top));
   return (
-    <div className="pointer-events-none absolute bottom-3 left-3 flex items-end gap-2.5">
+    <div className="pointer-events-none flex items-end gap-2.5">
       <div className="relative rounded-full border border-white/10 bg-black/45 backdrop-blur" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="absolute inset-0 rotate-[135deg]">
           <defs>
