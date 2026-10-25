@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Check, Clock, Play, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Clock } from "lucide-react";
 import { featuresUnlockedBy, flattenLessons, type Project } from "@/engine/types";
 import type { ProgramHandle } from "@/engine/program";
 import { latestBuild } from "@/engine/compose";
@@ -10,6 +10,7 @@ import { preloadPython, runProgram } from "@/engine/python/host";
 import { submittedCode, useProgress } from "@/data/progress/store";
 import { StageShell, type StageStatus } from "@/components/stage/StageShell";
 import { AdSlot } from "@/components/ads/AdSlot";
+import { FeatureIcon, ProjectIcon } from "@/components/ui/icons";
 
 export function ProjectHub({ project }: { project: Project }) {
   const progress = useProgress();
@@ -67,130 +68,165 @@ export function ProjectHub({ project }: { project: Project }) {
   }, [buildKey]);
 
   const cta = nextLesson ?? lessons[0];
-  const ctaLabel = finished ? "Replay from the start" : doneIds.length === 0 ? "Start building" : `Continue: ${nextLesson?.title}`;
+  const ctaLabel = finished ? "Replay from the start" : doneIds.length === 0 ? "Start the first lesson" : `Continue: ${nextLesson?.title}`;
 
   return (
     <div>
-      <section className="relative overflow-hidden border-b border-line">
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_1.15fr] lg:py-16">
+      <section className="border-b border-line">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_1.2fr] lg:py-16">
           <div className="flex min-w-0 flex-col justify-center">
-            <p className="eyebrow">
-              {project.difficulty} · ~{project.hours}h · {lessons.length} lessons
+            <Link href="/projects" className="mb-6 inline-flex w-fit items-center gap-1.5 text-sm text-ink-3 hover:text-ink">
+              <ArrowLeft className="h-3.5 w-3.5" /> All projects
+            </Link>
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-tint text-brand">
+              <ProjectIcon slug={project.slug} className="h-5 w-5" />
+            </span>
+            <h1 className="font-display mt-5 text-[2.5rem] sm:text-[3.25rem]">{project.title}</h1>
+            <p className="mt-2 text-sm text-ink-3">
+              {project.difficulty} · about {project.hours} hours · {lessons.length} lessons
             </p>
-            <h1 className="font-display mt-4 text-6xl sm:text-7xl">
-              {project.emoji}
-              <br />
-              <span className="text-gradient">{project.title}</span>
-            </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-2">{project.pitch}</p>
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-2 sm:text-lg">{project.pitch}</p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href={`/projects/${project.slug}/${cta.id}`} className="btn btn-primary">
-                <Play className="h-4 w-4" fill="currentColor" />
-                {ctaLabel}
+              <Link href={`/projects/${project.slug}/${cta.id}`} className="btn btn-primary !h-11 !px-5">
+                {ctaLabel} <ArrowRight className="h-4 w-4" />
               </Link>
-              <span className="chip">
-                <Zap className="h-3 w-3" fill="currentColor" />
-                {earnedXp}/{totalXp} XP
-              </span>
             </div>
 
             <div className="mt-8 max-w-md">
-              <div className="flex items-center justify-between text-xs font-bold text-ink-2">
-                <span>{doneIds.length === 0 ? "Not started: still a blueprint" : `${unlocked.size}/${project.features.length} parts alive`}</span>
-                <span>{pct}%</span>
+              <div className="flex items-center justify-between gap-4 text-xs text-ink-2">
+                <span>
+                  {doneIds.length === 0
+                    ? "Not started"
+                    : `${doneIds.length} of ${lessons.length} lessons · ${unlocked.size}/${project.features.length} parts working`}
+                </span>
+                <span className="tabular-nums">
+                  {earnedXp}/{totalXp} XP
+                </span>
               </div>
-              <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-surface-2">
-                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: "linear-gradient(120deg, var(--brand-light), var(--brand) 55%, var(--brand-deep))" }} />
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${pct}%` }} />
               </div>
             </div>
           </div>
 
-          <div className="h-[420px] min-w-0 sm:h-[500px]">
+          <div className="tint-panel h-[400px] min-w-0 p-2 sm:h-[480px] sm:p-3">
             <StageShell
               project={project}
               program={program}
               unlocked={unlocked}
               status={status}
               statusText="Booting your build…"
-              emptyHint={bootFailed ? "Couldn't load Python. Check your connection and reload." : doneIds.length === 0 ? "Pass lesson 1 to power it up" : undefined}
+              emptyHint={
+                bootFailed
+                  ? "Couldn't load Python. Check your connection and reload."
+                  : doneIds.length === 0
+                    ? "Pass lesson 1 to power it up"
+                    : undefined
+              }
             />
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
-        <div className="grid gap-12 lg:grid-cols-[1fr_320px]">
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <div className="grid gap-12 lg:grid-cols-[1fr_300px]">
           <div>
-            <p className="eyebrow">Roadmap</p>
-            <h2 className="font-display mt-3 text-4xl sm:text-5xl">Every lesson builds a part.</h2>
+            <h2 className="font-display text-[2rem]">Learning path</h2>
+            <p className="mt-2 text-ink-2">Each lesson adds one working part to your build.</p>
 
-            <div className="mt-10 space-y-12">
-              {project.chapters.map((chapter, ci) => (
-                <div key={chapter.id}>
-                  <div className="flex items-baseline gap-3">
-                    <span className="font-display text-5xl text-ink-3/40">{String(ci + 1).padStart(2, "0")}</span>
-                    <div>
-                      <h3 className="font-display text-2xl">{chapter.title}</h3>
-                      <p className="text-sm text-ink-2">{chapter.blurb}</p>
+            <div className="mt-8 space-y-6">
+              {project.chapters.map((chapter, ci) => {
+                const chapterDone = chapter.lessons.filter((l) => progress.completed[l.id]).length;
+                return (
+                  <div key={chapter.id} className="card p-5 sm:p-7">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium text-ink-3">Chapter {ci + 1}</p>
+                        <h3 className="mt-1 text-xl font-semibold tracking-tight">{chapter.title}</h3>
+                        <p className="mt-1 text-sm text-ink-2">{chapter.blurb}</p>
+                      </div>
+                      <span className="chip tabular-nums">
+                        {chapterDone}/{chapter.lessons.length} done
+                      </span>
                     </div>
-                  </div>
-                  <ol className="relative mt-5 space-y-3 border-l-2 border-line pl-6">
-                    {chapter.lessons.map((lesson) => {
-                      const done = Boolean(progress.completed[lesson.id]);
-                      const isNext = nextLesson?.id === lesson.id;
-                      const feats = lesson.unlocks.map((id) => project.features.find((f) => f.id === id)).filter(Boolean);
-                      return (
-                        <li key={lesson.id} className="relative">
-                          <span
-                            className={`absolute -left-[37px] top-5 grid h-6 w-6 place-items-center rounded-full border-2 text-[10px] font-bold ${
-                              done ? "border-transparent text-black" : isNext ? "pulse-ring border-[var(--accent-from)] bg-bg" : "border-line bg-bg text-ink-3"
-                            }`}
-                            style={done ? { background: "linear-gradient(120deg, var(--brand-light), var(--brand) 55%, var(--brand-deep))" } : undefined}
-                          >
-                            {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : null}
-                          </span>
-                          <Link
-                            href={`/projects/${project.slug}/${lesson.id}`}
-                            className={`card flex flex-col gap-3 p-4 transition-transform hover:-translate-y-0.5 sm:flex-row sm:items-center ${isNext ? "!border-[var(--accent-from)]" : ""}`}
-                          >
-                            <div className="min-w-0 flex-1">
-                              <p className="font-display text-xl leading-tight">{lesson.title}</p>
-                              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-3">
-                                <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{lesson.minutes} min</span>
-                                <span>{lesson.xp} XP</span>
-                                <span className="font-mono">{lesson.concepts.join(" · ")}</span>
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {feats.map((f) => (
-                                <span key={f!.id} className={`chip ${done ? "!border-transparent !text-black" : ""}`} style={done ? { background: "linear-gradient(120deg, var(--brand-light), var(--brand) 55%, var(--brand-deep))" } : undefined}>
-                                  {f!.emoji} {f!.title}
+
+                    <ol className="mt-6">
+                      {chapter.lessons.map((lesson, li) => {
+                        const done = Boolean(progress.completed[lesson.id]);
+                        const isNext = nextLesson?.id === lesson.id;
+                        const feats = lesson.unlocks
+                          .map((id) => project.features.find((f) => f.id === id))
+                          .filter((f) => f !== undefined);
+                        const last = li === chapter.lessons.length - 1;
+                        return (
+                          <li key={lesson.id} className="relative">
+                            {!last && (
+                              <span
+                                className={`absolute left-[25px] top-[50px] h-[calc(100%-46px)] w-0.5 rounded-full ${done ? "bg-primary" : "bg-[var(--line)]"}`}
+                              />
+                            )}
+                            <Link
+                              href={`/projects/${project.slug}/${lesson.id}`}
+                              className={`group flex items-center gap-4 rounded-2xl p-1 ${last ? "" : "pb-5"}`}
+                            >
+                              <span
+                                className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border transition-colors ${
+                                  done
+                                    ? "border-transparent bg-primary text-primary-ink"
+                                    : isNext
+                                      ? "border-[var(--brand)] bg-surface text-brand ring-4 ring-[var(--brand-soft)]"
+                                      : "border-line bg-surface-2 text-ink-3 group-hover:text-ink-2"
+                                }`}
+                              >
+                                {done ? (
+                                  <Check className="h-5 w-5" strokeWidth={2.5} />
+                                ) : (
+                                  <FeatureIcon id={feats[0]?.id ?? ""} className="h-[18px] w-[18px]" />
+                                )}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className={`font-medium leading-snug group-hover:underline ${done || isNext ? "text-ink" : "text-ink-2"}`}>
+                                  {lesson.title}
+                                </p>
+                                <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-ink-3">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {lesson.minutes} min
+                                  </span>
+                                  <span>{lesson.xp} XP</span>
+                                  {feats.length > 0 && <span>Adds {feats.map((f) => f.title).join(", ")}</span>}
+                                </p>
+                              </div>
+                              {isNext && (
+                                <span className="btn btn-primary btn-sm hidden shrink-0 sm:inline-flex">
+                                  {doneIds.length === 0 ? "Start" : "Continue"}
                                 </span>
-                              ))}
-                              <ArrowRight className="h-4 w-4 text-ink-3" />
-                            </div>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
-              ))}
+                              )}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+          <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
             <div className="card p-5">
-              <p className="eyebrow">You will learn</p>
+              <p className="text-sm font-medium">You will learn</p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {project.skills.map((s) => (
-                  <span key={s} className="chip font-mono">{s}</span>
+                  <span key={s} className="chip font-mono">
+                    {s}
+                  </span>
                 ))}
               </div>
             </div>
             <div className="card p-5">
-              <p className="eyebrow">Controls</p>
+              <p className="text-sm font-medium">Controls</p>
               <ul className="mt-3 space-y-1.5 font-mono text-xs text-ink-2">
                 {project.controls.map((c) => (
                   <li key={c}>{c}</li>

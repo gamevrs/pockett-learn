@@ -203,13 +203,13 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   const grid = new THREE.GridHelper(2400, 80, BRAND, BRAND);
   const gridMat = grid.material as THREE.LineBasicMaterial;
   gridMat.transparent = true;
-  gridMat.opacity = 0.07;
+  gridMat.opacity = 0.045;
   gridMat.depthWrite = false;
   grid.position.y = -0.4;
   scene.add(grid);
 
   // ── circuit ──
-  const blueprintMat = new THREE.MeshBasicMaterial({ color: BRAND, wireframe: true, transparent: true, opacity: 0.22 });
+  const blueprintMat = new THREE.MeshBasicMaterial({ color: BRAND, wireframe: true, transparent: true, opacity: 0.14 });
   const ghostMat = new THREE.MeshBasicMaterial({ color: BRAND, transparent: true, opacity: 0.07, depthWrite: false });
   const asphaltTex = noiseTexture();
   asphaltTex.repeat.set(1, 1);
@@ -219,7 +219,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   const kerbDarkMat = new THREE.MeshStandardMaterial({ color: "#3a3d36", roughness: 0.5 });
   const runoffMat = new THREE.MeshStandardMaterial({ color: "#181916", roughness: 1 });
   const wallMat = new THREE.MeshStandardMaterial({ color: "#31332f", roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide });
-  const neonMat = new THREE.MeshStandardMaterial({ color: BRAND, emissive: BRAND, emissiveIntensity: 0.75, roughness: 0.4 });
+  const neonMat = new THREE.MeshStandardMaterial({ color: "#4d6b1f", emissive: BRAND, emissiveIntensity: 0.22, roughness: 0.5 });
   const checkerMat = new THREE.MeshStandardMaterial({ map: checkerTexture(), roughness: 0.6 });
   // Each road layer sits on its own height AND pulls forward in the depth buffer.
   const layer = (m: THREE.Material, level: number) => {
@@ -287,7 +287,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   // light posts along the outer wall (instanced)
   const lampCount = 24;
   const lampPost = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.8, 1, 26, 6), wallMat, lampCount);
-  const lampHead = new THREE.InstancedMesh(new THREE.SphereGeometry(1.5, 12, 8), new THREE.MeshStandardMaterial({ color: "#000000", emissive: BRAND_LIGHT, emissiveIntensity: 0.9 }), lampCount);
+  const lampHead = new THREE.InstancedMesh(new THREE.SphereGeometry(1.5, 12, 8), new THREE.MeshStandardMaterial({ color: "#000000", emissive: BRAND_LIGHT, emissiveIntensity: 0.55 }), lampCount);
   {
     const m = new THREE.Matrix4();
     for (let l = 0; l < lampCount; l++) {
@@ -487,8 +487,8 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
     paintMat.color.set(view.painted ? safeColor(view.paint) : "#8a8f9c");
     hemi.intensity = view.lit ? 0.55 : 0.15;
     sun.intensity = view.lit ? 1.7 : 0.25;
-    gridMat.opacity = view.lit ? 0.06 : 0.16;
-    ctx.bloom.strength = view.lit ? 0.42 : 0.7;
+    gridMat.opacity = view.lit ? 0.04 : 0.1;
+    ctx.bloom.strength = view.lit ? 0.28 : 0.4;
     ctx.bloom.threshold = view.lit ? 0.92 : 0.6;
     ctx.bloom.radius = 0.45;
   };

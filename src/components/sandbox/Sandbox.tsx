@@ -75,7 +75,7 @@ function SandboxInner() {
   return (
     <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6">
       <p className="eyebrow">Sandbox</p>
-      <h1 className="font-display mt-2 text-4xl sm:text-5xl">Free-play Python.</h1>
+      <h1 className="font-display mt-2 text-[2.25rem] sm:text-[2.75rem]">Python sandbox</h1>
       <p className="mt-3 max-w-xl text-ink-2">No lessons, no tests. Just you and an interpreter. Everything stays in your browser.</p>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">

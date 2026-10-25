@@ -98,7 +98,7 @@ export function TouchControls({
           onPointerUp={() => input.set(t.action, false)}
           onPointerLeave={() => input.set(t.action, false)}
           onPointerCancel={() => input.set(t.action, false)}
-          className="grid h-14 w-14 select-none place-items-center rounded-full border-2 border-white/30 bg-white/10 text-xl font-bold text-white backdrop-blur active:bg-white/30"
+          className="grid h-14 w-14 select-none place-items-center rounded-full border border-white/20 bg-white/10 text-xl font-medium text-white backdrop-blur active:bg-white/30"
           style={{ touchAction: "none" }}
         >
           {t.label}
@@ -133,7 +133,7 @@ export function TouchButtons({ input, buttons, onTouch }: { input: InputState; b
           onPointerUp={() => input.set(t.action, false)}
           onPointerLeave={() => input.set(t.action, false)}
           onPointerCancel={() => input.set(t.action, false)}
-          className="grid h-12 w-12 select-none place-items-center rounded-full border-2 border-white/30 bg-white/10 text-lg font-bold text-white backdrop-blur active:bg-white/30"
+          className="grid h-12 w-12 select-none place-items-center rounded-full border border-white/20 bg-white/10 text-lg font-medium text-white backdrop-blur active:bg-white/30"
           style={{ touchAction: "none" }}
         >
           {t.label}

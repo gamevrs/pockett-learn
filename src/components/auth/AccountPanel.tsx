@@ -75,7 +75,7 @@ function AuthForms() {
   return (
     <div className="rise">
       <p className="eyebrow">Account</p>
-      <h1 className="font-display mt-3 text-5xl">{title}</h1>
+      <h1 className="font-display mt-3 text-[2.5rem]">{title}</h1>
       <p className="mt-3 text-ink-2">
         {mode === "forgot"
           ? "Enter your email and we'll send you a link to choose a new password."
@@ -161,7 +161,7 @@ function SignedIn() {
     <div className="rise">
       <p className="eyebrow">Account</p>
       <div className="mt-4 flex items-center gap-4">
-        <span className="bg-brand-gradient grid h-16 w-16 place-items-center rounded-2xl bg-brand text-2xl font-black text-brand-ink">{name.slice(0, 1).toUpperCase()}</span>
+        <span className="grid h-14 w-14 place-items-center rounded-full bg-tint text-xl font-semibold text-brand">{name.slice(0, 1).toUpperCase()}</span>
         <div className="min-w-0">
           <h1 className="font-display truncate text-4xl">{name}</h1>
           <p className="truncate text-sm text-ink-3">{user?.email}</p>
@@ -259,7 +259,7 @@ function NewPassword() {
       }}
     >
       <p className="eyebrow">Account</p>
-      <h1 className="font-display mt-3 text-5xl">Choose a new password.</h1>
+      <h1 className="font-display mt-3 text-[2.5rem]">Choose a new password</h1>
       <div className="card mt-8 space-y-4 p-5">
         <Field label="New password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" placeholder="At least 8 characters" />
         {error && <p className="rounded-xl border border-bad/40 bg-bad/10 px-3 py-2 text-sm font-semibold text-bad">{error}</p>}

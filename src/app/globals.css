@@ -5,57 +5,64 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ───────────── Design tokens ─────────────
-   Light = warm paper + black ink. Dark = deep ink + neon.
-   Components use semantic tokens (bg-surface, text-ink-2, border-line) so both themes
-   come for free. Each project overrides --accent-from / --accent-to on its wrapper. */
+   Neutral greys (no tint), one accent (lime). Light = white, dark = near-black.
+   --brand is the accent for text/lines; --primary is the filled accent for main actions. */
 :root {
-  --bg: #f3efe6;
-  --bg-2: #eae5d8;
-  --surface: #fffdf8;
-  --surface-2: #f6f2e8;
-  --ink: #0f110c;
-  --ink-2: #4a4d44;
-  --ink-3: #7b7f73;
-  --line: rgba(15, 17, 12, 0.14);
-  --line-strong: #0f110c;
+  --bg: #f6f5f1;
+  --bg-2: #efede7;
+  --surface: #ffffff;
+  --surface-2: #f3f2ed;
+  --ink: #121211;
+  --ink-2: #56554f;
+  --ink-3: #8a8880;
+  --line: #e5e3dc;
+  --line-strong: #d2d0c8;
+  --tint: #ebf3da;
   --brand: #4d7c0f;
   --brand-light: #65a30d;
   --brand-deep: #365314;
   --brand-ink: #ffffff;
-  --brand-soft: rgba(77, 124, 15, 0.1);
-  /* One accent colour. mint/hot/sun stay as aliases so nothing reintroduces a second hue. */
+  --brand-soft: rgba(101, 163, 13, 0.12);
+  --primary: #a3e635;
+  --primary-hover: #b4ec55;
+  --primary-ink: #0a0a0a;
+  /* single accent: legacy aliases point at it */
   --mint: var(--brand);
   --hot: var(--brand);
   --sun: var(--brand);
-  --good: #0f9f6e;
-  --bad: #d92d4a;
-  --shadow: 0 1px 0 rgba(15, 17, 12, 0.05), 0 18px 40px -18px rgba(15, 17, 12, 0.28);
-  --pop-shadow: 4px 4px 0 var(--line-strong);
+  --good: #16a34a;
+  --bad: #dc2626;
+  --shadow: 0 1px 2px rgba(20, 20, 10, 0.04), 0 4px 16px -8px rgba(20, 20, 10, 0.08);
+  --pop-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   --accent-from: var(--brand);
   --accent-to: var(--brand);
-  --stage-bg: #0b0c0a;
+  --stage-bg: #0a0a0a;
 }
 
 .dark {
-  --bg: #070807;
-  --bg-2: #0c0d0b;
-  --surface: #111310;
-  --surface-2: #191b17;
-  --ink: #f4f6f0;
-  --ink-2: #b7bcae;
-  --ink-3: #80867a;
-  --line: rgba(255, 255, 255, 0.1);
-  --line-strong: #f4f6f0;
+  --bg: #0a0a0a;
+  --bg-2: #0e0e0e;
+  --surface: #121212;
+  --surface-2: #1a1a1a;
+  --ink: #fafafa;
+  --ink-2: #a3a3a3;
+  --ink-3: #737373;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --tint: #141a0c;
   --brand: #a3e635;
-  --brand-light: #d9f99d;
-  --brand-deep: #65a30d;
-  --brand-ink: #0b1003;
-  --brand-soft: rgba(163, 230, 53, 0.16);
-  --good: #34d399;
+  --brand-light: #bef264;
+  --brand-deep: #84cc16;
+  --brand-ink: #0a0a0a;
+  --brand-soft: rgba(163, 230, 53, 0.1);
+  --primary: #a3e635;
+  --primary-hover: #b4ec55;
+  --primary-ink: #0a0a0a;
+  --good: #4ade80;
   --bad: #f87171;
-  --shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 22px 50px -20px rgba(0, 0, 0, 0.8);
-  --pop-shadow: 4px 4px 0 rgba(245, 245, 251, 0.9);
-  --stage-bg: #050604;
+  --shadow: none;
+  --pop-shadow: none;
+  --stage-bg: #0a0a0a;
 }
 
 @theme inline {
@@ -72,6 +79,9 @@
   --color-brand-deep: var(--brand-deep);
   --color-brand-ink: var(--brand-ink);
   --color-brand-soft: var(--brand-soft);
+  --color-primary: var(--primary);
+  --color-tint: var(--tint);
+  --color-primary-ink: var(--primary-ink);
   --color-mint: var(--mint);
   --color-hot: var(--hot);
   --color-sun: var(--sun);
@@ -80,8 +90,8 @@
   --color-accent-from: var(--accent-from);
   --color-accent-to: var(--accent-to);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-serif-face), ui-serif, Georgia, serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
-  --font-display: var(--font-display-face), var(--font-geist-sans), ui-sans-serif, sans-serif;
   --shadow-card: var(--shadow);
   --shadow-pop: var(--pop-shadow);
 }

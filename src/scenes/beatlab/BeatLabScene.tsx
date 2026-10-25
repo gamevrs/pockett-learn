@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { Play, Square, Volume2, VolumeX } from "lucide-react";
 import type { SceneProps } from "@/engine/scene";
 import { useThreeStage } from "@/engine/three-kit";
 import { STEPS, TRACK_IDS, midiName, midiToHzReference } from "./sequencer";
@@ -241,7 +242,7 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
             className="absolute left-0 top-0 whitespace-nowrap pr-2 text-right will-change-transform"
             style={{ opacity: 0 }}
           >
-            <div className={`${subs ? "text-[11px] leading-tight" : "text-[10px] leading-none"} font-bold tracking-wide ${r.tone === "off" ? "text-white/40" : r.muted ? "text-white/45 line-through" : "text-white"}`}>
+            <div className={`${subs ? "text-[11px] leading-tight" : "text-[10px] leading-none"} font-medium tracking-wide ${r.tone === "off" ? "text-white/40" : r.muted ? "text-white/45 line-through" : "text-white"}`}>
               {r.label}
             </div>
             {subs && r.sub && <div className={`max-w-[90px] truncate text-[10px] leading-tight ${TONE[r.tone]}`}>{r.sub}</div>}
@@ -255,7 +256,7 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
               ref={(el) => {
                 labelsRef.current.mixer[i] = el;
               }}
-              className="absolute left-0 top-0 whitespace-nowrap rounded-md bg-black/45 px-1 py-px text-[10px] font-bold leading-tight text-lime-100 will-change-transform"
+              className="absolute left-0 top-0 whitespace-nowrap rounded-md bg-black/45 px-1 py-px text-[10px] font-medium leading-tight text-lime-100 will-change-transform"
               style={{ opacity: 0 }}
             >
               {m ? m.vol : ""}
@@ -270,11 +271,11 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
         {!hud.powered ? (
           mode === "tiny" ? (
             <div className="truncate font-mono text-[11px] leading-4">
-              <span className="font-bold text-lime-200">NO POWER</span> <span className="text-white/55">· print() to boot</span>
+              <span className="font-medium text-lime-200">NO POWER</span> <span className="text-white/55">· print() to boot</span>
             </div>
           ) : (
             <div className="font-mono text-[11px] leading-snug">
-              <div className="font-bold tracking-wider text-lime-200">NO POWER</div>
+              <div className="font-medium tracking-wider text-lime-200">NO POWER</div>
               <div className="truncate text-white/55">print() something to boot</div>
             </div>
           )
@@ -306,14 +307,14 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
           <div className="flex items-center gap-2 font-mono text-[11px] leading-4">
             {lamps}
             <span className="text-white/75">{barText}</span>
-            {sectionText && <span className={`font-bold uppercase ${sectionClass}`}>{sectionText}</span>}
+            {sectionText && <span className={`font-medium uppercase ${sectionClass}`}>{sectionText}</span>}
           </div>
         ) : (
           <>
             <div className="flex justify-end">{lamps}</div>
             <div className="mt-1 text-right font-mono text-[11px] leading-snug">
               <div className="text-white/75">{barText}</div>
-              {sectionText && <div className={`font-bold uppercase tracking-wider ${sectionClass}`}>{sectionText}</div>}
+              {sectionText && <div className={`font-medium uppercase tracking-wider ${sectionClass}`}>{sectionText}</div>}
             </div>
           </>
         )}
@@ -323,25 +324,26 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
       <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex items-center gap-2">
         {silent && interactive && (
           <div
-            className="whitespace-nowrap rounded-full border border-white/10 bg-black/45 px-3 py-1.5 font-mono text-[11px] leading-4 text-white/80 backdrop-blur"
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-black/45 px-3 py-1.5 text-[11px] leading-4 text-white/80 backdrop-blur"
             title={autoplay ? "Tap for sound" : "Sound is off"}
           >
-            🔇{narrow ? "" : autoplay ? " Tap for sound" : " Sound is off"}
+            <VolumeX className="h-3.5 w-3.5" />
+            {narrow ? "" : autoplay ? "Tap for sound" : "Sound is off"}
           </div>
         )}
         {canPlay && (
           <button
             type="button"
             onClick={() => void rt.toggle()}
-            className={`pointer-events-auto rounded-full border-2 px-3.5 py-1.5 text-[11px] font-extrabold uppercase leading-4 tracking-wider transition-colors ${
+            className={`pointer-events-auto flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium leading-4 transition-colors ${
               silent
-                ? "pulse-ring border-black bg-[#d9f99d] text-black"
+                ? "border-transparent bg-[#a3e635] text-black"
                 : ui.playing
-                  ? "border-white/30 bg-black/55 text-white backdrop-blur hover:bg-white/15"
-                  : "border-black bg-[#a3e635] text-black"
+                  ? "border-white/15 bg-black/55 text-white backdrop-blur hover:bg-white/15"
+                  : "border-transparent bg-[#a3e635] text-black"
             }`}
           >
-            {silent ? "🔊 Sound on" : ui.playing ? "■ Stop" : "▶ Play"}
+            {silent ? <><Volume2 className="h-3.5 w-3.5" /> Sound on</> : ui.playing ? <><Square className="h-3 w-3" fill="currentColor" /> Stop</> : <><Play className="h-3 w-3" fill="currentColor" /> Play</>}
             {!narrow && <span className="ml-1 opacity-60 [@media(pointer:coarse)]:hidden">(Space)</span>}
           </button>
         )}

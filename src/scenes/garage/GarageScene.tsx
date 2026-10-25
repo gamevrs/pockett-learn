@@ -199,7 +199,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
       {/* name tag */}
       <div ref={labelRef} className="pointer-events-none absolute left-0 top-0 transition-opacity" style={{ opacity: 0 }}>
         {name && (
-          <span className="rounded-full border border-white/15 bg-black/60 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur">
+          <span className="rounded-full border border-white/15 bg-black/60 px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur">
             {name}
           </span>
         )}
@@ -221,7 +221,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
               )
             ) : (
               <>
-                <p className="font-bold uppercase tracking-[0.16em] text-[#d9f99d]">{program ? "No power" : "Blueprint"}</p>
+                <p className="font-medium uppercase tracking-[0.16em] text-[#d9f99d]">{program ? "No power" : "Blueprint"}</p>
                 {!tiny && <p className="text-white/50">{program ? "print() something to boot the car" : "Press Run to boot the car"}</p>}
               </>
             )}
@@ -229,7 +229,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
 
           {showLapBoard && (
             <div className="shrink-0 rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-right font-mono text-[11px] leading-relaxed text-white/60 backdrop-blur">
-              <p className="text-[13px] font-bold text-white">
+              <p className="text-[13px] font-medium text-white">
                 Lap {hud.lap + 1} <span className="ml-1 text-lime-200">{hud.lapTime.toFixed(1)}s</span>
               </p>
               {hud.bestLap !== null && <p>Best {hud.bestLap.toFixed(2)}s</p>}
@@ -249,7 +249,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
 
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
           {hud.splitVisible ? (
-            <span className="pop-in rounded-full bg-[#a3e635] px-3 py-1 font-mono text-[11px] font-bold text-[#0a0c06] shadow-[0_0_40px_rgba(163, 230, 53,0.6)]">
+            <span className="pop-in rounded-full bg-[#a3e635] px-3 py-1 font-mono text-[11px] font-medium text-[#0a0c06] ">
               {hud.split}
             </span>
           ) : interactive && canDrive && !focused && !hud.autopilot && !compact ? (
@@ -267,7 +267,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
               {lit && interactive && (
                 <button
                   onClick={toggleCamera}
-                  className="flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 text-[11px] font-bold text-white/85 backdrop-blur hover:bg-white/10"
+                  className="flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 text-[11px] font-medium text-white/85 backdrop-blur hover:bg-white/10"
                   aria-label={camera === "chase" ? "Switch to overview camera" : "Switch to chase camera"}
                   title="Switch camera (C)"
                 >
@@ -280,7 +280,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
                   onClick={toggleAutopilot}
                   aria-pressed={hud.autopilot}
                   title="Toggle autopilot (P)"
-                  className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+                  className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-medium uppercase tracking-wide transition-colors ${
                     hud.autopilot ? "bg-[#a3e635] text-[#0a0c06] shadow-[0_0_30px_rgba(163, 230, 53,0.55)]" : "border border-white/15 bg-black/55 text-white/85 backdrop-blur hover:bg-white/10"
                   }`}
                 >
@@ -353,12 +353,12 @@ function Speedo({ kmh, top, pedal, power, compact }: { kmh: number; top: number;
             <p className="font-display text-xl leading-none text-white" style={{ letterSpacing: "-0.03em" }}>
               {Math.round(kmh)}
             </p>
-            <p className="font-mono text-[9px] font-bold tracking-widest text-white/50">KM/H</p>
+            <p className="font-mono text-[9px] font-medium tracking-widest text-white/50">KM/H</p>
           </div>
         </div>
       </div>
       {pedal !== null && power !== null && !compact && (
-        <div className="mb-1 w-24 space-y-1.5 rounded-xl border border-white/10 bg-black/45 px-2.5 py-2 font-mono text-[9px] font-bold tracking-wider text-white/55 backdrop-blur">
+        <div className="mb-1 w-24 space-y-1.5 rounded-xl border border-white/10 bg-black/45 px-2.5 py-2 font-mono text-[9px] font-medium tracking-wider text-white/55 backdrop-blur">
           <Bar label="PEDAL" value={pedal} color="rgba(255,255,255,0.75)" />
           <Bar label="POWER" value={power} color="#a3e635" />
         </div>

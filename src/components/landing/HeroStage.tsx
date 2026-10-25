@@ -14,6 +14,6 @@ export function HeroStage() {
   const [program] = useState<ProgramHandle>(() => DEMO_PROGRAMS.garage());
 
   return (
-    <StageShell project={garage} program={program} unlocked={ALL} autoplayScene interactive hideControls className="shadow-[var(--pop-shadow)] !border-2 !border-[var(--line-strong)]" />
+    <StageShell project={garage} program={program} unlocked={ALL} autoplayScene interactive hideControls className="!rounded-none !border-0" />
   );
 }

@@ -365,7 +365,7 @@ export class LaunchWorld {
     this.camera.far = 12500;
     this.camera.fov = 38;
     this.camera.updateProjectionMatrix();
-    ctx.bloom.strength = 0.7;
+    ctx.bloom.strength = 0.45;
     ctx.bloom.radius = 0.55;
     ctx.bloom.threshold = 0.82;
 
@@ -1058,7 +1058,7 @@ export class LaunchWorld {
 
     // flash
     this.flash = Math.max(0, this.flash - dt * 1.5);
-    this.ctx.bloom.strength = 0.7 + (v.reduced ? 0 : this.flash * 1.2);
+    this.ctx.bloom.strength = 0.45 + (v.reduced ? 0 : this.flash * 0.8);
   }
 
   dispose() {

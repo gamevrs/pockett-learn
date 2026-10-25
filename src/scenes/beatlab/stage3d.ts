@@ -557,7 +557,7 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
     gridMat.opacity = powered ? 0.07 : 0.2;
     ghostLineMat.opacity = 0.45 + (focus === "power" ? 0.4 * pulse : 0);
     rim.intensity = powered ? 0.25 + rt.beat * 0.5 + rt.crashFlash * 1.2 : 0;
-    ctx.bloom.strength = 0.5 + rt.crashFlash * 0.4 + rt.celebrate * 0.6;
+    ctx.bloom.strength = 0.35 + rt.crashFlash * 0.3 + rt.celebrate * 0.4;
 
     // ── pads ──
     for (let row = 0; row < TRACK_IDS.length; row++) {

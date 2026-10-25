@@ -11,8 +11,8 @@ const GARAGE_ART = (() => {
   return { d, car: { x: sx(t.pts[i].x), y: sy(t.pts[i].y), deg: (t.tangent[i] * 180) / Math.PI } };
 })();
 
-/** Hand-drawn SVG key art per project. Colours come from --accent-from / --accent-to. */
-export function ProjectArt({ slug, emoji }: { slug: string; emoji: string }) {
+/** Flat SVG key art per project: dark field, one accent colour, no glow. */
+export function ProjectArt({ slug }: { slug: string }) {
   const defs = (
     <defs>
       <linearGradient id={`g-${slug}`} x1="0" y1="0" x2="1" y2="1">
@@ -29,8 +29,15 @@ export function ProjectArt({ slug, emoji }: { slug: string; emoji: string }) {
   return (
     <svg viewBox="0 0 400 220" className="h-full w-full" role="img" aria-label={`${slug} illustration`} preserveAspectRatio="xMidYMid slice">
       {defs}
-      <rect width="400" height="220" fill="#070807" />
-      <circle cx="260" cy="90" r="150" fill={`url(#glow-${slug})`} />
+      <rect width="400" height="220" fill="#0c0d0b" />
+      <g stroke="#ffffff" strokeOpacity=".05">
+        {Array.from({ length: 11 }).map((_, i) => (
+          <path key={i} d={`M${i * 40} 0 V220`} />
+        ))}
+        {Array.from({ length: 6 }).map((_, i) => (
+          <path key={i} d={`M0 ${i * 40 + 10} H400`} />
+        ))}
+      </g>
       {slug === "garage" && (
         <g>
           <path
@@ -53,11 +60,6 @@ export function ProjectArt({ slug, emoji }: { slug: string; emoji: string }) {
             <rect x="-24" y="-12" width="48" height="24" rx="10" fill="url(#g-garage)" />
             <rect x="-9" y="-8" width="24" height="16" rx="5" fill="#0b0f18" />
             <rect x="-24" y="-1.5" width="48" height="3" fill="#fff" opacity=".25" />
-          </g>
-          <g stroke="url(#g-garage)" strokeWidth="3" strokeLinecap="round" opacity=".7">
-            <path d="M120 40 h40" />
-            <path d="M100 52 h56" />
-            <path d="M130 64 h28" />
           </g>
         </g>
       )}
@@ -90,10 +92,10 @@ export function ProjectArt({ slug, emoji }: { slug: string; emoji: string }) {
                 y={170 - h}
                 width="14"
                 height={h}
-                rx="5"
+                rx="3"
                 fill="url(#g-beatlab)"
                 opacity={i % 4 === 0 ? 1 : 0.65}
-                style={{ transformOrigin: `${49 + i * 21}px 170px`, animation: `eq ${0.9 + (i % 5) * 0.18}s ease-in-out ${i * 0.07}s infinite` }}
+                style={{ transformOrigin: `${49 + i * 21}px 170px` }}
               />
             );
           })}
@@ -103,11 +105,6 @@ export function ProjectArt({ slug, emoji }: { slug: string; emoji: string }) {
             ))}
           </g>
         </g>
-      )}
-      {!["garage", "launch", "beatlab"].includes(slug) && (
-        <text x="200" y="130" textAnchor="middle" fontSize="84">
-          {emoji}
-        </text>
       )}
     </svg>
   );

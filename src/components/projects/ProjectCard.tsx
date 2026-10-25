@@ -7,6 +7,7 @@ import { useProgress } from "@/data/progress/store";
 import type { UpcomingProject } from "@/engine/types";
 import type { summarize } from "@/content";
 import { ProjectArt } from "./ProjectArt";
+import { FeatureIcon, ProjectIcon } from "@/components/ui/icons";
 
 type Summary = ReturnType<typeof summarize>;
 
@@ -20,16 +21,17 @@ export function ProjectCard({ project, lessonIds }: { project: Summary; lessonId
       href={`/projects/${project.slug}`}
       className="pop-card group flex flex-col overflow-hidden"
     >
-      <div className="relative aspect-[400/220] overflow-hidden border-b-2 border-[var(--line-strong)]">
-        <ProjectArt slug={project.slug} emoji={project.emoji} />
+      <div className="relative m-2 mb-0 aspect-[400/220] overflow-hidden rounded-xl">
+        <ProjectArt slug={project.slug} />
         <span className="sticker absolute left-3 top-3">{project.difficulty}</span>
-        <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-white text-black opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-black opacity-0 transition-opacity group-hover:opacity-100">
           <ArrowUpRight className="h-4 w-4" />
         </span>
       </div>
       <div className="flex flex-1 flex-col p-5">
-        <h3 className="font-display text-3xl">
-          {project.emoji} {project.title}
+        <h3 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+          <ProjectIcon slug={project.slug} className="h-[18px] w-[18px] text-brand" />
+          {project.title}
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-ink-2">{project.tagline}</p>
 
@@ -38,22 +40,22 @@ export function ProjectCard({ project, lessonIds }: { project: Summary; lessonId
           <span className="chip"><Clock className="h-3 w-3" />~{project.hours}h</span>
         </div>
 
-        <p className="eyebrow mt-5">Comes alive</p>
+        <p className="mt-5 text-xs font-medium text-ink-3">What you build</p>
         <div className="mt-2 flex flex-wrap gap-1">
           {project.features.map((f) => (
-            <span key={f.id} title={f.title} className="grid h-8 w-8 place-items-center rounded-lg border border-line bg-surface-2 text-base">
-              {f.emoji}
+            <span key={f.id} title={f.title} className="grid h-7 w-7 place-items-center rounded-full border border-line bg-surface-2 text-ink-2">
+              <FeatureIcon id={f.id} />
             </span>
           ))}
         </div>
 
         <div className="mt-auto pt-5">
-          <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-ink-2">{done === 0 ? "Not started" : done === lessonIds.length ? "Complete 🎉" : `${done}/${lessonIds.length} lessons`}</span>
+          <div className="flex items-center justify-between text-xs font-medium">
+            <span className="text-ink-2">{done === 0 ? "Not started" : done === lessonIds.length ? "Complete" : `${done}/${lessonIds.length} lessons`}</span>
             <span className="text-ink-3">{pct}%</span>
           </div>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "linear-gradient(120deg, var(--brand-light), var(--brand) 55%, var(--brand-deep))" }} />
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+            <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
           </div>
         </div>
       </div>
@@ -64,13 +66,13 @@ export function ProjectCard({ project, lessonIds }: { project: Summary; lessonId
 export function UpcomingCard({ project }: { project: UpcomingProject }) {
   return (
     <div
-      className="flex items-center gap-4 rounded-2xl border-2 border-dashed border-line p-4"
+      className="flex items-center gap-4 rounded-2xl border border-dashed border-[var(--line-strong)] p-4"
     >
-      <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-3xl" style={{ background: "linear-gradient(120deg, var(--brand-light), var(--brand) 55%, var(--brand-deep))" }}>
-        {project.emoji}
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-2 text-ink-3">
+        <ProjectIcon slug={project.slug} className="h-5 w-5" />
       </span>
       <div className="min-w-0">
-        <p className="font-display text-xl">{project.title}</p>
+        <p className="font-medium">{project.title}</p>
         <p className="text-sm text-ink-2">{project.tagline}</p>
       </div>
       <span className="chip ml-auto shrink-0">Soon</span>

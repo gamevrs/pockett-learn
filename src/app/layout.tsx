@@ -1,6 +1,6 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -9,26 +9,23 @@ import { CloudSync } from "@/components/auth/CloudSync";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const display = Bricolage_Grotesque({
-  variable: "--font-display-face",
-  subsets: ["latin"],
-  weight: ["600", "800"],
-});
+// Editorial serif for display headings; UI text stays in Geist.
+const serif = Source_Serif_4({ variable: "--font-serif-face", subsets: ["latin"], weight: ["500", "600"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "pockett. — learn to code by building things that move",
-    template: "%s · pockett.",
+    default: "pockett — learn to code by building real projects",
+    template: "%s · pockett",
   },
   description:
-    "Free, interactive Python. Pick a project — drive a car, launch a rocket, make beats — and watch it come alive as you learn. Runs entirely in your browser.",
+    "Free, interactive Python lessons. Build a self-driving car, a rocket flight computer or a drum machine, and see every lesson work in a live 3D demo. Runs in your browser.",
   keywords: ["learn python", "free coding course", "interactive programming", "python projects", "learn to code"],
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#070807" },
-    { media: "(prefers-color-scheme: light)", color: "#f3efe6" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#f6f5f1" },
   ],
 };
 
@@ -40,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${serif.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

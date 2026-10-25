@@ -10,8 +10,11 @@ import type { Celebration } from "@/engine/scene";
 import { DEMO_PROGRAMS } from "@/scenes/demos";
 import { StageShell } from "@/components/stage/StageShell";
 import { PythonCode } from "@/components/ui/Prose";
+import { FeatureIcon } from "@/components/ui/icons";
 
 const lessons = flattenLessons(garage);
+const PILL = "inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[0.8rem] transition-colors hover:border-[var(--line-strong)]";
+const PILL_ON = "!border-transparent bg-ink !text-bg";
 
 export function UnlockExplorer() {
   const [step, setStep] = useState(0); // 0 = blueprint, n = first n lessons passed
@@ -45,21 +48,22 @@ export function UnlockExplorer() {
     <div className="grid gap-6 lg:grid-cols-[1fr_1.25fr]">
       <div className="flex min-h-[360px] min-w-0 flex-col">
         <div className="flex flex-wrap gap-1.5">
-          <button onClick={() => go(0)} className={`chip !px-3 !py-1.5 ${step === 0 ? "!border-transparent !bg-ink !text-bg" : ""}`}>
+          <button onClick={() => go(0)} className={`${PILL} ${step === 0 ? PILL_ON : "text-ink-2"}`}>
             Blueprint
           </button>
           {garage.features.map((f, i) => (
             <button
               key={f.id}
               onClick={() => go(i + 1)}
-              className={`chip !px-3 !py-1.5 ${step === i + 1 ? "!border-transparent !bg-ink !text-bg" : step > i + 1 ? "!text-ink" : ""}`}
+              title={f.title}
+              className={`${PILL} ${step === i + 1 ? PILL_ON : step > i + 1 ? "text-ink" : "text-ink-3"}`}
             >
-              {f.emoji} <span className="hidden sm:inline">{f.title}</span>
+              <FeatureIcon id={f.id} /> <span className="hidden sm:inline">{f.title}</span>
             </button>
           ))}
         </div>
 
-        <div className="mt-5 flex-1 rounded-2xl border border-line bg-[#0b0c0a] p-4 text-white">
+        <div className="mt-5 flex-1 rounded-xl border border-white/10 bg-[#0a0a0a] p-4 text-white">
           <p className="font-mono text-[11px] uppercase tracking-widest text-white/40">{current ? `lesson ${step} · ${current.title}` : "main.py"}</p>
           <pre className="mt-3 overflow-x-auto font-mono text-[13px] leading-relaxed text-[#eef0e8]">
             {current ? <PythonCode code={current.solutionAdd} /> : <span className="text-white/35"># (empty)</span>}
@@ -80,8 +84,8 @@ export function UnlockExplorer() {
           <button className="btn btn-sm btn-ghost" onClick={() => go(Math.min(lessons.length, step + 1))} disabled={step >= lessons.length}>
             Next part <ArrowRight className="h-3.5 w-3.5" />
           </button>
-          <Link href="/projects/garage" className="ml-auto text-sm font-bold text-brand hover:underline">
-            Build it yourself →
+          <Link href="/projects/garage" className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
+            Build it yourself <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </div>

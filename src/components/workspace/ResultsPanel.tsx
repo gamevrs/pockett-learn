@@ -50,7 +50,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
       <div className="flex shrink-0 items-center gap-1 border-b border-line p-2">
         <button
           onClick={() => onTab("checks")}
-          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold ${tab === "checks" ? "bg-ink text-bg" : "text-ink-2 hover:bg-surface-2"}`}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${tab === "checks" ? "bg-surface-2 text-ink" : "text-ink-2 hover:bg-surface-2"}`}
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
           Checks
@@ -62,7 +62,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
         </button>
         <button
           onClick={() => onTab("console")}
-          className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold ${tab === "console" ? "bg-ink text-bg" : "text-ink-2 hover:bg-surface-2"}`}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${tab === "console" ? "bg-surface-2 text-ink" : "text-ink-2 hover:bg-surface-2"}`}
         >
           <Terminal className="h-3.5 w-3.5" />
           Console
@@ -70,7 +70,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
         </button>
         <div className="ml-auto flex min-w-0 items-center gap-2">
           {running && (
-            <span className="flex min-w-0 items-center gap-2 text-xs font-semibold text-ink-3">
+            <span className="flex min-w-0 items-center gap-2 text-xs text-ink-3">
               <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-line border-t-brand" />
               <span className="truncate">{statusText}</span>
             </span>
@@ -94,7 +94,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
             {tests.map((t) => {
               const r = results.find((x) => x.testId === t.id);
               return (
-                <li key={t.id} className={`flex items-start gap-2.5 rounded-xl border px-3 py-2 text-sm ${r ? (r.passed ? "border-good/30 bg-good/10" : "border-bad/30 bg-bad/10") : "border-line bg-surface-2"}`}>
+                <li key={t.id} className={`flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm ${r ? (r.passed ? "border-good/25 bg-good/[0.06]" : "border-bad/25 bg-bad/[0.06]") : "border-line"}`}>
                   {!r ? (
                     <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-ink-3" />
                   ) : r.passed ? (
@@ -103,7 +103,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
                     <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-bad" />
                   )}
                   <div className="min-w-0">
-                    <p className="font-semibold leading-snug">{t.description}</p>
+                    <p className="leading-snug">{t.description}</p>
                     {r && !r.passed && r.error && <p className="mt-1 font-mono text-xs leading-relaxed text-bad">{r.error}</p>}
                   </div>
                 </li>
@@ -116,8 +116,8 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
         {tab === "console" && (
           <div className="font-mono text-[13px] leading-relaxed">
             {error && (
-              <div className="mb-2 rounded-xl border border-bad/40 bg-bad/10 p-3">
-                <p className="font-bold text-bad">
+              <div className="mb-2 rounded-lg border border-bad/30 bg-bad/[0.06] p-3">
+                <p className="font-medium text-bad">
                   {error.line ? `Line ${error.line} · ` : ""}
                   {error.type}: {error.message}
                 </p>
