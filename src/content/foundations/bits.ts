@@ -3,6 +3,7 @@ import type { Module } from "../../learn/types.ts";
 /** Module 1: how computers store information (bits → bytes → text, colour, sizes). */
 export const bitsModule: Module = {
   id: "bits",
+  part: "machine",
   title: "How computers store information",
   blurb: "Bits, binary, bytes and hex, how text and colour become numbers, and the gates that compute with them.",
   icon: "binary",

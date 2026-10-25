@@ -3,13 +3,23 @@ import { bitsModule } from "./bits.ts";
 import { programsModule } from "./programs.ts";
 import { oopModule } from "./oop.ts";
 import { patternsModule } from "./patterns.ts";
+import { computerModule } from "./computer.ts";
+import { assemblyModule } from "./assembly.ts";
+import { cModule } from "./c.ts";
+import { unixModule } from "./unix.ts";
+import { networkModule } from "./network.ts";
+import { dsaModule } from "./dsa.ts";
 
 /** The Foundations track: from a single bit to design patterns, every step interactive. */
 export const FOUNDATIONS: Track = {
   slug: "foundations",
   title: "Foundations",
   tagline: "How code really works, from a single bit to design patterns.",
-  modules: [bitsModule, programsModule, oopModule, patternsModule],
+  parts: [
+    { id: "machine", title: "How computers work", blurb: "From a single bit up through the CPU, assembly, C, the operating system and the network." },
+    { id: "program", title: "How to program", blurb: "From your first instruction to data structures, the four pillars of OOP and design patterns." },
+  ],
+  modules: [bitsModule, computerModule, assemblyModule, cModule, unixModule, networkModule, programsModule, dsaModule, oopModule, patternsModule],
 };
 
 export interface ConceptContext {

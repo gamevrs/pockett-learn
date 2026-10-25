@@ -6,6 +6,7 @@ const py = (code: string) => "~~~python\n" + code.trim() + "\n~~~";
 /** Module 4: design patterns. Each pattern: the pain first, then the mechanism, the roles, code, and when to use it. */
 export const patternsModule: Module = {
   id: "patterns",
+  part: "program",
   title: "Design patterns",
   blurb: "Proven shapes for code: Strategy, Observer, Factory, Decorator, Adapter, Command, State and more.",
   icon: "puzzle",

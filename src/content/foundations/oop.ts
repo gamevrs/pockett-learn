@@ -82,6 +82,7 @@ const SOLID = ["Single responsibility", "Open/closed", "Liskov substitution", "I
 /** Module 3: object-oriented programming, built around the four pillars. */
 export const oopModule: Module = {
   id: "oop",
+  part: "program",
   title: "Object-oriented programming",
   blurb: "Classes and objects, then the four pillars: encapsulation, abstraction, inheritance and polymorphism.",
   icon: "boxes",

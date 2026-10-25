@@ -399,6 +399,15 @@
   padding-left: 1.1rem;
   list-style: disc;
 }
+.prose-lesson ol {
+  margin: 0.5rem 0;
+  padding-left: 1.3rem;
+  list-style: decimal;
+}
+.prose-lesson ol li::marker {
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
 .prose-lesson li {
   margin: 0.2rem 0;
 }

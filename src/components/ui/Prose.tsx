@@ -17,15 +17,16 @@ function inline(text: string, keyBase: string): React.ReactNode[] {
     const tok = m[0];
     const key = `${keyBase}-${i++}`;
     if (tok.startsWith("`")) out.push(<code key={key}>{tok.slice(1, -1)}</code>);
-    else if (tok.startsWith("**")) out.push(<strong key={key}>{tok.slice(2, -2)}</strong>);
-    else out.push(<em key={key}>{tok.slice(1, -1)}</em>);
+    // bold and italic may contain `code` (and each other), so render their insides inline too
+    else if (tok.startsWith("**")) out.push(<strong key={key}>{inline(tok.slice(2, -2), key)}</strong>);
+    else out.push(<em key={key}>{inline(tok.slice(1, -1), key)}</em>);
     last = idx + tok.length;
   }
   if (last < text.length) out.push(text.slice(last));
   return out;
 }
 
-type CodeLanguage = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go";
+type CodeLanguage = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go" | "asm" | "shell";
 
 const words = (list: string) => new Set(list.split(" "));
 const SYNTAX: Record<CodeLanguage, { keywords: Set<string>; comment: RegExp; caseInsensitive?: boolean }> = {
@@ -47,24 +48,36 @@ const SYNTAX: Record<CodeLanguage, { keywords: Set<string>; comment: RegExp; cas
     comment: /\/\/.*$/,
   },
   cpp: {
-    keywords: words("include using namespace std int double float char bool void auto const return if else for while do true false nullptr class struct public private new delete switch case break continue"),
+    keywords: words("include using namespace std int double float char bool void auto const return if else for while do true false nullptr class struct public private new delete switch case break continue NULL sizeof unsigned signed long short static typedef enum union extern"),
     comment: /\/\/.*$/,
   },
   go: {
     keywords: words("package import func var const type struct return if else for range true false nil map chan go defer switch case break continue"),
     comment: /\/\/.*$/,
   },
+  // the toy CPU in Foundations, plus common real mnemonics
+  asm: {
+    keywords: words("mov load store add sub mul div cmp jmp jz jnz jlt jgt je jne out push pop call ret hlt nop lea inc dec and or xor not"),
+    comment: /;.*$/,
+    caseInsensitive: true,
+  },
+  shell: {
+    keywords: words("ls cd pwd mkdir touch cat echo cp mv rm grep wc sort uniq head tail chmod chown ps kill jobs sleep which export sudo man less find"),
+    comment: /#.*$/,
+  },
 };
 
 /** Maps a fence tag (```js, ~~~sql, …) to a highlighter. */
 function fenceLanguage(tag: string, fallback: CodeLanguage): CodeLanguage | "text" {
   const t = tag.trim().toLowerCase();
-  if (["text", "txt", "output", "console", "plain"].includes(t)) return "text";
+  if (["text", "txt", "output", "console", "plain", "http"].includes(t)) return "text";
+  if (["asm", "assembly", "nasm", "s"].includes(t)) return "asm";
+  if (["sh", "bash", "shell", "zsh"].includes(t)) return "shell";
   if (["js", "javascript", "ts", "typescript"].includes(t)) return "javascript";
   if (["py", "python"].includes(t)) return "python";
   if (t === "sql") return "sql";
   if (["cs", "csharp", "c#", "java", "kotlin"].includes(t)) return "csharp";
-  if (["cpp", "c++", "cc"].includes(t)) return "cpp";
+  if (["c", "h", "cpp", "c++", "cc"].includes(t)) return "cpp";
   if (t === "go") return "go";
   return fallback;
 }
@@ -176,6 +189,19 @@ export function Prose({ source, className = "", language = "python" }: { source:
       continue;
     }
 
+    if (/^\s*\d+[.)] /.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*\d+[.)] /.test(lines[i])) items.push(lines[i++].replace(/^\s*\d+[.)] /, ""));
+      blocks.push(
+        <ol key={key++}>
+          {items.map((t, j) => (
+            <li key={j}>{inline(t, `oli${key}-${j}`)}</li>
+          ))}
+        </ol>,
+      );
+      continue;
+    }
+
     if (line.trim() === "") {
       i++;
       continue;
@@ -186,7 +212,8 @@ export function Prose({ source, className = "", language = "python" }: { source:
       i < lines.length &&
       lines[i].trim() !== "" &&
       !/^(~~~|```|### )/.test(lines[i]) &&
-      !/^\s*[-*] /.test(lines[i])
+      !/^\s*[-*] /.test(lines[i]) &&
+      !/^\s*\d+[.)] /.test(lines[i])
     ) {
       para.push(lines[i++]);
     }

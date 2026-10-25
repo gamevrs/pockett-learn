@@ -144,6 +144,21 @@ export function QuestionInput({
           onChange={(e) => onAnswer(e.target.value)}
           aria-label="Your answer"
         />
+        {question.type === "number" && !locked && (
+          // phone number pads often have no minus key
+          <button
+            type="button"
+            onClick={() => {
+              const v = ((answer as string) ?? "").trim();
+              onAnswer(v.startsWith("-") ? v.slice(1) : `-${v}`);
+            }}
+            aria-label="Toggle negative"
+            title="Make it negative or positive"
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-line bg-surface font-mono text-lg text-ink-2 hover:border-[var(--line-strong)] hover:text-ink"
+          >
+            ±
+          </button>
+        )}
         {question.type === "number" && question.unit && <span className="text-ink-2">{question.unit}</span>}
       </div>
     );

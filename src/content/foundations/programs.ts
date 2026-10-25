@@ -929,8 +929,9 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
 
 export const programsModule: Module = {
   id: "programs",
+  part: "program",
   title: "How programs run",
   blurb: "Values, variables, decisions, loops, functions, memory and the call stack.",
-  icon: "cpu",
+  icon: "code",
   lessons,
 };

@@ -55,11 +55,14 @@ runs every code step.
 
 - `status` prop: `"idle" | "correct" | "wrong" | "revealed"`. On `"revealed"` a widget can draw
   the solution; on `"wrong"` it can mark the learner's mistake.
+- `WidgetSpec.after: true` hides the widget until the question is answered, then shows it playable
+  ("predict first, then check it yourself").
 - `WidgetSpec.live: true` keeps a widget playable after the question is answered ("predict, then
   try it").
 - Enter inside a widget's own input does not trigger Check (the widget's card is marked
   `data-widget`).
-- Fences: ```python, ```js, ```sql, ```java/```cs, and ```text (plain output, no highlighting).
+- Fences: ```python, ```js, ```sql, ```c/```cpp, ```java/```cs, ```asm, ```sh, ```go, and ```text / ```http (plain, no highlighting).
+- Number questions get a ± button (phone keypads often lack a minus key).
 
 ## Code traces
 

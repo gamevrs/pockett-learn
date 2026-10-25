@@ -166,8 +166,8 @@ function StepFrame({
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       if (e.key !== "Enter" || e.shiftKey || t.closest(".monaco-editor") || t.tagName === "BUTTON") return;
-      // a widget's own text fields use Enter for themselves
-      if (t.closest("[data-widget]") && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      // anything focused inside a widget (a terminal, an editor, a control) owns its Enter key
+      if (t.closest("[data-widget]")) return;
       e.preventDefault();
       primaryRef.current();
     };
@@ -208,9 +208,17 @@ function StepFrame({
             <>
               {"body" in step && step.body && <Prose source={step.body} className="mt-4 !text-[1rem] !leading-relaxed" />}
 
-              {widgetDef && "widget" in step && step.widget && (
-                <div className="card mt-6 flex justify-center p-4 sm:p-6" data-widget>
-                  <widgetDef.Component props={step.widget.props ?? {}} onChange={onWidget} revealed={answered && !step.widget.live}
+              {widgetDef && "widget" in step && step.widget && step.widget.after && !answered && (
+                <p className="mt-6 rounded-xl border border-dashed border-[var(--line-strong)] p-4 text-sm text-ink-3">
+                  Answer first, then you can try it yourself here.
+                </p>
+              )}
+              {widgetDef && "widget" in step && step.widget && (!step.widget.after || answered) && (
+                <div className={`card mt-6 flex justify-center p-4 sm:p-6 ${step.widget.after ? "pop-in" : ""}`} data-widget>
+                  <widgetDef.Component
+                    props={step.widget.props ?? {}}
+                    onChange={onWidget}
+                    revealed={answered && !step.widget.live && !step.widget.after}
                     status={status}
                     goal={step.kind === "question" && step.question.type === "widget" ? step.question.goal : undefined}
                   />
@@ -328,6 +336,12 @@ function StepFrame({
               </div>
             )}
             {status === "revealed" && <p className="text-sm text-ink-2">Here&apos;s the answer. It&apos;ll stick next time.</p>}
+            {/* after two misses the way out stays available, even after "Try again" */}
+            {status === "idle" && isQuestion && attempts >= 2 && (
+              <button type="button" className="text-sm font-medium text-ink-2 underline underline-offset-2 hover:text-ink" onClick={() => setStatus("revealed")}>
+                Show answer
+              </button>
+            )}
           </div>
           <button type="button" className="btn btn-primary !h-11 shrink-0 !px-6" onClick={primary.run} disabled={primary.disabled}>
             {isCode && !answered && status !== "wrong" && <Play className="h-3.5 w-3.5" fill="currentColor" />}

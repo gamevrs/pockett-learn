@@ -15,6 +15,11 @@ export interface WidgetSpec {
   props?: Record<string, unknown>;
   /** Keep the widget playable after the question is answered (e.g. "predict, then try it"). */
   live?: boolean;
+  /**
+   * Show the widget only once the question is answered, then playable: "predict first, then
+   * check it yourself". Use with choice/number/text questions whose answer the widget would reveal.
+   */
+  after?: boolean;
 }
 
 export type Question =
@@ -60,6 +65,8 @@ export interface ConceptLesson {
 
 export interface Module {
   id: string;
+  /** Which part of the track it belongs to (Track.parts[].id). */
+  part: string;
   title: string;
   blurb: string;
   /** Lucide icon name key from src/learn/module-icons.ts. */
@@ -67,10 +74,18 @@ export interface Module {
   lessons: ConceptLesson[];
 }
 
+export interface TrackPart {
+  id: string;
+  title: string;
+  blurb: string;
+}
+
 export interface Track {
   slug: string;
   title: string;
   tagline: string;
+  /** Parts group modules into parallel paths; modules are listed in part order. */
+  parts: TrackPart[];
   modules: Module[];
 }
 
