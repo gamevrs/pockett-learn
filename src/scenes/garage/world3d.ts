@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { BRAND, BRAND_LIGHT, fitDistance, type ThreeContext } from "@/engine/three-kit";
+import { fitDistance, type ThreeContext } from "@/engine/three-kit";
+import { ACCENT, GLOW, NEUTRAL, ROLE, SIGNAL, applyBloom, createFloor, material, setupStage } from "@/engine/stage-style";
 import { SENSOR_ANGLE, SENSOR_RANGE, WORLD_H, WORLD_W, type CarState, type Sensors, type SimEvent, type Track } from "./sim";
 
 /**
@@ -136,7 +136,7 @@ function noiseTexture(size = 256, base = 196, spread = 48) {
     const v = base + Math.random() * spread;
     img.data[i * 4] = v;
     img.data[i * 4 + 1] = v;
-    img.data[i * 4 + 2] = v + 3;
+    img.data[i * 4 + 2] = v;
     img.data[i * 4 + 3] = 255;
   }
   g.putImageData(img, 0, 0);
@@ -153,7 +153,7 @@ function checkerTexture() {
   const g = c.getContext("2d")!;
   for (let x = 0; x < 16; x++)
     for (let y = 0; y < 4; y++) {
-      g.fillStyle = (x + y) % 2 ? "#ced0cc" : "#181917";
+      g.fillStyle = (x + y) % 2 ? NEUTRAL[200] : NEUTRAL[850];
       g.fillRect(x * 4, y * 4, 4, 4);
     }
   const t = new THREE.CanvasTexture(c);
@@ -166,61 +166,34 @@ function checkerTexture() {
 // ───────────────────────── the world ─────────────────────────
 
 export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld {
-  const { scene, camera, renderer } = ctx;
+  const { scene, camera } = ctx;
   const hw = track.halfWidth;
 
-  scene.background = new THREE.Color("#070807");
-  scene.fog = new THREE.FogExp2("#070807", 0.00028);
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environment = envTex;
-  scene.environmentIntensity = 0.35;
+  // shared stage: background, fog, reflections, hemi + shadow-casting key + faint lime rim.
+  // The key comes from the same high front-left as before; the shadow box covers the whole circuit.
+  const rig = setupStage(ctx, { shadowExtent: 560, keyFrom: [-320, 620, 260], fog: 0.00028 });
+  const hemiBase = rig.hemi.intensity;
+  const keyBase = rig.key.intensity;
 
-  // lights
-  const hemi = new THREE.HemisphereLight("#e3ecd6", "#0a0b0a", 0.55);
-  scene.add(hemi);
-  const sun = new THREE.DirectionalLight("#ffffff", 1.7);
-  sun.position.set(-320, 620, 260);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -560, right: 560, top: 360, bottom: -360, near: 10, far: 1600 });
-  sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.6;
-  scene.add(sun);
-  const rim = new THREE.DirectionalLight(BRAND, 0.3); // lime reads very bright: keep the rim subtle
-  rim.position.set(420, 160, -380);
-  scene.add(rim);
-
-  // ground + grid
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(4000, 4000),
-    new THREE.MeshStandardMaterial({ color: "#0f100e", roughness: 1, metalness: 0 }),
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -1;
-  ground.receiveShadow = true;
-  scene.add(ground);
-  const grid = new THREE.GridHelper(2400, 80, BRAND, BRAND);
-  const gridMat = grid.material as THREE.LineBasicMaterial;
-  gridMat.transparent = true;
-  gridMat.opacity = 0.045;
-  gridMat.depthWrite = false;
-  grid.position.y = -0.4;
-  scene.add(grid);
+  // ground: neutral, moire-free grid (the blueprint state lives on the circuit, not the floor)
+  const floor = createFloor(ctx, { size: 4000, cell: 30, y: -1 });
+  scene.add(floor);
 
   // ── circuit ──
-  const blueprintMat = new THREE.MeshBasicMaterial({ color: BRAND, wireframe: true, transparent: true, opacity: 0.14 });
-  const ghostMat = new THREE.MeshBasicMaterial({ color: BRAND, transparent: true, opacity: 0.07, depthWrite: false });
+  const blueprintMat = material.blueprint(0.14);
+  // blending happens in linear space, so a few percent already reads as a solid tint: keep it faint
+  const ghostMat = material.ghost(0.03);
   const asphaltTex = noiseTexture();
   asphaltTex.repeat.set(1, 1);
-  const asphaltMat = new THREE.MeshStandardMaterial({ color: "#363833", map: asphaltTex, roughness: 0.86, metalness: 0 });
-  const lineMat = new THREE.MeshStandardMaterial({ color: "#a3a89f", roughness: 0.7 });
-  const kerbLightMat = new THREE.MeshStandardMaterial({ color: "#93988e", roughness: 0.7 });
-  const kerbDarkMat = new THREE.MeshStandardMaterial({ color: "#3a3d36", roughness: 0.5 });
-  const runoffMat = new THREE.MeshStandardMaterial({ color: "#181916", roughness: 1 });
-  const wallMat = new THREE.MeshStandardMaterial({ color: "#31332f", roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide });
-  const neonMat = new THREE.MeshStandardMaterial({ color: "#4d6b1f", emissive: BRAND, emissiveIntensity: 0.22, roughness: 0.5 });
-  const checkerMat = new THREE.MeshStandardMaterial({ map: checkerTexture(), roughness: 0.6 });
+  const asphaltMat = material.matte(ROLE.surface, { map: asphaltTex, roughness: 0.86 });
+  const lineMat = material.satin(ROLE.surfaceLight, { roughness: 0.7, metalness: 0 });
+  const kerbLightMat = material.satin(NEUTRAL[300], { roughness: 0.7, metalness: 0 });
+  const kerbDarkMat = material.satin(ROLE.structureDark, { roughness: 0.5, metalness: 0 });
+  const runoffMat = material.matte(NEUTRAL[850], { roughness: 1 });
+  const wallMat = material.satin(ROLE.structure, { metalness: 0.2, side: THREE.DoubleSide });
+  // steady powered trim: deep lime base, soft glow, so it reads as a light line, not a lime slab
+  const neonMat = material.glow(ACCENT[600], "soft", { color: ACCENT[900] });
+  const checkerMat = material.satin(SIGNAL.white, { map: checkerTexture(), roughness: 0.6, metalness: 0 });
   // Each road layer sits on its own height AND pulls forward in the depth buffer.
   const layer = (m: THREE.Material, level: number) => {
     m.polygonOffset = true;
@@ -248,6 +221,11 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   };
   addPart(ribbon(track, -hw - 12, hw + 12, 0.2), runoffMat);
   addPart(ribbon(track, -hw, hw, 0.7, undefined, 1 / 60), asphaltMat);
+  // blueprint road: same surface on a coarser sampling, so the wireframe reads as a calm drawing
+  // instead of a dense, shimmering mesh
+  const coarse = { ...track, pts: track.pts.filter((_, i) => i % 4 === 0), tangent: track.tangent.filter((_, i) => i % 4 === 0) };
+  const blueprintRoad = new THREE.Mesh(ribbon(coarse, -hw, hw, 0.7), blueprintMat);
+  scene.add(blueprintRoad);
   addPart(ribbon(track, -hw + 2.5, -hw + 4.2, 1.2), lineMat);
   addPart(ribbon(track, hw - 4.2, hw - 2.5, 1.2), lineMat);
   addPart(ribbon(track, -0.9, 0.9, 1.2, (i) => i % 8 < 4), lineMat);
@@ -259,7 +237,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
     const wa = side < 0 ? -hw - WALL_OFFSET - 3 : hw + WALL_OFFSET;
     const wb = side < 0 ? -hw - WALL_OFFSET : hw + WALL_OFFSET + 3;
     addPart(wall(track, wa, wb, 6), wallMat, true);
-    addPart(ribbon(track, (wa + wb) / 2 - 0.7, (wa + wb) / 2 + 0.7, 6.5), neonMat);
+    addPart(ribbon(track, (wa + wb) / 2 - 0.55, (wa + wb) / 2 + 0.55, 6.5), neonMat);
   }
   // start / finish: checker band + gantry
   const startIdx = (i: number) => i < 2 || i > N - 3;
@@ -279,15 +257,16 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   gantryBeam.position.y = 35;
   gantryBeam.castShadow = true;
   gantry.add(gantryBeam);
-  const banner = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.2, (hw + WALL_OFFSET) * 2), neonMat);
-  banner.position.y = 35;
+  // a slim soft-glow accent line along the lower edge of the beam (both faces), not a lime bar
+  const banner = new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.6, (hw + WALL_OFFSET) * 2), neonMat);
+  banner.position.y = 33.2;
   gantry.add(banner);
   scene.add(gantry);
 
   // light posts along the outer wall (instanced)
   const lampCount = 24;
   const lampPost = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.8, 1, 26, 6), wallMat, lampCount);
-  const lampHead = new THREE.InstancedMesh(new THREE.SphereGeometry(1.5, 12, 8), new THREE.MeshStandardMaterial({ color: "#000000", emissive: BRAND_LIGHT, emissiveIntensity: 0.55 }), lampCount);
+  const lampHead = new THREE.InstancedMesh(new THREE.SphereGeometry(1.5, 12, 8), material.glow(SIGNAL.heatCore, "soft"), lampCount);
   {
     const m = new THREE.Matrix4();
     for (let l = 0; l < lampCount; l++) {
@@ -332,7 +311,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
       const arch = new THREE.Group();
       arch.position.set(toX(p.x), 0, toZ(p.y));
       arch.rotation.y = -track.tangent[i];
-      const mat = new THREE.MeshStandardMaterial({ color: "#dddfdb", emissive: "#ffffff", emissiveIntensity: 0.05, roughness: 0.4 });
+      const mat = material.satin(GATE_IDLE_HEX, { emissive: ROLE.alive, emissiveIntensity: 0, roughness: 0.4 });
       for (const s of [-1, 1]) {
         const post = new THREE.Mesh(gatePostGeo, mat);
         post.position.set(0, 12, s * (hw + 5));
@@ -349,14 +328,14 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   // ── car ──
   const car = new THREE.Group();
   scene.add(car);
-  const paintMat = new THREE.MeshPhysicalMaterial({ color: "#8a8f9c", metalness: 0.55, roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.08 });
-  const glassMat = new THREE.MeshPhysicalMaterial({ color: "#0b0c0a", metalness: 0.3, roughness: 0.06, clearcoat: 1 });
-  const trimMat = new THREE.MeshStandardMaterial({ color: "#151614", roughness: 0.6, metalness: 0.3 });
-  const tireMat = new THREE.MeshStandardMaterial({ color: "#0e0f0e", roughness: 0.9 });
-  const rimMat = new THREE.MeshStandardMaterial({ color: "#bec1ba", metalness: 0.9, roughness: 0.25 });
-  const headMat = new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#fff6e3", emissiveIntensity: 0 });
-  const tailMat = new THREE.MeshStandardMaterial({ color: "#2a0a10", emissive: "#ff3355", emissiveIntensity: 0.4 });
-  const stripeMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.4, transparent: true, opacity: 0.75 });
+  const paintMat = material.paint(UNPAINTED);
+  const glassMat = material.glass();
+  const trimMat = material.satin(NEUTRAL[900], { roughness: 0.6, metalness: 0.3 });
+  const tireMat = material.matte(NEUTRAL[950], { roughness: 0.9 });
+  const rimMat = material.metal(NEUTRAL[200]);
+  const headMat = material.satin(SIGNAL.heatCore, { emissive: SIGNAL.heatCore, emissiveIntensity: 0 });
+  const tailMat = material.glow(SIGNAL.danger, "none", { color: SIGNAL.dangerDeep });
+  const stripeMat = material.satin(NEUTRAL[100], { roughness: 0.4, metalness: 0, transparent: true, opacity: 0.75 });
 
   const carParts: { mesh: THREE.Mesh; lit: THREE.Material }[] = [];
   const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number, parent: THREE.Object3D = car) => {
@@ -403,17 +382,17 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
     if (x > 0) steerPivots.push(pivot);
   }
 
-  const flameMat = new THREE.MeshBasicMaterial({ color: "#ffb26b", transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+  const flameMat = new THREE.MeshBasicMaterial({ color: SIGNAL.heat, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
   const flame = new THREE.Mesh(new THREE.ConeGeometry(1.6, 9, 10), flameMat);
   flame.rotation.z = Math.PI / 2;
   flame.position.set(-23, 5, 0);
   car.add(flame);
 
-  const beam = new THREE.SpotLight("#fff4dc", 0, 260, 0.42, 0.65, 1.2);
+  const beam = new THREE.SpotLight(SIGNAL.heatCore, 0, 260, 0.42, 0.65, 1.2);
   beam.position.set(18, 8, 0);
   beam.target.position.set(90, 0, 0);
   car.add(beam, beam.target);
-  const underglow = new THREE.PointLight(BRAND, 0, 60, 1.6);
+  const underglow = new THREE.PointLight(ROLE.alive, 0, 60, 1.6);
   underglow.position.set(0, 2, 0);
   car.add(underglow);
 
@@ -421,11 +400,11 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   const sensorGeo = new THREE.BufferGeometry();
   const sensorPos = new Float32Array(18);
   sensorGeo.setAttribute("position", new THREE.BufferAttribute(sensorPos, 3));
-  const sensorLines = new THREE.LineSegments(sensorGeo, new THREE.LineBasicMaterial({ color: BRAND_LIGHT, transparent: true, opacity: 0.85 }));
+  const sensorLines = new THREE.LineSegments(sensorGeo, material.line(ACCENT[300], 0.85));
   sensorLines.frustumCulled = false;
   scene.add(sensorLines);
   const hitGeo = new THREE.SphereGeometry(2.2, 10, 8);
-  const hitMats = [0, 1, 2].map(() => new THREE.MeshBasicMaterial({ color: BRAND_LIGHT }));
+  const hitMats = [0, 1, 2].map(() => new THREE.MeshBasicMaterial({ color: ACCENT[200] }));
   const hits = hitMats.map((m) => {
     const s = new THREE.Mesh(hitGeo, m);
     scene.add(s);
@@ -464,7 +443,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   for (let i = 0; i < PCOUNT; i++) pLife[i] = 99;
 
   // celebration ring
-  const ringMat = new THREE.MeshBasicMaterial({ color: BRAND_LIGHT, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
+  const ringMat = new THREE.MeshBasicMaterial({ color: ACCENT[300], transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false });
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 64), ringMat);
   ring.rotation.x = -Math.PI / 2;
   scene.add(ring);
@@ -477,20 +456,23 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
     if (key === lookKey) return;
     lookKey = key;
     for (const p of trackParts) {
-      p.mesh.material = !view.lit ? blueprintMat : view.roadAlive ? p.lit : ghostMat;
-      // blueprint: only the road surface, as a clean wireframe; ghost: just the outline of the road
-      p.mesh.visible = view.lit ? view.roadAlive || p.lit === asphaltMat : p.lit === asphaltMat;
+      // blueprint: the road as a clean wireframe over a faint fill of the run-off;
+      // ignition without steering: just a ghost of the road; steering: the real circuit
+      if (!view.lit) {
+        p.mesh.material = ghostMat;
+        p.mesh.visible = p.lit === runoffMat;
+      } else {
+        p.mesh.material = view.roadAlive ? p.lit : ghostMat;
+        p.mesh.visible = view.roadAlive || p.lit === asphaltMat;
+      }
     }
+    blueprintRoad.visible = !view.lit;
     gantry.visible = view.roadAlive;
     lampPost.visible = lampHead.visible = view.lit && view.roadAlive;
     for (const c of carParts) c.mesh.material = view.lit ? c.lit : blueprintMat;
-    paintMat.color.set(view.painted ? safeColor(view.paint) : "#8a8f9c");
-    hemi.intensity = view.lit ? 0.55 : 0.15;
-    sun.intensity = view.lit ? 1.7 : 0.25;
-    gridMat.opacity = view.lit ? 0.04 : 0.1;
-    ctx.bloom.strength = view.lit ? 0.28 : 0.4;
-    ctx.bloom.threshold = view.lit ? 0.92 : 0.6;
-    ctx.bloom.radius = 0.45;
+    paintMat.color.set(view.painted ? safeColor(view.paint) : UNPAINTED);
+    rig.hemi.intensity = view.lit ? hemiBase : 0.15;
+    rig.key.intensity = view.lit ? keyBase : 0.25;
   };
 
   // ── camera ──
@@ -531,8 +513,9 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
       const roll = ((c.kmh * 1.55) / 4.6) * dt;
       for (const s of spinners) s.rotation.z -= roll;
       wing.visible = view.painted && view.turbo;
-      headMat.emissiveIntensity = view.lit ? 2.2 : 0;
-      tailMat.emissiveIntensity = view.lit ? (c.braking ? 4 : 0.5) : 0;
+      // real light sources: headlights steady at the focal level, tail lights flare only while braking
+      headMat.emissiveIntensity = view.lit ? GLOW.medium : 0;
+      tailMat.emissiveIntensity = view.lit ? (c.braking ? GLOW.strong : GLOW.soft) : 0;
       beam.intensity = view.lit ? 420 : 0;
       underglow.intensity = view.lit ? 12 : 0;
       const boost = view.painted && view.turbo ? Math.max(0, view.power - 0.55) * 2.2 : 0;
@@ -545,12 +528,14 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
         gateKey = key;
         rebuildGates(view.gates);
       }
+      // idle: plain neutral arch; passed: accent at a soft steady glow, with a flash that decays
+      let flashPeak = 0;
       for (const [g, mat] of gateMeshes) {
         const passed = c.gatesPassed.includes(g);
         const flash = view.gateFlash[g] ?? 0;
-        mat.color.copy(passed ? BRAND : GATE_IDLE);
-        mat.emissive.copy(passed ? BRAND : WHITE);
-        mat.emissiveIntensity = passed ? 1.4 + flash * 4 : 0.05;
+        flashPeak = Math.max(flashPeak, flash);
+        mat.color.copy(passed ? GATE_PASSED : GATE_IDLE);
+        mat.emissiveIntensity = passed ? GLOW.soft + flash * flash * (GLOW.flash - GLOW.soft) : 0;
       }
 
       // sensors
@@ -566,7 +551,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
           const hz = toZ(c.y + Math.sin(a) * d);
           sensorPos.set([x, 6, z, hx, 6, hz], r * 6);
           hits[r].position.set(hx, 6, hz);
-          hitMats[r].color.copy(vals[r] < 0.35 ? DANGER : BRAND_LIGHT);
+          hitMats[r].color.copy(vals[r] < 0.35 ? DANGER : HIT);
         }
         sensorGeo.attributes.position.needsUpdate = true;
       }
@@ -577,9 +562,9 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
       }
       for (const e of view.events) {
         if (e.kind === "wall")
-          for (let k = 0; k < 14; k++) emit(x, 6, z, (Math.random() - 0.5) * 120, Math.random() * 60, (Math.random() - 0.5) * 120, 0.5, WHITE);
+          for (let k = 0; k < 14; k++) emit(x, 6, z, (Math.random() - 0.5) * 120, Math.random() * 60, (Math.random() - 0.5) * 120, 0.5, SPARK);
         if (e.kind === "lap")
-          for (let k = 0; k < 40; k++) emit(x, 10, z, (Math.random() - 0.5) * 160, 40 + Math.random() * 80, (Math.random() - 0.5) * 160, 1.2, BRAND_LIGHT);
+          for (let k = 0; k < 40; k++) emit(x, 10, z, (Math.random() - 0.5) * 160, 40 + Math.random() * 80, (Math.random() - 0.5) * 160, 1.2, CONFETTI);
       }
       for (let i = 0; i < PCOUNT; i++) {
         pLife[i] += dt;
@@ -600,6 +585,10 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
       ring.position.set(x, ROAD_TOP + 1, z);
       ring.scale.setScalar(20 + ringT * 160);
       ringMat.opacity = (1 - ringT) * 0.9;
+
+      // bloom baseline, plus a short boost on gate passes and unlocks
+      const ringPulse = 1 - Math.min(1, ringT * 2);
+      applyBloom(ctx, { blueprint: !view.lit, boost: Math.max(flashPeak * flashPeak, ringPulse * ringPulse) });
 
       // camera
       if (view.camera === "chase") {
@@ -635,8 +624,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
       };
     },
     dispose() {
-      envTex.dispose();
-      pmrem.dispose();
+      rig.dispose();
       for (const m of [blueprintMat, ghostMat, asphaltMat, lineMat, kerbLightMat, kerbDarkMat, runoffMat, wallMat, neonMat, checkerMat]) m.dispose();
     },
     celebrate() {
@@ -644,20 +632,25 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
       for (let k = 0; k < 60; k++) {
         const a = Math.random() * Math.PI * 2;
         const sp = 40 + Math.random() * 120;
-        emit(car.position.x, 8, car.position.z, Math.cos(a) * sp, 50 + Math.random() * 90, Math.sin(a) * sp, 1.4, BRAND_LIGHT);
+        emit(car.position.x, 8, car.position.z, Math.cos(a) * sp, 50 + Math.random() * 90, Math.sin(a) * sp, 1.4, CONFETTI);
       }
     },
   };
 }
 
-const WHITE = new THREE.Color("#ffffff");
-const GATE_IDLE = new THREE.Color("#dddfdb");
-const SMOKE = new THREE.Color("#60655b");
-const DANGER = new THREE.Color("#f87171");
+const UNPAINTED = NEUTRAL[400];
+const GATE_IDLE_HEX = NEUTRAL[300];
+const GATE_IDLE = new THREE.Color(GATE_IDLE_HEX);
+const GATE_PASSED = new THREE.Color(ROLE.alive);
+const SMOKE = new THREE.Color(NEUTRAL[500]);
+const SPARK = new THREE.Color(SIGNAL.heatCore);
+const DANGER = new THREE.Color(SIGNAL.danger);
+const HIT = new THREE.Color(ROLE.aliveBright);
+const CONFETTI = new THREE.Color(ACCENT[200]);
 
 /** Learner-provided colour: hex or a CSS colour name; anything else falls back to the brand lime. */
 function safeColor(value: string): THREE.Color {
   const v = value.trim().toLowerCase();
   if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(v) || v in THREE.Color.NAMES) return new THREE.Color(v);
-  return new THREE.Color("#a3e635");
+  return new THREE.Color(ROLE.alive);
 }

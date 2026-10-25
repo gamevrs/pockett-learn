@@ -1,15 +1,19 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { BRAND, BRAND_LIGHT, type ThreeApp, type ThreeContext } from "@/engine/three-kit";
+import type { ThreeApp, ThreeContext } from "@/engine/three-kit";
+import { ACCENT, GLOW, NEUTRAL, ROLE, SIGNAL, applyBloom, color, createFloor, material, setupStage } from "@/engine/stage-style";
 import { STEPS, TRACK_IDS, clamp, sectionLevel, type TrackId } from "./sequencer";
 import { trackAlive, type PatternId, type Runtime } from "./runtime";
 
 /**
  * Beat Lab in 3D: a drum machine on a plinth. Rows of rounded pads (one InstancedMesh)
- * press down and glow on hits, a playhead sweeps across, a spectrum ring breathes around
- * the machine, bass notes rise as glowing orbs, and the mixer is a strip of real faders.
+ * press down and light up on hits, a playhead sweeps across, a spectrum ring breathes around
+ * the machine, bass notes send up a short-lived spark, and the mixer is a strip of real faders.
  * All text is HTML: the stage only positions the label elements it is handed.
+ *
+ * Look (Pockett Stage, see docs/STAGE_DESIGN_SYSTEM.md): a dark anodized chassis with neutral
+ * rubber pads. Programmed steps glow lime at `soft`, the playhead column is the one `medium`
+ * element, hits flash `strong` and decay, and everything locked is a faint blueprint outline.
  *
  * Landscape: one block of 16 columns, a fader at the end of each row.
  * Portrait: two blocks of 8 (steps 1-8 above 9-16) with the mixer strip behind them.
@@ -49,9 +53,9 @@ export function hudTopPx(mode: HudMode): number {
   return mode === "tiny" ? 82 : mode === "small" ? 118 : 148;
 }
 
-/** Room left of the pads for the HTML row labels. */
+/** Screen gutter kept clear on the left (the row labels are printed on the chassis, left of the pads). */
 export function rowLabelPx(mode: HudMode): number {
-  return mode === "full" ? 100 : 52;
+  return mode === "full" ? 16 : 10;
 }
 
 const HUD_BOTTOM_PX = 48; // Play button + sound chip
@@ -70,26 +74,34 @@ const MIX_W = 3.0;
 const PLINTH_H = 0.55;
 const DECK_H = 0.45;
 const TOP = PLINTH_H + DECK_H;
+/** Chassis margin left of the pads: the row labels live here. */
+const LABEL_MARGIN = 2.3;
+const LABEL_MARGIN_PORTRAIT = 1.9;
 const ORBS = 8;
-const ORB_LIFE = 1.4;
-const ORB_RISE = 1.9;
+const ORB_LIFE = 0.55; // bass sparks are hit feedback: gone well inside a beat
+const ORB_RISE = 1.1;
 const RING_BARS = 72;
 const RING_MAX_H = 1.5;
 const RING_GAP = 1.2;
 const N_PADS = TRACK_IDS.length * STEPS;
 
-const DEEP = new THREE.Color("#65a30d");
-const DANGER = new THREE.Color("#f87171");
-const PAD_OFF = new THREE.Color("#272925");
-const PAD_OFF_BEAT = new THREE.Color("#32342f");
-
-/** Each instrument is a different shade of the one lime. */
-const ROW_COLOR: Record<TrackId, THREE.Color> = {
-  kick: BRAND.clone(),
-  snare: BRAND.clone().lerp(BRAND_LIGHT, 0.45),
-  clap: BRAND_LIGHT.clone(),
-  hats: new THREE.Color("#a5a99c"),
-  bass: DEEP.clone(),
+/** Linear-space colours from the stage tokens (instance colours and additive layers mix in linear). */
+const C = {
+  pad: color(NEUTRAL[700]), // unlit rubber pad
+  padBeat: color(NEUTRAL[700]).lerp(color(NEUTRAL[600]), 0.45), // first pad of each group of four
+  padMuted: color(NEUTRAL[500]), // programmed step on a muted row: neutral, never lime
+  padOn: color(ACCENT[800]), // programmed step body: deep lime rubber, the glow on top does the talking
+  padAccent: color(ACCENT[700]),
+  lit: color(ACCENT[400]), // glow on programmed steps
+  hit: color(ACCENT[300]), // flash on hits, playhead
+  neutralLight: color(NEUTRAL[100]),
+  blueprint: color(ROLE.blueprint),
+  ringLo: color(NEUTRAL[600]),
+  ringHi: color(ACCENT[700]),
+  led: color(ACCENT[300]),
+  ledOff: color(NEUTRAL[400]),
+  danger: color(SIGNAL.danger),
+  black: new THREE.Color(0, 0, 0),
 };
 
 interface Layout {
@@ -113,7 +125,7 @@ function makeLayout(portrait: boolean): Layout {
   const padsW = cols * PITCH + (cols / 4 - 1) * GROUP_GAP;
   const blockD = 5 * ROW_PITCH;
   const padsD = blocks * blockD + (blocks - 1) * BLOCK_GAP;
-  const left = 0.7;
+  const left = portrait ? LABEL_MARGIN_PORTRAIT : LABEL_MARGIN;
   const back = portrait ? MIX_D + 0.4 : 0;
   const side = portrait ? 0 : MIX_W + 0.4;
   const w = left + padsW + side + 0.7;
@@ -135,7 +147,7 @@ function rowZ(L: Layout, row: number, block: number): number {
   return L.z0 + block * (L.blockD + BLOCK_GAP) + row * ROW_PITCH + ROW_PITCH / 2;
 }
 
-/** Points that must stay on screen: machine box, spectrum ring footprint + height, rising orbs. */
+/** Points that must stay on screen: machine box, spectrum ring footprint + height, rising sparks. */
 function framePoints(L: Layout): Float32Array {
   const pts: number[] = [];
   const hx = L.w / 2 + 0.45;
@@ -162,7 +174,7 @@ function bandAt(f: number, c: number, w: number, a: number): number {
 }
 
 export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLabels): BeatStage {
-  const { scene, camera, renderer } = ctx;
+  const { scene, camera } = ctx;
 
   // ───── per-frame scratch (no allocations in the loop) ─────
   const m4 = new THREE.Matrix4();
@@ -183,57 +195,34 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   let elev = 0.85;
   let azim = -0.3;
 
-  // ───── world ─────
-  scene.background = new THREE.Color("#070807");
-  scene.fog = new THREE.Fog("#070807", 30, 80);
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environment = envTex;
-  scene.environmentIntensity = 0.35;
-
-  scene.add(new THREE.HemisphereLight("#e3ecd6", "#0a0b0a", 0.55));
-  const key = new THREE.DirectionalLight("#ffffff", 1.8);
-  key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
-  key.shadow.radius = 5;
-  key.shadow.bias = -0.0004;
-  key.shadow.normalBias = 0.03;
-  scene.add(key, key.target);
-  const rim = new THREE.PointLight(BRAND, 0, 0, 0);
-  scene.add(rim);
-
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshStandardMaterial({ color: "#0a0c06", roughness: 0.92, metalness: 0 }));
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-  scene.add(floor);
-  const grid = new THREE.GridHelper(120, 120, BRAND, BRAND);
-  const gridMat = grid.material as THREE.Material;
-  gridMat.transparent = true;
-  gridMat.opacity = 0.1;
-  gridMat.depthWrite = false;
-  grid.position.y = 0.02; // lines can't use polygonOffset: lift them clear of the floor
-  grid.renderOrder = 1;
-  scene.add(grid);
+  // ───── world: the shared stage rig (void background, fog, reflections, key + fill + rim) ─────
+  const rig = setupStage(ctx, { shadowExtent: 16, fog: [30, 80], reflections: 0.35 });
+  const key = rig.key;
+  scene.add(createFloor(ctx, { size: 240, cell: PITCH }));
 
   // ───── materials ─────
-  const additive = (color: THREE.ColorRepresentation, extra: THREE.MeshBasicMaterialParameters = {}) =>
-    new THREE.MeshBasicMaterial({ color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, ...extra });
-  const ghostLineMat = new THREE.LineBasicMaterial({ color: BRAND, transparent: true, opacity: 0.55, depthWrite: false });
-  const ghostFillMat = new THREE.MeshBasicMaterial({ color: BRAND, transparent: true, opacity: 0.22, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
-  const plinthMat = new THREE.MeshPhysicalMaterial({ color: "#0f100d", roughness: 0.5, metalness: 0.25, clearcoat: 0.5, clearcoatRoughness: 0.4 });
-  const deckMat = new THREE.MeshPhysicalMaterial({ color: "#1b1c1a", roughness: 0.32, metalness: 0.35, clearcoat: 1, clearcoatRoughness: 0.18 });
-  const padMat = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0.36, metalness: 0.05, clearcoat: 0.8, clearcoatRoughness: 0.25 });
-  const glowMat = additive("#ffffff", { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
-  const ghostPadMat = additive("#ffffff", { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
-  const lineMat = new THREE.MeshBasicMaterial({ color: BRAND_LIGHT.clone().multiplyScalar(1.6), toneMapped: false });
-  const playMat = additive(BRAND_LIGHT.clone().multiplyScalar(2.2));
-  const bandMat = additive(BRAND.clone().multiplyScalar(0.22), { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
-  const ringMat = additive("#ffffff");
-  const celebMat = additive(BRAND_LIGHT.clone().multiplyScalar(2), { side: THREE.DoubleSide });
-  const slotMat = new THREE.MeshStandardMaterial({ color: "#050508", roughness: 0.8 });
-  const faderMat = new THREE.MeshPhysicalMaterial({ color: "#dcded6", roughness: 0.3, metalness: 0.6, clearcoat: 1 });
-  const knobMat = new THREE.MeshPhysicalMaterial({ color: "#222420", roughness: 0.4, metalness: 0.5, clearcoat: 0.8 });
-  const tickMat = new THREE.MeshBasicMaterial({ color: "#ffffff" });
+  const additive = (c: THREE.ColorRepresentation, extra: THREE.MeshBasicMaterialParameters = {}) =>
+    new THREE.MeshBasicMaterial({ color: c, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, ...extra });
+  const scaled = (c: THREE.Color, k: number) => c.clone().multiplyScalar(k);
+  const ghostLineMat = material.line(ROLE.blueprint, 0.4);
+  ghostLineMat.depthWrite = false;
+  const ghostFillMat = material.ghost(0.08);
+  Object.assign(ghostFillMat, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
+  const ghostShellMat = material.ghost(0.015);
+  const plinthMat = material.satin(NEUTRAL[850], { roughness: 0.5, metalness: 0.3 });
+  const deckMat = material.satin(NEUTRAL[800], { roughness: 0.38, metalness: 0.45 }); // anodized top plate
+  const padMat = material.satin(SIGNAL.white, { roughness: 0.62, metalness: 0 }); // rubber; the colour is per instance
+  const glowMat = additive(SIGNAL.white, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+  const ghostPadMat = additive(SIGNAL.white, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
+  const stripMat = material.glow(ACCENT[400], "faint");
+  const playMat = additive(scaled(C.hit, GLOW.medium));
+  const bandMat = additive(scaled(C.lit, 0.06), { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+  const ringMat = material.satin(SIGNAL.white, { roughness: 0.5, metalness: 0.2 }); // colour is per bar
+  const celebMat = additive(scaled(C.hit, GLOW.strong), { side: THREE.DoubleSide });
+  const slotMat = material.matte(NEUTRAL[950]);
+  const faderMat = material.metal(NEUTRAL[200]);
+  const knobMat = material.satin(NEUTRAL[700], { roughness: 0.4, metalness: 0.5 });
+  const tickMat = new THREE.MeshBasicMaterial({ color: NEUTRAL[100] });
   const orbMats: THREE.MeshBasicMaterial[] = [];
 
   // ───── machine ─────
@@ -246,10 +235,13 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   // blueprint body: just the outline edges of plinth and deck (a full wireframe was far too busy)
   const ghostBody = new THREE.LineSegments(new THREE.BufferGeometry(), ghostLineMat);
   ghostBody.renderOrder = 2;
-  const frontLine = new THREE.Mesh(new THREE.BoxGeometry(1, 0.05, 0.05), lineMat);
-  machine.add(plinth, deck, ghostBody, frontLine);
+  // ...plus a barely-there fill so the outline reads as a solid that isn't built yet
+  const ghostShell = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), ghostShellMat);
+  ghostShell.renderOrder = 1;
+  const frontLine = new THREE.Mesh(new THREE.BoxGeometry(1, 0.05, 0.05), stripMat);
+  machine.add(plinth, deck, ghostBody, ghostShell, frontLine);
 
-  const pads = new THREE.InstancedMesh(new RoundedBoxGeometry(PAD, PAD_H, PAD, 2, 0.09), padMat, N_PADS);
+  const pads = new THREE.InstancedMesh(new RoundedBoxGeometry(PAD, PAD_H, PAD, 2, 0.06), padMat, N_PADS);
   pads.castShadow = true;
   pads.receiveShadow = true;
   const capGeo = new THREE.PlaneGeometry(PAD * 0.78, PAD * 0.78);
@@ -271,7 +263,7 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   for (const im of [pads, caps, ghostPads]) {
     im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     im.frustumCulled = false; // instances move; a cached bounding sphere would cull them wrongly
-    for (let i = 0; i < N_PADS; i++) im.setColorAt(i, col.setRGB(0, 0, 0));
+    for (let i = 0; i < N_PADS; i++) im.setColorAt(i, C.black);
     if (im.instanceColor) im.instanceColor.setUsage(THREE.DynamicDrawUsage);
   }
   machine.add(pads, caps, ghostPads);
@@ -282,21 +274,20 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   band.renderOrder = 3;
   machine.add(playhead, band);
 
-  // spectrum ring on the floor around the plinth
+  // spectrum ring on the floor around the plinth: solid neutral bars, tinted lime only at their peaks
   const barGeo = new THREE.BoxGeometry(0.2, 1, 0.2);
   barGeo.translate(0, 0.5, 0);
   const ring = new THREE.InstancedMesh(barGeo, ringMat, RING_BARS);
   ring.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   ring.frustumCulled = false;
-  ring.renderOrder = 3;
-  for (let i = 0; i < RING_BARS; i++) ring.setColorAt(i, col.setRGB(0, 0, 0));
+  for (let i = 0; i < RING_BARS; i++) ring.setColorAt(i, C.ringLo);
   scene.add(ring);
   const ringLevels = new Float32Array(RING_BARS);
 
-  // bass orbs
-  const orbGeo = new THREE.SphereGeometry(0.2, 20, 14);
+  // bass sparks: one per bass hit, gone within ORB_LIFE
+  const orbGeo = new THREE.SphereGeometry(0.13, 20, 14);
   const orbs = Array.from({ length: ORBS }, () => {
-    const mat = additive(BRAND_LIGHT.clone().multiplyScalar(2.4));
+    const mat = additive(scaled(C.hit, GLOW.strong));
     orbMats.push(mat);
     const mesh = new THREE.Mesh(orbGeo, mat);
     mesh.visible = false;
@@ -307,7 +298,7 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   let orbNext = 0;
   let lastBassSerial = rt.bassSerial;
 
-  // mixer
+  // mixer: neutral metal faders and knobs, one small LED per channel
   const slotGeo = new THREE.BoxGeometry(0.16, 0.04, 1.6);
   const faderGeo = new RoundedBoxGeometry(0.62, 0.24, 0.32, 2, 0.06);
   const knobGeo = new THREE.CylinderGeometry(0.22, 0.24, 0.2, 28);
@@ -321,7 +312,7 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
     const knob = new THREE.Mesh(knobGeo, knobMat);
     knob.castShadow = true;
     knob.add(new THREE.Mesh(tickGeo, tickMat));
-    const ledMat = new THREE.MeshBasicMaterial({ color: BRAND.clone().multiplyScalar(1.5), toneMapped: false });
+    const ledMat = material.glow(ACCENT[300], "faint");
     const led = new THREE.Mesh(ledGeo, ledMat);
     machine.add(slot, fader, knob, led);
     return { slot, fader, knob, led, ledMat, vol: 0.75, pan: 0 };
@@ -396,6 +387,8 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(merged, 3));
     ghostBody.geometry = g;
+    ghostShell.scale.set(L.w + 0.9, TOP, L.d + 0.9);
+    ghostShell.position.y = TOP / 2;
     frontLine.scale.set(L.w - 0.5, 1, 1);
     frontLine.position.set(0, TOP - 0.07, L.d / 2 + 0.05); // stands proud of the deck face
 
@@ -428,6 +421,7 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
       }
     }
 
+    // fit the shared key light's shadow to this layout
     const span = Math.max(L.w, L.d);
     key.position.set(-span * 0.35, span * 0.9 + 6, span * 0.55 + 4);
     const cam = key.shadow.camera;
@@ -438,7 +432,7 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
     cam.near = 1;
     cam.far = span * 3 + 20;
     cam.updateProjectionMatrix();
-    rim.position.set(0, 5, -L.d / 2 - 5);
+    key.shadow.normalBias = 0.03;
     ringRadius.set(L.w / 2 + RING_GAP, L.d / 2 + RING_GAP);
     celebScale = (Math.max(L.w, L.d) * 0.62 + 2) * 1.6;
     ringLevels.fill(0);
@@ -454,7 +448,7 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   const fit = (width: number, height: number) => {
     camera.clearViewOffset();
     const mode = hudMode(width, height);
-    // free screen area in NDC: below the HUD panels, above the Play button, right of the row labels
+    // free screen area in NDC: below the HUD panels, above the Play button, inside the left gutter
     const yTop = 1 - (2 * hudTopPx(mode)) / height;
     const yBot = -1 + (2 * HUD_BOTTOM_PX) / height;
     const xL = -1 + (2 * rowLabelPx(mode)) / width;
@@ -552,19 +546,18 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
     placeCamera(dist, azim + Math.sin(time * 0.13) * 0.045);
 
     plinth.visible = deck.visible = frontLine.visible = powered;
-    ghostBody.visible = !powered;
-    lineMat.color.copy(BRAND_LIGHT).multiplyScalar(0.8 + rt.beat * 1.6);
-    gridMat.opacity = powered ? 0.07 : 0.2;
-    ghostLineMat.opacity = 0.45 + (focus === "power" ? 0.4 * pulse : 0);
-    rim.intensity = powered ? 0.25 + rt.beat * 0.5 + rt.crashFlash * 1.2 : 0;
-    ctx.bloom.strength = 0.35 + rt.crashFlash * 0.3 + rt.celebrate * 0.4;
+    ghostBody.visible = ghostShell.visible = !powered;
+    // power strip: steady and quiet, with a small tick on each beat
+    stripMat.emissiveIntensity = GLOW.faint + rt.beat * (GLOW.soft - GLOW.faint);
+    ghostLineMat.opacity = 0.4 + (focus === "power" ? 0.35 * pulse : 0);
+    // crash and celebration add a short bloom boost that decays with them
+    applyBloom(ctx, { blueprint: !powered, boost: rt.crashFlash * 0.6 + rt.celebrate });
 
     // ── pads ──
     for (let row = 0; row < TRACK_IDS.length; row++) {
       const id = TRACK_IDS[row];
       const on = powered && trackAlive(id, aliveFn);
       const muted = on && !!model && model.mix[id].mute;
-      const base = ROW_COLOR[id];
       const focused = !on && (focus === id || (focus === "snare" && id === "clap"));
       const flashes = rt.flash[id];
       for (let s = 0; s < STEPS; s++) {
@@ -573,8 +566,8 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
         const z = rowZ(L, row, blockOf(L, s));
 
         // ghost frame (locked) — black is invisible with additive blending
-        if (on) col.setRGB(0, 0, 0);
-        else col.copy(BRAND).multiplyScalar(focused ? 0.5 + 0.6 * pulse : powered ? 0.4 : 0.6);
+        if (on) col.copy(C.black);
+        else col.copy(C.blueprint).multiplyScalar(focused ? 0.18 + 0.32 * pulse : powered ? 0.14 : 0.24);
         if (colorChanged(ghostRGB, i, col)) {
           ghostPads.setColorAt(i, col);
           touch(range.gc, i);
@@ -612,20 +605,29 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
           touch(range.cm, i);
         }
 
-        if (level > 0) col.copy(DEEP).lerp(base, clamp(level / 1.2, 0, 1)).lerp(BRAND_LIGHT, clamp((level - 1.2) / 0.8, 0, 1) * 0.45).multiplyScalar(0.8);
-        else col.copy(s % 4 === 0 ? PAD_OFF_BEAT : PAD_OFF);
-        if (level > 0 && level < 0.6) col.multiplyScalar(0.55 + level * 0.6);
-        if (muted) col.multiplyScalar(0.35);
+        // body: neutral rubber; programmed steps take the deep lime (velocity sets how much)
+        if (level <= 0) col.copy(s % 4 === 0 ? C.padBeat : C.pad);
+        else if (muted) col.copy(C.padMuted);
+        else col.copy(C.pad).lerp(C.padOn, clamp(0.45 + level * 0.45, 0, 0.9)).lerp(C.padAccent, clamp((level - 1.2) / 0.8, 0, 1) * 0.6);
         if (colorChanged(padRGB, i, col)) {
           pads.setColorAt(i, col);
           touch(range.pc, i);
         }
 
-        let k = fl * 2.4 * (level > 0 ? 0.6 + Math.min(level, 2) * 0.35 : 0.4);
-        if (isNow) k += level > 0 ? 0.55 : 0.12;
-        if (level > 0 && !muted) k += 0.06 + level * 0.04;
-        if (muted) k *= 0.3;
-        glow.copy(level > 0 ? base : BRAND_LIGHT).multiplyScalar(k);
+        // glow: soft when programmed (faint for ghost notes), medium under the playhead, strong on a hit
+        let k = 0;
+        if (level > 0 && !muted) {
+          k = isNow ? GLOW.medium : GLOW.faint + (GLOW.soft - GLOW.faint) * clamp((level - 0.25) / 0.75, 0, 1);
+          glow.copy(C.lit);
+          if (fl > 0) {
+            k += (GLOW.strong - k) * fl;
+            glow.lerp(C.hit, fl);
+          }
+        } else if (isNow) {
+          k = GLOW.faint * 0.5; // empty pads in the playhead column: a neutral lift, not lime
+          glow.copy(C.neutralLight);
+        }
+        glow.multiplyScalar(k);
         if (colorChanged(capRGB, i, glow)) {
           caps.setColorAt(i, glow);
           touch(range.cc, i);
@@ -651,7 +653,6 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
       playhead.scale.set(0.07, 0.05, L.blockD + 0.3);
       band.position.set(padX(L, s), TOP + 0.008, zc);
       band.scale.set(PITCH * 0.98, 1, L.blockD + 0.2);
-      playMat.color.copy(BRAND_LIGHT).multiplyScalar(1.2 + rt.beat * 0.8);
     }
 
     // ── spectrum ring ──
@@ -681,13 +682,13 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
         dummy.scale.set(1, 0.05 + cur * (RING_MAX_H - 0.05), 1);
         dummy.updateMatrix();
         ring.setMatrixAt(i, dummy.matrix);
-        ring.setColorAt(i, col.copy(DEEP).lerp(BRAND_LIGHT, cur).multiplyScalar(0.25 + cur * 1.3));
+        ring.setColorAt(i, col.copy(C.ringLo).lerp(C.ringHi, clamp((cur - 0.45) / 0.55, 0, 1) * 0.6)); // neutral metal, lime only near peaks
       }
       ring.instanceMatrix.needsUpdate = true;
       if (ring.instanceColor) ring.instanceColor.needsUpdate = true;
     }
 
-    // ── bass orbs (the note name + Hz lives in the BASS row label, so no floating tags to collide) ──
+    // ── bass sparks (the note name + Hz lives in the BASS row label, so no floating tags to collide) ──
     if (rt.bassSerial !== lastBassSerial) {
       lastBassSerial = rt.bassSerial;
       if (powered && rt.isAlive("bass")) {
@@ -711,8 +712,8 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
       }
       o.mesh.visible = true;
       o.mesh.position.set(o.x, TOP + PAD_H + 0.3 + (1 - (1 - k) * (1 - k)) * ORB_RISE, o.z);
-      o.mesh.scale.setScalar(1 + k * 0.7);
-      o.mat.opacity = 1 - k;
+      o.mesh.scale.setScalar(1 + k * 0.5);
+      o.mat.opacity = (1 - k) * (1 - k);
     }
 
     // ── mixer ──
@@ -722,7 +723,7 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
     tmp.set(L.mixX + 3, TOP, rowZ(L, 0, 0)).project(camera);
     const ty = tmp.y;
     tmp.set(L.mixX + 3, TOP, rowZ(L, 1, 0)).project(camera);
-    const tagsOk = L.portrait || Math.abs(tmp.y - ty) * 0.5 * ctx.size.height >= 17;
+    const tagsOk = L.portrait || Math.abs(tmp.y - ty) * 0.5 * ctx.size.height >= 18; // tags are 16px pills
     for (let i = 0; i < channels.length; i++) {
       const c = channels[i];
       const id = TRACK_IDS[i];
@@ -735,26 +736,33 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
       if (L.portrait) c.fader.position.set(c.slot.position.x, TOP + 0.135, L.mixZ + 0.7 - c.vol * 1.4);
       else c.fader.position.set(L.mixX + 0.55 + c.vol * 1.4, TOP + 0.135, c.slot.position.z);
       c.knob.rotation.y = -c.pan * 2.3;
-      if (mixerOn && mix) c.ledMat.color.copy(mix.mute ? DANGER : BRAND_LIGHT).multiplyScalar(mix.mute ? 1.4 : 0.85 + rt.energy[id] * 2.5);
+      if (mixerOn && mix && model) {
+        // channel LED: a lime meter on hits, neutral when muted, red when the row's code is broken
+        const broken = model.rawLen[id] < 0 || (id === "bass" && model.hzBad);
+        const led = broken ? C.danger : mix.mute ? C.ledOff : C.led;
+        c.ledMat.emissive.copy(led);
+        c.ledMat.color.copy(led).multiplyScalar(0.35);
+        c.ledMat.emissiveIntensity = broken ? GLOW.soft : mix.mute ? GLOW.faint : GLOW.faint + rt.energy[id] * (GLOW.strong - GLOW.faint);
+      }
       if (L.portrait) place(5 + i, labels.mixer[i], c.slot.position.x, TOP + 0.1, L.mixZ - 0.95, mixerOn ? 1 : 0, "translate(-50%,-100%)");
       else place(5 + i, labels.mixer[i], L.mixX + 3.0, TOP + 0.1, c.slot.position.z, mixerOn && tagsOk ? 1 : 0, "translate(0,-50%)");
     }
-    if (!mixerOn) ghostFillMat.opacity = focus === "mixer" ? 0.2 + 0.3 * pulse : 0.22;
+    if (!mixerOn) ghostFillMat.opacity = focus === "mixer" ? 0.08 + 0.2 * pulse : 0.08;
 
-    // ── row labels ──
+    // ── row labels: on the chassis margin, right-aligned just short of the first pad column ──
     tmp.set(L.x0, TOP, rowZ(L, 0, 0)).project(camera);
     const y0 = tmp.y;
     tmp.set(L.x0, TOP, rowZ(L, 1, 0)).project(camera);
     rowSpacingPx = Math.abs(tmp.y - y0) * 0.5 * ctx.size.height;
     for (let row = 0; row < TRACK_IDS.length; row++) {
-      place(row, labels.rows[row], L.x0 - 0.2, TOP + 0.2, rowZ(L, row, 0), rowSpacingPx >= 11 ? 1 : 0, "translate(-100%,-50%)");
+      place(row, labels.rows[row], L.x0 - 0.15, TOP, rowZ(L, row, 0), rowSpacingPx >= 11 ? 1 : 0, "translate(-100%,-50%)");
     }
 
-    // ── celebration ──
+    // ── celebration: one expanding ring, fading out with the runtime's decay ──
     celebRing.visible = rt.celebrate > 0;
     if (rt.celebrate > 0) {
       celebRing.scale.setScalar(2 + (1 - rt.celebrate) * celebScale);
-      celebMat.opacity = rt.celebrate;
+      celebMat.opacity = rt.celebrate * rt.celebrate;
     }
   };
 
@@ -766,7 +774,8 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
       ndc.set((x / ctx.size.width) * 2 - 1, -(y / ctx.size.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
       if (!raycaster.ray.intersectPlane(plane, hitPoint)) return null;
-      if (hitPoint.x < L.x0 - 1.5 || hitPoint.x > L.x0 + L.padsW) return null;
+      // the label margin counts too: tapping a row's name auditions it
+      if (hitPoint.x < L.x0 - (L.portrait ? LABEL_MARGIN_PORTRAIT : LABEL_MARGIN) || hitPoint.x > L.x0 + L.padsW) return null;
       for (let b = 0; b < L.blocks; b++) {
         const z0 = L.z0 + b * (L.blockD + BLOCK_GAP);
         const row = Math.floor((hitPoint.z - z0) / ROW_PITCH);
@@ -778,9 +787,8 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
       return null;
     },
     dispose() {
-      envTex.dispose();
-      pmrem.dispose();
-      for (const m of [ghostLineMat, ghostFillMat, plinthMat, deckMat, padMat, glowMat, ghostPadMat, lineMat, playMat, bandMat, ringMat, celebMat, slotMat, faderMat, knobMat, tickMat, ...orbMats]) m.dispose();
+      rig.dispose();
+      for (const m of [ghostLineMat, ghostFillMat, ghostShellMat, plinthMat, deckMat, padMat, glowMat, ghostPadMat, stripMat, playMat, bandMat, ringMat, celebMat, slotMat, faderMat, knobMat, tickMat, ...orbMats]) m.dispose();
       for (const c of channels) c.ledMat.dispose();
     },
   };

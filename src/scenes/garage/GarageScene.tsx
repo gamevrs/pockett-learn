@@ -5,6 +5,7 @@ import { Bot, Video } from "lucide-react";
 import type { SceneProps } from "@/engine/scene";
 import { TouchButtons, useInput } from "@/engine/scene-kit";
 import { useThreeStage } from "@/engine/three-kit";
+import { ACCENT, NEUTRAL } from "@/engine/stage-style";
 import { GarageController, TRACK } from "./controller";
 import { createGarageWorld, type CameraMode } from "./world3d";
 
@@ -102,7 +103,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
             car,
             lit: alive("ignition") && !!prog,
             painted: alive("paint") && !!prog,
-            paint: prog?.str("paint", "#a3e635") ?? "#a3e635",
+            paint: prog?.str("paint", ACCENT[400]) ?? ACCENT[400],
             turbo: prog?.bool("has_turbo", false) ?? false,
             roadAlive: alive("steering"),
             gates: alive("checkpoints") && prog ? prog.list<number>("checkpoints") : [],
@@ -198,49 +199,55 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
 
       {/* name tag */}
       <div ref={labelRef} className="pointer-events-none absolute left-0 top-0 transition-opacity" style={{ opacity: 0 }}>
-        {name && (
-          <span className="rounded-full border border-white/15 bg-black/60 px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-white backdrop-blur">
-            {name}
-          </span>
-        )}
+        {name && <span className="hud-tag font-mono uppercase">{name}</span>}
       </div>
 
       {/* HUD: rows (top info, bottom gauges + buttons, touch pads) so panels can never overlap */}
       <div className="pointer-events-none absolute inset-0 flex flex-col gap-2 p-3 pt-12">
         <div className="flex items-start justify-between gap-2">
-          <div className={`min-w-0 rounded-xl border border-white/10 bg-black/45 px-3 py-2 font-mono text-[11px] leading-relaxed backdrop-blur ${compact ? "max-w-[50%]" : "max-w-[min(60%,280px)]"}`}>
+          <div className={`hud-panel min-w-0 ${lit ? "hud-log" : ""} ${compact ? "max-w-[50%]" : "max-w-[min(60%,280px)]"}`}>
             {lit ? (
               lines.length ? (
                 lines.map((l, i) => (
-                  <p key={i} className="truncate text-lime-100/90">
-                    <span className="text-[#a3e635]">›</span> {l}
+                  <p key={i} className="hud-log-line truncate">
+                    {l}
                   </p>
                 ))
               ) : (
-                <p className="text-white/45">› nothing printed yet</p>
+                <p className="hud-muted">nothing printed yet</p>
               )
             ) : (
               <>
-                <p className="font-medium uppercase tracking-[0.16em] text-[#d9f99d]">{program ? "No power" : "Blueprint"}</p>
-                {!tiny && <p className="text-white/50">{program ? "print() something to boot the car" : "Press Run to boot the car"}</p>}
+                <p className="hud-label">{program ? "No power" : "Blueprint"}</p>
+                {!tiny && <p className="hud-muted">{program ? "print() something to boot the car" : "Press Run to boot the car"}</p>}
               </>
             )}
           </div>
 
           {showLapBoard && (
-            <div className="shrink-0 rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-right font-mono text-[11px] leading-relaxed text-white/60 backdrop-blur">
-              <p className="text-[13px] font-medium text-white">
-                Lap {hud.lap + 1} <span className="ml-1 text-lime-200">{hud.lapTime.toFixed(1)}s</span>
+            <div className="hud-panel shrink-0 text-right">
+              <p className="hud-title">
+                Lap <span className="hud-value">{hud.lap + 1}</span> <span className="hud-value hud-accent ml-1">{hud.lapTime.toFixed(1)}s</span>
               </p>
-              {hud.bestLap !== null && <p>Best {hud.bestLap.toFixed(2)}s</p>}
+              {hud.bestLap !== null && (
+                <p>
+                  <span className="hud-label">Best</span> <span className="hud-value">{hud.bestLap.toFixed(2)}s</span>
+                </p>
+              )}
               {alive("tires") && program?.has("tire") && !tiny && (
-                <p className="text-lime-200">
-                  {program.str("tire", "?")} tyres · grip {program.num("grip", 1).toFixed(2)}
+                <p>
+                  <span className="hud-label">Tyres</span>{" "}
+                  <span className="hud-value">
+                    {program.str("tire", "?")} · grip {program.num("grip", 1).toFixed(2)}
+                  </span>
                 </p>
               )}
               {alive("tires") && program?.has("best_lap") && !compact && (
                 <p>
-                  Pit: best {program.num("best_lap", 0).toFixed(1)}s · avg {program.num("average_lap", 0).toFixed(1)}s
+                  <span className="hud-label">Pit</span>{" "}
+                  <span className="hud-value hud-muted">
+                    best {program.num("best_lap", 0).toFixed(1)}s · avg {program.num("average_lap", 0).toFixed(1)}s
+                  </span>
                 </p>
               )}
             </div>
@@ -249,11 +256,11 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
 
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
           {hud.splitVisible ? (
-            <span className="pop-in rounded-full bg-[#a3e635] px-3 py-1 font-mono text-[11px] font-medium text-[#0a0c06] ">
-              {hud.split}
+            <span className="pop-in hud-tag h-6 px-3">
+              <span className="hud-value hud-accent">{hud.split}</span>
             </span>
           ) : interactive && canDrive && !focused && !hud.autopilot && !compact ? (
-            <span className="rounded-full border border-white/15 bg-black/55 px-3 py-1.5 text-[11px] font-semibold text-white/80 backdrop-blur [@media(pointer:coarse)]:hidden">
+            <span className="hud-tag h-7 px-3 [@media(pointer:coarse)]:hidden">
               Click the stage, then drive with W A S D · C switches camera
             </span>
           ) : null}
@@ -267,7 +274,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
               {lit && interactive && (
                 <button
                   onClick={toggleCamera}
-                  className="flex h-8 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 text-[11px] font-medium text-white/85 backdrop-blur hover:bg-white/10"
+                  className="hud-btn"
                   aria-label={camera === "chase" ? "Switch to overview camera" : "Switch to chase camera"}
                   title="Switch camera (C)"
                 >
@@ -280,9 +287,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
                   onClick={toggleAutopilot}
                   aria-pressed={hud.autopilot}
                   title="Toggle autopilot (P)"
-                  className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-medium uppercase tracking-wide transition-colors ${
-                    hud.autopilot ? "bg-[#a3e635] text-[#0a0c06] shadow-[0_0_30px_rgba(163, 230, 53,0.55)]" : "border border-white/15 bg-black/55 text-white/85 backdrop-blur hover:bg-white/10"
-                  }`}
+                  className={`hud-btn ${hud.autopilot ? "hud-btn-on" : ""}`}
                 >
                   <Bot className="h-3.5 w-3.5" />
                   {compact ? (hud.autopilot ? "On" : "Off") : `Autopilot ${hud.autopilot ? "on" : "off"}`}
@@ -327,22 +332,16 @@ function Speedo({ kmh, top, pedal, power, compact }: { kmh: number; top: number;
   const frac = Math.min(1, Math.max(0, kmh / top));
   return (
     <div className="pointer-events-none flex items-end gap-2.5">
-      <div className="relative rounded-full border border-white/10 bg-black/45 backdrop-blur" style={{ width: size, height: size }}>
+      <div className="hud-panel relative rounded-full p-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="absolute inset-0 rotate-[135deg]">
-          <defs>
-            <linearGradient id="speedo" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#d9f99d" />
-              <stop offset="1" stopColor="#65a30d" />
-            </linearGradient>
-          </defs>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={5} strokeLinecap="round" strokeDasharray={`${circ * sweep} ${circ}`} />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={NEUTRAL[700]} strokeWidth={4} strokeLinecap="round" strokeDasharray={`${circ * sweep} ${circ}`} />
           <circle
             cx={size / 2}
             cy={size / 2}
             r={r}
             fill="none"
-            stroke="url(#speedo)"
-            strokeWidth={5}
+            stroke={ACCENT[400]}
+            strokeWidth={4}
             strokeLinecap="round"
             strokeDasharray={`${circ * sweep * frac} ${circ}`}
             style={{ transition: "stroke-dasharray 0.1s linear" }}
@@ -350,29 +349,27 @@ function Speedo({ kmh, top, pedal, power, compact }: { kmh: number; top: number;
         </svg>
         <div className="absolute inset-0 grid place-items-center text-center">
           <div>
-            <p className="font-display text-xl leading-none text-white" style={{ letterSpacing: "-0.03em" }}>
-              {Math.round(kmh)}
-            </p>
-            <p className="font-mono text-[9px] font-medium tracking-widest text-white/50">KM/H</p>
+            <p className={`hud-value leading-none ${compact ? "text-lg" : "text-xl"}`}>{Math.round(kmh)}</p>
+            <p className="hud-label mt-0.5">km/h</p>
           </div>
         </div>
       </div>
       {pedal !== null && power !== null && !compact && (
-        <div className="mb-1 w-24 space-y-1.5 rounded-xl border border-white/10 bg-black/45 px-2.5 py-2 font-mono text-[9px] font-medium tracking-wider text-white/55 backdrop-blur">
-          <Bar label="PEDAL" value={pedal} color="rgba(255,255,255,0.75)" />
-          <Bar label="POWER" value={power} color="#a3e635" />
+        <div className="hud-panel mb-1 w-24 space-y-1.5">
+          <Bar label="Pedal" value={pedal} fill={NEUTRAL[200]} />
+          <Bar label="Power" value={power} />
         </div>
       )}
     </div>
   );
 }
 
-function Bar({ label, value, color }: { label: string; value: number; color: string }) {
+function Bar({ label, value, fill }: { label: string; value: number; fill?: string }) {
   return (
     <div>
-      <p>{label}</p>
-      <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-        <div className="h-full rounded-full" style={{ width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%`, background: color }} />
+      <p className="hud-label">{label}</p>
+      <div className="hud-bar mt-1">
+        <span style={{ width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%`, background: fill }} />
       </div>
     </div>
   );

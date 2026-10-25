@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { SceneProps } from "@/engine/scene";
 import { useInput } from "@/engine/scene-kit";
 import { useThreeStage } from "@/engine/three-kit";
+import { ACCENT, NEUTRAL, ROLE, SIGNAL } from "@/engine/stage-style";
 import type { ProgramHandle } from "@/engine/program";
 import {
   G0,
@@ -39,10 +40,12 @@ const smooth = (t: number) => {
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
 const TICK = 0.62;
+/** Livery when the learner hasn't set rocket_color. */
+const DEFAULT_LIVERY = NEUTRAL[100];
 const TICK_AUTO = 0.34;
 
 type Mode = "idle" | "countdown" | "held" | "flight" | "outro" | "over";
-type Tone = "ok" | "bad" | "accent" | "plain";
+type Tone = "ok" | "bad" | "warn" | "accent" | "plain";
 
 interface Banner {
   title: string;
@@ -178,7 +181,7 @@ function readRocket(program: ProgramHandle | null) {
   return {
     mission: program ? clip(program.str("mission_name", "MISSION"), 24) : "MISSION",
     name: program ? clip(program.str("rocket_name", "ROCKET"), 18) : "ROCKET",
-    color: program ? program.str("rocket_color", "#f2f4fa") : "#f2f4fa",
+    color: program ? program.str("rocket_color", DEFAULT_LIVERY) : DEFAULT_LIVERY,
     crew: program ? clamp(Math.round(program.num("crew", 0)), 0, 8) : 0,
     fuelT: program ? clamp(program.num("fuel_tons", 80), 0, 2000) : 80,
     tower: program ? program.bool("has_escape_tower", true) : true,
@@ -223,18 +226,30 @@ function clockText(s: Sim, tick: number): string {
   return "";
 }
 
+/** Headline tone (banners, result card): lime means the learner's code made it work. */
 const toneText: Record<Tone, string> = {
-  ok: "text-[#34d399]",
-  bad: "text-[#f87171]",
-  accent: "text-lime-200",
-  plain: "text-white",
+  ok: "hud-accent",
+  bad: "hud-danger",
+  warn: "hud-warning",
+  accent: "hud-accent",
+  plain: "",
 };
-const toneBar: Record<Tone, string> = {
-  ok: "bg-[#34d399]",
-  bad: "bg-[#f87171]",
-  accent: "bg-[#a3e635]",
-  plain: "bg-white/70",
+/** Telemetry values stay neutral unless they report a verdict (good / caution / failure). */
+const toneValue: Record<Tone, string> = {
+  ok: "hud-accent",
+  bad: "hud-danger",
+  warn: "hud-warning",
+  accent: "",
+  plain: "",
 };
+/** Meter fill; lime (the .hud-bar default) unless the reading is a warning. */
+const toneBar: Partial<Record<Tone, string>> = {
+  bad: SIGNAL.danger,
+  warn: SIGNAL.warning,
+  plain: NEUTRAL[300],
+};
+/** Focus ring on the panel the current lesson will power. */
+const ringStyle = { boxShadow: `0 0 0 2px ${ACCENT[400]}` };
 
 // ───────────────────────── the scene ─────────────────────────
 export default function LaunchScene({ program, unlocked, focus, celebration, interactive, autoplay = false }: SceneProps) {
@@ -248,7 +263,7 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
     engines: false,
     staged: false,
     tower: 1,
-    color: "#f2f4fa",
+    color: DEFAULT_LIVERY,
     crew: 0,
     flying: false,
     altKm: 0,
@@ -619,7 +634,7 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
     if (alive("rocket") && program) {
       if (f && spec) {
         const frac = fuelFraction(f, spec);
-        rows.push({ label: "FUEL", value: `${(frac * (totalFuelKg(spec) / 1000)).toFixed(1)} t`, bar: frac, tone: frac > 0.12 ? "accent" : "bad" });
+        rows.push({ label: "FUEL", value: `${(frac * (totalFuelKg(spec) / 1000)).toFixed(1)} t`, bar: frac, tone: frac > 0.12 ? "accent" : "warn" });
       } else {
         rows.push({ label: "FUEL", value: `${data.fuelT.toFixed(1)} t`, bar: s.fuelAnim, tone: "accent" });
       }
@@ -736,13 +751,12 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
   const teleW = Math.round(tiny ? Math.min(138, W / 2 - 18) : compact ? 142 : 156);
   const consoleW = Math.round(Math.max(110, Math.min(portrait ? 270 : 300, hasTele ? W - teleW - 36 : W - 24)));
   const countSize = Math.round(clamp(Math.min(W, H) * 0.17, 34, 92));
-  const ringConsole = interactive && (focus === "console" || focus === "countdown") && !alive(focus) ? "ring-2 ring-[#a3e635]/70" : "";
-  const ringTele = interactive && (focus === "throttle" || focus === "guidance") && !alive(focus) ? "ring-2 ring-[#a3e635]/70" : "";
-  const glass = "rounded-xl border border-white/10 bg-black/45 backdrop-blur";
+  const ringConsole = interactive && (focus === "console" || focus === "countdown") && !alive(focus) ? ringStyle : undefined;
+  const ringTele = interactive && (focus === "throttle" || focus === "guidance") && !alive(focus) ? ringStyle : undefined;
   const bannerTop = portrait && !compact;
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#070807]">
+    <div className="relative h-full w-full overflow-hidden" style={{ backgroundColor: ROLE.void }}>
       <canvas
         ref={canvasRef}
         tabIndex={interactive ? 0 : -1}
@@ -751,51 +765,52 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
       />
 
       {hud && (
-        <div className={`pointer-events-none absolute inset-0 font-mono leading-snug text-white ${tiny ? "text-[10.5px]" : "text-[11px]"}`}>
+        <div className={`pointer-events-none absolute inset-0 leading-snug ${tiny ? "text-[10.5px]" : "text-[11px]"}`}>
           {/* console (top-left, below the stage header) */}
-          <div className={`absolute left-3 top-11 ${glass} ${tiny ? "px-2 py-1.5" : "px-3 py-2"} ${ringConsole}`} style={{ width: consoleW }}>
+          <div className={`hud-panel absolute left-3 top-11 ${tiny ? "px-2 py-1.5" : "px-3 py-2"}`} style={{ width: consoleW, ...ringConsole }}>
             {hud.consoleOn ? (
               <>
-                <div className="mb-0.5 flex items-center justify-between gap-2 text-[9.5px] uppercase tracking-[0.12em] text-lime-200/70">
-                  <span className="truncate">{tiny && hud.showPlate ? hud.mission : "Launch console"}</span>
-                  {hud.clock && <span className="shrink-0 font-medium text-lime-200">{hud.clock}</span>}
+                <div className="mb-0.5 flex items-center justify-between gap-2">
+                  <span className="hud-label truncate">{tiny && hud.showPlate ? hud.mission : "Launch console"}</span>
+                  {hud.clock && <span className="hud-value shrink-0">{hud.clock}</span>}
                 </div>
-                {hud.lines.length ? (
-                  hud.lines.map((l, i) => (
-                    <div key={`${i}-${l}`} className="truncate text-lime-100">
-                      <span className="text-[#a3e635]">› </span>
-                      {l}
-                    </div>
-                  ))
-                ) : (
-                  <div className="truncate text-white/45">› (nothing printed yet)</div>
-                )}
+                <div className="hud-log">
+                  {hud.lines.length ? (
+                    hud.lines.map((l, i) => (
+                      <div key={`${i}-${l}`} className="hud-log-line truncate">
+                        {l}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="hud-log-line hud-muted truncate">(nothing printed yet)</div>
+                  )}
+                </div>
               </>
             ) : (
               <>
-                <div className="truncate text-[10px] font-medium uppercase tracking-[0.14em] text-lime-200">{program ? "Console offline" : "Blueprint"}</div>
-                <div className="truncate text-white/50">{program ? "print() to power it on" : "press Run to power up"}</div>
+                <div className="hud-label hud-accent truncate">{program ? "Console offline" : "Blueprint"}</div>
+                <div className="hud-muted truncate">{program ? "print() to power it on" : "press Run to power up"}</div>
               </>
             )}
           </div>
 
           {/* telemetry (top-right) */}
           {hasTele && (
-            <div className={`absolute right-3 top-11 ${glass} ${tiny ? "px-2 py-1.5" : "px-3 py-2"} ${ringTele}`} style={{ width: teleW }}>
+            <div className={`hud-panel absolute right-3 top-11 ${tiny ? "px-2 py-1.5" : "px-3 py-2"}`} style={{ width: teleW, ...ringTele }}>
               {hud.rows.map((r) => (
                 <div key={r.label} className="py-[1px]">
                   <div className="flex min-w-0 items-baseline justify-between gap-2">
-                    <span className="shrink-0 whitespace-nowrap text-[9.5px] uppercase tracking-wider text-white/50">{r.label}</span>
-                    <span className={`truncate font-medium tabular-nums ${toneText[r.tone ?? "plain"]}`}>{r.value}</span>
+                    <span className="hud-label shrink-0 whitespace-nowrap">{r.label}</span>
+                    <span className={`hud-value truncate ${toneValue[r.tone ?? "plain"]}`}>{r.value}</span>
                   </div>
                   {r.bar !== undefined && (
-                    <div className="mt-0.5 h-[3px] w-full overflow-hidden rounded-full bg-white/10">
-                      <div className={`h-full rounded-full ${toneBar[r.tone ?? "accent"]}`} style={{ width: `${clamp(r.bar, 0, 1) * 100}%` }} />
+                    <div className="hud-bar mt-0.5 w-full">
+                      <span style={{ width: `${clamp(r.bar, 0, 1) * 100}%`, backgroundColor: toneBar[r.tone ?? "accent"] }} />
                     </div>
                   )}
                 </div>
               ))}
-              {hud.warp > 1.5 && <div className="mt-1 text-right text-[9.5px] font-medium text-lime-200/80">TIME ×{Math.round(hud.warp)}</div>}
+              {hud.warp > 1.5 && <div className="hud-label mt-1 text-right">Time ×{Math.round(hud.warp)}</div>}
             </div>
           )}
 
@@ -804,7 +819,7 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
             <div className="absolute inset-x-0 flex justify-center" style={{ top: portrait ? "30%" : "24%" }}>
               <div
                 key={hud.countKey}
-                className="pop-in font-sans font-semibold leading-none tracking-tight text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.6)]"
+                className="hud-title pop-in font-sans leading-none tabular-nums drop-shadow-lg"
                 style={{ fontSize: hud.countdown.length > 3 ? Math.round(countSize * 0.5) : countSize }}
               >
                 {hud.countdown}
@@ -816,14 +831,14 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
           {hud.banner && !hud.result && (
             <div className="absolute inset-x-0 flex justify-center px-3" style={bannerTop ? { top: "40%" } : { bottom: tiny ? "2.9rem" : "3.4rem" }}>
               {bannerTop ? (
-                <div key={hud.banner.id} className={`pop-in ${glass} max-w-full px-4 py-2 text-center`}>
-                  <div className={`truncate font-sans text-sm font-semibold uppercase tracking-[0.18em] ${toneText[hud.banner.tone]}`}>{hud.banner.title}</div>
-                  <div className="truncate text-[10.5px] text-white/70">{hud.banner.sub}</div>
+                <div key={hud.banner.id} className="hud-panel pop-in max-w-full px-4 py-2 text-center">
+                  <div className={`hud-title truncate font-sans text-sm uppercase tracking-[0.12em] ${toneText[hud.banner.tone]}`}>{hud.banner.title}</div>
+                  <div className="hud-muted truncate">{hud.banner.sub}</div>
                 </div>
               ) : (
-                <div key={hud.banner.id} className="pop-in flex min-w-0 max-w-full items-baseline gap-2 rounded-full border border-white/10 bg-black/45 px-3 py-1 backdrop-blur">
-                  <span className={`shrink-0 font-sans text-[11px] font-semibold uppercase tracking-[0.14em] ${toneText[hud.banner.tone]}`}>{hud.banner.title}</span>
-                  {!tiny && <span className="truncate text-[10.5px] text-white/65">{hud.banner.sub}</span>}
+                <div key={hud.banner.id} className="hud-panel pop-in flex min-w-0 max-w-full items-baseline gap-2 rounded-full px-3 py-1">
+                  <span className={`hud-title shrink-0 font-sans text-[11px] uppercase tracking-[0.12em] ${toneText[hud.banner.tone]}`}>{hud.banner.title}</span>
+                  {!tiny && <span className="hud-muted truncate">{hud.banner.sub}</span>}
                 </div>
               )}
             </div>
@@ -832,29 +847,31 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
           {/* outcome card (centred, above everything) */}
           {hud.result && (
             <div className="absolute inset-0 z-[5] flex items-center justify-center px-3">
-              <div className={`pop-in ${glass} bg-black/65 ${tiny ? "px-3 py-2" : "px-4 py-3"}`} style={{ width: Math.min(340, W - 24) }}>
-                <div className={`font-sans font-semibold uppercase tracking-[0.12em] ${tiny ? "text-sm" : "text-lg"} ${toneText[hud.result.tone]}`}>{hud.result.title}</div>
-                {(tiny ? hud.result.lines.slice(0, 2) : hud.result.lines).map((l) => (
-                  <div key={l} className="mt-1 text-white/85">
-                    {l}
-                  </div>
-                ))}
+              <div className={`hud-panel pop-in ${tiny ? "px-3 py-2" : "px-4 py-3"}`} style={{ width: Math.min(340, W - 24) }}>
+                <div className={`hud-title font-sans ${tiny ? "text-sm" : "text-lg"} ${toneText[hud.result.tone]}`}>{hud.result.title}</div>
+                <div className="hud-log">
+                  {(tiny ? hud.result.lines.slice(0, 2) : hud.result.lines).map((l) => (
+                    <div key={l} className="mt-1">
+                      {l}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
           {/* mission plate (bottom-left; on small stages the name moves into the console header) */}
           {hud.showPlate && !tiny && (
-            <div className={`absolute bottom-3 left-3 ${glass} px-3 py-1.5`} style={{ maxWidth: Math.max(120, W - 210) }}>
-              <div className="truncate font-medium text-white/90">
-                {hud.mission} <span className="text-lime-200/70">· {hud.rocket}</span>
+            <div className="hud-panel absolute bottom-3 left-3 px-3 py-1.5" style={{ maxWidth: Math.max(120, W - 210) }}>
+              <div className="hud-title truncate">
+                {hud.mission} <span className="hud-muted font-medium">· {hud.rocket}</span>
               </div>
               {hud.crew > 0 && (
-                <div className="mt-0.5 flex items-center gap-1 text-[10px] text-white/55">
+                <div className="mt-0.5 flex items-center gap-1">
                   {Array.from({ length: hud.crew }, (_, i) => (
-                    <span key={i} className="inline-block h-2 w-2 rounded-full bg-[#a3e635]" />
+                    <span key={i} className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: ROLE.alive }} />
                   ))}
-                  <span className="ml-1">CREW {hud.crew}</span>
+                  <span className="hud-label ml-1">Crew {hud.crew}</span>
                 </div>
               )}
             </div>
@@ -862,7 +879,7 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
 
           {!compact && !hud.banner && !focused && canLaunch && (uiMode === "over" || uiMode === "held") && (
             <div className="absolute inset-x-0 bottom-14 flex justify-center [@media(pointer:coarse)]:hidden">
-              <span className="rounded-full border border-white/10 bg-black/45 px-3 py-1.5 font-sans text-[11px] font-semibold text-white/80 backdrop-blur">Click the stage, then press R to relaunch</span>
+              <span className="hud-panel rounded-full px-3 py-1.5 text-[11px] font-medium">Click the stage, then press R to relaunch</span>
             </div>
           )}
         </div>
@@ -877,10 +894,10 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
             if (s.mode === "countdown") s.skipReq = true;
             else s.restartReq = true;
           }}
-          className={`absolute bottom-3 right-3 z-10 rounded-full border border-[#a3e635]/60 bg-black/55 font-mono font-medium uppercase tracking-wider text-white backdrop-blur transition-colors hover:bg-[#a3e635]/25 ${tiny ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-[11px]"}`}
+          className={`hud-btn absolute bottom-3 right-3 z-10 ${tiny ? "h-auto px-2.5 py-1 text-[10px]" : ""}`}
         >
           {uiMode === "countdown" ? (tiny ? "Skip" : "Skip countdown") : uiMode === "idle" ? "Launch" : tiny ? "Relaunch" : "Launch again"}
-          {!tiny && <span className="text-lime-200/70"> ({uiMode === "countdown" ? "Space" : "R"})</span>}
+          {!tiny && <span className="hud-muted font-mono text-[11px]">{uiMode === "countdown" ? "Space" : "R"}</span>}
         </button>
       )}
     </div>

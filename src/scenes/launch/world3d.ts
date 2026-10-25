@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { BRAND, BRAND_LIGHT, type ThreeContext } from "@/engine/three-kit";
+import type { ThreeContext } from "@/engine/three-kit";
+import { GLOW, NEUTRAL, ROLE, SIGNAL, applyBloom, createFloor, material, setupStage, type StageRig } from "@/engine/stage-style";
 
 /**
  * Three.js rendering for Launch Control. Pure view: it never touches the learner program
@@ -36,11 +37,29 @@ export interface LaunchView {
 
 export type WorldEvent = "reset" | "liftoff" | "stage_sep" | "abort" | "crash" | "celebrate";
 
-const LIME_DEEP = new THREE.Color("#65a30d");
-const BG = new THREE.Color("#070807");
-const SKY_TOP = new THREE.Color("#101a1c");
-const SKY_LOW = new THREE.Color("#34464c");
-const SKY_BLUEPRINT = new THREE.Color("#0b0c0a");
+// Sky: a neutral dusk grey at ground level that fades to the shared void as the rocket climbs.
+const BG = new THREE.Color(ROLE.void);
+const SKY_TOP = new THREE.Color(NEUTRAL[900]);
+const SKY_LOW = new THREE.Color(NEUTRAL[700]);
+const SKY_BLUEPRINT = new THREE.Color(NEUTRAL[900]);
+/** Default livery when the learner's rocket_color is missing or invalid. */
+const DEFAULT_LIVERY = NEUTRAL[100];
+/** HDR multiplier for the floodlight lamp heads (real light sources, so they may bloom a touch). */
+const LAMP = 1.25;
+/** Blueprint wireframe opacity (the material.blueprint default; dense hulls overlap so they still read). */
+const GHOST_OPACITY = 0.14;
+// Particle colours are written straight into a linear render target, so take the linear components.
+const HEAT = new THREE.Color(SIGNAL.heat);
+const HEAT_CORE = new THREE.Color(SIGNAL.heatCore);
+const SMOKE = new THREE.Color(NEUTRAL[300]);
+const SMOKE_DARK = new THREE.Color(NEUTRAL[400]);
+const CHEER = new THREE.Color(ROLE.aliveBright);
+
+/** "rgba(...)" from a palette hex, for canvas painting. */
+function rgba(hex: string, a: number) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
 const RE = 4200; // planet radius in world units
 const PAD_TOP = 1;
 const ROCKET_CENTER = 6; // rocket local origin sits this far above its base
@@ -218,9 +237,9 @@ function earthTexture() {
   return canvasTexture(1024, 512, (g) => {
     const rnd = seeded(11);
     const grad = g.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, "#121c1f");
-    grad.addColorStop(0.5, "#18252a");
-    grad.addColorStop(1, "#121c1f");
+    grad.addColorStop(0, NEUTRAL[900]);
+    grad.addColorStop(0.5, NEUTRAL[850]);
+    grad.addColorStop(1, NEUTRAL[900]);
     g.fillStyle = grad;
     g.fillRect(0, 0, 1024, 512);
     // land masses: soft desaturated blobs
@@ -229,7 +248,7 @@ function earthTexture() {
       const y = 80 + rnd() * 352;
       const r = 20 + rnd() * 70;
       for (let j = 0; j < 9; j++) {
-        g.fillStyle = `rgba(44, 52, 50,${0.35 + rnd() * 0.3})`;
+        g.fillStyle = rgba(NEUTRAL[700], 0.35 + rnd() * 0.3);
         g.beginPath();
         g.ellipse(x + (rnd() - 0.5) * r * 1.6, y + (rnd() - 0.5) * r, r * (0.4 + rnd() * 0.6), r * (0.3 + rnd() * 0.5), rnd() * 3, 0, 7);
         g.fill();
@@ -237,7 +256,7 @@ function earthTexture() {
     }
     // cloud streaks
     for (let i = 0; i < 160; i++) {
-      g.fillStyle = `rgba(232, 240, 236,${0.05 + rnd() * 0.14})`;
+      g.fillStyle = rgba(NEUTRAL[100], 0.05 + rnd() * 0.14);
       g.beginPath();
       g.ellipse(rnd() * 1024, rnd() * 512, 20 + rnd() * 90, 2 + rnd() * 6, (rnd() - 0.5) * 0.3, 0, 7);
       g.fill();
@@ -248,11 +267,11 @@ function earthTexture() {
 function moonTexture() {
   return canvasTexture(512, 256, (g) => {
     const rnd = seeded(5);
-    g.fillStyle = "#9b9aa3";
+    g.fillStyle = NEUTRAL[300];
     g.fillRect(0, 0, 512, 256);
     for (let i = 0; i < 140; i++) {
       const r = 2 + rnd() * rnd() * 30;
-      g.fillStyle = `rgba(${rnd() < 0.5 ? "70,70,80" : "185,185,195"},${0.12 + rnd() * 0.2})`;
+      g.fillStyle = rgba(rnd() < 0.5 ? NEUTRAL[600] : NEUTRAL[200], 0.12 + rnd() * 0.2);
       g.beginPath();
       g.arc(rnd() * 512, rnd() * 256, r, 0, 7);
       g.fill();
@@ -263,9 +282,9 @@ function moonTexture() {
 function softDot() {
   return canvasTexture(64, 64, (g) => {
     const r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-    r.addColorStop(0, "rgba(255,255,255,1)");
-    r.addColorStop(0.5, "rgba(255,255,255,0.35)");
-    r.addColorStop(1, "rgba(255,255,255,0)");
+    r.addColorStop(0, rgba(SIGNAL.white, 1));
+    r.addColorStop(0.5, rgba(SIGNAL.white, 0.35));
+    r.addColorStop(1, rgba(SIGNAL.white, 0));
     g.fillStyle = r;
     g.fillRect(0, 0, 64, 64);
   });
@@ -279,23 +298,27 @@ export class LaunchWorld {
   private readonly scene: THREE.Scene;
   private readonly camera: THREE.PerspectiveCamera;
 
-  private readonly ghost = new THREE.MeshBasicMaterial({ color: BRAND, wireframe: true, transparent: true, opacity: 0.5, depthWrite: false });
-  private readonly paint = new THREE.MeshPhysicalMaterial({ color: "#f2f4fa", clearcoat: 1, clearcoatRoughness: 0.18, roughness: 0.36, metalness: 0.12 });
+  private readonly ghost = material.blueprint(GHOST_OPACITY);
+  private readonly paint = material.satin(DEFAULT_LIVERY); // the learner's rocket_color
   private readonly sky: THREE.Mesh;
   private readonly skyTop = new THREE.Color();
   private readonly skyBottom = new THREE.Color();
   private readonly fog: THREE.FogExp2;
+  private readonly rig: StageRig;
+  private readonly keyOffset = new THREE.Vector3();
+  private readonly keyBase: number;
+  private readonly hemiBase: number;
 
   private readonly earthPivot = new THREE.Group();
   private readonly atmosphere: THREE.Mesh;
   private readonly padGroup = new THREE.Group();
-  private readonly grid: THREE.GridHelper;
-  private readonly groundMat: THREE.MeshStandardMaterial;
   private readonly ground: THREE.Mesh;
+  private readonly groundMat: THREE.MeshStandardMaterial;
   private readonly arms: THREE.Group[] = [];
-  private readonly beacon = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), new THREE.MeshBasicMaterial({ color: BRAND, toneMapped: false }));
+  private readonly beaconMat = material.glow(ROLE.alive, "faint");
+  private readonly beacon = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), this.beaconMat);
   private readonly padLights: THREE.PointLight[] = [];
-  private readonly padBulbs = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.35, 2.2), toneMapped: false });
+  private readonly padBulbs = new THREE.MeshBasicMaterial({ color: new THREE.Color(SIGNAL.heatCore).multiplyScalar(LAMP), toneMapped: false });
 
   private readonly rocket = new THREE.Group(); // positioned at the rocket centre, rotated by pitch
   private readonly body = new THREE.Group(); // offset so its base sits at the origin of the stack
@@ -311,9 +334,6 @@ export class LaunchWorld {
   private readonly flame = new THREE.Group();
   private readonly flameMats: THREE.MeshBasicMaterial[] = [];
   private readonly flameLight: THREE.PointLight;
-  private readonly rim: THREE.PointLight;
-  private readonly key: THREE.DirectionalLight;
-  private readonly hemi: THREE.HemisphereLight;
 
   private readonly smoke = new ParticleField(900, false);
   private readonly fire = new ParticleField(500, true);
@@ -365,14 +385,20 @@ export class LaunchWorld {
     this.camera.far = 12500;
     this.camera.fov = 38;
     this.camera.updateProjectionMatrix();
-    ctx.bloom.strength = 0.45;
-    ctx.bloom.radius = 0.55;
-    ctx.bloom.threshold = 0.82;
+    applyBloom(ctx);
 
+    // shared rig: reflections, hemisphere fill, one shadow-casting key (it follows the rocket
+    // near the ground, see frame()) and the faint brand rim. Sky colour and fog are driven by altitude.
     const scene = this.scene;
+    this.rig = setupStage(ctx, { shadowExtent: 30, keyFrom: [-40, 70, 45], fog: 0.004, reflections: 0.35 });
+    this.rig.key.shadow.mapSize.set(1024, 1024); // same budget as before; the shadow box is small
+    this.keyOffset.copy(this.rig.key.position);
+    this.keyBase = this.rig.key.intensity;
+    this.hemiBase = this.rig.hemi.intensity;
+    scene.add(this.rig.key.target);
     scene.background = BG.clone();
-    this.fog = new THREE.FogExp2(0x232521, 0.004);
-    scene.fog = this.fog;
+    this.fog = scene.fog as THREE.FogExp2;
+    this.fog.color.copy(SKY_LOW);
 
     // ── sky dome (single-hue vertical gradient) ──
     this.sky = new THREE.Mesh(
@@ -389,26 +415,8 @@ export class LaunchWorld {
     this.sky.renderOrder = -10;
     scene.add(this.sky);
 
-    // ── lights ──
-    this.hemi = new THREE.HemisphereLight(0xc8cbc4, 0x181a17, 0.55);
-    scene.add(this.hemi);
-    this.key = new THREE.DirectionalLight(0xfff4ea, 2.2);
-    this.key.position.set(-40, 70, 45);
-    this.key.castShadow = true;
-    this.key.shadow.mapSize.set(1024, 1024);
-    this.key.shadow.camera.left = -30;
-    this.key.shadow.camera.right = 30;
-    this.key.shadow.camera.top = 30;
-    this.key.shadow.camera.bottom = -10;
-    this.key.shadow.camera.near = 10;
-    this.key.shadow.camera.far = 200;
-    this.key.shadow.bias = -0.0005;
-    this.key.shadow.radius = 4;
-    scene.add(this.key);
-    scene.add(this.key.target);
-    this.rim = new THREE.PointLight(BRAND, 60, 70, 1.6);
-    scene.add(this.rim);
-    this.flameLight = new THREE.PointLight(0xff9a4a, 0, 90, 1.5);
+    // the engine plume is the only coloured light (a real light source)
+    this.flameLight = new THREE.PointLight(SIGNAL.heat, 0, 90, 1.5);
     scene.add(this.flameLight);
 
     // ── planet ──
@@ -426,7 +434,7 @@ export class LaunchWorld {
         side: THREE.BackSide,
         blending: THREE.AdditiveBlending,
         fog: false,
-        uniforms: { uColor: { value: new THREE.Color("#a3e635") }, uStrength: { value: 0 } },
+        uniforms: { uColor: { value: new THREE.Color(NEUTRAL[200]) }, uStrength: { value: 0 } },
         vertexShader: `varying vec3 vN; varying vec3 vView; void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vN = normalize(mat3(modelMatrix) * normal); vView = normalize(cameraPosition - wp.xyz); gl_Position = projectionMatrix * viewMatrix * wp; }`,
         fragmentShader: `uniform vec3 uColor; uniform float uStrength; varying vec3 vN; varying vec3 vView; void main(){ float f = pow(1.0 - abs(dot(vN, vView)), 3.0); gl_FragColor = vec4(uColor * f * 1.6, f * uStrength); }`,
       }),
@@ -437,24 +445,22 @@ export class LaunchWorld {
     // ── pad (rides on the planet) ──
     this.padGroup.position.set(0, RE + 1.5, 0);
     this.earthPivot.add(this.padGroup);
-    this.groundMat = new THREE.MeshStandardMaterial({ color: 0x121411, roughness: 1, metalness: 0, transparent: true, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
+    // ground: the shared mipmapped floor grid (no moiré), cut to a disc so its edge never reads
+    // as a square; CircleGeometry's UVs span the same 0..1 square as the 340-unit plane
+    const floor = createFloor(ctx, { size: 340, cell: 4 });
+    floor.geometry.dispose();
+    this.groundMat = floor.material;
+    Object.assign(this.groundMat, { transparent: true, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
     const ground = new THREE.Mesh(new THREE.CircleGeometry(170, 64), this.groundMat);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0;
-    this.ground = ground;
+    ground.rotation.copy(floor.rotation);
     ground.receiveShadow = true;
+    this.ground = ground;
     this.padGroup.add(ground);
-    this.grid = new THREE.GridHelper(320, 80, BRAND, BRAND);
-    const gridMat = this.grid.material as THREE.Material;
-    gridMat.transparent = true;
-    gridMat.opacity = 0.14;
-    gridMat.depthWrite = false;
-    this.grid.position.y = 0.12;
-    this.padGroup.add(this.grid);
     this.buildPad();
 
     // ── rocket ──
-    this.windows = new THREE.MeshStandardMaterial({ color: 0x161715, emissive: BRAND_LIGHT, emissiveIntensity: 0.25, roughness: 0.2, metalness: 0.4 });
+    // crew windows light up for the crew the learner set
+    this.windows = material.glow(ROLE.aliveBright, "soft", { color: NEUTRAL[900], roughness: 0.2, metalness: 0.4 });
     const { interstage, upperNozzle, collar } = this.buildRocket();
     this.interstage = interstage;
     this.upperNozzle = upperNozzle;
@@ -467,13 +473,13 @@ export class LaunchWorld {
     const flameGeo = new THREE.ConeGeometry(1, 1, 24, 1, true);
     flameGeo.rotateX(Math.PI); // tip down
     flameGeo.translate(0, -0.5, 0); // wide end at the nozzle (y = 0)
-    const flameColors: [number, number, number, number][] = [
-      [1.0, 0.42, 0.12, 0.42],
-      [1.0, 0.68, 0.3, 0.6],
-      [1.0, 0.95, 0.82, 0.85],
+    const flameColors: [THREE.Color, number][] = [
+      [HEAT, 0.42],
+      [HEAT.clone().lerp(HEAT_CORE, 0.5), 0.6],
+      [HEAT_CORE, 0.85],
     ];
-    flameColors.forEach(([r, g, b, o], i) => {
-      const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(r * 3, g * 3, b * 3), transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false, side: THREE.DoubleSide });
+    flameColors.forEach(([c, o], i) => {
+      const m = new THREE.MeshBasicMaterial({ color: c.clone().multiplyScalar(3), transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false, side: THREE.DoubleSide });
       this.flameMats.push(m);
       const cone = new THREE.Mesh(flameGeo, m);
       const s = 1 - i * 0.28;
@@ -505,16 +511,16 @@ export class LaunchWorld {
     }
     const starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-    this.starMat = new THREE.PointsMaterial({ color: 0xf2f3f2, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, fog: false });
+    this.starMat = new THREE.PointsMaterial({ color: NEUTRAL[50], size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, fog: false });
     this.stars = new THREE.Points(starGeo, this.starMat);
     this.stars.renderOrder = -9;
     scene.add(this.stars);
 
-    this.moonMat = new THREE.MeshStandardMaterial({ map: moonTexture(), roughness: 1, emissive: 0x30332d, emissiveIntensity: 0.6, transparent: true, opacity: 0, fog: false });
+    this.moonMat = new THREE.MeshStandardMaterial({ map: moonTexture(), roughness: 1, emissive: NEUTRAL[700], emissiveIntensity: 0.6, transparent: true, opacity: 0, fog: false });
     this.moon = new THREE.Mesh(new THREE.SphereGeometry(110, 48, 32), this.moonMat);
     scene.add(this.moon);
 
-    this.cloudMat = new THREE.SpriteMaterial({ map: softDot(), color: 0xd4d7d2, transparent: true, opacity: 0.22, depthWrite: false });
+    this.cloudMat = new THREE.SpriteMaterial({ map: softDot(), color: NEUTRAL[200], transparent: true, opacity: 0.22, depthWrite: false });
     for (let i = 0; i < 26; i++) {
       const s = new THREE.Sprite(this.cloudMat);
       const alt = 1200 + rnd() * 6000;
@@ -533,7 +539,10 @@ export class LaunchWorld {
     trailGeo.setAttribute("position", new THREE.BufferAttribute(this.trailPos, 3).setUsage(THREE.DynamicDrawUsage));
     trailGeo.setDrawRange(0, 0);
     trailGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e6);
-    this.trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: BRAND_LIGHT, transparent: true, opacity: 0.75, fog: false }));
+    // the flight path is drawn by the learner's engines + guidance, so it's the brand accent
+    const trailMat = material.line(ROLE.aliveBright, 0.75);
+    trailMat.fog = false;
+    this.trail = new THREE.Line(trailGeo, trailMat);
     this.trail.frustumCulled = false;
     this.earthPivot.add(this.trail);
   }
@@ -546,9 +555,9 @@ export class LaunchWorld {
   }
 
   private buildPad() {
-    const concrete = new THREE.MeshStandardMaterial({ color: 0x30332d, roughness: 0.92, metalness: 0.05 });
-    const steel = new THREE.MeshStandardMaterial({ color: 0x666d60, roughness: 0.55, metalness: 0.7 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x0e0e0d, roughness: 1 });
+    const concrete = material.matte(ROLE.structureDark); // floodlit, so it starts dark
+    const steel = material.metal(ROLE.surface, { roughness: 0.55 });
+    const dark = material.matte(ROLE.floor);
 
     const pad = new THREE.Mesh(new THREE.CylinderGeometry(9, 10, PAD_TOP, 40), concrete);
     pad.position.y = PAD_TOP / 2;
@@ -589,7 +598,7 @@ export class LaunchWorld {
     this.padGroup.add(this.track(lattice, "pad"));
 
     // swing arms (pivot at the tower)
-    const armMat = new THREE.MeshStandardMaterial({ color: 0x41453d, roughness: 0.6, metalness: 0.5 });
+    const armMat = material.satin(ROLE.structure, { metalness: 0.5 });
     for (const y of [5.5, 9.5, 12.6]) {
       const pivot = new THREE.Group();
       pivot.position.set(towerX + w / 2, PAD_TOP + y, 0);
@@ -612,7 +621,7 @@ export class LaunchWorld {
       const bulb = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 0.4), this.padBulbs);
       bulb.position.set(x, PAD_TOP + 9.1, z);
       this.padGroup.add(bulb);
-      const light = new THREE.PointLight(0xf8f8f7, 0, 45, 1.4);
+      const light = new THREE.PointLight(SIGNAL.white, 0, 45, 1.4);
       light.position.set(x * 0.85, PAD_TOP + 8.5, z * 0.85);
       this.padLights.push(light);
       this.padGroup.add(light);
@@ -627,10 +636,10 @@ export class LaunchWorld {
   }
 
   private buildRocket(): { interstage: THREE.Mesh; upperNozzle: THREE.Mesh; collar: THREE.Mesh } {
-    const metal = new THREE.MeshPhysicalMaterial({ color: 0x41453d, roughness: 0.32, metalness: 0.9, clearcoat: 0.3 });
-    const band = new THREE.MeshStandardMaterial({ color: 0x1a1c18, roughness: 0.5, metalness: 0.3 });
-    const white = new THREE.MeshPhysicalMaterial({ color: 0xdee0dc, roughness: 0.42, metalness: 0.1, clearcoat: 0.6 });
-    const towerMat = new THREE.MeshStandardMaterial({ color: 0xd0d2cd, roughness: 0.4, metalness: 0.6 });
+    const metal = material.metal(NEUTRAL[500]); // engine bells
+    const band = material.satin(ROLE.structureDark); // bands, fins, interstage
+    const white = material.satin(NEUTRAL[50]); // service module + capsule
+    const towerMat = material.metal(NEUTRAL[200], { roughness: 0.4 });
 
     const nozzleGeo = this.lathe([[0.13, 0.9], [0.16, 0.7], [0.24, 0.3], [0.31, 0]], 24);
     for (const [x, z] of [[0, 0.33], [0.29, -0.17], [-0.29, -0.17]]) {
@@ -715,22 +724,22 @@ export class LaunchWorld {
   }
 
   private buildCapsule(): { chute: THREE.Mesh; flame: THREE.Mesh } {
-    const white = new THREE.MeshPhysicalMaterial({ color: 0xdee0dc, roughness: 0.42, metalness: 0.1, clearcoat: 0.6 });
-    const capsule = new THREE.Mesh(this.lathe([[0.62, 0], [0.6, 0.05], [0.24, 1.05], [0.17, 1.15], [0, 1.18]], 32), white);
+    const capsule = new THREE.Mesh(this.lathe([[0.62, 0], [0.6, 0.05], [0.24, 1.05], [0.17, 1.15], [0, 1.18]], 32), material.satin(NEUTRAL[50]));
     this.capsule.add(capsule);
-    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 1.6, 8), new THREE.MeshStandardMaterial({ color: 0xd0d2cd, metalness: 0.6, roughness: 0.4 }));
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 1.6, 8), material.metal(NEUTRAL[200], { roughness: 0.4 }));
     tower.position.y = 1.9;
     tower.name = "tower";
     this.capsule.add(tower);
     const flame = new THREE.Mesh(
       new THREE.ConeGeometry(0.35, 2.2, 16, 1, true).rotateX(Math.PI).translate(0, -1.1, 0),
-      new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 1.8, 0.8), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }),
+      new THREE.MeshBasicMaterial({ color: HEAT.clone().lerp(HEAT_CORE, 0.3).multiplyScalar(3), transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }),
     );
     flame.position.y = 0;
     this.capsule.add(flame);
     const chute = new THREE.Mesh(
       new THREE.SphereGeometry(1.8, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshPhysicalMaterial({ color: BRAND_LIGHT, roughness: 0.6, side: THREE.DoubleSide, emissive: LIME_DEEP, emissiveIntensity: 0.25 }),
+      // the learner's abort system saved the crew: a large lime surface, so the deep shade
+      material.satin(ROLE.aliveSoft, { side: THREE.DoubleSide, emissive: ROLE.aliveSoft, emissiveIntensity: GLOW.soft }),
     );
     chute.position.y = 4.2;
     chute.visible = false;
@@ -764,6 +773,7 @@ export class LaunchWorld {
         break;
       case "liftoff":
         this.liftAge = 0;
+        this.flash = 0.6; // ignition: a short bloom lift that decays
         break;
       case "stage_sep": {
         this.rocket.updateMatrixWorld(true);
@@ -776,18 +786,19 @@ export class LaunchWorld {
         this.debrisSpin = 0.5 + Math.random() * 0.4;
         this.debrisAge = 0;
         this.debris.visible = true;
-        this.burst(this.debris.position, 40, 1.2, 0.7, 0.4, 7);
+        this.burst(this.debris.position, 40, HEAT, 1.2, 7);
+        this.flash = 0.5;
         break;
       }
       case "abort":
       case "crash": {
         this.rocket.updateMatrixWorld(true);
         this.tmp.copy(this.rocket.position);
-        this.burst(this.tmp, 160, 3, 1.4, 0.5, 16);
+        this.burst(this.tmp, 160, HEAT, 3, 16);
         for (let i = 0; i < 70; i++) {
           const a = Math.random() * Math.PI * 2;
           const v = 2 + Math.random() * 8;
-          this.smoke.spawn(this.tmp.x, this.tmp.y, this.tmp.z, Math.cos(a) * v, (Math.random() - 0.3) * v, Math.sin(a) * v, 3 + Math.random() * 2, 3, 3, 0.35, 0.35, 0.4, 0.7, 0.8, 0.4);
+          this.smoke.spawn(this.tmp.x, this.tmp.y, this.tmp.z, Math.cos(a) * v, (Math.random() - 0.3) * v, Math.sin(a) * v, 3 + Math.random() * 2, 3, 3, SMOKE_DARK.r, SMOKE_DARK.g, SMOKE_DARK.b, 0.7, 0.8, 0.4);
         }
         this.flash = 1;
         if (kind === "abort") {
@@ -804,13 +815,16 @@ export class LaunchWorld {
       }
       case "celebrate": {
         this.flash = 0.8;
-        this.burst(this.rocket.position, 90, 0.56 * 2, 0.45 * 2, 1.0 * 2, 10);
+        this.burst(this.rocket.position, 90, CHEER, 1.6, 10);
         break;
       }
     }
   }
 
-  private burst(at: THREE.Vector3, n: number, r: number, g: number, b: number, speed: number) {
+  private burst(at: THREE.Vector3, n: number, c: THREE.Color, gain: number, speed: number) {
+    const r = c.r * gain;
+    const g = c.g * gain;
+    const b = c.b * gain;
     for (let i = 0; i < n; i++) {
       const u = Math.random() * 2 - 1;
       const th = Math.random() * Math.PI * 2;
@@ -839,7 +853,7 @@ export class LaunchWorld {
     if (v.color !== this.colorKey) {
       this.colorKey = v.color;
       const ok = /^#[0-9a-fA-F]{6}$/.test(v.color.trim());
-      this.paint.color.set(ok ? v.color.trim() : "#f2f4fa");
+      this.paint.color.set(ok ? v.color.trim() : DEFAULT_LIVERY);
     }
     let i = 0;
     for (const child of this.upperPart.children) {
@@ -848,7 +862,7 @@ export class LaunchWorld {
         i++;
       }
     }
-    this.ghost.opacity = v.pulseGhost ? 0.4 + 0.35 * Math.sin(time * 5) : 0.5;
+    this.ghost.opacity = v.pulseGhost ? GHOST_OPACITY * (1.2 + 0.8 * Math.sin(time * 5)) : GHOST_OPACITY;
   }
 
   frame(v: LaunchView, dt: number, time: number) {
@@ -903,7 +917,7 @@ export class LaunchWorld {
       const ex = -Math.sin(p); // exhaust direction
       const ey = -Math.cos(p);
       const nearGround = alt < 0.25;
-      this.emit += dt * (nearGround ? 140 : 70 * (1 - v.vacuum * 0.7)) * v.throttle;
+      this.emit += dt * (nearGround ? 110 : 70 * (1 - v.vacuum * 0.7)) * v.throttle;
       while (this.emit >= 1) {
         this.emit -= 1;
         const j = (Math.random() - 0.5) * 2;
@@ -912,12 +926,14 @@ export class LaunchWorld {
           // billowing ground cloud pushed out sideways from the trench
           const a = Math.random() * Math.PI * 2;
           const sp = 8 + Math.random() * 14;
-          this.smoke.spawn(this.tmp2.x + j, PAD_TOP + 0.6, this.tmp2.z + k, Math.cos(a) * sp, 1 + Math.random() * 3, Math.sin(a) * sp * 0.6 + 4, 3 + Math.random() * 2.5, 2.4, 3.2, 0.62, 0.62, 0.66, 0.55, 0.6, 0.4);
+          // low per-puff alpha + shade variation: dense overlap must still read as volume, not a flat disc
+          const shade = 0.62 + Math.random() * 0.38;
+          this.smoke.spawn(this.tmp2.x + j, PAD_TOP + 0.6, this.tmp2.z + k, Math.cos(a) * sp, 1 + Math.random() * 3, Math.sin(a) * sp * 0.6 + 4, 3 + Math.random() * 2.5, 2.4, 3.2, SMOKE.r * shade, SMOKE.g * shade, SMOKE.b * shade, 0.2, 0.6, 0.4);
         } else if (v.vacuum < 0.55) {
           const sp = 10 + Math.random() * 6;
-          this.smoke.spawn(this.tmp2.x + j * 0.4, this.tmp2.y, this.tmp2.z + k * 0.4, ex * sp + j * 1.5, ey * sp, k * 1.5, 2.5 + Math.random() * 2, 1.6, 4, 0.55, 0.55, 0.6, 0.5 * (1 - v.vacuum * 0.9), 0.4, 0);
+          this.smoke.spawn(this.tmp2.x + j * 0.4, this.tmp2.y, this.tmp2.z + k * 0.4, ex * sp + j * 1.5, ey * sp, k * 1.5, 2.5 + Math.random() * 2, 1.6, 4, SMOKE.r * 0.92, SMOKE.g * 0.92, SMOKE.b * 0.92, 0.5 * (1 - v.vacuum * 0.9), 0.4, 0);
         }
-        this.fire.spawn(this.tmp2.x + j * 0.25, this.tmp2.y, this.tmp2.z + k * 0.25, ex * 18 + j * 2, ey * 18, k * 2, 0.25 + Math.random() * 0.2, 1.1, -0.5, 1.6, 0.8, 0.35, 0.9, 0.5, 0);
+        this.fire.spawn(this.tmp2.x + j * 0.25, this.tmp2.y, this.tmp2.z + k * 0.25, ex * 18 + j * 2, ey * 18, k * 2, 0.25 + Math.random() * 0.2, 1.1, -0.5, HEAT.r * 1.6, HEAT.g * 1.6, HEAT.b * 1.6, 0.9, 0.5, 0);
       }
     }
     this.smoke.update(dt);
@@ -990,19 +1006,18 @@ export class LaunchWorld {
     const outside = smooth((this.camera.position.distanceTo(this.earthPivot.position) - RE * 1.035) / 300);
     am.uniforms.uStrength.value = outside * smooth((alt - 8) / 40) * (0.3 + 0.35 * space);
     this.cloudMat.opacity = v.lit ? 0.22 * (1 - smooth(alt / 14)) : 0;
-    // the flat pad disk and grid only matter near the ground; fade them before the curvature shows
+    // the flat pad disk only matters near the ground; fade it before the curvature shows
     const near = 1 - smooth(alt / 6);
     this.groundMat.opacity = (v.lit ? 1 : 0.85) * near;
     this.ground.visible = near > 0.01;
-    (this.grid.material as THREE.Material).opacity = (v.lit ? 0.035 : 0.3) * near;
-    this.grid.visible = near > 0.01;
-    this.hemi.intensity = v.lit ? 0.75 : 0.25;
-    this.key.intensity = v.lit ? 2.2 : 0.6;
-    const blink = Math.sin(time * 3.5) > 0 ? 1 : 0.25;
-    (this.beacon.material as THREE.MeshBasicMaterial).color.copy(BRAND).multiplyScalar(v.lit ? 1.6 * blink : 0.3);
-    this.padBulbs.color.setRGB(v.lit ? 2.4 : 0.15, v.lit ? 2.35 : 0.15, v.lit ? 2.2 : 0.2);
-    for (const l of this.padLights) l.intensity = v.lit ? 70 : 0;
-    this.windows.emissiveIntensity = v.painted ? 0.6 : 0;
+    this.rig.hemi.intensity = v.lit ? this.hemiBase : this.hemiBase * 0.35;
+    this.rig.key.intensity = v.lit ? this.keyBase : this.keyBase * 0.3;
+    // status beacon: powered by the console lesson, blinks between medium and faint
+    const blink = Math.sin(time * 3.5) > 0;
+    this.beaconMat.emissiveIntensity = v.lit ? (blink ? GLOW.medium : GLOW.faint) : GLOW.faint;
+    this.padBulbs.color.set(SIGNAL.heatCore).multiplyScalar(v.lit ? LAMP : 0.12);
+    for (const l of this.padLights) l.intensity = v.lit ? 50 : 0;
+    this.windows.emissiveIntensity = v.painted ? GLOW.soft : GLOW.none;
 
     // ── moon ──
     const moonA = v.lit ? smooth((alt - 35) / 40) : 0;
@@ -1052,17 +1067,18 @@ export class LaunchWorld {
     this.moon.rotation.y = time * 0.01;
 
     // key light + shadow box follow the rocket near the ground
-    this.key.target.position.copy(this.rocket.position);
-    this.key.position.copy(this.rocket.position).add(this.tmp.set(-40, 70, 45));
-    this.rim.position.copy(this.rocket.position).add(this.tmp.set(-10, 8, -12));
+    const key = this.rig.key;
+    key.target.position.copy(this.rocket.position);
+    key.position.copy(this.rocket.position).add(this.keyOffset);
 
-    // flash
+    // flash: events lift bloom briefly, then it decays back to the calm baseline
     this.flash = Math.max(0, this.flash - dt * 1.5);
-    this.ctx.bloom.strength = 0.45 + (v.reduced ? 0 : this.flash * 0.8);
+    applyBloom(this.ctx, { blueprint: !v.lit, boost: v.reduced ? 0 : this.flash });
   }
 
   dispose() {
-    // geometry/material cleanup is done by useThreeStage (disposeScene); nothing else is held
+    // geometry/material cleanup is done by useThreeStage (disposeScene); the env map is ours
+    this.rig.dispose();
     this.styleKey = -1;
   }
 }

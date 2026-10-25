@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Play, Square, Volume2, VolumeX } from "lucide-react";
 import type { SceneProps } from "@/engine/scene";
 import { useThreeStage } from "@/engine/three-kit";
+import { ACCENT, NEUTRAL } from "@/engine/stage-style";
 import { STEPS, TRACK_IDS, midiName, midiToHzReference } from "./sequencer";
 import { Runtime, TRACKS, trackAlive, type PatternId, type Ui } from "./runtime";
 import { createBeatStage, formatHz, hudMode, type BeatStage, type StageLabels } from "./stage3d";
@@ -98,12 +99,12 @@ const EMPTY_HUD: Hud = {
   mixer: [],
 };
 
-const GLASS = "rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur";
+/** Row sub-label colour by state (Pockett Stage HUD classes). */
 const TONE: Record<Tone, string> = {
-  on: "text-lime-200/80",
-  warn: "text-amber-200/90",
-  bad: "text-[#f87171]",
-  off: "text-white/35",
+  on: "hud-accent",
+  warn: "hud-warning",
+  bad: "hud-danger",
+  off: "hud-muted",
 };
 
 // ───────────────────────── component ─────────────────────────
@@ -209,15 +210,16 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
       {[0, 1, 2, 3].map((b) => (
         <span
           key={b}
-          className={`h-2 w-2 rounded-full ${hud.powered && beatIdx === b ? "bg-lime-300 shadow-[0_0_10px_2px_rgba(163, 230, 53,0.8)]" : "border border-lime-300/40"}`}
+          className="h-1.5 w-1.5 rounded-full"
+          style={hud.powered && beatIdx === b ? { background: ACCENT[300] } : { boxShadow: `inset 0 0 0 1px ${NEUTRAL[500]}` }}
         />
       ))}
     </div>
   );
   const barText = hud.arranger ? `BAR ${hud.playing ? String(hud.bar).padStart(2, "0") : "--"}` : `STEP ${hud.step >= 0 ? String(hud.step + 1).padStart(2, "0") : "--"}/16`;
   const sectionText = hud.arranger ? (hud.playing ? hud.section : "-") : "";
-  const sectionClass = hud.section === "groove" ? "text-lime-300" : hud.section === "break" ? "text-white/70" : "text-lime-100";
-  const panel = mode === "tiny" ? "rounded-xl border border-white/10 bg-black/45 px-2.5 py-1.5 backdrop-blur" : GLASS;
+  const sectionClass = hud.section === "break" ? "hud-muted" : "hud-accent";
+  const panel = mode === "tiny" ? "hud-panel px-2.5 py-1.5" : "hud-panel";
   const shortInfo = hud.info.split(" · ");
 
   return (
@@ -242,10 +244,8 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
             className="absolute left-0 top-0 whitespace-nowrap pr-2 text-right will-change-transform"
             style={{ opacity: 0 }}
           >
-            <div className={`${subs ? "text-[11px] leading-tight" : "text-[10px] leading-none"} font-medium tracking-wide ${r.tone === "off" ? "text-white/40" : r.muted ? "text-white/45 line-through" : "text-white"}`}>
-              {r.label}
-            </div>
-            {subs && r.sub && <div className={`max-w-[90px] truncate text-[10px] leading-tight ${TONE[r.tone]}`}>{r.sub}</div>}
+            <div className={`hud-label leading-tight ${r.tone === "off" ? "" : r.muted ? "hud-muted line-through" : "hud-value"}`}>{r.label}</div>
+            {subs && r.sub && <div className={`hud-value max-w-[84px] truncate text-[10px] leading-tight ${TONE[r.tone]}`}>{r.sub}</div>}
           </div>
         ))}
         {TRACK_IDS.map((id, i) => {
@@ -256,11 +256,11 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
               ref={(el) => {
                 labelsRef.current.mixer[i] = el;
               }}
-              className="absolute left-0 top-0 whitespace-nowrap rounded-md bg-black/45 px-1 py-px text-[10px] font-medium leading-tight text-lime-100 will-change-transform"
+              className={`hud-tag absolute left-0 top-0 h-4 whitespace-nowrap px-1.5 tabular-nums will-change-transform ${m?.mute ? "hud-muted" : ""}`}
               style={{ opacity: 0 }}
             >
               {m ? m.vol : ""}
-              {m?.mute && <span className="ml-1 text-[#f87171]">M</span>}
+              {m?.mute && <span className="ml-1">M</span>}
             </div>
           );
         })}
@@ -270,33 +270,35 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
       <div className={`pointer-events-none absolute left-3 top-12 z-10 max-w-[min(58%,340px)] ${panel} ${displayFocus ? "pulse-ring" : ""} ${hud.hasProgram ? "" : "hidden"}`}>
         {!hud.powered ? (
           mode === "tiny" ? (
-            <div className="truncate font-mono text-[11px] leading-4">
-              <span className="font-medium text-lime-200">NO POWER</span> <span className="text-white/55">· print() to boot</span>
+            <div className="truncate leading-4">
+              <span className="hud-label">No power</span> <span className="hud-log hud-muted">· print() to boot</span>
             </div>
           ) : (
-            <div className="font-mono text-[11px] leading-snug">
-              <div className="font-medium tracking-wider text-lime-200">NO POWER</div>
-              <div className="truncate text-white/55">print() something to boot</div>
-            </div>
+            <>
+              <div className="hud-label">No power</div>
+              <div className="hud-log hud-muted truncate">print() something to boot</div>
+            </>
           )
         ) : mode === "tiny" ? (
-          <div className="truncate font-mono text-[11px] leading-4">
-            <span className={`font-sans text-[12px] font-semibold ${hud.tempo ? "text-white" : "text-white/35"}`}>{hud.tempo ? hud.title : "UNTITLED"}</span>
-            {hud.tempo && <span className="text-lime-200"> · {shortInfo[0]}</span>}
+          <div className="truncate leading-4">
+            <span className={`hud-title ${hud.tempo ? "" : "hud-muted"}`}>{hud.tempo ? hud.title : "UNTITLED"}</span>
+            {hud.tempo && <span className="hud-value hud-muted"> · {shortInfo[0]}</span>}
           </div>
         ) : (
-          <div className="min-w-0 font-mono text-[11px] leading-snug">
-            <div className={`truncate font-sans text-[13px] font-semibold ${hud.tempo ? "text-white" : "text-white/35"}`}>{hud.tempo ? hud.title : "UNTITLED"}</div>
-            <div className={`truncate ${hud.tempo ? "text-lime-200" : "text-white/35"}`}>{hud.tempo ? (narrow ? shortInfo.slice(0, 2).join(" · ") : hud.info) : "tempo: locked"}</div>
-            {lines.length === 0 ? (
-              <div className="truncate text-white/40">› (nothing printed yet)</div>
-            ) : (
-              lines.map((l, i) => (
-                <div key={`${i}:${l}`} className="truncate text-white/65">
-                  › {l}
-                </div>
-              ))
-            )}
+          <div className="min-w-0">
+            <div className={`hud-title truncate ${hud.tempo ? "" : "hud-muted"}`}>{hud.tempo ? hud.title : "UNTITLED"}</div>
+            <div className={`hud-value truncate ${hud.tempo ? "hud-muted" : "hud-label"}`}>{hud.tempo ? (narrow ? shortInfo.slice(0, 2).join(" · ") : hud.info) : "tempo: locked"}</div>
+            <div className="hud-log mt-1">
+              {lines.length === 0 ? (
+                <div className="hud-log-line hud-muted truncate">(nothing printed yet)</div>
+              ) : (
+                lines.map((l, i) => (
+                  <div key={`${i}:${l}`} className="hud-log-line truncate">
+                    {l}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -304,17 +306,17 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
       {/* LED panel: beat lamps, bar counter and the arranger's decision */}
       <div className={`pointer-events-none absolute right-3 top-12 z-10 ${panel} ${ledFocus ? "pulse-ring" : ""}`}>
         {mode === "tiny" ? (
-          <div className="flex items-center gap-2 font-mono text-[11px] leading-4">
+          <div className="flex items-center gap-2 leading-4">
             {lamps}
-            <span className="text-white/75">{barText}</span>
-            {sectionText && <span className={`font-medium uppercase ${sectionClass}`}>{sectionText}</span>}
+            <span className="hud-value">{barText}</span>
+            {sectionText && <span className={`hud-label ${sectionClass}`}>{sectionText}</span>}
           </div>
         ) : (
           <>
             <div className="flex justify-end">{lamps}</div>
-            <div className="mt-1 text-right font-mono text-[11px] leading-snug">
-              <div className="text-white/75">{barText}</div>
-              {sectionText && <div className={`font-medium uppercase tracking-wider ${sectionClass}`}>{sectionText}</div>}
+            <div className="mt-1.5 text-right">
+              <div className="hud-value">{barText}</div>
+              {sectionText && <div className={`hud-label ${sectionClass}`}>{sectionText}</div>}
             </div>
           </>
         )}
@@ -324,7 +326,7 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
       <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex items-center gap-2">
         {silent && interactive && (
           <div
-            className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-black/45 px-3 py-1.5 text-[11px] leading-4 text-white/80 backdrop-blur"
+            className="hud-btn hud-muted"
             title={autoplay ? "Tap for sound" : "Sound is off"}
           >
             <VolumeX className="h-3.5 w-3.5" />
@@ -335,13 +337,7 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
           <button
             type="button"
             onClick={() => void rt.toggle()}
-            className={`pointer-events-auto flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium leading-4 transition-colors ${
-              silent
-                ? "border-transparent bg-[#a3e635] text-black"
-                : ui.playing
-                  ? "border-white/15 bg-black/55 text-white backdrop-blur hover:bg-white/15"
-                  : "border-transparent bg-[#a3e635] text-black"
-            }`}
+            className={`hud-btn pointer-events-auto ${silent || !ui.playing ? "hud-btn-on" : ""}`}
           >
             {silent ? <><Volume2 className="h-3.5 w-3.5" /> Sound on</> : ui.playing ? <><Square className="h-3 w-3" fill="currentColor" /> Stop</> : <><Play className="h-3 w-3" fill="currentColor" /> Play</>}
             {!narrow && <span className="ml-1 opacity-60 [@media(pointer:coarse)]:hidden">(Space)</span>}

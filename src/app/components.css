@@ -257,6 +257,123 @@
   }
 }
 
+/* ───────────── Stage HUD (Pockett Stage design system) ─────────────
+   Overlays on the 3D demos. The stage is always dark, so these never follow the page theme.
+   Hierarchy: .hud-label (what) → .hud-value (how much) → .hud-accent (alive / good). */
+.hud-panel {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 10, 10, 0.72);
+  backdrop-filter: blur(8px);
+  color: #f4f4f4;
+  padding: 0.5rem 0.7rem;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.hud-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f4f4f4;
+  letter-spacing: -0.01em;
+}
+.hud-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+.hud-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: #f4f4f4;
+}
+/* program output / console lines */
+.hud-log {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.82);
+}
+.hud-log-line::before {
+  content: "›";
+  margin-right: 0.45em;
+  color: #a3e635;
+}
+.hud-bar {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.hud-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #a3e635;
+}
+.hud-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 1.25rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 10, 10, 0.72);
+  color: #f4f4f4;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(6px);
+}
+.hud-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2rem;
+  padding: 0 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 10, 10, 0.72);
+  color: #f4f4f4;
+  font-size: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+  white-space: nowrap;
+}
+.hud-btn:hover {
+  background: rgba(40, 40, 40, 0.85);
+}
+.hud-btn-on {
+  border-color: transparent;
+  background: #a3e635;
+  color: #0a0a0a;
+}
+.hud-btn-on:hover {
+  background: #b4ec55;
+}
+
+/* text colour helpers come last so they can tint any hud element (e.g. .hud-tag.hud-accent) */
+.hud-accent {
+  color: #bef264;
+}
+.hud-muted {
+  color: rgba(255, 255, 255, 0.55);
+}
+.hud-danger {
+  color: #f87171;
+}
+.hud-warning {
+  color: #fbbf24;
+}
+.hud-bar-neutral > span {
+  background: #c8c8c8;
+}
+
 /* ───────────── Lesson prose (mini-markdown output) ───────────── */
 .prose-lesson {
   font-size: 0.9rem;

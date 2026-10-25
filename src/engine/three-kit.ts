@@ -6,6 +6,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { ACCENT, BLOOM, EXPOSURE } from "./stage-style";
 
 /**
  * Shared three.js plumbing for scenes: renderer, tone mapping, soft shadows, bloom,
@@ -30,8 +31,8 @@ export interface ThreeApp {
   dispose?(): void;
 }
 
-export const BRAND = new THREE.Color("#a3e635");
-export const BRAND_LIGHT = new THREE.Color("#d9f99d");
+export const BRAND = new THREE.Color(ACCENT[400]);
+export const BRAND_LIGHT = new THREE.Color(ACCENT[200]);
 
 export function useThreeStage(canvasRef: RefObject<HTMLCanvasElement | null>, create: (ctx: ThreeContext) => ThreeApp) {
   const createRef = useRef(create);
@@ -53,7 +54,7 @@ export function useThreeStage(canvasRef: RefObject<HTMLCanvasElement | null>, cr
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = EXPOSURE;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -62,7 +63,7 @@ export function useThreeStage(canvasRef: RefObject<HTMLCanvasElement | null>, cr
     const camera = new THREE.PerspectiveCamera(38, 1, 4, 6000);
     const composer = new EffectComposer(renderer);
     composer.addPass(new RenderPass(scene, camera));
-    const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.75, 0.55, 0.78);
+    const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), BLOOM.strength, BLOOM.radius, BLOOM.threshold);
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
 
