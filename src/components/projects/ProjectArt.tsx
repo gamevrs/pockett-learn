@@ -81,6 +81,23 @@ export function ProjectArt({ slug }: { slug: string }) {
           </g>
         </g>
       )}
+      {slug === "sqldesk" && (
+        <g>
+          {/* a results table on the left, a bar chart on the right */}
+          <rect x="40" y="44" width="170" height="132" rx="8" fill="#151515" stroke="#ffffff" strokeOpacity=".08" />
+          <rect x="40" y="44" width="170" height="24" rx="8" fill="#1f1f1f" />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <g key={i}>
+              <rect x="54" y={80 + i * 19} width={56 - (i % 3) * 10} height="6" rx="3" fill="#ffffff" opacity={i === 0 ? 0.7 : 0.3} />
+              <rect x="150" y={80 + i * 19} width="44" height="6" rx="3" fill={i === 0 ? "url(#g-sqldesk)" : "#ffffff"} opacity={i === 0 ? 1 : 0.18} />
+            </g>
+          ))}
+          {[64, 92, 48, 110, 78, 124].map((h, i) => (
+            <rect key={i} x={238 + i * 22} y={176 - h} width="14" height={h} rx="3" fill={i === 5 ? "url(#g-sqldesk)" : "#ffffff"} opacity={i === 5 ? 1 : 0.22} />
+          ))}
+          <path d="M232 176 H372" stroke="#ffffff" strokeOpacity=".15" />
+        </g>
+      )}
       {slug === "beatlab" && (
         <g>
           {Array.from({ length: 16 }).map((_, i) => {

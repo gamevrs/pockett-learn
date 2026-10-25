@@ -16,6 +16,8 @@ const Editor = dynamic(() => import("@monaco-editor/react"), {
 });
 
 interface CodeEditorProps {
+  /** Monaco language id. */
+  language?: string;
   value: string;
   onChange: (value: string) => void;
   onRun: () => void;
@@ -35,16 +37,22 @@ const defineThemes: BeforeMount = (monaco) => {
     base: "vs-dark",
     inherit: true,
     rules: [
-      { token: "comment", foreground: "7a8099", fontStyle: "italic" },
+      { token: "comment", foreground: "8a8a8a", fontStyle: "italic" },
       { token: "keyword", foreground: "a3e635" },
       { token: "string", foreground: "fcd34d" },
       { token: "number", foreground: "ffb86b" },
+      // built-ins (SQL functions, JS globals) and types: one cool tone, never magenta
+      { token: "predefined", foreground: "7fd4ff" },
+      { token: "type", foreground: "7fd4ff" },
+      { token: "operator", foreground: "d4d4d4" },
+      { token: "delimiter", foreground: "a3a3a3" },
+      { token: "regexp", foreground: "fcd34d" },
     ],
     colors: {
-      "editor.background": "#0b0c0a",
-      "editorLineNumber.foreground": "#4c5046",
-      "editorLineNumber.activeForeground": "#b7bcae",
-      "editor.lineHighlightBackground": "#151713",
+      "editor.background": "#0a0a0a",
+      "editorLineNumber.foreground": "#4d4d4d",
+      "editorLineNumber.activeForeground": "#bdbdbd",
+      "editor.lineHighlightBackground": "#141414",
       "editorCursor.foreground": "#a3e635",
       "editor.selectionBackground": "#3f621280",
     },
@@ -53,20 +61,24 @@ const defineThemes: BeforeMount = (monaco) => {
     base: "vs",
     inherit: true,
     rules: [
-      { token: "comment", foreground: "8a8a98", fontStyle: "italic" },
+      { token: "comment", foreground: "8a8a8a", fontStyle: "italic" },
       { token: "keyword", foreground: "4d7c0f" },
       { token: "string", foreground: "b45309" },
       { token: "number", foreground: "c2570c" },
+      { token: "predefined", foreground: "0e7490" },
+      { token: "type", foreground: "0e7490" },
+      { token: "operator", foreground: "404040" },
+      { token: "delimiter", foreground: "525252" },
     ],
     colors: {
-      "editor.background": "#fffdf8",
-      "editor.lineHighlightBackground": "#f6f2e8",
-      "editorLineNumber.foreground": "#b5b1a5",
+      "editor.background": "#ffffff",
+      "editor.lineHighlightBackground": "#f6f5f1",
+      "editorLineNumber.foreground": "#b5b3ab",
     },
   });
 };
 
-export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorMessage, revealKey }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorMessage, revealKey, language = "python" }: CodeEditorProps) {
   const { theme } = useTheme();
   const editorRef = useRef<EditorInstance | null>(null);
   const monacoRef = useRef<MonacoInstance | null>(null);
@@ -130,7 +142,7 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
   return (
     <Editor
       height="100%"
-      language="python"
+      language={language}
       value={value}
       onChange={(v) => onChange(v ?? "")}
       beforeMount={defineThemes}

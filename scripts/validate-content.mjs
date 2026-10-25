@@ -1,4 +1,4 @@
-// Validates every project's lessons against the real Python engine.
+// Validates every project's lessons against the real engines (Python, JavaScript, SQL).
 //   node scripts/validate-content.mjs [slug]
 // Solutions must pass all tests. Starters must NOT pass all tests (so lessons aren't pre-solved).
 process.env.NODE_NO_WARNINGS = "1";
@@ -9,7 +9,9 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { ENGINE_PRELUDE } from "../src/engine/python/prelude.ts";
 import { solutionThrough, starterFor } from "../src/engine/compose.ts";
-import { flattenLessons, YOUR_TURN_MARKER } from "../src/engine/types.ts";
+import { flattenLessons, languageOf, YOUR_TURN_MARKER } from "../src/engine/types.ts";
+import { executeJs, runJsTests } from "../src/engine/runtimes/javascript/engine.ts";
+import { executeSql, runSqlTests } from "../src/engine/runtimes/sql/engine.ts";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const only = process.argv[2];
@@ -41,26 +43,58 @@ for (const file of files) {
       if (!featureIds.has(u)) problems.push(`${tag}: unlocks unknown feature "${u}"`);
       unlocked.add(u);
     }
-    cases.push({ label: `${tag}::solution`, source: solutionThrough(project, i), tests: lesson.tests, expect: "pass" });
-    cases.push({ label: `${tag}::starter`, source: starterFor(project, i, {}), tests: lesson.tests, expect: "fail" });
+    const language = languageOf(project);
+    const setup = project.setup ?? "";
+    cases.push({ label: `${tag}::solution`, language, setup, source: solutionThrough(project, i), tests: lesson.tests, expect: "pass" });
+    cases.push({ label: `${tag}::starter`, language, setup, source: starterFor(project, i, {}), tests: lesson.tests, expect: "fail" });
   });
   for (const f of featureIds) if (!unlocked.has(f)) problems.push(`${project.slug}: feature "${f}" is never unlocked by any lesson`);
 }
 
-const tmp = mkdtempSync(join(tmpdir(), "pockett-validate-"));
-const casesFile = join(tmp, "cases.json");
-const preludeFile = join(tmp, "prelude.py");
-writeFileSync(casesFile, JSON.stringify(cases));
-writeFileSync(preludeFile, ENGINE_PRELUDE);
-const py = spawnSync(process.platform === "win32" ? "python" : "python3", ["-I", join(here, "validate_runner.py"), casesFile, preludeFile], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
-if (py.status !== 0) {
-  console.error(py.stderr || py.stdout);
-  process.exit(1);
+// Python runs in a real CPython with the engine prelude; JavaScript and SQL run in-process with
+// the exact engine code the browser uses.
+const pyCases = cases.filter((c) => c.language === "python");
+const pyResults = [];
+if (pyCases.length) {
+  const tmp = mkdtempSync(join(tmpdir(), "pockett-validate-"));
+  const casesFile = join(tmp, "cases.json");
+  const preludeFile = join(tmp, "prelude.py");
+  writeFileSync(casesFile, JSON.stringify(pyCases));
+  writeFileSync(preludeFile, ENGINE_PRELUDE);
+  const py = spawnSync(process.platform === "win32" ? "python" : "python3", ["-I", join(here, "validate_runner.py"), casesFile, preludeFile], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  if (py.status !== 0) {
+    console.error(py.stderr || py.stdout);
+    process.exit(1);
+  }
+  pyResults.push(...JSON.parse(py.stdout));
 }
-const results = JSON.parse(py.stdout);
+
+let SQL = null;
+const toResult = (c, error, tests) => ({ label: c.label, error, results: tests.map((t) => ({ id: t.testId, ok: t.passed, error: t.error })) });
+const results = [];
+for (const c of cases) {
+  if (c.language === "python") {
+    results.push(pyResults.shift());
+  } else if (c.language === "javascript") {
+    const run = executeJs(c.source);
+    results.push(run.ok ? toResult(c, null, runJsTests(run.scope, c.tests)) : toResult(c, run.error, []));
+  } else if (c.language === "sql") {
+    if (!SQL) {
+      const initSqlJs = (await import(pathToFileURL(join(here, "..", "node_modules", "sql.js", "dist", "sql-wasm.js")).href)).default;
+      SQL = await initSqlJs();
+    }
+    const run = executeSql(SQL, c.source, c.setup);
+    results.push(run.error ? toResult(c, run.error, []) : toResult(c, null, runSqlTests(run, c.tests)));
+    run.db.close();
+  } else {
+    warn.push(`${c.label}: ${c.language} lessons need the remote runner; not validated locally`);
+    results.push({ label: c.label, skipped: true, results: [] });
+  }
+}
 let ok = 0;
 results.forEach((r, i) => {
   const c = cases[i];
+  if (r.skipped) return;
   const allPassed = !r.error && r.results.length > 0 && r.results.every((t) => t.ok);
   if (c.expect === "pass") {
     if (allPassed) ok++;

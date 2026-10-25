@@ -15,7 +15,7 @@ const GARAGE = PROJECTS.find((p) => p.slug === "garage") ?? PROJECTS[0];
 const STATS = [
   { value: String(PROJECTS.length), label: "Guided projects" },
   { value: String(LESSON_COUNT), label: "Hands-on lessons" },
-  { value: "0", label: "Things to install" },
+  { value: String(new Set(PROJECTS.map((p) => p.language ?? "python")).size), label: "Languages" },
   { value: "Free", label: "No paywall, ever" },
 ];
 
@@ -118,11 +118,11 @@ export default function HomePage() {
         <div className="rise mx-auto max-w-4xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs text-ink-2">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Free Python course · runs in your browser
+            Free coding courses · runs in your browser
           </span>
           <h1 className="font-display mt-6 text-balance text-[clamp(2.6rem,5.6vw,4.25rem)]">Learn to code by building things that work</h1>
           <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-ink-2 sm:text-lg">
-            Write real Python, one short lesson at a time. Every lesson you pass switches on part of a live 3D project, so you can see exactly what your code does.
+            Write real Python, JavaScript or SQL, one short lesson at a time. Every lesson you pass switches on part of a live 3D project, so you can see exactly what your code does.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href="/projects/garage/garage-1-ignition" className="btn btn-primary !h-12 !px-6 !text-base">
@@ -223,7 +223,7 @@ export default function HomePage() {
 
         <div className="mt-20 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: Zap, t: "Instant feedback", d: "Python runs in your browser through WebAssembly. No servers, no waiting." },
+            { icon: Zap, t: "Instant feedback", d: "Your code runs right in the browser. No installs, no servers, no waiting." },
             { icon: TestTube2, t: "Real tests", d: "Every lesson is graded by assertions, the same way production code is." },
             { icon: Globe, t: "Free for everyone", d: "No paywall and no trial. Supported by a small number of ads." },
             { icon: Layers, t: "Your build persists", d: "Your project grows with you. Come back any time and keep going." },

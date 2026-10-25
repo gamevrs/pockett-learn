@@ -8,6 +8,7 @@ import type { UpcomingProject } from "@/engine/types";
 import type { summarize } from "@/content";
 import { ProjectArt } from "./ProjectArt";
 import { FeatureIcon, ProjectIcon } from "@/components/ui/icons";
+import { languageInfo } from "@/engine/languages";
 
 type Summary = ReturnType<typeof summarize>;
 
@@ -22,8 +23,8 @@ export function ProjectCard({ project, lessonIds }: { project: Summary; lessonId
       className="pop-card group flex flex-col overflow-hidden"
     >
       <div className="relative m-2 mb-0 aspect-[400/220] overflow-hidden rounded-xl">
-        <ProjectArt slug={project.slug} />
-        <span className="sticker absolute left-3 top-3">{project.difficulty}</span>
+        <ProjectArt slug={project.sceneId} />
+        <span className="sticker absolute left-3 top-3">{languageInfo(project.language).label} · {project.difficulty}</span>
         <span className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-black opacity-0 transition-opacity group-hover:opacity-100">
           <ArrowUpRight className="h-4 w-4" />
         </span>

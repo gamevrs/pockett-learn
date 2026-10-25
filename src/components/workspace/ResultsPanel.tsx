@@ -7,19 +7,29 @@ import type { RunError, TestCase, TestResult } from "@/engine/types";
 export type ResultTab = "checks" | "console";
 
 function friendly(err: RunError): string {
+  if (/has already been declared/.test(err.message)) {
+    return "This name was already created earlier in the file (maybe in a previous lesson). Reuse it, or pick a new name.";
+  }
   switch (err.type) {
     case "SyntaxError":
-      return "Python couldn't read this line. Look for a missing quote, bracket or colon.";
+      return "This line can't be read. Look for a missing quote, bracket, colon or comma.";
     case "IndentationError":
       return "The spacing at the start of a line is off. Lines inside def/if/for must be indented the same amount.";
     case "NameError":
-      return "A name isn't defined yet. Check the spelling, and that it's created above the line that uses it.";
+    case "ReferenceError":
+      return "A name isn't defined yet. Check the spelling (capitals matter), and that it's created above the line that uses it.";
     case "TypeError":
-      return "A value is the wrong type for this operation (for example adding text to a number).";
+      return "A value is the wrong type for this operation (for example calling something that isn't a function, or adding text to a number).";
     case "TimeoutError":
       return "Your code ran for too long. A loop may never end.";
     case "ZeroDivisionError":
       return "Dividing by zero isn't allowed.";
+    case "SQLError":
+      return /no such (table|column)/.test(err.message)
+        ? "That table or column doesn't exist. Check the schema panel for the exact names."
+        : "The database couldn't run this statement. Check commas between columns and the order of the clauses.";
+    case "CompileError":
+      return "The compiler stopped before running anything. The first error listed is usually the real one.";
     default:
       return "";
   }

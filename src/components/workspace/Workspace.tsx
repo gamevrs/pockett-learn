@@ -3,10 +3,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Check, ChevronLeft, ChevronRight, Code2, Flame, ListChecks, MonitorPlay, Play, RotateCcw, Send, Volume2, VolumeX, X, Zap } from "lucide-react";
-import { featuresUnlockedBy, flattenLessons, type RunError, type TestResult } from "@/engine/types";
+import { featuresUnlockedBy, flattenLessons, languageOf, type RunError, type TestResult } from "@/engine/types";
 import type { Celebration } from "@/engine/scene";
 import type { ProgramHandle } from "@/engine/program";
-import { gradeProgram, preloadPython, runProgram } from "@/engine/python/host";
+import { loadRuntime, preloadRuntime } from "@/engine/runtimes";
+import { languageInfo } from "@/engine/languages";
 import { solutionThrough, starterFor } from "@/engine/compose";
 import type { LessonContext } from "@/content";
 import {
@@ -57,6 +58,8 @@ function WorkspaceSkeleton({ ctx }: { ctx: LessonContext }) {
 
 function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
   const { project, lesson, index, total, prev, next } = ctx;
+  const language = languageOf(project);
+  const lang = languageInfo(language);
   const progress = useProgress();
   const lessons = flattenLessons(project);
   const done = Boolean(progress.completed[lesson.id]);
@@ -127,12 +130,13 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
 
   // Start downloading Python right away; if there is earlier work, boot it so the stage is alive on arrival.
   useEffect(() => {
-    preloadPython();
+    preloadRuntime(language);
     if (booted.current) return;
     booted.current = true;
     if (index === 0 && !done) return;
     const my = epoch.current;
-    void runProgram(codeRef.current, setStatusText)
+    void loadRuntime(language)
+      .then((rt) => rt.run(codeRef.current, { onStatus: setStatusText, setup: project.setup }))
       .then((out) => {
         if (my !== epoch.current) {
           out.program?.dispose();
@@ -149,7 +153,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
       .finally(() => {
         if (my === epoch.current) setStatus("idle");
       });
-  }, [index, done]);
+  }, [index, done, language, project.setup]);
 
   // autosave the draft shortly after typing stops
   useEffect(() => {
@@ -172,7 +176,8 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     setMiss(null);
 
     try {
-      const out = await runProgram(code, setStatusText);
+      const rt = await loadRuntime(language);
+      const out = await rt.run(code, { onStatus: setStatusText, setup: project.setup });
       if (my !== epoch.current) {
         out.program?.dispose();
         return;
@@ -205,7 +210,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
         sound.playError();
       } else {
         setStatusText("Checking your work…");
-        const graded = await gradeProgram(code, lesson.tests, setStatusText);
+        const graded = await rt.grade(code, lesson.tests, { onStatus: setStatusText, setup: project.setup });
         nextResults = graded.results;
       }
       if (my !== epoch.current) return;
@@ -391,7 +396,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
               <section className="card flex h-full min-h-0 flex-col overflow-hidden">
                 <div className="flex h-10 shrink-0 items-center justify-between border-b border-line px-3">
                   <span className="flex min-w-0 items-center gap-2 font-mono text-xs font-medium">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" /> main.py
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" /> {lang.fileName}
                     <span className="hidden truncate font-sans font-medium text-ink-3 sm:inline">· your whole {project.title} program</span>
                   </span>
                   <button onClick={reset} className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-ink-3 hover:bg-surface-2 hover:text-ink">
@@ -404,7 +409,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
                     onChange={(v) => {
                       setCode(v);
                       setPristine(false);
-                    }} onRun={() => void runRef.current("run")} onSubmit={() => void runRef.current("submit")} errorLine={errorLine} errorMessage={runError ? `${runError.type}: ${runError.message}` : undefined} revealKey={lesson.id} />
+                    }} onRun={() => void runRef.current("run")} onSubmit={() => void runRef.current("submit")} language={lang.monaco} errorLine={errorLine} errorMessage={runError ? `${runError.type}: ${runError.message}` : undefined} revealKey={lesson.id} />
                 </div>
               </section>
             ),

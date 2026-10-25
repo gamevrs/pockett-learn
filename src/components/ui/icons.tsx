@@ -1,7 +1,16 @@
 import React from "react";
 import {
   Activity,
+  ArrowDownWideNarrow,
   AudioWaveform,
+  ChartBar,
+  Database,
+  Filter,
+  GitBranch,
+  Merge,
+  Save,
+  Sigma,
+  Users,
   Bot,
   Car,
   Circle,
@@ -34,8 +43,10 @@ import {
 
 const PROJECT_ICONS: Record<string, LucideIcon> = {
   garage: Car,
+  "garage-js": Car,
   launch: Rocket,
   beatlab: AudioWaveform,
+  "pit-wall": Database,
   "pixel-pet": Bot,
   rover: Compass,
   "art-studio": Palette,
@@ -68,6 +79,15 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   bass: AudioWaveform,
   mixer: SlidersHorizontal,
   arranger: ListMusic,
+  // Pit Wall
+  roster: Users,
+  timing: Filter,
+  fastest: ArrowDownWideNarrow,
+  stats: Sigma,
+  pace: ChartBar,
+  tower: Merge,
+  strategy: GitBranch,
+  pitlog: Save,
 };
 
 export function ProjectIcon({ slug, className = "h-4 w-4" }: { slug: string; className?: string }) {

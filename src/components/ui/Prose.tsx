@@ -25,17 +25,56 @@ function inline(text: string, keyBase: string): React.ReactNode[] {
   return out;
 }
 
-const KEYWORDS = new Set(
-  "def return if elif else for while in not and or is class import from as try except finally with lambda pass break continue None True False yield raise".split(" "),
-);
+type CodeLanguage = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go";
 
-export function PythonCode({ code }: { code: string }) {
+const words = (list: string) => new Set(list.split(" "));
+const SYNTAX: Record<CodeLanguage, { keywords: Set<string>; comment: RegExp; caseInsensitive?: boolean }> = {
+  python: {
+    keywords: words("def return if elif else for while in not and or is class import from as try except finally with lambda pass break continue None True False yield raise self"),
+    comment: /#.*$/,
+  },
+  javascript: {
+    keywords: words("const let var function return if else for while do of in new class extends this super import export from default try catch finally throw typeof instanceof null undefined true false break continue switch case async await yield static get set"),
+    comment: /\/\/.*$/,
+  },
+  sql: {
+    keywords: words("select from where and or not in is null as on join left right inner outer full cross group by having order asc desc limit offset insert into values update set delete create table view index drop alter distinct case when then else end between like count sum avg min max round coalesce union all exists primary key integer text real"),
+    comment: /--.*$/,
+    caseInsensitive: true,
+  },
+  csharp: {
+    keywords: words("using namespace class static void public private protected int double float string bool var new return if else for foreach in while do true false null this base switch case break continue try catch finally throw"),
+    comment: /\/\/.*$/,
+  },
+  cpp: {
+    keywords: words("include using namespace std int double float char bool void auto const return if else for while do true false nullptr class struct public private new delete switch case break continue"),
+    comment: /\/\/.*$/,
+  },
+  go: {
+    keywords: words("package import func var const type struct return if else for range true false nil map chan go defer switch case break continue"),
+    comment: /\/\/.*$/,
+  },
+};
+
+/** Maps a fence tag (```js, ~~~sql, …) to a highlighter. */
+function fenceLanguage(tag: string, fallback: CodeLanguage): CodeLanguage {
+  const t = tag.trim().toLowerCase();
+  if (["js", "javascript", "ts", "typescript"].includes(t)) return "javascript";
+  if (["py", "python"].includes(t)) return "python";
+  if (t === "sql") return "sql";
+  if (["cs", "csharp", "c#"].includes(t)) return "csharp";
+  if (["cpp", "c++", "cc"].includes(t)) return "cpp";
+  if (t === "go") return "go";
+  return fallback;
+}
+
+export function CodeBlock({ code, language = "python" }: { code: string; language?: CodeLanguage }) {
   const lines = code.replace(/\n$/, "").split("\n");
   return (
     <code>
       {lines.map((line, li) => (
         <React.Fragment key={li}>
-          {highlightLine(line)}
+          {highlightLine(line, SYNTAX[language] ?? SYNTAX.python)}
           {li < lines.length - 1 ? "\n" : null}
         </React.Fragment>
       ))}
@@ -43,29 +82,52 @@ export function PythonCode({ code }: { code: string }) {
   );
 }
 
-function highlightLine(line: string): React.ReactNode[] {
+/** Kept for existing call sites. */
+export function PythonCode({ code }: { code: string }) {
+  return <CodeBlock code={code} language="python" />;
+}
+
+function highlightLine(line: string, syntax: (typeof SYNTAX)[CodeLanguage]): React.ReactNode[] {
   const out: React.ReactNode[] = [];
-  const re = /(#.*$)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z_0-9]*)/g;
+  // strip the comment first so words inside it aren't highlighted
+  const cm = syntax.comment.exec(line);
+  const commentAt = cm && !insideString(line, cm.index) ? cm.index : -1;
+  const body = commentAt >= 0 ? line.slice(0, commentAt) : line;
+  const re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][A-Za-z_0-9$]*)/g;
   let last = 0;
   let n = 0;
-  for (const m of line.matchAll(re)) {
+  for (const m of body.matchAll(re)) {
     const idx = m.index ?? 0;
-    if (idx > last) out.push(line.slice(last, idx));
-    const [tok, comment, str, num, word] = m;
+    if (idx > last) out.push(body.slice(last, idx));
+    const [tok, str, num, word] = m;
     const key = n++;
-    if (comment) out.push(<span key={key} style={{ color: "#7a8099" }}>{tok}</span>);
-    else if (str) out.push(<span key={key} style={{ color: "#fcd34d" }}>{tok}</span>);
+    const kw = word && syntax.keywords.has(syntax.caseInsensitive ? word.toLowerCase() : word);
+    if (str) out.push(<span key={key} style={{ color: "#fcd34d" }}>{tok}</span>);
     else if (num) out.push(<span key={key} style={{ color: "#ffb86b" }}>{tok}</span>);
-    else if (word && KEYWORDS.has(word)) out.push(<span key={key} style={{ color: "#a3e635" }}>{tok}</span>);
-    else if (word && /^\s*\(/.test(line.slice(idx + tok.length))) out.push(<span key={key} style={{ color: "#7fd4ff" }}>{tok}</span>);
+    else if (kw) out.push(<span key={key} style={{ color: "#a3e635" }}>{tok}</span>);
+    else if (word && /^\s*\(/.test(body.slice(idx + tok.length))) out.push(<span key={key} style={{ color: "#7fd4ff" }}>{tok}</span>);
     else out.push(tok);
     last = idx + tok.length;
   }
-  if (last < line.length) out.push(line.slice(last));
+  if (last < body.length) out.push(body.slice(last));
+  if (commentAt >= 0) out.push(<span key="c" style={{ color: "#8a8a8a" }}>{line.slice(commentAt)}</span>);
   return out;
 }
 
-export function Prose({ source, className = "" }: { source: string; className?: string }) {
+/** True if position `at` sits inside a string literal on this line. */
+function insideString(line: string, at: number): boolean {
+  let quote: string | null = null;
+  for (let i = 0; i < at; i++) {
+    const ch = line[i];
+    if (quote) {
+      if (ch === "\\") i++;
+      else if (ch === quote) quote = null;
+    } else if (ch === '"' || ch === "'" || ch === "`") quote = ch;
+  }
+  return quote !== null;
+}
+
+export function Prose({ source, className = "", language = "python" }: { source: string; className?: string; language?: CodeLanguage }) {
   const blocks: React.ReactNode[] = [];
   const lines = source.trim().split("\n");
   let i = 0;
@@ -76,13 +138,14 @@ export function Prose({ source, className = "" }: { source: string; className?: 
 
     if (/^(~~~|```)/.test(line)) {
       const fence = line.slice(0, 3);
+      const lang = fenceLanguage(line.slice(3), language);
       const body: string[] = [];
       i++;
       while (i < lines.length && !lines[i].startsWith(fence)) body.push(lines[i++]);
       i++;
       blocks.push(
         <pre key={key++}>
-          <PythonCode code={body.join("\n")} />
+          <CodeBlock code={body.join("\n")} language={lang} />
         </pre>,
       );
       continue;

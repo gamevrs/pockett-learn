@@ -1,10 +1,12 @@
-import { flattenLessons, type Lesson, type Project, type UpcomingProject } from "@/engine/types";
+import { flattenLessons, languageOf, type Lesson, type Project, type UpcomingProject } from "@/engine/types";
 import { garage } from "./projects/garage";
 import { launch } from "./projects/launch";
 import { beatlab } from "./projects/beatlab";
+import { pitWall } from "./projects/pit-wall";
+import { garageJs } from "./projects/garage-js";
 
 /** Every playable project, in the order shown in the picker. */
-export const PROJECTS: Project[] = [garage, launch, beatlab];
+export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs];
 
 /** Teasers shown as "coming soon" cards. */
 export const UPCOMING: UpcomingProject[] = [
@@ -54,6 +56,8 @@ export function summarize(project: Project) {
   const lessons = flattenLessons(project);
   return {
     slug: project.slug,
+    language: languageOf(project),
+    sceneId: project.sceneId,
     title: project.title,
     tagline: project.tagline,
     emoji: project.emoji,

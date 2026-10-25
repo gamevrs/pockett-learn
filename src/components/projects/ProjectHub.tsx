@@ -3,10 +3,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, Clock } from "lucide-react";
-import { featuresUnlockedBy, flattenLessons, type Project } from "@/engine/types";
+import { featuresUnlockedBy, flattenLessons, languageOf, type Project } from "@/engine/types";
+import { languageInfo } from "@/engine/languages";
 import type { ProgramHandle } from "@/engine/program";
 import { latestBuild } from "@/engine/compose";
-import { preloadPython, runProgram } from "@/engine/python/host";
+import { loadRuntime, preloadRuntime } from "@/engine/runtimes";
 import { submittedCode, useProgress } from "@/data/progress/store";
 import { StageShell, type StageStatus } from "@/components/stage/StageShell";
 import { AdSlot } from "@/components/ads/AdSlot";
@@ -33,13 +34,14 @@ export function ProjectHub({ project }: { project: Project }) {
   const live = useRef<ProgramHandle | null>(null);
 
   useEffect(() => {
-    preloadPython();
-  }, []);
+    preloadRuntime(languageOf(project));
+  }, [project]);
 
   useEffect(() => {
     if (!build) return;
     let cancelled = false;
-    runProgram(build.code)
+    loadRuntime(languageOf(project))
+      .then((rt) => rt.run(build.code, { setup: project.setup }))
       .then((out) => {
         if (cancelled) {
           out.program?.dispose();
@@ -83,7 +85,7 @@ export function ProjectHub({ project }: { project: Project }) {
             </span>
             <h1 className="font-display mt-5 text-[2.5rem] sm:text-[3.25rem]">{project.title}</h1>
             <p className="mt-2 text-sm text-ink-3">
-              {project.difficulty} · about {project.hours} hours · {lessons.length} lessons
+              {languageInfo(project.language).label} · {project.difficulty} · about {project.hours} hours · {lessons.length} lessons
             </p>
             <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-2 sm:text-lg">{project.pitch}</p>
 

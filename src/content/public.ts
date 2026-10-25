@@ -7,6 +7,7 @@ import type { Project } from "@/engine/types";
 export function toPublicProject(project: Project) {
   return {
     slug: project.slug,
+    language: project.language ?? "python",
     title: project.title,
     tagline: project.tagline,
     pitch: project.pitch,

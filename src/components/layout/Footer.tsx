@@ -9,7 +9,7 @@ export function Footer() {
         <div>
           <Logo />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-2">
-            Learn Python by building real, working projects. Everything runs in your browser. Free, with no paywall.
+            Learn to code by building real, working projects in Python, JavaScript and SQL. Everything runs in your browser. Free, with no paywall.
           </p>
         </div>
         <div>
@@ -25,14 +25,14 @@ export function Footer() {
           <ul className="space-y-2 text-sm text-ink-2">
             <li><Link className="hover:text-ink" href="/projects">All projects</Link></li>
             <li><Link className="hover:text-ink" href="/dashboard">Your progress</Link></li>
-            <li><Link className="hover:text-ink" href="/playground">Python sandbox</Link></li>
+            <li><Link className="hover:text-ink" href="/playground">Code sandbox</Link></li>
           </ul>
         </div>
       </div>
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-ink-3 sm:flex-row sm:justify-between sm:px-6">
           <span>© pockett</span>
-          <span className="font-mono">Python runs in your browser via WebAssembly</span>
+          <span className="font-mono">Code runs in your browser via WebAssembly</span>
         </div>
       </div>
     </footer>

@@ -5,7 +5,8 @@ import { BookOpen, CheckCircle2, Clock, Lightbulb, Lock, Target, Zap } from "luc
 import { FeatureIcon } from "@/components/ui/icons";
 import type { Feature } from "@/engine/types";
 import type { LessonContext } from "@/content";
-import { Prose, PythonCode } from "@/components/ui/Prose";
+import { CodeBlock, Prose } from "@/components/ui/Prose";
+import { languageOf } from "@/engine/types";
 import { sound } from "@/lib/sound/sound";
 
 type Tab = "mission" | "learn" | "hints";
@@ -86,7 +87,7 @@ export function LessonPanel({ ctx, feature, alreadyDone, attempts, hintsSeen, on
               </div>
             )}
 
-            <Prose source={lesson.mission} className="mt-5" />
+            <Prose source={lesson.mission} className="mt-5" language={languageOf(ctx.project)} />
 
             <h3 className="mt-6 text-sm font-medium text-ink">Your tasks</h3>
             <ol className="mt-2 space-y-2">
@@ -111,7 +112,7 @@ export function LessonPanel({ ctx, feature, alreadyDone, attempts, hintsSeen, on
 
         {tab === "learn" && (
           <div className="rise">
-            <Prose source={lesson.learn} />
+            <Prose source={lesson.learn} language={languageOf(ctx.project)} />
           </div>
         )}
 
@@ -152,7 +153,7 @@ export function LessonPanel({ ctx, feature, alreadyDone, attempts, hintsSeen, on
                 <>
                   <div className="prose-lesson">
                     <pre style={{ maxHeight: 260, overflow: "auto" }}>
-                      <PythonCode code={lesson.solutionAdd} />
+                      <CodeBlock code={lesson.solutionAdd} language={languageOf(ctx.project)} />
                     </pre>
                   </div>
                   <button className="btn btn-sm mt-2" onClick={onUseSolution}>

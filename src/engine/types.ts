@@ -8,10 +8,17 @@
 
 export type Difficulty = "Beginner" | "Intermediate" | "Advanced";
 
+/** Languages a project can be written in. See src/engine/languages.ts for what each supports. */
+export type LanguageId = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go";
+
 export interface TestCase {
   id: string;
   description: string;
-  /** Python executed in the learner's namespace after their code. Use `assert`. */
+  /**
+   * Check code in the project's test language (see the runtime): Python `assert` for Python
+   * projects; JavaScript using `assert(cond, msg)` / `assertEqual(actual, expected, msg)` for
+   * JavaScript and SQL projects.
+   */
   assertionCode: string;
 }
 
@@ -64,6 +71,10 @@ export interface Chapter {
 
 export interface Project {
   slug: string;
+  /** Language the learner writes. Defaults to "python". */
+  language?: LanguageId;
+  /** Hidden code run before the learner's (e.g. SQL schema + seed data). */
+  setup?: string;
   title: string;
   tagline: string;
   pitch: string;
@@ -83,6 +94,7 @@ export interface Project {
 
 export interface UpcomingProject {
   slug: string;
+  language?: LanguageId;
   title: string;
   tagline: string;
   emoji: string;
@@ -116,4 +128,8 @@ export function featuresUnlockedBy(project: Project, completed: Iterable<string>
     if (done.has(lesson.id)) lesson.unlocks.forEach((f) => out.add(f));
   }
   return out;
+}
+
+export function languageOf(project: Pick<Project, "language">): LanguageId {
+  return project.language ?? "python";
 }

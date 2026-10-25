@@ -1,6 +1,9 @@
 import { ENGINE_PRELUDE } from "./prelude";
-import { createPythonProgram, type ProgramHandle, type PyModule } from "../program";
+import { createPythonProgram, type PyModule } from "../program";
 import type { RunError, TestCase, TestResult } from "../types";
+import { crashedResults, type GradeOutcome, type RunOutcome, type StatusListener } from "../runtimes/types";
+
+export type { GradeOutcome, RunOutcome, StatusListener };
 
 const PYODIDE_VERSION = "0.26.4";
 const PYODIDE_BASE = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
@@ -22,8 +25,6 @@ declare global {
     __pockettPyodide?: Promise<PyodideInstance>;
   }
 }
-
-export type StatusListener = (message: string) => void;
 
 export function loadPyodideOnce(onStatus?: StatusListener): Promise<PyodideInstance> {
   if (typeof window === "undefined") {
@@ -94,14 +95,6 @@ function createNamespace(py: PyodideInstance) {
   return mod;
 }
 
-export interface RunOutcome {
-  stdout: string;
-  error: RunError | null;
-  durationMs: number;
-  /** Present when the program ran without crashing. Caller owns it (dispose when done). */
-  program: ProgramHandle | null;
-}
-
 export async function runProgram(source: string, onStatus?: StatusListener): Promise<RunOutcome> {
   const started = performance.now();
   const py = await loadPyodideOnce(onStatus);
@@ -123,14 +116,6 @@ export async function runProgram(source: string, onStatus?: StatusListener): Pro
   }
 }
 
-export interface GradeOutcome {
-  stdout: string;
-  error: RunError | null;
-  results: TestResult[];
-  allPassed: boolean;
-  durationMs: number;
-}
-
 /** Runs the code in a throwaway namespace (so tests can't disturb the live scene) and grades it. */
 export async function gradeProgram(
   source: string,
@@ -147,12 +132,7 @@ export async function gradeProgram(
       return {
         stdout: res.stdout,
         error: res.error,
-        results: tests.map((t) => ({
-          testId: t.id,
-          description: t.description,
-          passed: false,
-          error: "Your code stopped with an error before this check could run.",
-        })),
+        results: crashedResults(tests),
         allPassed: false,
         durationMs: Math.round(performance.now() - started),
       };
