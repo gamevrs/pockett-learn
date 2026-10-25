@@ -17,7 +17,7 @@
   font-weight: 600;
 }
 
-/* Single-hue gradient: light to deep violet, never a second colour. */
+/* Single-hue gradient: light to deep lime, never a second colour. */
 .text-gradient {
   background-image: linear-gradient(100deg, var(--brand-light), var(--brand) 55%, var(--brand-deep));
   -webkit-background-clip: text;
@@ -295,8 +295,8 @@
   margin: 0.7rem 0;
   padding: 0.85rem 1rem;
   border-radius: 0.9rem;
-  background: #0b0b12;
-  color: #e8e8f4;
+  background: #0b0c0a;
+  color: #eef0e8;
   overflow-x: auto;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }

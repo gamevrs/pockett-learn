@@ -99,7 +99,7 @@ const EMPTY_HUD: Hud = {
 
 const GLASS = "rounded-xl border border-white/10 bg-black/45 px-3 py-2 backdrop-blur";
 const TONE: Record<Tone, string> = {
-  on: "text-violet-200/80",
+  on: "text-lime-200/80",
   warn: "text-amber-200/90",
   bad: "text-[#f87171]",
   off: "text-white/35",
@@ -208,14 +208,14 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
       {[0, 1, 2, 3].map((b) => (
         <span
           key={b}
-          className={`h-2 w-2 rounded-full ${hud.powered && beatIdx === b ? "bg-violet-300 shadow-[0_0_10px_2px_rgba(143,116,255,0.8)]" : "border border-violet-300/40"}`}
+          className={`h-2 w-2 rounded-full ${hud.powered && beatIdx === b ? "bg-lime-300 shadow-[0_0_10px_2px_rgba(163, 230, 53,0.8)]" : "border border-lime-300/40"}`}
         />
       ))}
     </div>
   );
   const barText = hud.arranger ? `BAR ${hud.playing ? String(hud.bar).padStart(2, "0") : "--"}` : `STEP ${hud.step >= 0 ? String(hud.step + 1).padStart(2, "0") : "--"}/16`;
   const sectionText = hud.arranger ? (hud.playing ? hud.section : "-") : "";
-  const sectionClass = hud.section === "groove" ? "text-violet-300" : hud.section === "break" ? "text-white/70" : "text-violet-100";
+  const sectionClass = hud.section === "groove" ? "text-lime-300" : hud.section === "break" ? "text-white/70" : "text-lime-100";
   const panel = mode === "tiny" ? "rounded-xl border border-white/10 bg-black/45 px-2.5 py-1.5 backdrop-blur" : GLASS;
   const shortInfo = hud.info.split(" · ");
 
@@ -255,7 +255,7 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
               ref={(el) => {
                 labelsRef.current.mixer[i] = el;
               }}
-              className="absolute left-0 top-0 whitespace-nowrap rounded-md bg-black/45 px-1 py-px text-[10px] font-bold leading-tight text-violet-100 will-change-transform"
+              className="absolute left-0 top-0 whitespace-nowrap rounded-md bg-black/45 px-1 py-px text-[10px] font-bold leading-tight text-lime-100 will-change-transform"
               style={{ opacity: 0 }}
             >
               {m ? m.vol : ""}
@@ -270,23 +270,23 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
         {!hud.powered ? (
           mode === "tiny" ? (
             <div className="truncate font-mono text-[11px] leading-4">
-              <span className="font-bold text-violet-200">NO POWER</span> <span className="text-white/55">· print() to boot</span>
+              <span className="font-bold text-lime-200">NO POWER</span> <span className="text-white/55">· print() to boot</span>
             </div>
           ) : (
             <div className="font-mono text-[11px] leading-snug">
-              <div className="font-bold tracking-wider text-violet-200">NO POWER</div>
+              <div className="font-bold tracking-wider text-lime-200">NO POWER</div>
               <div className="truncate text-white/55">print() something to boot</div>
             </div>
           )
         ) : mode === "tiny" ? (
           <div className="truncate font-mono text-[11px] leading-4">
             <span className={`font-sans text-[12px] font-semibold ${hud.tempo ? "text-white" : "text-white/35"}`}>{hud.tempo ? hud.title : "UNTITLED"}</span>
-            {hud.tempo && <span className="text-violet-200"> · {shortInfo[0]}</span>}
+            {hud.tempo && <span className="text-lime-200"> · {shortInfo[0]}</span>}
           </div>
         ) : (
           <div className="min-w-0 font-mono text-[11px] leading-snug">
             <div className={`truncate font-sans text-[13px] font-semibold ${hud.tempo ? "text-white" : "text-white/35"}`}>{hud.tempo ? hud.title : "UNTITLED"}</div>
-            <div className={`truncate ${hud.tempo ? "text-violet-200" : "text-white/35"}`}>{hud.tempo ? (narrow ? shortInfo.slice(0, 2).join(" · ") : hud.info) : "tempo: locked"}</div>
+            <div className={`truncate ${hud.tempo ? "text-lime-200" : "text-white/35"}`}>{hud.tempo ? (narrow ? shortInfo.slice(0, 2).join(" · ") : hud.info) : "tempo: locked"}</div>
             {lines.length === 0 ? (
               <div className="truncate text-white/40">› (nothing printed yet)</div>
             ) : (
@@ -335,10 +335,10 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
             onClick={() => void rt.toggle()}
             className={`pointer-events-auto rounded-full border-2 px-3.5 py-1.5 text-[11px] font-extrabold uppercase leading-4 tracking-wider transition-colors ${
               silent
-                ? "pulse-ring border-black bg-[#c4b5ff] text-black"
+                ? "pulse-ring border-black bg-[#d9f99d] text-black"
                 : ui.playing
                   ? "border-white/30 bg-black/55 text-white backdrop-blur hover:bg-white/15"
-                  : "border-black bg-[#8f74ff] text-black"
+                  : "border-black bg-[#a3e635] text-black"
             }`}
           >
             {silent ? "🔊 Sound on" : ui.playing ? "■ Stop" : "▶ Play"}

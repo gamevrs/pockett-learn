@@ -54,9 +54,9 @@ function highlightLine(line: string): React.ReactNode[] {
     const [tok, comment, str, num, word] = m;
     const key = n++;
     if (comment) out.push(<span key={key} style={{ color: "#7a8099" }}>{tok}</span>);
-    else if (str) out.push(<span key={key} style={{ color: "#a5e075" }}>{tok}</span>);
+    else if (str) out.push(<span key={key} style={{ color: "#fcd34d" }}>{tok}</span>);
     else if (num) out.push(<span key={key} style={{ color: "#ffb86b" }}>{tok}</span>);
-    else if (word && KEYWORDS.has(word)) out.push(<span key={key} style={{ color: "#c4a5ff" }}>{tok}</span>);
+    else if (word && KEYWORDS.has(word)) out.push(<span key={key} style={{ color: "#a3e635" }}>{tok}</span>);
     else if (word && /^\s*\(/.test(line.slice(idx + tok.length))) out.push(<span key={key} style={{ color: "#7fd4ff" }}>{tok}</span>);
     else out.push(tok);
     last = idx + tok.length;

@@ -36,11 +36,11 @@ export interface LaunchView {
 
 export type WorldEvent = "reset" | "liftoff" | "stage_sep" | "abort" | "crash" | "celebrate";
 
-const VIOLET_DEEP = new THREE.Color("#6440f0");
-const BG = new THREE.Color("#07070c");
-const SKY_TOP = new THREE.Color("#141831");
-const SKY_LOW = new THREE.Color("#3a4062");
-const SKY_BLUEPRINT = new THREE.Color("#0e0b1c");
+const LIME_DEEP = new THREE.Color("#65a30d");
+const BG = new THREE.Color("#070807");
+const SKY_TOP = new THREE.Color("#101a1c");
+const SKY_LOW = new THREE.Color("#34464c");
+const SKY_BLUEPRINT = new THREE.Color("#0b0c0a");
 const RE = 4200; // planet radius in world units
 const PAD_TOP = 1;
 const ROCKET_CENTER = 6; // rocket local origin sits this far above its base
@@ -218,9 +218,9 @@ function earthTexture() {
   return canvasTexture(1024, 512, (g) => {
     const rnd = seeded(11);
     const grad = g.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, "#151a30");
-    grad.addColorStop(0.5, "#1c2340");
-    grad.addColorStop(1, "#151a30");
+    grad.addColorStop(0, "#121c1f");
+    grad.addColorStop(0.5, "#18252a");
+    grad.addColorStop(1, "#121c1f");
     g.fillStyle = grad;
     g.fillRect(0, 0, 1024, 512);
     // land masses: soft desaturated blobs
@@ -229,7 +229,7 @@ function earthTexture() {
       const y = 80 + rnd() * 352;
       const r = 20 + rnd() * 70;
       for (let j = 0; j < 9; j++) {
-        g.fillStyle = `rgba(44,48,68,${0.35 + rnd() * 0.3})`;
+        g.fillStyle = `rgba(44, 52, 50,${0.35 + rnd() * 0.3})`;
         g.beginPath();
         g.ellipse(x + (rnd() - 0.5) * r * 1.6, y + (rnd() - 0.5) * r, r * (0.4 + rnd() * 0.6), r * (0.3 + rnd() * 0.5), rnd() * 3, 0, 7);
         g.fill();
@@ -237,7 +237,7 @@ function earthTexture() {
     }
     // cloud streaks
     for (let i = 0; i < 160; i++) {
-      g.fillStyle = `rgba(230,232,245,${0.05 + rnd() * 0.14})`;
+      g.fillStyle = `rgba(232, 240, 236,${0.05 + rnd() * 0.14})`;
       g.beginPath();
       g.ellipse(rnd() * 1024, rnd() * 512, 20 + rnd() * 90, 2 + rnd() * 6, (rnd() - 0.5) * 0.3, 0, 7);
       g.fill();
@@ -371,7 +371,7 @@ export class LaunchWorld {
 
     const scene = this.scene;
     scene.background = BG.clone();
-    this.fog = new THREE.FogExp2(0x1a1d2c, 0.004);
+    this.fog = new THREE.FogExp2(0x232521, 0.004);
     scene.fog = this.fog;
 
     // ── sky dome (single-hue vertical gradient) ──
@@ -390,7 +390,7 @@ export class LaunchWorld {
     scene.add(this.sky);
 
     // ── lights ──
-    this.hemi = new THREE.HemisphereLight(0xb9bdd6, 0x15151c, 0.55);
+    this.hemi = new THREE.HemisphereLight(0xc8cbc4, 0x181a17, 0.55);
     scene.add(this.hemi);
     this.key = new THREE.DirectionalLight(0xfff4ea, 2.2);
     this.key.position.set(-40, 70, 45);
@@ -426,7 +426,7 @@ export class LaunchWorld {
         side: THREE.BackSide,
         blending: THREE.AdditiveBlending,
         fog: false,
-        uniforms: { uColor: { value: new THREE.Color("#7f6cff") }, uStrength: { value: 0 } },
+        uniforms: { uColor: { value: new THREE.Color("#a3e635") }, uStrength: { value: 0 } },
         vertexShader: `varying vec3 vN; varying vec3 vView; void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vN = normalize(mat3(modelMatrix) * normal); vView = normalize(cameraPosition - wp.xyz); gl_Position = projectionMatrix * viewMatrix * wp; }`,
         fragmentShader: `uniform vec3 uColor; uniform float uStrength; varying vec3 vN; varying vec3 vView; void main(){ float f = pow(1.0 - abs(dot(vN, vView)), 3.0); gl_FragColor = vec4(uColor * f * 1.6, f * uStrength); }`,
       }),
@@ -437,7 +437,7 @@ export class LaunchWorld {
     // ── pad (rides on the planet) ──
     this.padGroup.position.set(0, RE + 1.5, 0);
     this.earthPivot.add(this.padGroup);
-    this.groundMat = new THREE.MeshStandardMaterial({ color: 0x0e0f17, roughness: 1, metalness: 0, transparent: true, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
+    this.groundMat = new THREE.MeshStandardMaterial({ color: 0x121411, roughness: 1, metalness: 0, transparent: true, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2 });
     const ground = new THREE.Mesh(new THREE.CircleGeometry(170, 64), this.groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
@@ -454,7 +454,7 @@ export class LaunchWorld {
     this.buildPad();
 
     // ── rocket ──
-    this.windows = new THREE.MeshStandardMaterial({ color: 0x10121c, emissive: BRAND_LIGHT, emissiveIntensity: 0.25, roughness: 0.2, metalness: 0.4 });
+    this.windows = new THREE.MeshStandardMaterial({ color: 0x161715, emissive: BRAND_LIGHT, emissiveIntensity: 0.25, roughness: 0.2, metalness: 0.4 });
     const { interstage, upperNozzle, collar } = this.buildRocket();
     this.interstage = interstage;
     this.upperNozzle = upperNozzle;
@@ -505,16 +505,16 @@ export class LaunchWorld {
     }
     const starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute("position", new THREE.BufferAttribute(starPos, 3));
-    this.starMat = new THREE.PointsMaterial({ color: 0xe8e6ff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, fog: false });
+    this.starMat = new THREE.PointsMaterial({ color: 0xf2f3f2, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0, depthWrite: false, fog: false });
     this.stars = new THREE.Points(starGeo, this.starMat);
     this.stars.renderOrder = -9;
     scene.add(this.stars);
 
-    this.moonMat = new THREE.MeshStandardMaterial({ map: moonTexture(), roughness: 1, emissive: 0x2a2838, emissiveIntensity: 0.6, transparent: true, opacity: 0, fog: false });
+    this.moonMat = new THREE.MeshStandardMaterial({ map: moonTexture(), roughness: 1, emissive: 0x30332d, emissiveIntensity: 0.6, transparent: true, opacity: 0, fog: false });
     this.moon = new THREE.Mesh(new THREE.SphereGeometry(110, 48, 32), this.moonMat);
     scene.add(this.moon);
 
-    this.cloudMat = new THREE.SpriteMaterial({ map: softDot(), color: 0xc9cbe0, transparent: true, opacity: 0.22, depthWrite: false });
+    this.cloudMat = new THREE.SpriteMaterial({ map: softDot(), color: 0xd4d7d2, transparent: true, opacity: 0.22, depthWrite: false });
     for (let i = 0; i < 26; i++) {
       const s = new THREE.Sprite(this.cloudMat);
       const alt = 1200 + rnd() * 6000;
@@ -546,9 +546,9 @@ export class LaunchWorld {
   }
 
   private buildPad() {
-    const concrete = new THREE.MeshStandardMaterial({ color: 0x2b2c35, roughness: 0.92, metalness: 0.05 });
-    const steel = new THREE.MeshStandardMaterial({ color: 0x5d6170, roughness: 0.55, metalness: 0.7 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x0b0b10, roughness: 1 });
+    const concrete = new THREE.MeshStandardMaterial({ color: 0x30332d, roughness: 0.92, metalness: 0.05 });
+    const steel = new THREE.MeshStandardMaterial({ color: 0x666d60, roughness: 0.55, metalness: 0.7 });
+    const dark = new THREE.MeshStandardMaterial({ color: 0x0e0e0d, roughness: 1 });
 
     const pad = new THREE.Mesh(new THREE.CylinderGeometry(9, 10, PAD_TOP, 40), concrete);
     pad.position.y = PAD_TOP / 2;
@@ -589,7 +589,7 @@ export class LaunchWorld {
     this.padGroup.add(this.track(lattice, "pad"));
 
     // swing arms (pivot at the tower)
-    const armMat = new THREE.MeshStandardMaterial({ color: 0x3a3c48, roughness: 0.6, metalness: 0.5 });
+    const armMat = new THREE.MeshStandardMaterial({ color: 0x41453d, roughness: 0.6, metalness: 0.5 });
     for (const y of [5.5, 9.5, 12.6]) {
       const pivot = new THREE.Group();
       pivot.position.set(towerX + w / 2, PAD_TOP + y, 0);
@@ -612,7 +612,7 @@ export class LaunchWorld {
       const bulb = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 0.4), this.padBulbs);
       bulb.position.set(x, PAD_TOP + 9.1, z);
       this.padGroup.add(bulb);
-      const light = new THREE.PointLight(0xf2f0ff, 0, 45, 1.4);
+      const light = new THREE.PointLight(0xf8f8f7, 0, 45, 1.4);
       light.position.set(x * 0.85, PAD_TOP + 8.5, z * 0.85);
       this.padLights.push(light);
       this.padGroup.add(light);
@@ -627,10 +627,10 @@ export class LaunchWorld {
   }
 
   private buildRocket(): { interstage: THREE.Mesh; upperNozzle: THREE.Mesh; collar: THREE.Mesh } {
-    const metal = new THREE.MeshPhysicalMaterial({ color: 0x3a3d48, roughness: 0.32, metalness: 0.9, clearcoat: 0.3 });
-    const band = new THREE.MeshStandardMaterial({ color: 0x16171e, roughness: 0.5, metalness: 0.3 });
-    const white = new THREE.MeshPhysicalMaterial({ color: 0xd8dae4, roughness: 0.42, metalness: 0.1, clearcoat: 0.6 });
-    const towerMat = new THREE.MeshStandardMaterial({ color: 0xc9ccd6, roughness: 0.4, metalness: 0.6 });
+    const metal = new THREE.MeshPhysicalMaterial({ color: 0x41453d, roughness: 0.32, metalness: 0.9, clearcoat: 0.3 });
+    const band = new THREE.MeshStandardMaterial({ color: 0x1a1c18, roughness: 0.5, metalness: 0.3 });
+    const white = new THREE.MeshPhysicalMaterial({ color: 0xdee0dc, roughness: 0.42, metalness: 0.1, clearcoat: 0.6 });
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0xd0d2cd, roughness: 0.4, metalness: 0.6 });
 
     const nozzleGeo = this.lathe([[0.13, 0.9], [0.16, 0.7], [0.24, 0.3], [0.31, 0]], 24);
     for (const [x, z] of [[0, 0.33], [0.29, -0.17], [-0.29, -0.17]]) {
@@ -715,10 +715,10 @@ export class LaunchWorld {
   }
 
   private buildCapsule(): { chute: THREE.Mesh; flame: THREE.Mesh } {
-    const white = new THREE.MeshPhysicalMaterial({ color: 0xd8dae4, roughness: 0.42, metalness: 0.1, clearcoat: 0.6 });
+    const white = new THREE.MeshPhysicalMaterial({ color: 0xdee0dc, roughness: 0.42, metalness: 0.1, clearcoat: 0.6 });
     const capsule = new THREE.Mesh(this.lathe([[0.62, 0], [0.6, 0.05], [0.24, 1.05], [0.17, 1.15], [0, 1.18]], 32), white);
     this.capsule.add(capsule);
-    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 1.6, 8), new THREE.MeshStandardMaterial({ color: 0xc9ccd6, metalness: 0.6, roughness: 0.4 }));
+    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 1.6, 8), new THREE.MeshStandardMaterial({ color: 0xd0d2cd, metalness: 0.6, roughness: 0.4 }));
     tower.position.y = 1.9;
     tower.name = "tower";
     this.capsule.add(tower);
@@ -730,7 +730,7 @@ export class LaunchWorld {
     this.capsule.add(flame);
     const chute = new THREE.Mesh(
       new THREE.SphereGeometry(1.8, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshPhysicalMaterial({ color: BRAND_LIGHT, roughness: 0.6, side: THREE.DoubleSide, emissive: VIOLET_DEEP, emissiveIntensity: 0.25 }),
+      new THREE.MeshPhysicalMaterial({ color: BRAND_LIGHT, roughness: 0.6, side: THREE.DoubleSide, emissive: LIME_DEEP, emissiveIntensity: 0.25 }),
     );
     chute.position.y = 4.2;
     chute.visible = false;

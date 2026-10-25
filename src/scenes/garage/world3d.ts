@@ -153,7 +153,7 @@ function checkerTexture() {
   const g = c.getContext("2d")!;
   for (let x = 0; x < 16; x++)
     for (let y = 0; y < 4; y++) {
-      g.fillStyle = (x + y) % 2 ? "#c9c9d3" : "#15151b";
+      g.fillStyle = (x + y) % 2 ? "#ced0cc" : "#181917";
       g.fillRect(x * 4, y * 4, 4, 4);
     }
   const t = new THREE.CanvasTexture(c);
@@ -169,15 +169,15 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   const { scene, camera, renderer } = ctx;
   const hw = track.halfWidth;
 
-  scene.background = new THREE.Color("#07070c");
-  scene.fog = new THREE.FogExp2("#07070c", 0.00028);
+  scene.background = new THREE.Color("#070807");
+  scene.fog = new THREE.FogExp2("#070807", 0.00028);
   const pmrem = new THREE.PMREMGenerator(renderer);
   const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environment = envTex;
   scene.environmentIntensity = 0.35;
 
   // lights
-  const hemi = new THREE.HemisphereLight("#cfc8ff", "#08080d", 0.55);
+  const hemi = new THREE.HemisphereLight("#e3ecd6", "#0a0b0a", 0.55);
   scene.add(hemi);
   const sun = new THREE.DirectionalLight("#ffffff", 1.7);
   sun.position.set(-320, 620, 260);
@@ -187,14 +187,14 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   sun.shadow.bias = -0.0004;
   sun.shadow.normalBias = 0.6;
   scene.add(sun);
-  const rim = new THREE.DirectionalLight(BRAND, 0.9);
+  const rim = new THREE.DirectionalLight(BRAND, 0.3); // lime reads very bright: keep the rim subtle
   rim.position.set(420, 160, -380);
   scene.add(rim);
 
   // ground + grid
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(4000, 4000),
-    new THREE.MeshStandardMaterial({ color: "#0c0d12", roughness: 1, metalness: 0 }),
+    new THREE.MeshStandardMaterial({ color: "#0f100e", roughness: 1, metalness: 0 }),
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -1;
@@ -213,13 +213,13 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   const ghostMat = new THREE.MeshBasicMaterial({ color: BRAND, transparent: true, opacity: 0.07, depthWrite: false });
   const asphaltTex = noiseTexture();
   asphaltTex.repeat.set(1, 1);
-  const asphaltMat = new THREE.MeshStandardMaterial({ color: "#30313b", map: asphaltTex, roughness: 0.86, metalness: 0 });
-  const lineMat = new THREE.MeshStandardMaterial({ color: "#9d9daa", roughness: 0.7 });
-  const kerbLightMat = new THREE.MeshStandardMaterial({ color: "#8c8c9a", roughness: 0.7 });
-  const kerbDarkMat = new THREE.MeshStandardMaterial({ color: "#3b3550", roughness: 0.5 });
-  const runoffMat = new THREE.MeshStandardMaterial({ color: "#14151b", roughness: 1 });
-  const wallMat = new THREE.MeshStandardMaterial({ color: "#2c2c36", roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide });
-  const neonMat = new THREE.MeshStandardMaterial({ color: BRAND, emissive: BRAND, emissiveIntensity: 1.25, roughness: 0.4 });
+  const asphaltMat = new THREE.MeshStandardMaterial({ color: "#363833", map: asphaltTex, roughness: 0.86, metalness: 0 });
+  const lineMat = new THREE.MeshStandardMaterial({ color: "#a3a89f", roughness: 0.7 });
+  const kerbLightMat = new THREE.MeshStandardMaterial({ color: "#93988e", roughness: 0.7 });
+  const kerbDarkMat = new THREE.MeshStandardMaterial({ color: "#3a3d36", roughness: 0.5 });
+  const runoffMat = new THREE.MeshStandardMaterial({ color: "#181916", roughness: 1 });
+  const wallMat = new THREE.MeshStandardMaterial({ color: "#31332f", roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide });
+  const neonMat = new THREE.MeshStandardMaterial({ color: BRAND, emissive: BRAND, emissiveIntensity: 0.75, roughness: 0.4 });
   const checkerMat = new THREE.MeshStandardMaterial({ map: checkerTexture(), roughness: 0.6 });
   // Each road layer sits on its own height AND pulls forward in the depth buffer.
   const layer = (m: THREE.Material, level: number) => {
@@ -287,7 +287,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   // light posts along the outer wall (instanced)
   const lampCount = 24;
   const lampPost = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.8, 1, 26, 6), wallMat, lampCount);
-  const lampHead = new THREE.InstancedMesh(new THREE.SphereGeometry(1.5, 12, 8), new THREE.MeshStandardMaterial({ color: "#000000", emissive: BRAND_LIGHT, emissiveIntensity: 1.3 }), lampCount);
+  const lampHead = new THREE.InstancedMesh(new THREE.SphereGeometry(1.5, 12, 8), new THREE.MeshStandardMaterial({ color: "#000000", emissive: BRAND_LIGHT, emissiveIntensity: 0.9 }), lampCount);
   {
     const m = new THREE.Matrix4();
     for (let l = 0; l < lampCount; l++) {
@@ -332,7 +332,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
       const arch = new THREE.Group();
       arch.position.set(toX(p.x), 0, toZ(p.y));
       arch.rotation.y = -track.tangent[i];
-      const mat = new THREE.MeshStandardMaterial({ color: "#d8d8e2", emissive: "#ffffff", emissiveIntensity: 0.05, roughness: 0.4 });
+      const mat = new THREE.MeshStandardMaterial({ color: "#dddfdb", emissive: "#ffffff", emissiveIntensity: 0.05, roughness: 0.4 });
       for (const s of [-1, 1]) {
         const post = new THREE.Mesh(gatePostGeo, mat);
         post.position.set(0, 12, s * (hw + 5));
@@ -350,10 +350,10 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
   const car = new THREE.Group();
   scene.add(car);
   const paintMat = new THREE.MeshPhysicalMaterial({ color: "#8a8f9c", metalness: 0.55, roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.08 });
-  const glassMat = new THREE.MeshPhysicalMaterial({ color: "#0b0d14", metalness: 0.3, roughness: 0.06, clearcoat: 1 });
-  const trimMat = new THREE.MeshStandardMaterial({ color: "#121218", roughness: 0.6, metalness: 0.3 });
-  const tireMat = new THREE.MeshStandardMaterial({ color: "#0d0d10", roughness: 0.9 });
-  const rimMat = new THREE.MeshStandardMaterial({ color: "#b7b7c4", metalness: 0.9, roughness: 0.25 });
+  const glassMat = new THREE.MeshPhysicalMaterial({ color: "#0b0c0a", metalness: 0.3, roughness: 0.06, clearcoat: 1 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: "#151614", roughness: 0.6, metalness: 0.3 });
+  const tireMat = new THREE.MeshStandardMaterial({ color: "#0e0f0e", roughness: 0.9 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: "#bec1ba", metalness: 0.9, roughness: 0.25 });
   const headMat = new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: "#fff6e3", emissiveIntensity: 0 });
   const tailMat = new THREE.MeshStandardMaterial({ color: "#2a0a10", emissive: "#ff3355", emissiveIntensity: 0.4 });
   const stripeMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.4, transparent: true, opacity: 0.75 });
@@ -488,7 +488,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
     hemi.intensity = view.lit ? 0.55 : 0.15;
     sun.intensity = view.lit ? 1.7 : 0.25;
     gridMat.opacity = view.lit ? 0.06 : 0.16;
-    ctx.bloom.strength = view.lit ? 0.55 : 0.9;
+    ctx.bloom.strength = view.lit ? 0.42 : 0.7;
     ctx.bloom.threshold = view.lit ? 0.92 : 0.6;
     ctx.bloom.radius = 0.45;
   };
@@ -534,7 +534,7 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
       headMat.emissiveIntensity = view.lit ? 2.2 : 0;
       tailMat.emissiveIntensity = view.lit ? (c.braking ? 4 : 0.5) : 0;
       beam.intensity = view.lit ? 420 : 0;
-      underglow.intensity = view.lit ? 50 : 0;
+      underglow.intensity = view.lit ? 12 : 0;
       const boost = view.painted && view.turbo ? Math.max(0, view.power - 0.55) * 2.2 : 0;
       flame.visible = boost > 0.05;
       flame.scale.set(1, 0.4 + boost + Math.random() * 0.3, 1);
@@ -651,13 +651,13 @@ export function createGarageWorld(ctx: ThreeContext, track: Track): GarageWorld 
 }
 
 const WHITE = new THREE.Color("#ffffff");
-const GATE_IDLE = new THREE.Color("#d8d8e2");
-const SMOKE = new THREE.Color("#5a5a66");
+const GATE_IDLE = new THREE.Color("#dddfdb");
+const SMOKE = new THREE.Color("#60655b");
 const DANGER = new THREE.Color("#f87171");
 
-/** Learner-provided colour: hex or a CSS colour name; anything else falls back to the brand violet. */
+/** Learner-provided colour: hex or a CSS colour name; anything else falls back to the brand lime. */
 function safeColor(value: string): THREE.Color {
   const v = value.trim().toLowerCase();
   if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(v) || v in THREE.Color.NAMES) return new THREE.Color(v);
-  return new THREE.Color("#8f74ff");
+  return new THREE.Color("#a3e635");
 }

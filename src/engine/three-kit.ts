@@ -30,8 +30,8 @@ export interface ThreeApp {
   dispose?(): void;
 }
 
-export const BRAND = new THREE.Color("#8f74ff");
-export const BRAND_LIGHT = new THREE.Color("#c4b5ff");
+export const BRAND = new THREE.Color("#a3e635");
+export const BRAND_LIGHT = new THREE.Color("#d9f99d");
 
 export function useThreeStage(canvasRef: RefObject<HTMLCanvasElement | null>, create: (ctx: ThreeContext) => ThreeApp) {
   const createRef = useRef(create);

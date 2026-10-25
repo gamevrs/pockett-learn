@@ -226,13 +226,13 @@ function clockText(s: Sim, tick: number): string {
 const toneText: Record<Tone, string> = {
   ok: "text-[#34d399]",
   bad: "text-[#f87171]",
-  accent: "text-violet-200",
+  accent: "text-lime-200",
   plain: "text-white",
 };
 const toneBar: Record<Tone, string> = {
   ok: "bg-[#34d399]",
   bad: "bg-[#f87171]",
-  accent: "bg-[#8f74ff]",
+  accent: "bg-[#a3e635]",
   plain: "bg-white/70",
 };
 
@@ -736,13 +736,13 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
   const teleW = Math.round(tiny ? Math.min(138, W / 2 - 18) : compact ? 142 : 156);
   const consoleW = Math.round(Math.max(110, Math.min(portrait ? 270 : 300, hasTele ? W - teleW - 36 : W - 24)));
   const countSize = Math.round(clamp(Math.min(W, H) * 0.17, 34, 92));
-  const ringConsole = interactive && (focus === "console" || focus === "countdown") && !alive(focus) ? "ring-2 ring-[#8f74ff]/70" : "";
-  const ringTele = interactive && (focus === "throttle" || focus === "guidance") && !alive(focus) ? "ring-2 ring-[#8f74ff]/70" : "";
+  const ringConsole = interactive && (focus === "console" || focus === "countdown") && !alive(focus) ? "ring-2 ring-[#a3e635]/70" : "";
+  const ringTele = interactive && (focus === "throttle" || focus === "guidance") && !alive(focus) ? "ring-2 ring-[#a3e635]/70" : "";
   const glass = "rounded-xl border border-white/10 bg-black/45 backdrop-blur";
   const bannerTop = portrait && !compact;
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#07070c]">
+    <div className="relative h-full w-full overflow-hidden bg-[#070807]">
       <canvas
         ref={canvasRef}
         tabIndex={interactive ? 0 : -1}
@@ -756,14 +756,14 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
           <div className={`absolute left-3 top-11 ${glass} ${tiny ? "px-2 py-1.5" : "px-3 py-2"} ${ringConsole}`} style={{ width: consoleW }}>
             {hud.consoleOn ? (
               <>
-                <div className="mb-0.5 flex items-center justify-between gap-2 text-[9.5px] uppercase tracking-[0.12em] text-violet-200/70">
+                <div className="mb-0.5 flex items-center justify-between gap-2 text-[9.5px] uppercase tracking-[0.12em] text-lime-200/70">
                   <span className="truncate">{tiny && hud.showPlate ? hud.mission : "Launch console"}</span>
-                  {hud.clock && <span className="shrink-0 font-bold text-violet-200">{hud.clock}</span>}
+                  {hud.clock && <span className="shrink-0 font-bold text-lime-200">{hud.clock}</span>}
                 </div>
                 {hud.lines.length ? (
                   hud.lines.map((l, i) => (
-                    <div key={`${i}-${l}`} className="truncate text-violet-100">
-                      <span className="text-[#8f74ff]">› </span>
+                    <div key={`${i}-${l}`} className="truncate text-lime-100">
+                      <span className="text-[#a3e635]">› </span>
                       {l}
                     </div>
                   ))
@@ -773,7 +773,7 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
               </>
             ) : (
               <>
-                <div className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-violet-200">{program ? "Console offline" : "Blueprint"}</div>
+                <div className="truncate text-[10px] font-bold uppercase tracking-[0.14em] text-lime-200">{program ? "Console offline" : "Blueprint"}</div>
                 <div className="truncate text-white/50">{program ? "print() to power it on" : "press Run to power up"}</div>
               </>
             )}
@@ -795,7 +795,7 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
                   )}
                 </div>
               ))}
-              {hud.warp > 1.5 && <div className="mt-1 text-right text-[9.5px] font-bold text-violet-200/80">TIME ×{Math.round(hud.warp)}</div>}
+              {hud.warp > 1.5 && <div className="mt-1 text-right text-[9.5px] font-bold text-lime-200/80">TIME ×{Math.round(hud.warp)}</div>}
             </div>
           )}
 
@@ -847,12 +847,12 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
           {hud.showPlate && !tiny && (
             <div className={`absolute bottom-3 left-3 ${glass} px-3 py-1.5`} style={{ maxWidth: Math.max(120, W - 210) }}>
               <div className="truncate font-bold text-white/90">
-                {hud.mission} <span className="text-violet-200/70">· {hud.rocket}</span>
+                {hud.mission} <span className="text-lime-200/70">· {hud.rocket}</span>
               </div>
               {hud.crew > 0 && (
                 <div className="mt-0.5 flex items-center gap-1 text-[10px] text-white/55">
                   {Array.from({ length: hud.crew }, (_, i) => (
-                    <span key={i} className="inline-block h-2 w-2 rounded-full bg-[#8f74ff]" />
+                    <span key={i} className="inline-block h-2 w-2 rounded-full bg-[#a3e635]" />
                   ))}
                   <span className="ml-1">CREW {hud.crew}</span>
                 </div>
@@ -877,10 +877,10 @@ export default function LaunchScene({ program, unlocked, focus, celebration, int
             if (s.mode === "countdown") s.skipReq = true;
             else s.restartReq = true;
           }}
-          className={`absolute bottom-3 right-3 z-10 rounded-full border border-[#8f74ff]/60 bg-black/55 font-mono font-bold uppercase tracking-wider text-white backdrop-blur transition-colors hover:bg-[#8f74ff]/25 ${tiny ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-[11px]"}`}
+          className={`absolute bottom-3 right-3 z-10 rounded-full border border-[#a3e635]/60 bg-black/55 font-mono font-bold uppercase tracking-wider text-white backdrop-blur transition-colors hover:bg-[#a3e635]/25 ${tiny ? "px-2.5 py-1 text-[10px]" : "px-3 py-1.5 text-[11px]"}`}
         >
           {uiMode === "countdown" ? (tiny ? "Skip" : "Skip countdown") : uiMode === "idle" ? "Launch" : tiny ? "Relaunch" : "Launch again"}
-          {!tiny && <span className="text-violet-200/70"> ({uiMode === "countdown" ? "Space" : "R"})</span>}
+          {!tiny && <span className="text-lime-200/70"> ({uiMode === "countdown" ? "Space" : "R"})</span>}
         </button>
       )}
     </div>

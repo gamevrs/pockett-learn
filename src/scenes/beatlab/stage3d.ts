@@ -78,17 +78,17 @@ const RING_MAX_H = 1.5;
 const RING_GAP = 1.2;
 const N_PADS = TRACK_IDS.length * STEPS;
 
-const DEEP = new THREE.Color("#6440f0");
+const DEEP = new THREE.Color("#65a30d");
 const DANGER = new THREE.Color("#f87171");
-const PAD_OFF = new THREE.Color("#22222c");
-const PAD_OFF_BEAT = new THREE.Color("#2b2b38");
+const PAD_OFF = new THREE.Color("#272925");
+const PAD_OFF_BEAT = new THREE.Color("#32342f");
 
-/** Each instrument is a different shade of the one violet. */
+/** Each instrument is a different shade of the one lime. */
 const ROW_COLOR: Record<TrackId, THREE.Color> = {
   kick: BRAND.clone(),
   snare: BRAND.clone().lerp(BRAND_LIGHT, 0.45),
   clap: BRAND_LIGHT.clone(),
-  hats: new THREE.Color("#a7a2c9"),
+  hats: new THREE.Color("#a5a99c"),
   bass: DEEP.clone(),
 };
 
@@ -184,14 +184,14 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   let azim = -0.3;
 
   // ───── world ─────
-  scene.background = new THREE.Color("#07070c");
-  scene.fog = new THREE.Fog("#07070c", 30, 80);
+  scene.background = new THREE.Color("#070807");
+  scene.fog = new THREE.Fog("#070807", 30, 80);
   const pmrem = new THREE.PMREMGenerator(renderer);
   const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environment = envTex;
   scene.environmentIntensity = 0.35;
 
-  scene.add(new THREE.HemisphereLight("#cfc8ff", "#08080d", 0.55));
+  scene.add(new THREE.HemisphereLight("#e3ecd6", "#0a0b0a", 0.55));
   const key = new THREE.DirectionalLight("#ffffff", 1.8);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
@@ -202,7 +202,7 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   const rim = new THREE.PointLight(BRAND, 0, 0, 0);
   scene.add(rim);
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshStandardMaterial({ color: "#0a0a10", roughness: 0.92, metalness: 0 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshStandardMaterial({ color: "#0a0c06", roughness: 0.92, metalness: 0 }));
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
@@ -220,8 +220,8 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
     new THREE.MeshBasicMaterial({ color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, ...extra });
   const ghostLineMat = new THREE.LineBasicMaterial({ color: BRAND, transparent: true, opacity: 0.55, depthWrite: false });
   const ghostFillMat = new THREE.MeshBasicMaterial({ color: BRAND, transparent: true, opacity: 0.22, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
-  const plinthMat = new THREE.MeshPhysicalMaterial({ color: "#101017", roughness: 0.5, metalness: 0.25, clearcoat: 0.5, clearcoatRoughness: 0.4 });
-  const deckMat = new THREE.MeshPhysicalMaterial({ color: "#17171f", roughness: 0.32, metalness: 0.35, clearcoat: 1, clearcoatRoughness: 0.18 });
+  const plinthMat = new THREE.MeshPhysicalMaterial({ color: "#0f100d", roughness: 0.5, metalness: 0.25, clearcoat: 0.5, clearcoatRoughness: 0.4 });
+  const deckMat = new THREE.MeshPhysicalMaterial({ color: "#1b1c1a", roughness: 0.32, metalness: 0.35, clearcoat: 1, clearcoatRoughness: 0.18 });
   const padMat = new THREE.MeshPhysicalMaterial({ color: "#ffffff", roughness: 0.36, metalness: 0.05, clearcoat: 0.8, clearcoatRoughness: 0.25 });
   const glowMat = additive("#ffffff", { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
   const ghostPadMat = additive("#ffffff", { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
@@ -231,8 +231,8 @@ export function createBeatStage(ctx: ThreeContext, rt: Runtime, labels: StageLab
   const ringMat = additive("#ffffff");
   const celebMat = additive(BRAND_LIGHT.clone().multiplyScalar(2), { side: THREE.DoubleSide });
   const slotMat = new THREE.MeshStandardMaterial({ color: "#050508", roughness: 0.8 });
-  const faderMat = new THREE.MeshPhysicalMaterial({ color: "#d9d6e8", roughness: 0.3, metalness: 0.6, clearcoat: 1 });
-  const knobMat = new THREE.MeshPhysicalMaterial({ color: "#1d1d27", roughness: 0.4, metalness: 0.5, clearcoat: 0.8 });
+  const faderMat = new THREE.MeshPhysicalMaterial({ color: "#dcded6", roughness: 0.3, metalness: 0.6, clearcoat: 1 });
+  const knobMat = new THREE.MeshPhysicalMaterial({ color: "#222420", roughness: 0.4, metalness: 0.5, clearcoat: 0.8 });
   const tickMat = new THREE.MeshBasicMaterial({ color: "#ffffff" });
   const orbMats: THREE.MeshBasicMaterial[] = [];
 

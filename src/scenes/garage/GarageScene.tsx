@@ -102,7 +102,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
             car,
             lit: alive("ignition") && !!prog,
             painted: alive("paint") && !!prog,
-            paint: prog?.str("paint", "#8f74ff") ?? "#8f74ff",
+            paint: prog?.str("paint", "#a3e635") ?? "#a3e635",
             turbo: prog?.bool("has_turbo", false) ?? false,
             roadAlive: alive("steering"),
             gates: alive("checkpoints") && prog ? prog.list<number>("checkpoints") : [],
@@ -212,8 +212,8 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
             {lit ? (
               lines.length ? (
                 lines.map((l, i) => (
-                  <p key={i} className="truncate text-violet-100/90">
-                    <span className="text-[#8f74ff]">›</span> {l}
+                  <p key={i} className="truncate text-lime-100/90">
+                    <span className="text-[#a3e635]">›</span> {l}
                   </p>
                 ))
               ) : (
@@ -221,7 +221,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
               )
             ) : (
               <>
-                <p className="font-bold uppercase tracking-[0.16em] text-[#b9a8ff]">{program ? "No power" : "Blueprint"}</p>
+                <p className="font-bold uppercase tracking-[0.16em] text-[#d9f99d]">{program ? "No power" : "Blueprint"}</p>
                 {!tiny && <p className="text-white/50">{program ? "print() something to boot the car" : "Press Run to boot the car"}</p>}
               </>
             )}
@@ -230,11 +230,11 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
           {showLapBoard && (
             <div className="shrink-0 rounded-xl border border-white/10 bg-black/45 px-3 py-2 text-right font-mono text-[11px] leading-relaxed text-white/60 backdrop-blur">
               <p className="text-[13px] font-bold text-white">
-                Lap {hud.lap + 1} <span className="ml-1 text-violet-200">{hud.lapTime.toFixed(1)}s</span>
+                Lap {hud.lap + 1} <span className="ml-1 text-lime-200">{hud.lapTime.toFixed(1)}s</span>
               </p>
               {hud.bestLap !== null && <p>Best {hud.bestLap.toFixed(2)}s</p>}
               {alive("tires") && program?.has("tire") && !tiny && (
-                <p className="text-violet-200">
+                <p className="text-lime-200">
                   {program.str("tire", "?")} tyres · grip {program.num("grip", 1).toFixed(2)}
                 </p>
               )}
@@ -249,7 +249,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
 
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
           {hud.splitVisible ? (
-            <span className="pop-in rounded-full bg-[#8f74ff] px-3 py-1 font-mono text-[11px] font-bold text-[#0a0a10] shadow-[0_0_40px_rgba(143,116,255,0.6)]">
+            <span className="pop-in rounded-full bg-[#a3e635] px-3 py-1 font-mono text-[11px] font-bold text-[#0a0c06] shadow-[0_0_40px_rgba(163, 230, 53,0.6)]">
               {hud.split}
             </span>
           ) : interactive && canDrive && !focused && !hud.autopilot && !compact ? (
@@ -281,7 +281,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
                   aria-pressed={hud.autopilot}
                   title="Toggle autopilot (P)"
                   className={`flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold uppercase tracking-wide transition-colors ${
-                    hud.autopilot ? "bg-[#8f74ff] text-[#0a0a10] shadow-[0_0_30px_rgba(143,116,255,0.55)]" : "border border-white/15 bg-black/55 text-white/85 backdrop-blur hover:bg-white/10"
+                    hud.autopilot ? "bg-[#a3e635] text-[#0a0c06] shadow-[0_0_30px_rgba(163, 230, 53,0.55)]" : "border border-white/15 bg-black/55 text-white/85 backdrop-blur hover:bg-white/10"
                   }`}
                 >
                   <Bot className="h-3.5 w-3.5" />
@@ -331,8 +331,8 @@ function Speedo({ kmh, top, pedal, power, compact }: { kmh: number; top: number;
         <svg width={size} height={size} className="absolute inset-0 rotate-[135deg]">
           <defs>
             <linearGradient id="speedo" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#c4b5ff" />
-              <stop offset="1" stopColor="#6440f0" />
+              <stop offset="0" stopColor="#d9f99d" />
+              <stop offset="1" stopColor="#65a30d" />
             </linearGradient>
           </defs>
           <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={5} strokeLinecap="round" strokeDasharray={`${circ * sweep} ${circ}`} />
@@ -360,7 +360,7 @@ function Speedo({ kmh, top, pedal, power, compact }: { kmh: number; top: number;
       {pedal !== null && power !== null && !compact && (
         <div className="mb-1 w-24 space-y-1.5 rounded-xl border border-white/10 bg-black/45 px-2.5 py-2 font-mono text-[9px] font-bold tracking-wider text-white/55 backdrop-blur">
           <Bar label="PEDAL" value={pedal} color="rgba(255,255,255,0.75)" />
-          <Bar label="POWER" value={power} color="#8f74ff" />
+          <Bar label="POWER" value={power} color="#a3e635" />
         </div>
       )}
     </div>

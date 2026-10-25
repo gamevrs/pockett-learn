@@ -10,7 +10,7 @@ export const PROJECTS: Project[] = [garage, launch, beatlab];
 export const UPCOMING: UpcomingProject[] = [
   { slug: "pixel-pet", title: "Pixel Pet", tagline: "Raise a creature with classes & state machines.", emoji: "🐣", accent: { from: "#ffd23d", to: "#ff8a3d" } },
   { slug: "rover", title: "Mars Rover", tagline: "Program a rover through a canyon with algorithms.", emoji: "🛰️", accent: { from: "#ff7a45", to: "#c2410c" } },
-  { slug: "art-studio", title: "Art Studio", tagline: "Generative art with loops and randomness.", emoji: "🎨", accent: { from: "#ff5c9a", to: "#8f74ff" } },
+  { slug: "art-studio", title: "Art Studio", tagline: "Generative art with loops and randomness.", emoji: "🎨", accent: { from: "#ff5c9a", to: "#a3e635" } },
 ];
 
 export function getProject(slug: string): Project | undefined {

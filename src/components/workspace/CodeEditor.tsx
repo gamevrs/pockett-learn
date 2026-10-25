@@ -9,7 +9,7 @@ import { YOUR_TURN_MARKER } from "@/engine/types";
 const Editor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
   loading: () => (
-    <div className="grid h-full place-items-center bg-[#0b0b12] font-mono text-xs text-white/50">
+    <div className="grid h-full place-items-center bg-[#0b0c0a] font-mono text-xs text-white/50">
       <span className="animate-pulse">loading editor…</span>
     </div>
   ),
@@ -36,17 +36,17 @@ const defineThemes: BeforeMount = (monaco) => {
     inherit: true,
     rules: [
       { token: "comment", foreground: "7a8099", fontStyle: "italic" },
-      { token: "keyword", foreground: "c4a5ff" },
-      { token: "string", foreground: "a5e075" },
+      { token: "keyword", foreground: "a3e635" },
+      { token: "string", foreground: "fcd34d" },
       { token: "number", foreground: "ffb86b" },
     ],
     colors: {
-      "editor.background": "#0b0b12",
-      "editorLineNumber.foreground": "#4a4d63",
-      "editorLineNumber.activeForeground": "#b6b6ca",
-      "editor.lineHighlightBackground": "#14141f",
-      "editorCursor.foreground": "#8f74ff",
-      "editor.selectionBackground": "#3b2f7a99",
+      "editor.background": "#0b0c0a",
+      "editorLineNumber.foreground": "#4c5046",
+      "editorLineNumber.activeForeground": "#b7bcae",
+      "editor.lineHighlightBackground": "#151713",
+      "editorCursor.foreground": "#a3e635",
+      "editor.selectionBackground": "#3f621280",
     },
   });
   monaco.editor.defineTheme("pockett-light", {
@@ -54,8 +54,8 @@ const defineThemes: BeforeMount = (monaco) => {
     inherit: true,
     rules: [
       { token: "comment", foreground: "8a8a98", fontStyle: "italic" },
-      { token: "keyword", foreground: "6a35ff" },
-      { token: "string", foreground: "1f8a4c" },
+      { token: "keyword", foreground: "4d7c0f" },
+      { token: "string", foreground: "b45309" },
       { token: "number", foreground: "c2570c" },
     ],
     colors: {

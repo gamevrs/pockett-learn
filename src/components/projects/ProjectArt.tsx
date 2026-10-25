@@ -29,14 +29,14 @@ export function ProjectArt({ slug, emoji }: { slug: string; emoji: string }) {
   return (
     <svg viewBox="0 0 400 220" className="h-full w-full" role="img" aria-label={`${slug} illustration`} preserveAspectRatio="xMidYMid slice">
       {defs}
-      <rect width="400" height="220" fill="#07070c" />
+      <rect width="400" height="220" fill="#070807" />
       <circle cx="260" cy="90" r="150" fill={`url(#glow-${slug})`} />
       {slug === "garage" && (
         <g>
           <path
             d={GARAGE_ART.d}
             fill="none"
-            stroke="#22222c"
+            stroke="#272925"
             strokeWidth="28"
             strokeLinejoin="round"
           />
@@ -66,16 +66,16 @@ export function ProjectArt({ slug, emoji }: { slug: string; emoji: string }) {
           {Array.from({ length: 26 }).map((_, i) => (
             <circle key={i} cx={(i * 97) % 400} cy={(i * 53) % 220} r={(i % 3) * 0.6 + 0.6} fill="#fff" opacity={0.3 + (i % 4) * 0.15} />
           ))}
-          <circle cx="330" cy="50" r="30" fill="#e8e6f8" opacity=".9" />
-          <circle cx="320" cy="42" r="6" fill="#c9c6e6" />
-          <circle cx="340" cy="60" r="4" fill="#c9c6e6" />
+          <circle cx="330" cy="50" r="30" fill="#e9eae4" opacity=".9" />
+          <circle cx="320" cy="42" r="6" fill="#c8cbc2" />
+          <circle cx="340" cy="60" r="4" fill="#c8cbc2" />
           <path d="M 90 200 C 120 120, 200 90, 300 60" fill="none" stroke="url(#g-launch)" strokeWidth="3" strokeDasharray="4 8" strokeLinecap="round" />
           <g transform="translate(190 110) rotate(32)">
-            <path d="M0 -44 C 16 -26, 16 8, 11 28 L -11 28 C -16 8, -16 -26, 0 -44 Z" fill="#f4f4fb" />
+            <path d="M0 -44 C 16 -26, 16 8, 11 28 L -11 28 C -16 8, -16 -26, 0 -44 Z" fill="#f8f8f7" />
             <circle cx="0" cy="-8" r="6" fill="#0b0f18" stroke="url(#g-launch)" strokeWidth="2.5" />
             <path d="M-11 12 L -26 34 L -11 28 Z M 11 12 L 26 34 L 11 28 Z" fill="url(#g-launch)" />
-            <path d="M-7 28 Q 0 64 7 28 Z" fill="#e8e3ff" />
-            <path d="M-4 28 Q 0 50 4 28 Z" fill="#b9a8ff" />
+            <path d="M-7 28 Q 0 64 7 28 Z" fill="#ecfccb" />
+            <path d="M-4 28 Q 0 50 4 28 Z" fill="#d9f99d" />
           </g>
         </g>
       )}

@@ -46,7 +46,7 @@ Design choices worth knowing:
 - **Watchdog, not workers.** A `sys.settrace` deadline stops runaway loops (`while True:` spanning several lines) with a friendly, line-numbered error. A Web Worker would be stricter but makes per-frame hook calls async; revisit if a project needs heavy compute. (A single-line `while True: pass` is not caught by CPython line tracing.)
 - **Scenes are gated, not branched.** A scene draws everything, but each feature is ghosted until `unlocked.has(id)`. That keeps "what you're building towards" visible from lesson 1.
 - **3D with one visual language.** Every scene renders through `useThreeStage` (ACES tone mapping, soft
-  shadows, bloom) with one violet accent; locked features are violet wireframe. All HUD text is HTML, not
+  shadows, bloom) with one lime accent; locked features are lime wireframe. All HUD text is HTML, not
   canvas text, so it stays crisp and matches the site.
 - **Pure sims.** `scenes/<project>/sim.ts` has no DOM or imports, so `scripts/tune-garage.mjs` can prove the reference autopilot laps without a browser.
 - **Content is data.** Projects are serializable. `toPublicProject()` whitelists fields for the API so reference solutions and test source never leave the server through it.
