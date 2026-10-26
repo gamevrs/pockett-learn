@@ -409,7 +409,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
                     onChange={(v) => {
                       setCode(v);
                       setPristine(false);
-                    }} onRun={() => void runRef.current("run")} onSubmit={() => void runRef.current("submit")} language={lang.monaco} errorLine={errorLine} errorMessage={runError ? `${runError.type}: ${runError.message}` : undefined} revealKey={lesson.id} />
+                    }} onRun={() => void runRef.current("run")} onSubmit={() => void runRef.current("submit")} language={lang.monaco} context={project.setup} errorLine={errorLine} errorMessage={runError ? `${runError.type}: ${runError.message}` : undefined} revealKey={lesson.id} />
                 </div>
               </section>
             ),

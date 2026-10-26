@@ -12,7 +12,8 @@
     "validate": "node scripts/validate-content.mjs",
     "tune:garage": "node scripts/tune-garage.mjs",
     "test:sync": "node scripts/test-sync-merge.mjs",
-    "test:runner": "node scripts/runner/test.mjs"
+    "test:runner": "node scripts/runner/test.mjs",
+    "ui:check": "node scripts/ui-check.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

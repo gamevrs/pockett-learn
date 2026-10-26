@@ -1,19 +1,25 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { OnMount, BeforeMount } from "@monaco-editor/react";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { YOUR_TURN_MARKER } from "@/engine/types";
+import { INTERPOLATION_LANGUAGES, ensureInterpolationGrammar } from "./monaco-interpolation";
+import { registerEditorTools, setModelContext } from "./monaco-tools";
 
-const Editor = dynamic(() => import("@monaco-editor/react"), {
-  ssr: false,
-  loading: () => (
+function EditorLoading() {
+  return (
     <div className="grid h-full place-items-center bg-[#0b0c0a] font-mono text-xs text-white/50">
       <span className="animate-pulse">loading editor…</span>
     </div>
-  ),
-});
+  );
+}
+
+const Editor = dynamic(() => import("@monaco-editor/react"), { ssr: false, loading: EditorLoading });
+
+/** Languages whose interpolation-aware tokenizer is registered (it must be before a model of that language exists). */
+const grammarReady = new Set<string>();
 
 interface CodeEditorProps {
   /** Monaco language id. */
@@ -27,10 +33,17 @@ interface CodeEditorProps {
   errorMessage?: string;
   /** Changes when a new lesson opens, so the editor scrolls to the YOUR TURN marker */
   revealKey: string;
+  /** Extra text the editor's completions should know about but that is not in the file, e.g. the SQL schema a project sets up. */
+  context?: string;
 }
 
 type EditorInstance = Parameters<OnMount>[0];
 type MonacoInstance = Parameters<OnMount>[1];
+
+const beforeMount: BeforeMount = (monaco) => {
+  registerEditorTools(monaco);
+  defineThemes(monaco);
+};
 
 const defineThemes: BeforeMount = (monaco) => {
   monaco.editor.defineTheme("pockett-dark", {
@@ -41,12 +54,28 @@ const defineThemes: BeforeMount = (monaco) => {
       { token: "keyword", foreground: "c5ee8a" },
       { token: "string", foreground: "fcd34d" },
       { token: "number", foreground: "ffb86b" },
-      // built-ins (SQL functions, JS globals) and types: one cool tone, never magenta
-      { token: "predefined", foreground: "7fd4ff" },
-      { token: "type", foreground: "7fd4ff" },
+      // names (see monaco-identifiers.ts): every kind has its own calm colour, none of them magenta.
+      // lime = keywords, yellow = strings, orange = numbers, then:
+      { token: "variable", foreground: "8db4e0" }, // soft blue: total, price, car_name
+      { token: "variable.parameter", foreground: "d9c2a6", fontStyle: "italic" }, // sand
+      { token: "variable.language", foreground: "9fb4cf", fontStyle: "italic" }, // self / cls
+      { token: "function", foreground: "5eead4" }, // teal: move(), WriteLine()
+      { token: "type", foreground: "7fd4ff" }, // sky: Car, Vec, Dictionary
+      { token: "constant", foreground: "ff9e8a" }, // coral: MAX_SPEED
+      { token: "predefined", foreground: "a5b4fc" }, // periwinkle: print, len, Console, fmt, std, println!
+      // VS Dark ships language-specific SQL colours (pure red strings, magenta functions); use ours
+      { token: "keyword.sql", foreground: "c5ee8a" },
+      { token: "string.sql", foreground: "fcd34d" },
+      { token: "predefined.sql", foreground: "a5b4fc" },
+      { token: "operator.sql", foreground: "d4d4d4" },
       { token: "operator", foreground: "d4d4d4" },
       { token: "delimiter", foreground: "a3a3a3" },
       { token: "regexp", foreground: "fcd34d" },
+      // string interpolation (see monaco-interpolation.ts): braces and fixed placeholders in the
+      // lime accent (ACCENT 500), format specs a quiet sage; the expression inside keeps the normal code colours
+      { token: "string.interpolation.delimiter", foreground: "abd373" },
+      { token: "string.format.placeholder", foreground: "abd373" },
+      { token: "string.format.spec", foreground: "9db1a3" },
     ],
     colors: {
       "editor.background": "#0a0a0a",
@@ -61,14 +90,27 @@ const defineThemes: BeforeMount = (monaco) => {
     base: "vs",
     inherit: true,
     rules: [
-      { token: "comment", foreground: "8a8a8a", fontStyle: "italic" },
+      // comment and number were #8a8a8a / #c2570c, which fall under 4.5:1 on white and on the line highlight
+      { token: "comment", foreground: "6b6b6b", fontStyle: "italic" },
       { token: "keyword", foreground: "4b7411" },
       { token: "string", foreground: "b45309" },
-      { token: "number", foreground: "c2570c" },
-      { token: "predefined", foreground: "0e7490" },
+      { token: "number", foreground: "b3500a" },
+      { token: "variable", foreground: "2f5f9e" },
+      { token: "variable.parameter", foreground: "8a5a2b", fontStyle: "italic" },
+      { token: "variable.language", foreground: "52627a", fontStyle: "italic" },
+      { token: "function", foreground: "0f766e" },
       { token: "type", foreground: "0e7490" },
+      { token: "constant", foreground: "b42318" },
+      { token: "predefined", foreground: "4f46e5" },
+      { token: "keyword.sql", foreground: "4b7411" },
+      { token: "string.sql", foreground: "b45309" },
+      { token: "predefined.sql", foreground: "4f46e5" },
+      { token: "operator.sql", foreground: "404040" },
       { token: "operator", foreground: "404040" },
       { token: "delimiter", foreground: "525252" },
+      { token: "string.interpolation.delimiter", foreground: "3f6212" },
+      { token: "string.format.placeholder", foreground: "3f6212" },
+      { token: "string.format.spec", foreground: "5f6f45" },
     ],
     colors: {
       "editor.background": "#ffffff",
@@ -76,11 +118,13 @@ const defineThemes: BeforeMount = (monaco) => {
       "editorLineNumber.foreground": "#b5b3ab",
       "editorCursor.foreground": "#4b7411",
       "editor.selectionBackground": "#c5ee8a80",
+      // VS Light's second bracket-pair colour (#319331) is only 3.9:1 on white
+      "editorBracketHighlight.foreground2": "#2b7a2b",
     },
   });
 };
 
-export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorMessage, revealKey, language = "python" }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorMessage, revealKey, context, language = "python" }: CodeEditorProps) {
   const { theme } = useTheme();
   const editorRef = useRef<EditorInstance | null>(null);
   const monacoRef = useRef<MonacoInstance | null>(null);
@@ -110,10 +154,26 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
   const handleMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => onRunRef.current());
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => onSubmitRef.current());
+    // an open suggestion list must never swallow Run / Submit: close it, then run
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      editor.trigger("pockett", "hideSuggestWidget", null);
+      onRunRef.current();
+    });
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => {
+      editor.trigger("pockett", "hideSuggestWidget", null);
+      onSubmitRef.current();
+    });
+    const model = editor.getModel();
+    if (model) setModelContext(model, contextRef.current);
     reveal();
   };
+
+  const contextRef = useRef(context);
+  useEffect(() => {
+    contextRef.current = context;
+    const model = editorRef.current?.getModel();
+    if (model) setModelContext(model, context);
+  }, [context]);
 
   useEffect(() => {
     // jump to the learner's next task whenever a new lesson opens
@@ -141,13 +201,36 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
     ]);
   }, [errorLine, errorMessage]);
 
+  // Register the interpolation-aware tokenizer for this language before Monaco creates its first model of it.
+  const [, bumpReady] = useState(0);
+  const isReady = grammarReady.has(language) || !INTERPOLATION_LANGUAGES.includes(language);
+  useEffect(() => {
+    if (isReady) return;
+    let live = true;
+    void import("@monaco-editor/react")
+      .then(({ loader }) => loader.init())
+      .then((monaco) => ensureInterpolationGrammar(monaco, language))
+      .catch(() => {
+        /* offline or blocked: fall back to Monaco's stock highlighting */
+      })
+      .then(() => {
+        grammarReady.add(language);
+        if (live) bumpReady((n) => n + 1);
+      });
+    return () => {
+      live = false;
+    };
+  }, [language, isReady]);
+
+  if (!isReady) return <EditorLoading />;
+
   return (
     <Editor
       height="100%"
       language={language}
       value={value}
       onChange={(v) => onChange(v ?? "")}
-      beforeMount={defineThemes}
+      beforeMount={beforeMount}
       onMount={handleMount}
       theme={theme === "dark" ? "pockett-dark" : "pockett-light"}
       options={{
@@ -167,8 +250,35 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
         padding: { top: 12, bottom: 12 },
         smoothScrolling: true,
         wordWrap: "on",
-        quickSuggestions: false,
-        suggestOnTriggerCharacters: false,
+        // ── smart editing: suggestions while typing, parameter hints, hover docs, auto-closing, guides ──
+        quickSuggestions: { other: "on", comments: "off", strings: "off" },
+        quickSuggestionsDelay: 30,
+        suggestOnTriggerCharacters: true,
+        wordBasedSuggestions: "allDocuments",
+        tabCompletion: "on",
+        acceptSuggestionOnEnter: "smart",
+        acceptSuggestionOnCommitCharacter: true,
+        snippetSuggestions: "inline",
+        suggestSelection: "first",
+        suggest: { preview: true, showWords: true, showSnippets: true, showKeywords: true, showFunctions: true, showVariables: true, showClasses: true, showModules: true, showFields: true, showMethods: true, localityBonus: true, insertMode: "replace" },
+        parameterHints: { enabled: true, cycle: true },
+        hover: { enabled: "on", delay: 250, sticky: true },
+        autoClosingBrackets: "languageDefined",
+        autoClosingQuotes: "languageDefined",
+        autoClosingDelete: "auto",
+        autoIndent: "full",
+        autoSurround: "languageDefined",
+        formatOnPaste: false,
+        bracketPairColorization: { enabled: true },
+        guides: { bracketPairs: true, indentation: true },
+        matchBrackets: "always",
+        occurrencesHighlight: "singleFile",
+        renameOnType: false,
+        multiCursorModifier: "alt",
+        stickyScroll: { enabled: true },
+        folding: true,
+        // suggestion / hover popups must not be clipped by the card the editor sits in
+        fixedOverflowWidgets: true,
       }}
     />
   );

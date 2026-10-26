@@ -164,6 +164,7 @@ function SandboxInner() {
               onRun={() => void run()}
               onSubmit={() => void run()}
               language={info.monaco}
+              context={language === "sql" ? SQL_SETUP : undefined}
               errorLine={error?.line ?? null}
               errorMessage={error ? `${error.type}: ${error.message}` : undefined}
               revealKey={`sandbox-${language}`}
