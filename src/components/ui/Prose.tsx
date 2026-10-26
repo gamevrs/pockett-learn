@@ -26,7 +26,7 @@ function inline(text: string, keyBase: string): React.ReactNode[] {
   return out;
 }
 
-type CodeLanguage = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go" | "asm" | "shell";
+type CodeLanguage = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go" | "rust" | "asm" | "shell";
 
 const words = (list: string) => new Set(list.split(" "));
 const SYNTAX: Record<CodeLanguage, { keywords: Set<string>; comment: RegExp; caseInsensitive?: boolean }> = {
@@ -55,6 +55,10 @@ const SYNTAX: Record<CodeLanguage, { keywords: Set<string>; comment: RegExp; cas
     keywords: words("package import func var const type struct return if else for range true false nil map chan go defer switch case break continue"),
     comment: /\/\/.*$/,
   },
+  rust: {
+    keywords: words("fn let mut const static struct enum impl trait pub use mod crate self Self super match if else loop while for in return break continue as ref move where dyn Box Vec String Option Some None Result Ok Err true false unsafe async await type"),
+    comment: /\/\/.*$/,
+  },
   // the toy CPU in Foundations, plus common real mnemonics
   asm: {
     keywords: words("mov load store add sub mul div cmp jmp jz jnz jlt jgt je jne out push pop call ret hlt nop lea inc dec and or xor not"),
@@ -79,6 +83,7 @@ function fenceLanguage(tag: string, fallback: CodeLanguage): CodeLanguage | "tex
   if (["cs", "csharp", "c#", "java", "kotlin"].includes(t)) return "csharp";
   if (["c", "h", "cpp", "c++", "cc"].includes(t)) return "cpp";
   if (t === "go") return "go";
+  if (["rs", "rust"].includes(t)) return "rust";
   return fallback;
 }
 

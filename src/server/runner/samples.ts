@@ -94,6 +94,29 @@ export const SAMPLES: Sample[] = [
     source: `package main\n\nimport "fmt"\n\nfunc main() {\n\ta := []int{1, 2, 3}\n\ti := 5\n\tfmt.Println("before")\n\tfmt.Println(a[i])\n}\n`,
     expect: { nonZeroExit: true, stdoutIncludes: "before", stderrIncludes: "index out of range", line: 9 },
   },
+
+  // ---- Rust ----
+  { id: "hello", language: "rust", source: `fn main() {\n    println!("${HELLO}");\n}\n`, expect: { stdoutIncludes: HELLO } },
+  {
+    id: "stdin",
+    language: "rust",
+    source: `use std::io;\n\nfn main() {\n    let mut name = String::new();\n    io::stdin().read_line(&mut name).unwrap();\n    println!("Hi {}", name.trim());\n}\n`,
+    stdin: "Ada\n",
+    expect: { stdoutIncludes: "Hi Ada" },
+  },
+  {
+    id: "compile-error",
+    language: "rust",
+    source: `fn main() {\n    let x: i32 = "five";\n    println!("{x}");\n}\n`,
+    expect: { compileError: true, line: 2 },
+  },
+  { id: "infinite-loop", language: "rust", source: `fn main() {\n    loop {}\n}\n`, expect: { timedOut: true } },
+  {
+    id: "runtime-error",
+    language: "rust",
+    source: `fn main() {\n    let v = vec![1, 2, 3];\n    let i = 5;\n    println!("before");\n    println!("{}", v[i]);\n}\n`,
+    expect: { nonZeroExit: true, stdoutIncludes: "before", stderrIncludes: "index out of bounds", line: 5 },
+  },
 ];
 
 /** Bigger programs whose only job is to pull toolchain caches (std packages, headers, assemblies) into the snapshot. */
@@ -101,6 +124,7 @@ export const WARMUP: Record<RunnerLanguage, string> = {
   csharp: `using System.Text;\nusing System.Text.Json;\nusing System.Text.RegularExpressions;\nusing System.Collections.Concurrent;\n\nvar sb = new StringBuilder();\nvar words = new ConcurrentDictionary<string, int>();\nforeach (var w in "the quick brown fox".Split(' ')) words[w] = w.Length;\nsb.Append(JsonSerializer.Serialize(words.OrderBy(kv => kv.Key).ToDictionary(kv => kv.Key, kv => kv.Value)));\nConsole.WriteLine(Regex.Replace(sb.ToString(), "[0-9]+", "#"));\nawait Task.Delay(1);\n`,
   cpp: `#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    vector<int> v{3, 1, 2};\n    sort(v.begin(), v.end());\n    map<string, int> m{{"a", 1}};\n    cout << v[0] << m["a"] << endl;\n}\n`,
   go: `package main\n\nimport (\n\t"bufio"\n\t"bytes"\n\t"container/heap"\n\t"container/list"\n\t"context"\n\t"encoding/json"\n\t"errors"\n\t"fmt"\n\t"io"\n\t"math"\n\t"math/rand"\n\t"os"\n\t"regexp"\n\t"sort"\n\t"strconv"\n\t"strings"\n\t"sync"\n\t"sync/atomic"\n\t"time"\n\t"unicode"\n)\n\nvar _ = heap.Init\nvar _ = list.New\nvar _ = context.Background\nvar _ = errors.New\nvar _ = io.EOF\nvar _ = rand.Intn\nvar _ = regexp.MustCompile\nvar _ = time.Now\nvar _ = unicode.IsLetter\nvar _ atomic.Int64\nvar _ sync.Mutex\n\nfunc main() {\n\tw := bufio.NewWriter(os.Stdout)\n\tdefer w.Flush()\n\tb, _ := json.Marshal(map[string]int{"n": int(math.Sqrt(16))})\n\tvar buf bytes.Buffer\n\tbuf.Write(b)\n\ts := []string{"b", "a"}\n\tsort.Strings(s)\n\tfmt.Fprintln(w, strings.ToUpper(buf.String()), strconv.Itoa(len(s)))\n}\n`,
+  rust: `use std::cell::RefCell;\nuse std::collections::{BTreeMap, HashMap, HashSet, VecDeque};\nuse std::fmt;\nuse std::io::{self, BufRead, Read, Write};\nuse std::rc::Rc;\n\nstruct P(i32);\nimpl fmt::Display for P {\n    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {\n        write!(f, "P({})", self.0)\n    }\n}\n\nfn main() {\n    let mut m: HashMap<String, i32> = HashMap::new();\n    m.insert("a".to_string(), 1);\n    let b: BTreeMap<i32, i32> = (0..3).map(|i| (i, i * i)).collect();\n    let s: HashSet<i32> = b.values().cloned().collect();\n    let mut q: VecDeque<i32> = VecDeque::new();\n    q.push_back(1);\n    let shared = Rc::new(RefCell::new(P(2)));\n    let mut line = String::new();\n    let _ = io::stdin().lock().read_line(&mut line);\n    let mut rest = String::new();\n    let _ = io::stdin().read_to_string(&mut rest);\n    let out = io::stdout();\n    writeln!(out.lock(), "{} {} {} {}", m["a"], s.len(), q.len(), shared.borrow()).unwrap();\n}\n`,
 };
 
 /** Returns a list of problems (empty when the response matches what the sample expects). */
@@ -108,7 +132,7 @@ export function checkSample(sample: Sample, res: Pick<RunResponse, "stdout" | "s
   const problems: string[] = [];
   const e = sample.expect;
   const lineOf = (text: string) => {
-    const m = /:(\d+):\d+:/.exec(text) ?? /\((\d+),\d+\)/.exec(text) ?? /:line (\d+)/.exec(text) ?? /\.go:(\d+)\b/.exec(text);
+    const m = /:(\d+):\d+:/.exec(text) ?? /-->\s+\S+?:(\d+):\d+/.exec(text) ?? /\((\d+),\d+\)/.exec(text) ?? /:line (\d+)/.exec(text) ?? /\.go:(\d+)\b/.exec(text);
     return m ? Number(m[1]) : null;
   };
   if (e.compileError) {

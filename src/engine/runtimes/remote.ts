@@ -4,7 +4,7 @@ import { parseOutput, runChecks, toError, type RemoteResult } from "./remote-out
 import type { LanguageId } from "../types";
 
 /**
- * Compiled languages (C#, C++, Go) run on the pockett runner: /api/run compiles and runs the source
+ * Compiled languages (C#, C++, Go, Rust) run on the pockett runner: /api/run compiles and runs the source
  * in a Vercel Sandbox microVM (src/server/runner). The file is compiled exactly as written, so the
  * line numbers in compiler errors and stack traces are the learner's own. Programs can't be called
  * back synchronously from a scene, so scenes read what the program printed: `stdout`, plus any lines

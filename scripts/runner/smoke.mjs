@@ -1,8 +1,8 @@
 // Smoke test for a deployed code runner: hello world, stdin, a compile error, an infinite loop and a
-// runtime exception in C#, C++ and Go, with latency. Exits 1 if anything fails.
+// runtime exception in C#, C++, Go and Rust, with latency. Exits 1 if anything fails.
 //
 //   node scripts/runner/smoke.mjs https://pockett.example.com
-//   node scripts/runner/smoke.mjs https://pockett.example.com --lang go --repeat 5
+//   node scripts/runner/smoke.mjs https://pockett.example.com --lang rust --repeat 5
 //
 // --repeat N runs the hello-world sample N extra times per language and prints min / median / max, to
 // judge whether per-request sandbox creation is fast enough (if the median is well over ~3 s, switch the
@@ -18,7 +18,7 @@ const flag = (name) => {
 };
 const base = args.find((a) => /^https?:\/\//.test(a));
 if (!base) {
-  console.error("usage: node scripts/runner/smoke.mjs <base-url> [--lang csharp|cpp|go] [--repeat N] [--header 'name: value']");
+  console.error("usage: node scripts/runner/smoke.mjs <base-url> [--lang csharp|cpp|go|rust] [--repeat N] [--header 'name: value']");
   process.exit(2);
 }
 const only = flag("--lang");

@@ -15,7 +15,7 @@ export type Difficulty = "Beginner" | "Intermediate" | "Advanced" | "Professiona
 export const TIERS: Difficulty[] = ["Beginner", "Intermediate", "Advanced", "Professional"];
 
 /** Languages a project can be written in. See src/engine/languages.ts for what each supports. */
-export type LanguageId = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go";
+export type LanguageId = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go" | "rust";
 
 export interface TestCase {
   id: string;

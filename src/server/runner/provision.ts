@@ -8,8 +8,8 @@ import { SAMPLES, WARMUP, checkSample } from "./samples.ts";
 /**
  * Builds the toolchain snapshot the runner starts every sandbox from:
  *   .NET SDK 10 (LTS) -> a pre-built, ReadyToRun Roslyn host (/opt/pockett/runner), then the SDK is
- *   removed and only the runtime stays; g++; Go; two unprivileged users; /opt/pockett/run.sh; and
- *   warm caches (Go std build cache, C++ precompiled bits/stdc++.h) filled by compiling and running
+ *   removed and only the runtime stays; g++; Go; Rust (rustup, minimal profile, in /opt/rust); two unprivileged users; /opt/pockett/run.sh; and
+ *   warm caches (Go std build cache, C++ precompiled bits/stdc++.h, Rust std) filled by compiling and running
  *   a program in each language. Then it self-tests the snapshot by running SAMPLES through the same
  *   code path /api/run uses.
  *
@@ -100,6 +100,24 @@ curl -fsSL "https://go.dev/dl/$V.linux-$GOARCH.tar.gz" | tar -C /usr/local -xzf 
 /usr/local/go/bin/go version`,
     },
     {
+      // rustup puts everything under /opt/rust (readable by the unprivileged build user). /opt/rust/toolchain
+      // points at the installed toolchain so run.sh can call the real rustc directly (no rustup proxy, which
+      // would want to write to RUSTUP_HOME). rustc links through cc, which the g++ package provides.
+      name: "Rust (stable, minimal profile)",
+      timeoutMs: 8 * min,
+      script: String.raw`export RUSTUP_HOME=/opt/rust/rustup CARGO_HOME=/opt/rust/cargo
+mkdir -p /opt/rust
+curl -fsSL https://sh.rustup.rs -o /tmp/rustup-init.sh
+sh /tmp/rustup-init.sh -y --profile minimal --default-toolchain stable --no-modify-path
+TC=$(ls -d /opt/rust/rustup/toolchains/stable-* | head -n 1)
+ln -sfn "$TC" /opt/rust/toolchain
+rm -rf /opt/rust/rustup/downloads /opt/rust/rustup/tmp /opt/rust/cargo/registry
+chmod -R a+rX /opt/rust
+command -v cc
+/opt/rust/toolchain/bin/rustc --version
+/opt/rust/toolchain/bin/rustc --print sysroot`,
+    },
+    {
       name: "Roslyn host (ReadyToRun publish)",
       timeoutMs: 10 * min,
       script: `${RID}
@@ -126,8 +144,8 @@ bash pch.sh`,
       script: `rm -rf /opt/dotnet/sdk /opt/dotnet/packs /opt/dotnet/templates /root/.nuget /root/.dotnet /root/.local '${cwd}/${SETUP_DIR}' /tmp/* /var/tmp/*
 apt-get clean
 rm -rf /var/lib/apt/lists/*
-chmod -R a+rX /opt/dotnet /opt/pockett /usr/local/go
-du -sh /opt/dotnet /opt/pockett /usr/local/go 2>/dev/null || true`,
+chmod -R a+rX /opt/dotnet /opt/pockett /usr/local/go /opt/rust
+du -sh /opt/dotnet /opt/pockett /usr/local/go /opt/rust 2>/dev/null || true`,
     },
   ];
 }
@@ -178,7 +196,7 @@ export async function buildSnapshot(log: (line: string) => void = () => {}): Pro
       }
       steps.push({ name: `warm ${language}`, ms: Math.round(performance.now() - t) });
     }
-    const final = await sandbox.runCommand({ cmd: "bash", args: ["-c", `rm -rf /tmp/* /var/tmp/*; rm -f '${cwd}'/Program.cs '${cwd}'/main.cpp '${cwd}'/main.go '${cwd}'/stdin.txt; chown -R pkbuild:pkbuild /home/pkbuild; sync`], sudo: true, timeoutMs: 2 * 60_000 });
+    const final = await sandbox.runCommand({ cmd: "bash", args: ["-c", `rm -rf /tmp/* /var/tmp/*; rm -f '${cwd}'/Program.cs '${cwd}'/main.cpp '${cwd}'/main.go '${cwd}'/main.rs '${cwd}'/stdin.txt; chown -R pkbuild:pkbuild /home/pkbuild; sync`], sudo: true, timeoutMs: 2 * 60_000 });
     if (final.exitCode !== 0) throw new Error(`Final cleanup failed:\n${tail(await final.output("both"))}`);
 
     say("saving snapshot (never expires)");

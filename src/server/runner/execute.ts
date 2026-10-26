@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { Sandbox } from "@vercel/sandbox";
 import { LANGUAGES, LIMITS, SNAPSHOT_PATHS } from "./config.ts";
 import type { RunResponse, RunnerLanguage } from "./config.ts";
-import { parseRunnerOutput } from "./result.ts";
+import { RunnerUnavailableError, parseRunnerOutput } from "./result.ts";
 
 /**
  * Runs one program in a Vercel Sandbox (Firecracker microVM) created from the toolchain snapshot.
@@ -93,6 +93,8 @@ export async function execOnSandbox(sandbox: Sandbox, req: RunRequest): Promise<
     // Backstop above the in-VM `timeout`s (compile + run + kill grace + overhead).
     timeoutMs: (LIMITS.compileSeconds + LIMITS.runSeconds + 10) * 1000,
   });
+  // run.sh exits 64 for a language it was not built with: the snapshot predates it.
+  if (finished.exitCode === 64) throw new RunnerUnavailableError();
   return parseRunnerOutput(await finished.stdout(), marker);
 }
 

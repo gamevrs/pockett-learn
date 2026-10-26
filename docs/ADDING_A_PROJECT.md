@@ -8,11 +8,19 @@ A project is **content** (`src/content/projects/<slug>.ts`) plus a **scene** (`s
 4. **Register** in three places: `PROJECTS` (`src/content/index.ts`), `SCENES` (`src/engine/scenes.tsx`), `DEMO_PROGRAMS` (`src/scenes/demos.ts`). Optionally add key art to `ProjectArt`.
 5. **Prove it.** `pnpm validate <slug>` must be clean. If the scene has physics, add a `scripts/tune-<slug>.mjs` that runs the reference solution headlessly.
 
-## Server languages (C#, C++, Go)
+## Server languages (C#, C++, Go, Rust)
 
 A project with `language: "csharp"` (see `content/projects/csharp-basics.ts`) runs on the pockett runner. The program cannot be called back, so the scene reads what it printed: `stdout` plus `@scene {json}` lines, which merge into the program's variables (`program.num/str/list/dict`). Checks are JavaScript over `stdout`, `lines` and `scene`. `Project.setup` is the program's stdin. When a build or run fails, the scene still gets a program carrying `build_error` (`{ type, message, line }`) so it can draw the compiler's message.
 
 C# top-level statements must come before any type declaration, but the learner file only grows by appending. Put `TYPES_DIVIDER` (from `engine/compose.ts`) on its own line inside a lesson's `starterAdd`/`solutionAdd`: what is above it joins the statements, what is below joins the declarations at the bottom, and later lessons without the divider keep appending to the statements. Local functions cannot be overloaded, so overloads live in a `static class` below the divider.
+
+C++, Go and Rust need the opposite shape: includes/imports, structs and functions at the top, then `main()` whose body grows. Lesson 1's `starterAdd`/`solutionAdd` carries the whole skeleton (`int main() {` / `func main() {` / `fn main() {` through the closing `}`, last in the file). From lesson 2 on, while the file is "main-shaped" (a main opener line, and main's closing `}` is the last non-blank line), each lesson's text is composed like this:
+
+- With no divider, the whole text goes at the **end of main's body**, just before its `}`, indented one level (4 spaces, a tab in Go) unless it is already indented.
+- With `MAIN_DIVIDER` (from `engine/compose.ts`, `// ───── code inside main() goes below this line ─────`) on its own line, what is **above** it is inserted among the declarations **before main**, and what is **below** it goes into main's body. Use it with nothing below to add only declarations (a new struct or function), or put the new declaration above and its first use below.
+- The divider never appears in the composed file, blank lines are normalised to one between parts, and a learner who deleted or broke `main` just gets plain appending (Python/JS/SQL/C# are unaffected).
+
+`pnpm validate` checks that every composed solution/starter of a main-shaped project is still main-shaped, has exactly one main opener, no divider text and no run of 3+ blank lines; `node scripts/test-compose.mjs` unit-tests the composition.
 
 ## Tiers and paths
 

@@ -34,6 +34,8 @@ export const LANGUAGES: Record<LanguageId, LanguageInfo> = {
     blurb: "Fast and close to the machine." },
   go: { id: "go", label: "Go", fileName: "main.go", monaco: "go", comment: "//", runsIn: "server", engine: "Go",
     blurb: "Simple, concurrent and built for servers." },
+  rust: { id: "rust", label: "Rust", fileName: "main.rs", monaco: "rust", comment: "//", runsIn: "server", engine: "Rust",
+    blurb: "Fast and safe, with a compiler that has your back." },
 };
 
 export function languageInfo(id: LanguageId | undefined): LanguageInfo {

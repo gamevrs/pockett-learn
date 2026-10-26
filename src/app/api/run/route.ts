@@ -1,12 +1,12 @@
 import { after } from "next/server";
 import { APIError } from "@vercel/sandbox";
-import { LIMITS, isRunnerLanguage } from "@/server/runner/config";
+import { LIMITS, UNAVAILABLE_MESSAGE, isRunnerLanguage } from "@/server/runner/config";
 import { runSandboxed, runnerMode } from "@/server/runner/execute";
 import { ConcurrencyGate, SlidingWindowLimiter, clientIp } from "@/server/runner/limits";
-import { RunnerProtocolError } from "@/server/runner/result";
+import { RunnerProtocolError, RunnerUnavailableError } from "@/server/runner/result";
 
 /**
- * Sandboxed code runner for compiled languages (C#, C++, Go).
+ * Sandboxed code runner for compiled languages (C#, C++, Go, Rust).
  *
  * Each request runs in a Vercel Sandbox (Firecracker microVM, no network) created from the toolchain
  * snapshot in RUNNER_SNAPSHOT_ID. Build that snapshot with POST /api/run/setup or
@@ -80,6 +80,7 @@ export async function POST(request: Request) {
     return reply({ ...result });
   } catch (err) {
     console.error("[runner] run failed", err);
+    if (err instanceof RunnerUnavailableError) return reply({ error: UNAVAILABLE_MESSAGE }, 503);
     if (err instanceof RunnerProtocolError) {
       return reply({ error: "Something unexpected happened. Try again in a moment." }, 502);
     }

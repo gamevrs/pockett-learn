@@ -10,7 +10,7 @@ import { ProjectCard, UpcomingCard } from "./ProjectCard";
 
 type Summary = ReturnType<typeof summarize>;
 
-const ORDER: LanguageId[] = ["python", "javascript", "sql", "csharp", "cpp", "go"];
+const ORDER: LanguageId[] = ["python", "javascript", "sql", "csharp", "cpp", "go", "rust"];
 
 /** What each rung of the ladder means, in a few words. */
 const TIER_NOTE: Record<Difficulty, string> = {

@@ -14,6 +14,7 @@ const loaders: Record<LanguageId, () => Promise<Runtime>> = {
   csharp: () => import("./remote").then((m) => m.remoteRuntime("csharp")),
   cpp: () => import("./remote").then((m) => m.remoteRuntime("cpp")),
   go: () => import("./remote").then((m) => m.remoteRuntime("go")),
+  rust: () => import("./remote").then((m) => m.remoteRuntime("rust")),
 };
 
 const cache = new Map<LanguageId, Promise<Runtime>>();

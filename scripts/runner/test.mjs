@@ -14,6 +14,8 @@ import { TIMEOUT_MESSAGE } from "../../src/server/runner/config.ts";
 import { ConcurrencyGate, SlidingWindowLimiter, clientIp } from "../../src/server/runner/limits.ts";
 import { RunnerProtocolError, cleanToolOutput, parseRunnerOutput } from "../../src/server/runner/result.ts";
 import { SAMPLES, checkSample } from "../../src/server/runner/samples.ts";
+import { LANGUAGES } from "../../src/server/runner/config.ts";
+import { lineFrom, parseRustPanic, parseRustcError, toError } from "../../src/engine/runtimes/remote-output.ts";
 
 let n = 0;
 const check = (name, fn) => {
@@ -177,6 +179,78 @@ check("sample checker accepts good responses and rejects bad ones", () => {
   assert.deepEqual(checkSample(cs, { stdout: "before\n", stderr: "Unhandled exception. System.DivideByZeroException: x\n   at Program.<Main>$(String[] args) in Program.cs:line 3", exitCode: 134, compileError: null }), []);
   const loop = SAMPLES.find((s) => s.language === "cpp" && s.id === "infinite-loop");
   assert.deepEqual(checkSample(loop, { stdout: "", stderr: TIMEOUT_MESSAGE, exitCode: 137, compileError: null, timedOut: true }), []);
+});
+
+// ---- Rust ----
+const RUSTC_E0382 = [
+  "error[E0382]: borrow of moved value: `s`",
+  " --> main.rs:12:20",
+  "   |",
+  "10 |     let s = String::from(\"hi\");",
+  "   |         - move occurs because `s` has type `String`, which does not implement the `Copy` trait",
+  "11 |     let t = s;",
+  "   |             - value moved here",
+  "12 |     println!(\"{}\", s);",
+  "   |                    ^ value borrowed here after move",
+  "",
+  "error: aborting due to 1 previous error",
+  "",
+  "For more information about this error, try `rustc --explain E0382`.",
+].join("\n");
+
+check("rustc: error code, headline and line of the first error", () => {
+  assert.deepEqual(parseRustcError(RUSTC_E0382), { type: "E0382", message: "borrow of moved value: `s`", line: 12 });
+  assert.deepEqual(toError({ stdout: "", stderr: "", exitCode: null, compileError: RUSTC_E0382 }), { type: "E0382", message: "borrow of moved value: `s`", line: 12 });
+});
+
+check("rustc: errors without a code are CompileError; warnings and the summary line are skipped", () => {
+  const text = "warning: unused variable: `x`\n --> main.rs:2:9\n\nerror: expected one of `!` or `::`, found `}`\n --> main.rs:5:1\n  |\n5 | }\n  | ^\n\nerror: aborting due to 1 previous error\n";
+  assert.deepEqual(parseRustcError(text), { type: "CompileError", message: "expected one of `!` or `::`, found `}`", line: 5 });
+  assert.equal(parseRustcError("error: aborting due to 1 previous error"), null);
+  assert.equal(parseRustcError("main.cpp:4:18: error: 'y' was not declared in this scope"), null);
+  assert.equal(parseRustcError("./main.go:6:2: declared and not used: x"), null);
+});
+
+check("rustc: several errors report the first one; a missing location gives line null", () => {
+  const two = "error[E0308]: mismatched types\n --> main.rs:2:18\n\nerror[E0425]: cannot find value `y` in this scope\n --> main.rs:3:20\n";
+  assert.deepEqual(parseRustcError(two), { type: "E0308", message: "mismatched types", line: 2 });
+  assert.deepEqual(parseRustcError("error: linking with `cc` failed: exit status: 1"), { type: "CompileError", message: "linking with `cc` failed: exit status: 1", line: null });
+});
+
+check("rust panic: modern and legacy formats give type Panic, the line and the message", () => {
+  const modern = "thread 'main' panicked at main.rs:7:5:\nindex out of bounds: the len is 3 but the index is 5\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n";
+  assert.deepEqual(parseRustPanic(modern), { type: "Panic", message: "index out of bounds: the len is 3 but the index is 5", line: 7 });
+  assert.deepEqual(toError({ stdout: "before", stderr: modern, exitCode: 101, compileError: null }), { type: "Panic", message: "index out of bounds: the len is 3 but the index is 5", line: 7 });
+  const unwrap = "thread 'main' panicked at main.rs:3:9:\ncalled `Result::unwrap()` on an `Err` value: ParseIntError { kind: InvalidDigit }\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n";
+  assert.equal(parseRustPanic(unwrap).line, 3);
+  assert.match(parseRustPanic(unwrap).message, /^called `Result::unwrap\(\)` on an `Err` value/);
+  assert.deepEqual(parseRustPanic("thread 'main' panicked at 'boom', main.rs:4:5\nnote: run with RUST_BACKTRACE=1"), { type: "Panic", message: "boom", line: 4 });
+  assert.deepEqual(parseRustPanic("thread 'main' panicked at main.rs:9:5:\nexplicit panic"), { type: "Panic", message: "explicit panic", line: 9 });
+  assert.equal(parseRustPanic("panic: boom\n\ngoroutine 1 [running]:"), null);
+});
+
+check("rust: other languages' errors keep their old shape; lineFrom reads rustc arrows", () => {
+  assert.deepEqual(toError({ stdout: "", stderr: "", exitCode: null, compileError: "main.cpp:4:18: error: 'y' was not declared" }), { type: "CompileError", message: "main.cpp:4:18: error: 'y' was not declared", line: 4 });
+  assert.equal(toError({ stdout: "", stderr: "panic: boom\n\ngoroutine 1 [running]:\nmain.go:9 +0x1d", exitCode: 2, compileError: null }).type, "RuntimeError");
+  assert.equal(lineFrom(" --> main.rs:12:5"), 12);
+  assert.equal(toError({ stdout: "", stderr: "", exitCode: 0, compileError: null }), null);
+});
+
+check("rust samples: the checker accepts rustc and panic output and rejects wrong lines", () => {
+  for (const id of ["hello", "stdin", "compile-error", "infinite-loop", "runtime-error"]) assert.ok(SAMPLES.some((s) => s.language === "rust" && s.id === id), `rust sample ${id}`);
+  const ce = SAMPLES.find((s) => s.language === "rust" && s.id === "compile-error");
+  assert.deepEqual(checkSample(ce, { stdout: "", stderr: "", exitCode: null, compileError: "error[E0308]: mismatched types\n --> main.rs:2:18\n" }), []);
+  assert.equal(checkSample(ce, { stdout: "", stderr: "", exitCode: null, compileError: "error[E0308]: mismatched types\n --> main.rs:3:18\n" }).length, 1);
+  const rt = SAMPLES.find((s) => s.language === "rust" && s.id === "runtime-error");
+  assert.deepEqual(checkSample(rt, { stdout: "before\n", stderr: "thread 'main' panicked at main.rs:5:20:\nindex out of bounds: the len is 3 but the index is 5\n", exitCode: 101, compileError: null }), []);
+  assert.equal(checkSample(rt, { stdout: "before\n", stderr: "thread 'main' panicked at main.rs:6:20:\nindex out of bounds: x\n", exitCode: 101, compileError: null }).length, 1);
+});
+
+check("rust: config and run.sh know the language", () => {
+  assert.deepEqual(LANGUAGES.rust, { file: "main.rs", label: "Rust" });
+  assert.match(RUN_SH, /rust\) SRC=main\.rs/);
+  assert.match(RUN_SH, /rustc --edition 2021 -C opt-level=1 -C debuginfo=0 -C codegen-units=4/);
+  assert.match(RUN_SH, /RUSTUP_HOME=\/opt\/rust\/rustup CARGO_HOME=\/opt\/rust\/cargo/);
 });
 
 // ---- embedded scripts ----

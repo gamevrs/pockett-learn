@@ -15,7 +15,7 @@ src/
       python.ts             Pyodide (python/host.ts + python/prelude.ts)
       javascript/           acorn loop-guard instrumentation + scoped execution
       sql/                  SQLite via sql.js, result sets + schema for scenes
-      remote.ts             C# / C++ / Go via /api/run → a Vercel Sandbox microVM (src/server/runner)
+      remote.ts             C# / C++ / Go / Rust via /api/run → a Vercel Sandbox microVM (src/server/runner)
     stage-style.ts        Pockett Stage design system for 3D demos (see STAGE_DESIGN_SYSTEM.md)
     compose.ts            the cumulative file (starter / reference solution per lesson)
     scene.ts, scene-kit   SceneProps contract + keyboard/touch input
@@ -74,7 +74,7 @@ interface Runtime {
 | Python | browser, Pyodide (main thread) | yes, synchronous | Python `assert` |
 | JavaScript | browser, main thread + loop guard | yes, synchronous | JavaScript (`assert`, `assertEqual`, `assertClose`) |
 | SQL | browser, SQLite (sql.js) | reads result sets + schema | JavaScript over `result`, `rows`, `results`, `query()` |
-| C#, C++, Go | pockett runner via `/api/run` | reads stdout and `@scene {json}` lines | JavaScript over `stdout`, `lines`, `scene` |
+| C#, C++, Go, Rust | pockett runner via `/api/run` | reads stdout and `@scene {json}` lines | JavaScript over `stdout`, `lines`, `scene` |
 
 - **Names are Python-style at the scene boundary.** Scenes ask for `car_name` or `autopilot.steer`;
   the JavaScript runtime also tries camelCase (`carName`), so one scene serves several languages.
@@ -84,7 +84,7 @@ interface Runtime {
   throws after the time budget: 2 s for a run, 60 ms per hook call, 1 s per check.
 - **SQL setup.** `Project.setup` (schema + seed rows) runs before the learner's statements on a
   fresh database every time, so runs are deterministic and checks can `query()` the end state.
-- **Compiled languages** (C#, C++, Go) run on Vercel Sandbox, a Firecracker microVM per run, via
+- **Compiled languages** (C#, C++, Go, Rust) run on Vercel Sandbox, a Firecracker microVM per run, via
   `/api/run` (code in `src/server/runner`). See "The compiled-language runner" below. Without
   `RUNNER_SNAPSHOT_ID` the route answers 503 and those courses show "coming soon".
 
@@ -101,7 +101,8 @@ Python projects can declare Pyodide `packages` (e.g. `sqlite3`); `RunOptions.pac
 
 - **Snapshot.** A Sandbox snapshot holds the toolchains: .NET 10 (LTS) runtime plus `/opt/pockett/runner`, a
   ReadyToRun-compiled Roslyn host; g++ with a precompiled `bits/stdc++.h`; Go (official tarball) with a warm
-  std build cache; two unprivileged users (`pkbuild`, `pkrun`); and `/opt/pockett/run.sh`. Build it with
+  std build cache; Rust (stable via rustup, minimal profile, in `/opt/rust`, with `/opt/rust/toolchain` pointing at the
+  installed toolchain so `run.sh` calls the real `rustc`, which links through `cc` from the g++ package); two unprivileged users (`pkbuild`, `pkrun`); and `/opt/pockett/run.sh`. Build it with
   `POST /api/run/setup` (bearer `RUNNER_ADMIN_TOKEN`, 404 if unset, `maxDuration` 800 s) or
   `node scripts/runner/build-snapshot.mjs`; both run the same routine (`provision.ts`), warm the caches by
   compiling and running a program per language, then self-test the saved snapshot through the real run path.
@@ -113,14 +114,21 @@ Python projects can declare Pyodide `packages` (e.g. `sqlite3`); `RunOptions.pac
   scratch dir; stdout capped by `ulimit -f` and `head -c` at 100 KB; 256 processes; 1 GiB address space for C++/Go,
   256 MiB GC heap for .NET) and prints stdout, stderr, exit code, compiler output and timings. Auth is the
   deployment's Vercel OIDC token, picked up by the SDK; there are no long-lived secrets.
-- **Line numbers.** Sources are never wrapped or renamed (`Program.cs`, `main.cpp`, `main.go`), so compiler
+- **Line numbers.** Sources are never wrapped or renamed (`Program.cs`, `main.cpp`, `main.go`, `main.rs`), so compiler
   diagnostics and stack traces already use the learner's own lines. C# compiles in-process with Roslyn (debug build,
   portable pdb) and runs as a normal `dotnet program.dll`, so `Program.cs:line N` appears in exception traces; the
   usings that `dotnet new console` turns on are supplied as a separate hidden file.
 - **Response mapping.** `{ stdout, stderr, exitCode, compileError, timedOut }`. Compiler output goes to `compileError`
   (temp paths and tool banners stripped); a timeout is exit 137 with a friendly message; silent crashes (segfault,
   divide by zero) get an explanation. Errors: 400/413 bad input, 429 rate limited or busy, 502 runner failure,
-  503 not set up or snapshot gone.
+  503 not set up, snapshot gone, or the snapshot predates the language (`run.sh` exits 64 "unsupported language" and the
+  route answers with a friendly "isn't available yet" message instead of a 502).
+- **Rust.** `rustc --edition 2021 -C opt-level=1 -C debuginfo=0 -C codegen-units=4 -C debug-assertions=on -A warnings --color never`
+  (debug assertions give "attempt to add with overflow" panics; warnings are muted so errors stay short). Diagnostics
+  are parsed client-side in `remote-output.ts`: `error[E0382]: ...` plus ` --> main.rs:12:5` becomes
+  `{ type: "E0382", message, line }` (first error wins); a `thread 'main' panicked at main.rs:7:5:` report on stderr
+  (exit 101) becomes `{ type: "Panic", message, line }`. The compile step has no `ulimit -v`, so rustc/LLVM's large
+  address-space mappings are unaffected.
 - **Abuse protection.** 64 KB source and stdin limits, a per-IP sliding window (30/min) and a global in-flight cap (8),
   both in memory per server instance (best effort on serverless; Vercel's firewall and Sandbox quotas are the hard backstop).
 - **Strategies** (`RUNNER_MODE`). `fresh` (default) is one microVM per run: the strongest isolation, because nothing a
@@ -131,11 +139,20 @@ Python projects can declare Pyodide `packages` (e.g. `sqlite3`); `RunOptions.pac
   `pkbuild`'s caches or /tmp allow). Use it only if measured create latency is too high.
 - **Verify a deployment** with `node scripts/runner/smoke.mjs https://your.site --repeat 5` (hello, stdin, compile error,
   infinite loop and runtime exception per language, with latency). Offline checks: `node scripts/runner/test.mjs`.
+- **Adding a language to the snapshot** (Rust was the last): the live snapshot is immutable, so the new code is safe to
+  deploy first (old snapshot keeps serving C#/C++/Go; the new language answers "isn't available yet"). Then, as the owner:
+  1. `curl -X POST -H "Authorization: Bearer $RUNNER_ADMIN_TOKEN" https://www.pockett.ai/api/run/setup` (takes several
+     minutes; the JSON report must say `"ok": true`, its `selfTest` includes the Rust samples, a broken install fails it).
+  2. Set `RUNNER_SNAPSHOT_ID` to the returned `snapshotId` in the Vercel project's environment variables.
+  3. Redeploy.
+  4. `node scripts/runner/smoke.mjs https://www.pockett.ai` (all four languages must pass), then
+     `RUNNER_BASE_URL=https://www.pockett.ai pnpm validate <rust-project-slug>`.
+  (From a dev machine, `node scripts/runner/build-snapshot.mjs` does step 1 with `vercel env pull` credentials.)
 
 ## Quality gates
 
 - `pnpm validate`: runs every lesson through the real engine for its language (CPython for Python, the browser engines' own code in Node for JavaScript and SQL). Every lesson's reference solution must pass all tests and its starter must fail at least one (so nothing ships pre-solved or broken), and every feature must be unlocked by some lesson.
-  - Server languages (C#, C++, Go) need the live runner: `RUNNER_BASE_URL=https://www.pockett.ai pnpm validate csharp-basics`. Each case is sent to `${RUNNER_BASE_URL}/api/run` (throttled to the route's ~30 runs/min, retried on 429/5xx) and judged by `engine/runtimes/remote-output.ts`, the same code the browser uses. `RUNNER_CACHE=1` reuses answers for identical source while authoring, and a third argument (`pnpm validate csharp-basics 5-loops`) limits it to lessons whose id contains that text. Without `RUNNER_BASE_URL` those lessons are skipped with a warning.
+  - Server languages (C#, C++, Go, Rust) need the live runner: `RUNNER_BASE_URL=https://www.pockett.ai pnpm validate csharp-basics`. Each case is sent to `${RUNNER_BASE_URL}/api/run` (throttled to the route's ~30 runs/min, retried on 429/5xx) and judged by `engine/runtimes/remote-output.ts`, the same code the browser uses. `RUNNER_CACHE=1` reuses answers for identical source while authoring, and a third argument (`pnpm validate csharp-basics 5-loops`) limits it to lessons whose id contains that text. Without `RUNNER_BASE_URL` those lessons are skipped with a warning.
 - `pnpm typecheck`, `pnpm build`, `eslint` (React Compiler rules are on).
 
 ## Accounts and cloud sync (Supabase)

@@ -1,5 +1,5 @@
 // Validates every project's lessons against the real engines (Python, JavaScript, SQL) and, with
-// RUNNER_BASE_URL set, the pockett runner (C#, C++, Go).
+// RUNNER_BASE_URL set, the pockett runner (C#, C++, Go, Rust).
 //   node scripts/validate-content.mjs [slug]
 //   RUNNER_BASE_URL=https://www.pockett.ai node scripts/validate-content.mjs csharp-basics
 // Server-language lessons call ${RUNNER_BASE_URL}/api/run (throttled to stay under its rate limit,
@@ -16,7 +16,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { Worker } from "node:worker_threads";
 import { ENGINE_PRELUDE } from "../src/engine/python/prelude.ts";
-import { solutionThrough, starterFor, TYPES_DIVIDER } from "../src/engine/compose.ts";
+import { solutionThrough, starterFor, TYPES_DIVIDER, MAIN_DIVIDER, isMainShaped, countMainOpeners } from "../src/engine/compose.ts";
 import { flattenLessons, languageOf, TIERS, YOUR_TURN_MARKER } from "../src/engine/types.ts";
 import { executeJs, runJsTests } from "../src/engine/runtimes/javascript/engine.ts";
 import { readFileSync, existsSync } from "node:fs";
@@ -75,6 +75,13 @@ for (const file of files) {
     const packages = project.packages ?? [];
     // Composition must be whitespace-idempotent around the types divider: one blank line each side, never more.
     for (const [kind, composed] of [["solution", solutionThrough(project, i)], ["starter", starterFor(project, i, {})]]) {
+      // main()-shaped projects (C++/Go/Rust): the skeleton from lesson 1 must stay intact as lessons append.
+      if (isMainShaped(solutionThrough(project, 0))) {
+        if (!isMainShaped(composed)) problems.push(`${tag}: ${kind} is no longer main()-shaped (main must stay last, its closing brace the last line)`);
+        if (countMainOpeners(composed) !== 1) problems.push(`${tag}: ${kind} has ${countMainOpeners(composed)} main() openers (expected exactly 1)`);
+        if (composed.includes(MAIN_DIVIDER)) problems.push(`${tag}: ${kind} still contains the main divider text`);
+        if (/\n[ \t]*\n[ \t]*\n[ \t]*\n/.test(composed)) problems.push(`${tag}: ${kind} has 3+ consecutive blank lines`);
+      }
       const at = composed.indexOf(TYPES_DIVIDER);
       if (at < 0) continue;
       const around = composed.slice(Math.max(0, at - 8), at + TYPES_DIVIDER.length + 8);

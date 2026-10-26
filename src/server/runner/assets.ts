@@ -128,7 +128,7 @@ internal static class Runner
 
 /**
  * Runs as root inside the single-use microVM. Compiles as pkbuild, runs as pkrun, and prints a report
- * that result.ts parses. usage: run.sh <csharp|cpp|go> <input-dir> <marker> <compile-secs> <run-secs> <max-output-bytes>
+ * that result.ts parses. usage: run.sh <csharp|cpp|go|rust> <input-dir> <marker> <compile-secs> <run-secs> <max-output-bytes>
  */
 export const RUN_SH = String.raw`#!/bin/bash
 LANG_ID="$1"; IN="$2"; M="$3"; CT="$4"; RT="$5"; MAXOUT="$6"
@@ -141,6 +141,7 @@ case "$LANG_ID" in
   csharp) SRC=Program.cs ;;
   cpp) SRC=main.cpp ;;
   go) SRC=main.go ;;
+  rust) SRC=main.rs ;;
   *) echo "unsupported language: $LANG_ID" >&2; exit 64 ;;
 esac
 
@@ -160,11 +161,11 @@ if [ -f "$IN/stdin.txt" ]; then cp "$IN/stdin.txt" "$S/stdin.txt"; else : > "$S/
 chown -R pkbuild:pkbuild "$B"; chmod 755 "$B"
 chown -R pkrun:pkrun "$S"; chmod 700 "$S"
 
-PATHX=/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin
+PATHX=/usr/local/go/bin:/opt/rust/toolchain/bin:/usr/local/bin:/usr/bin:/bin
 # EnableWriteXorExecute=0: W^X double-maps JIT memory through a memfd, which "ulimit -f" caps, so CoreCLR
 # would fail to start with "Out Of Memory". Turning it off also makes startup faster.
 DOTNETENV="DOTNET_ROOT=/opt/dotnet DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 DOTNET_TieredPGO=0 DOTNET_EnableDiagnostics=0 DOTNET_EnableWriteXorExecute=0"
-BENV="setpriv --reuid=pkbuild --regid=pkbuild --clear-groups --no-new-privs env -i PATH=$PATHX HOME=/home/pkbuild TMPDIR=$B LANG=C.UTF-8 GOCACHE=/home/pkbuild/.cache/go-build GOPATH=/home/pkbuild/go CGO_ENABLED=0 GOTOOLCHAIN=local GOPROXY=off GOTELEMETRY=off $DOTNETENV"
+BENV="setpriv --reuid=pkbuild --regid=pkbuild --clear-groups --no-new-privs env -i PATH=$PATHX HOME=/home/pkbuild TMPDIR=$B LANG=C.UTF-8 GOCACHE=/home/pkbuild/.cache/go-build GOPATH=/home/pkbuild/go CGO_ENABLED=0 GOTOOLCHAIN=local GOPROXY=off GOTELEMETRY=off RUSTUP_HOME=/opt/rust/rustup CARGO_HOME=/opt/rust/cargo $DOTNETENV"
 RENV="setpriv --reuid=pkrun --regid=pkrun --clear-groups --no-new-privs env -i PATH=$PATHX HOME=$S TMPDIR=$S LANG=C.UTF-8 GOMEMLIMIT=512MiB $DOTNETENV"
 
 kv() { printf '\n%s:%s=%s\n' "$M" "$1" "$2"; }
@@ -175,6 +176,9 @@ case "$LANG_ID" in
   csharp) CCMD="dotnet /opt/pockett/runner/Runner.dll Program.cs $B" ;;
   cpp) CCMD="g++ -std=c++20 -O1 -pipe -I/opt/pockett/pch -o prog main.cpp" ;;
   go) CCMD="go build -o prog main.go" ;;
+  # rustc links through cc (installed with g++). debug-assertions=on turns on overflow checks, so
+  # "attempt to add with overflow" panics like a debug build; -A warnings keeps compile errors short.
+  rust) CCMD="rustc --edition 2021 -C opt-level=1 -C debuginfo=0 -C codegen-units=4 -C debug-assertions=on -A warnings --color never -o prog main.rs" ;;
 esac
 T0=$(now_ms)
 (

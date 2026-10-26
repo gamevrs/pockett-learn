@@ -71,6 +71,14 @@ export function describeExit(code: number): string | null {
   }
 }
 
+/** The sandbox image has no such language (run.sh answers "unsupported language", exit 64): an older snapshot is in use. */
+export class RunnerUnavailableError extends Error {
+  constructor() {
+    super("The runner does not support this language yet.");
+    this.name = "RunnerUnavailableError";
+  }
+}
+
 export function parseRunnerOutput(raw: string, marker: string): RunResponse {
   // Leading newline makes `\n<marker>:key=` match for the very first line too.
   const text = `\n${raw}`;
