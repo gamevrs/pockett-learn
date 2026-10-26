@@ -1,0 +1,82 @@
+{
+  "id": "smart-home-8-decorators",
+  "title": "Decorators: logging, timing, retry",
+  "minutes": 25,
+  "xp": 160,
+  "concepts": [
+    "decorators",
+    "functools.wraps",
+    "*args / **kwargs",
+    "decorators with arguments",
+    "stacking order",
+    "try / finally"
+  ],
+  "tasks": [
+    "audit(line) and call_log(): a bounded trail of the newest 60 lines",
+    "logged: record name(args) -> result, or the error, and keep the function's identity with functools.wraps",
+    "timed (with try/finally) and retry(times, on): a decorator that takes arguments",
+    "Apply logged to command, run_routine, run_preset and motion_detected, then use the scene and read the trail"
+  ],
+  "unlocks": [
+    "sh-audit"
+  ],
+  "explanation": "logged() wraps a function without changing its signature, because *args and **kwargs pass everything through. functools.wraps keeps the name and docstring so the audit lines say command, not wrapper. retry(times, on) has three layers (options, decorator, wrapper) and each captures what it needs, which is the closure lesson in action. Stacking order matters because the outermost wrapper sees the results of everything inside it.",
+  "hints": [
+    {
+      "title": "The trail",
+      "content": "audit appends to call_entries and call_log returns list(call_entries). _brief: text = repr(value); return text if len(text) <= limit else text[:limit - 3] + \"...\"."
+    },
+    {
+      "title": "logged",
+      "content": "Put @functools.wraps(func) above def wrapper(*args, **kwargs). Build shown = \", \".join([_brief(a) for a in args] + [f\"{k}={_brief(v)}\" for k, v in kwargs.items()]). try: result = func(*args, **kwargs) / except Exception as err: audit the failure and use a bare raise / then audit the result and return it."
+    },
+    {
+      "title": "retry and applying",
+      "content": "retry has three layers: def retry(times=3, on=(Exception,)): def decorator(func): def wrapper(*args, **kwargs): for attempt in range(1, times + 1): try: return func(...) except on as err: if attempt == times: raise; audit(...). Return wrapper, then decorator. Apply with command = logged(command) and the same for the other three."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "With this stacking, which wrapper runs *first* when `send()` is called?\n\n~~~python\n@logged\n@timed\ndef send(): ...\n~~~",
+      "question": {
+        "type": "choice",
+        "options": [
+          "timed's wrapper",
+          "logged's wrapper",
+          "They run at the same time",
+          "send itself"
+        ],
+        "answer": 1
+      },
+      "explanation": "`@logged @timed def send` means `send = logged(timed(send))`. The outermost wrapper (`logged`) is entered first and calls the one inside it. They are *applied* bottom-up but *entered* top-down."
+    },
+    {
+      "prompt": "You write `@retry` (no parentheses) above a function, but `retry` is defined as `def retry(times=3): ...`. What happens?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "It works exactly like @retry()",
+          "The function is passed as `times`, so the name is rebound to the inner decorator instead of the wrapped function",
+          "Python raises a SyntaxError",
+          "times defaults to 3 and the function runs 3 times"
+        ],
+        "answer": 1
+      },
+      "explanation": "A decorator with arguments is a factory: you must call it, `@retry()` or `@retry(times=3)`. Without the call, your function ends up as `times`, and the decorated name now refers to the inner `decorator` function, which is a classic hard-to-spot bug."
+    },
+    {
+      "prompt": "What breaks if a `logged` wrapper forgets `return result`?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Nothing: the original function's return value is kept automatically",
+          "Every decorated function silently returns None",
+          "Python raises an error at decoration time",
+          "Only functions with arguments are affected"
+        ],
+        "answer": 1
+      },
+      "explanation": "The wrapper *replaces* the function, so whatever it returns is what callers get. Always return the original's result (and re-raise errors rather than swallowing them)."
+    }
+  ]
+}

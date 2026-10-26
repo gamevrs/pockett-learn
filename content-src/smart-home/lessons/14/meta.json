@@ -1,0 +1,83 @@
+{
+  "id": "smart-home-14-automations",
+  "title": "Automations: rules from everything you built",
+  "minutes": 35,
+  "xp": 260,
+  "concepts": [
+    "rule engine",
+    "decorator with arguments",
+    "closure factories",
+    "dependency injection",
+    "observer",
+    "dataclasses",
+    "explainability"
+  ],
+  "tasks": [
+    "condition(description), describe(), after_dark(), between(start, end), device_is(id, **expected) and payload_is(key, value)",
+    "Rule (frozen dataclass) whose evaluate() returns a verdict and a reason; effects light_on, light_off, run and notify",
+    "RuleEngine: subscribe to \"*\", skip rule.* events, evaluate matching rules, isolate failures, keep status and a log, announce rule.fired",
+    "Add the bedtime and sunrise routines and six rules named Welcome light, Lights off when empty, Welcome home, Goodnight, Sunrise blinds and Heating notice, plus the automations() hook"
+  ],
+  "unlocks": [
+    "sh-automations"
+  ],
+  "explanation": "Each rule is plain data: an event name, conditions that only look, and an effect that acts. The conditions and effects come from factories (after_dark(), light_on(60)), the descriptions come from a decorator with arguments, and the clock arrives through the injected context, so the same engine runs against fakes in tests. The engine is just another observer on the bus: it ignores its own announcements, catches failures per rule, and records why each decision was made.",
+  "hints": [
+    {
+      "title": "Conditions",
+      "content": "condition(description) returns mark(func) which sets func.description = description and returns func. after_dark builds @condition(\"it is dark\") def check(ctx): return ctx.daylight.is_dark() and returns check. between: if start <= end return start <= now < end, otherwise return now >= start or now < end, using ctx.clock.now()."
+    },
+    {
+      "title": "Rule and effects",
+      "content": "evaluate loops over self.when: if not check(ctx): return False, f\"needs: {describe(check)}\". At the end return True, \" and \".join([f\"{self.on} event\", *(describe(c) for c in self.when)]). light_on(level, room) returns effect(ctx) which finds ctx.devices.get(f\"{room or ctx.event.payload.get('room')}_light\") and executes \"dim\"."
+    },
+    {
+      "title": "The engine",
+      "content": "In _on_event: return early if event.name.startswith(\"rule.\"); build a Context; for each rule with rule.on == event.name evaluate it, run rule.then(ctx) inside try/except Exception when it fired, update self.status[rule.name], append to self.log, and emit rule.fired after a real fire. Routines: ROUTINES[\"bedtime\"] = chain(goodnight, blinds_to(0)) and ROUTINES[\"sunrise\"] = blinds_to(100)."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "Why must `RuleEngine._on_event` ignore events whose name starts with `rule.`?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Those events are slower to process",
+          "The engine listens to every event and emits rule.fired itself, so it would react to its own announcements and could loop forever",
+          "Python reserves the prefix rule.",
+          "The scene cannot display them otherwise"
+        ],
+        "answer": 1
+      },
+      "explanation": "A wildcard subscriber sees everything, including what it publishes. Naming a family of internal events and excluding them is the standard way to avoid a feedback loop."
+    },
+    {
+      "prompt": "The Goodnight rule has a condition \"something is still on or unlocked\". What problem does it solve?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "It makes the rule run faster",
+          "Time events keep arriving after 23:00, so without a state check the rule would fire again on every one",
+          "It prevents the lock from opening",
+          "It is only there for the dashboard"
+        ],
+        "answer": 1
+      },
+      "explanation": "Time-based rules should also check state. The clock stays past 23:00 for hours, but once the house is shut down there is nothing left to do, so the rule skips and says why."
+    },
+    {
+      "prompt": "Which earlier idea does `@condition(\"it is dark\")` rely on?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "A decorator with arguments (a factory that returns the real decorator)",
+          "A generator expression",
+          "weakref.WeakMethod",
+          "An abstract base class"
+        ],
+        "answer": 0
+      },
+      "explanation": "`condition(text)` runs first and returns `mark`, which then receives the function: three layers of closures, just like `retry(times=3)`."
+    }
+  ]
+}

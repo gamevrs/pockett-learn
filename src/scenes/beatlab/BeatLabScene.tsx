@@ -266,7 +266,7 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
         })}
       </div>
 
-      {/* display: title, tempo and what print() said (with no program, StageShell shows its own hint here) */}
+      {/* display: title, tempo and what print() said */}
       <div className={`pointer-events-none absolute left-3 top-12 z-10 max-w-[min(58%,340px)] ${panel} ${displayFocus ? "pulse-ring" : ""} ${hud.hasProgram ? "" : "hidden"}`}>
         {!hud.powered ? (
           mode === "tiny" ? (

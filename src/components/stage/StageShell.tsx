@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { AlertTriangle, Lock, Maximize2, Minimize2, Play, Sparkles } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, Lock, Maximize2, Minimize2, Play, Sparkles, X } from "lucide-react";
 import type { Project } from "@/engine/types";
 import type { ProgramHandle } from "@/engine/program";
 import type { Celebration } from "@/engine/scene";
@@ -19,7 +19,7 @@ interface StageShellProps {
   interactive?: boolean;
   status?: StageStatus;
   statusText?: string;
-  /** Shown over the stage while there is no program yet. */
+  /** Shown in the stage title bar while there is no program yet. */
   emptyHint?: string;
   className?: string;
   hideControls?: boolean;
@@ -46,6 +46,8 @@ export function StageShell({
   const rootRef = useRef<HTMLDivElement>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [dismissedNonce, setDismissedNonce] = useState<number | null>(null);
+  const [dismissedError, setDismissedError] = useState<string | null>(null);
+  const [expandedError, setExpandedError] = useState<string | null>(null);
   const Scene = SCENES[project.sceneId];
 
   const subscribeToErrors = useCallback(
@@ -53,6 +55,9 @@ export function StageShell({
     [program],
   );
   const hookError = useSyncExternalStore(subscribeToErrors, () => program?.lastError ?? null, () => null);
+
+  // Once the hook recovers, forget the dismissal so the next failure shows again.
+  if (hookError === null && dismissedError !== null) setDismissedError(null);
 
   useEffect(() => {
     const onChange = () => setFullscreen(document.fullscreenElement === rootRef.current);
@@ -72,6 +77,11 @@ export function StageShell({
   };
 
   const featureById = new Map(project.features.map((f) => [f.id, f]));
+  const showError = hookError !== null && hookError !== dismissedError;
+  const errorExpanded = hookError !== null && expandedError === hookError;
+  const errorLong = hookError !== null && (hookError.length > 90 || hookError.includes("\n"));
+  const showEmpty = !program && status !== "loading" && !!emptyHint;
+  const pillShown = status === "loading" || showEmpty;
   const showToast = celebration && celebration.nonce !== dismissedNonce && celebration.features.length > 0;
 
   return (
@@ -81,14 +91,29 @@ export function StageShell({
     >
       {/* header */}
       <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-2 bg-gradient-to-b from-black/70 to-transparent px-3 py-2.5">
-        <div className="flex min-w-0 items-center gap-2 text-xs font-medium">
+        <div className="flex min-w-0 shrink items-center gap-2 text-xs font-medium">
           <span
             className={`h-2 w-2 shrink-0 rounded-full ${program ? "bg-[#a3e635]" : "bg-white/30"}`}
             aria-hidden
           />
           <span className="truncate text-white/80">
-            {program ? "Live" : "Blueprint"} · {project.title}
+            {program ? "Live" : "Blueprint"}
+            <span className={pillShown ? "hidden sm:inline" : ""}> · {project.title}</span>
           </span>
+        </div>
+        {/* status pill: lives in the title bar so it never covers a scene's own header */}
+        <div className="pointer-events-none flex min-w-0 flex-1 justify-end">
+          {status === "loading" ? (
+            <span className="hud-tag max-w-full shrink-0 gap-1.5" role="status">
+              <span className="h-2.5 w-2.5 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-[#a3e635]" />
+              <span className="truncate">{statusText || "Booting Python…"}</span>
+            </span>
+          ) : showEmpty ? (
+            <span className="hud-tag max-w-full shrink-0 gap-1.5">
+              <Play className="h-3 w-3 shrink-0 text-[#d9f99d]" fill="currentColor" />
+              <span className="truncate">{emptyHint}</span>
+            </span>
+          ) : null}
         </div>
         {!hideControls && (
           <button
@@ -100,6 +125,35 @@ export function StageShell({
           </button>
         )}
       </div>
+
+      {/* hook error: a slim strip under the title bar that pushes the scene down (never overlays it) */}
+      {showError && (
+        <div className="relative top-[42px] z-30 mx-2 shrink-0" role="alert">
+          <div className="flex items-start gap-2 rounded-lg border border-[#f87171]/40 bg-[#2a0f0f]/90 py-1.5 pl-2.5 pr-1.5 backdrop-blur">
+            <AlertTriangle className="hud-danger mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+            <p className={`hud-log min-w-0 flex-1 whitespace-pre-wrap break-words text-[#fecaca] ${errorExpanded ? "max-h-40 overflow-y-auto" : "line-clamp-2"}`}>
+              {hookError}
+            </p>
+            {errorLong && (
+              <button
+                onClick={() => setExpandedError(errorExpanded ? null : hookError)}
+                aria-expanded={errorExpanded}
+                aria-label={errorExpanded ? "Collapse error" : "Expand error"}
+                className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-white/70 hover:bg-white/10"
+              >
+                {errorExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </button>
+            )}
+            <button
+              onClick={() => setDismissedError(hookError)}
+              aria-label="Dismiss error"
+              className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-white/70 hover:bg-white/10"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* scene */}
       <div className="relative min-h-0 flex-1">
@@ -114,31 +168,6 @@ export function StageShell({
           />
         ) : (
           <div className="grid h-full place-items-center text-sm text-white/50">Scene “{project.sceneId}” is not registered.</div>
-        )}
-
-        {!program && status !== "loading" && emptyHint && (
-          <div className="pointer-events-none absolute inset-x-0 top-12 z-10 flex justify-center px-4">
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs font-medium backdrop-blur">
-              <Play className="h-3.5 w-3.5 text-[#d9f99d]" fill="currentColor" />
-              {emptyHint}
-            </div>
-          </div>
-        )}
-
-        {status === "loading" && (
-          <div className="absolute inset-x-0 top-12 z-10 flex justify-center px-4">
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/70 px-4 py-2 text-xs font-medium backdrop-blur">
-              <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-[#a3e635]" />
-              {statusText || "Booting Python…"}
-            </div>
-          </div>
-        )}
-
-        {hookError && (
-          <div className="absolute inset-x-3 top-12 z-10 flex items-start gap-2 rounded-xl border border-rose-400/40 bg-rose-950/85 px-3 py-2 text-xs text-rose-100 backdrop-blur">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-300" />
-            <span className="font-mono leading-relaxed">{hookError}</span>
-          </div>
         )}
 
         {showToast && celebration && (

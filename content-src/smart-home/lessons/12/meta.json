@@ -1,0 +1,81 @@
+{
+  "id": "smart-home-12-injection",
+  "title": "Dependency injection: clock, daylight, phone",
+  "minutes": 25,
+  "xp": 180,
+  "concepts": [
+    "dependency injection",
+    "test doubles / fakes",
+    "Protocol as a dependency contract",
+    "composition root",
+    "constants"
+  ],
+  "tasks": [
+    "hhmm, is_dark_at and the SUNRISE / SUNSET constants",
+    "Clock and Notifier protocols, a settable SimClock and a PhoneNotifier that reads time from an injected clock",
+    "Daylight(clock) and DoorWatch(bus, daylight, notifier): nothing created inside, everything handed in",
+    "The composition root: build clock, phone, daylight and door_watch for the hub, make the clock follow time events, and add notifications()"
+  ],
+  "unlocks": [
+    "sh-phone"
+  ],
+  "explanation": "None of DoorWatch, Daylight or PhoneNotifier creates what it depends on, so the tests could hand them a FixedClock and a Recorder and check exact behaviour without waiting for evening or sending anything. Only the composition root at the bottom knows the real classes. Daylight stores the clock, not the time, which is why it stays correct when the scene drags the slider.",
+  "hints": [
+    {
+      "title": "Small functions",
+      "content": "hhmm: f\"{minute // 60 % 24:02d}:{minute % 60:02d}\". is_dark_at: return minute < sunrise or minute >= sunset. SimClock.set: self.minute = int(_number(minute, \"minute\")) % 1440."
+    },
+    {
+      "title": "The injected classes",
+      "content": "PhoneNotifier.__init__ stores the clock and creates self.outbox = deque(maxlen=keep); send appends {\"at\": hhmm(self._clock.now()), \"title\": title, \"body\": body}. Daylight.is_dark returns is_dark_at(self._clock.now(), self._sunrise, self._sunset). DoorWatch subscribes self._on_door in __init__ and keeps the unsubscribe function for close()."
+    },
+    {
+      "title": "The composition root",
+      "content": "clock = SimClock(); phone = PhoneNotifier(clock); daylight = Daylight(clock); door_watch = DoorWatch(bus, daylight, phone). Then make the clock follow the world: follow_time = bus.subscribe(\"time\", lambda event: clock.set(event.payload[\"minute\"])). notifications() returns list(phone.outbox)."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "Why is it better for `DoorWatch` to receive a `Daylight` object than to call `datetime.now()` itself?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "datetime.now() is deprecated",
+          "A test can inject a clock fixed at 02:00, so the result is exact and independent of when the test runs",
+          "Daylight objects are faster",
+          "It lets DoorWatch change the system time"
+        ],
+        "answer": 1
+      },
+      "explanation": "Hidden calls to the real clock make behaviour depend on when the code runs. An injected dependency can be replaced by a fake that returns whatever the test needs."
+    },
+    {
+      "prompt": "What is the \"composition root\"?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "A class that every other class inherits from",
+          "The one place in the program that creates the real objects and passes them to the code that needs them",
+          "A decorator that injects arguments",
+          "A package manager feature"
+        ],
+        "answer": 1
+      },
+      "explanation": "Keeping object creation in one place means everything else just *receives* its collaborators. Changing the clock or the notifier for the whole house is then a one-line edit."
+    },
+    {
+      "prompt": "`Daylight.__init__` stores the *clock* rather than the current minute. What would go wrong if it stored the minute?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Nothing, they are equivalent",
+          "It would keep answering for the minute it was constructed at, even after the clock moves",
+          "It would raise a TypeError",
+          "The clock could never be set"
+        ],
+        "answer": 1
+      },
+      "explanation": "Inject the thing that *changes* (a collaborator you can ask), not a snapshot of its value."
+    }
+  ]
+}

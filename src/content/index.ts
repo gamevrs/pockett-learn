@@ -4,9 +4,13 @@ import { launch } from "./projects/launch";
 import { beatlab } from "./projects/beatlab";
 import { pitWall } from "./projects/pit-wall";
 import { garageJs } from "./projects/garage-js";
+import { signalLab } from "./projects/signal-lab";
+import { cargoControl } from "./projects/cargo-control";
+import { storeApi } from "./projects/store-api";
+import { smartHome } from "./projects/smart-home";
 
 /** Every playable project, in the order shown in the picker. */
-export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs];
+export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs, signalLab, cargoControl, storeApi, smartHome];
 
 /**
  * Planned (not yet built) projects. They fill out each language's path (Beginner → Intermediate →

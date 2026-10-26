@@ -1,0 +1,82 @@
+{
+  "id": "smart-home-10-resilient-bus",
+  "title": "A bus that survives: failures and leaks",
+  "minutes": 28,
+  "xp": 190,
+  "concepts": [
+    "exception isolation",
+    "dead-letter queue",
+    "subclassing a seam",
+    "weakref",
+    "WeakMethod",
+    "lapsed listeners"
+  ],
+  "tasks": [
+    "ResilientBus(EventBus): override _deliver so a handler's exception is caught and recorded in a bounded errors deque",
+    "Catch Exception only, so interrupts and timeouts still stop the program",
+    "subscribe_weak(name, method): subscribe through a forwarding closure that holds only a weak reference",
+    "Replace the hub's bus, reconnect the lights, and add bus_errors() for the scene"
+  ],
+  "unlocks": [
+    "sh-resilience"
+  ],
+  "explanation": "Because every call goes through _deliver, one overridden method adds isolation to the whole bus. Failures become data (event, sequence, handler, message) in a bounded box instead of exceptions thrown at the publisher. A weak subscription stores only a WeakMethod; its forwarding closure unsubscribes itself the first time it finds the owner gone, so forgotten listeners clean up after themselves.",
+  "hints": [
+    {
+      "title": "Isolating failures",
+      "content": "def _deliver(self, subscription, event): try: subscription.handler(event) except Exception as err: self.errors.append({\"event\": event.name, \"seq\": event.seq, \"handler\": getattr(subscription.handler, \"__qualname__\", repr(subscription.handler)), \"error\": f\"{type(err).__name__}: {err}\"}); return False. After the try/except, return True. In __init__ call super().__init__(history_size) and create self.errors = deque(maxlen=50)."
+    },
+    {
+      "title": "Weak subscriptions",
+      "content": "reference = weakref.WeakMethod(method) if inspect.ismethod(method) else weakref.ref(method). Define def forward(event): target = reference(); if target is None: unsubscribe() else: target(event). Then unsubscribe = self.subscribe(name, forward) and return unsubscribe. forward can use unsubscribe because it is only called after the assignment."
+    },
+    {
+      "title": "Swapping the bus",
+      "content": "bus = ResilientBus() then stop_following = connect_lights(bus), because the old bus's subscriptions do not move. bus_errors() is list(bus.errors). world_event and event_log keep working unchanged because they look up the global name bus each time they run."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "Why should `_deliver` catch `Exception` rather than use a bare `except:`?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "A bare except is slower",
+          "A bare except also catches KeyboardInterrupt, SystemExit and timeouts, so the program could not be stopped",
+          "Exception catches more error types than a bare except",
+          "Python does not allow a bare except inside a method"
+        ],
+        "answer": 1
+      },
+      "explanation": "Those signals derive from `BaseException`, not `Exception`. They exist so you can interrupt a program; a handler wrapper should isolate ordinary bugs, not make the whole process unkillable."
+    },
+    {
+      "prompt": "A dashboard object subscribes `self.refresh` to the bus in `__init__`, and later the program drops every reference to the dashboard. With a normal (strong) subscription, what happens?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "The dashboard is freed and stops receiving events",
+          "The bus's reference to the bound method keeps the dashboard alive and it keeps receiving events",
+          "Python raises an error when the last reference is dropped",
+          "The bus automatically unsubscribes it"
+        ],
+        "answer": 1
+      },
+      "explanation": "A bound method holds its instance, and the bus holds the bound method, so the instance can never be collected. Fix it with an explicit `close()` that calls unsubscribe, or a weak subscription."
+    },
+    {
+      "prompt": "Why is `weakref.ref(panel.on_event)` almost useless for a weak subscription?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Weak references only work on classes",
+          "`panel.on_event` creates a fresh bound-method object each time, and nothing else holds it, so it is freed immediately",
+          "weakref cannot refer to methods at all",
+          "It works fine; WeakMethod is only a shortcut"
+        ],
+        "answer": 1
+      },
+      "explanation": "Each evaluation of `panel.on_event` builds a temporary bound-method object. Using `weakref.WeakMethod` stores weak references to the instance and function separately and rebuilds the method when asked."
+    }
+  ]
+}

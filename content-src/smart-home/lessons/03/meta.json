@@ -1,0 +1,68 @@
+{
+  "id": "smart-home-3-polymorphism",
+  "title": "Polymorphism: one call, many devices",
+  "minutes": 18,
+  "xp": 110,
+  "concepts": [
+    "polymorphism",
+    "Liskov substitution",
+    "EAFP",
+    "try / except / else",
+    "hysteresis"
+  ],
+  "tasks": [
+    "DoorLock: locked by default, with lock and unlock actions",
+    "Thermostat: target, current and heating, with a dead band so it never flickers",
+    "Register both in FACTORIES and rebuild devices (no other function should need to change)",
+    "broadcast(items, action, value): try an action on every device and report who did it and who refused"
+  ],
+  "unlocks": [
+    "sh-lock",
+    "sh-climate"
+  ],
+  "explanation": "snapshot() and command() were written for lights and now serve a lock and a thermostat without a single edit: that is polymorphism paying off. broadcast() relies on the contract (UnsupportedAction means 'not my kind of action') and lets everything else, such as a bad value, propagate. The thermostat's dead band is a tiny state machine: heating only changes at the two thresholds.",
+  "hints": [
+    {
+      "title": "DoorLock",
+      "content": "super().__init__(spec), then self.locked = True. state() returns {\"locked\": self.locked}. execute() sets self.locked = True for \"lock\", False for \"unlock\", else raises UnsupportedAction."
+    },
+    {
+      "title": "Thermostat logic",
+      "content": "In measure(): self.current = _number(temperature, \"temperature\"); if self.current <= self.target - 0.5: self.heating = True; elif self.current >= self.target: self.heating = False. In set_target(): validate with 10 <= number <= 30 first, then assign self.target, then call self.measure(self.current)."
+    },
+    {
+      "title": "Registering and broadcasting",
+      "content": "FACTORIES.update({Kind.LOCK: DoorLock, Kind.THERMOSTAT: Thermostat}) then devices = build_devices(CATALOG). In broadcast(): for each device, try: device.execute(action, value) / except UnsupportedAction: skipped.append(device.id) / else: done.append(device.id)."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "A new `Blinds` class is added next month. Which of these functions has to change so it works with the blinds?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "`snapshot()`",
+          "`command()`",
+          "`broadcast()`",
+          "None of them: only FACTORIES gets a new entry"
+        ],
+        "answer": 3
+      },
+      "explanation": "All three only use the contract (`describe()`, `execute()`), so they are closed for modification and open for extension. If they had an `isinstance` ladder, each would need editing."
+    },
+    {
+      "prompt": "Why does `broadcast()` catch `UnsupportedAction` but let a `ValueError` for `dim 999` escape?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "ValueError cannot be caught in a loop",
+          "An unsupported action is a normal fact about a device; a bad value is a mistake the caller should hear about",
+          "Python only allows one except clause",
+          "UnsupportedAction is faster"
+        ],
+        "answer": 1
+      },
+      "explanation": "Catch the narrowest exception that describes a situation you *expect*. Silently skipping a bad value would hide a bug; skipping a device that doesn't speak the action is the whole point of broadcasting."
+    }
+  ]
+}

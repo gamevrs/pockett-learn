@@ -1,0 +1,81 @@
+{
+  "id": "smart-home-5-first-class",
+  "title": "Functions as values: your first delegates",
+  "minutes": 22,
+  "xp": 140,
+  "concepts": [
+    "first-class functions",
+    "Callable",
+    "delegates",
+    "higher-order functions",
+    "dispatch table"
+  ],
+  "tasks": [
+    "select(items, where) and apply_to(items, action): take a function as an argument",
+    "by_kind(kind): return a function (a predicate) instead of a value",
+    "lights_off, lock_up, everything_off, goodnight: routines built from the pieces above",
+    "ROUTINES table, run_routine(name) and routine_names(): replace an if/elif ladder with a dictionary of functions"
+  ],
+  "unlocks": [
+    "sh-routines"
+  ],
+  "explanation": "select() and apply_to() know nothing about devices: the behaviour arrives as an argument, which is exactly what a delegate is in other languages. by_kind() returns a function, and goodnight() is a routine that calls other routines. ROUTINES is a dispatch table, so run_routine() has no branches and the scene can build a button for every key.",
+  "hints": [
+    {
+      "title": "Taking functions",
+      "content": "select is [item for item in items if where(item)]. apply_to loops over items, calls action(item) and counts. Remember to call the function you were handed: where(item), not where."
+    },
+    {
+      "title": "Returning a function",
+      "content": "Define an inner function inside by_kind: def matches(device): return device.spec.kind is kind, and return matches without parentheses. lights_off can then be apply_to(select(devs.values(), by_kind(Kind.LIGHT)), lambda light: light.execute(\"off\"))."
+    },
+    {
+      "title": "The table",
+      "content": "ROUTINES = {\"lights_off\": lights_off, ...} stores the functions without calling them. run_routine: routine = ROUTINES.get(name); if routine is None, return an error dict; otherwise call routine(devices) and return {\"ok\": True, \"routine\": name}."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "What goes wrong in `apply_to(lights, turn_off())`?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Nothing, the parentheses are optional",
+          "turn_off() runs immediately and its return value (None) is passed instead of the function",
+          "Python raises a SyntaxError",
+          "apply_to receives a copy of turn_off"
+        ],
+        "answer": 1
+      },
+      "explanation": "Parentheses mean *call it now*. To hand over the function itself, leave them off: `apply_to(lights, turn_off)`."
+    },
+    {
+      "prompt": "Which Python type hint matches a C# `Func<Device, bool>` (or a Java `Predicate<Device>`)?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "`Callable[[Device], None]`",
+          "`Callable[[Device], bool]`",
+          "`Callable[[bool], Device]`",
+          "`list[Device]`"
+        ],
+        "answer": 1
+      },
+      "explanation": "`Callable[[arguments], return_type]`: one argument of type `Device`, returning `bool`. An `Action<Device>` has no return value, so it maps to `Callable[[Device], None]`."
+    },
+    {
+      "prompt": "Why is `ROUTINES.get(name)` followed by a `None` check friendlier than `ROUTINES[name]` in `run_routine`?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "It is faster",
+          "An unknown name produces a clear message from us instead of a raw KeyError",
+          "It lets the routine run twice",
+          "Dictionaries cannot be indexed with strings"
+        ],
+        "answer": 1
+      },
+      "explanation": "The scene may send any name. With `.get` you decide what an unknown name looks like (`{'ok': False, 'error': ...}`) instead of leaking a `KeyError` across the boundary."
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "id": "smart-home-4-protocols",
+  "title": "Protocols: interfaces by shape",
+  "minutes": 20,
+  "xp": 130,
+  "concepts": [
+    "typing.Protocol",
+    "@runtime_checkable",
+    "structural typing",
+    "ABC vs Protocol",
+    "interface segregation"
+  ],
+  "tasks": [
+    "Switchable and Sensor: two small runtime-checkable Protocols",
+    "Speaker and MotionSensor as Devices (Blinds is given); register all three and rebuild devices",
+    "power_down(things): switch off everything Switchable, including objects that never inherit from anything",
+    "active_sensors(sensors): the sensors currently reading above zero"
+  ],
+  "unlocks": [
+    "sh-sensors",
+    "sh-comfort"
+  ],
+  "explanation": "A Protocol describes a capability by its shape, so Light, Speaker and a vendor plug all satisfy Switchable without sharing a base class. power_down() asks each object for the capability and ignores the rest, which is what makes it work for code you do not control. Device stays an ABC because it is a family you own with shared code; Switchable and Sensor are roles that cut across families.",
+  "hints": [
+    {
+      "title": "Writing a Protocol",
+      "content": "Inherit from Protocol and write signatures with ... as the body: def turn_on(self) -> None: ... and def turn_off(self) -> None: ... Keep @runtime_checkable above the class."
+    },
+    {
+      "title": "The two devices",
+      "content": "Speaker mirrors Light: __init__ sets playing = False and volume = 30; execute handles \"on\", \"off\" and \"volume\". MotionSensor has detected = False, trigger() sets it True, clear() sets it False, and read() returns 1.0 if self.detected else 0.0."
+    },
+    {
+      "title": "Helpers",
+      "content": "power_down: loop over things, and when isinstance(thing, Switchable) call thing.turn_off() and add one to a counter, then return the counter. active_sensors is a list comprehension: [s for s in sensors if s.read() > 0]. Don't forget FACTORIES.update(...) and devices = build_devices(CATALOG)."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "A third-party `SmartPlug` class has `turn_on()` and `turn_off()` methods but knows nothing about your code. Which statement is true?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "It must be wrapped in a Device subclass before power_down() can use it",
+          "It already satisfies Switchable, because the Protocol only cares about its shape",
+          "It cannot be used until it inherits from Switchable",
+          "power_down() raises a TypeError for it"
+        ],
+        "answer": 1
+      },
+      "explanation": "Structural typing: `isinstance(SmartPlug(), Switchable)` is `True` because the methods exist, with no inheritance needed. That is exactly why Protocols are the right tool for libraries and test fakes."
+    },
+    {
+      "prompt": "Which design choice fits an ABC better than a Protocol?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Accepting a fake clock in a unit test",
+          "A family of classes you own that share code and state (describe(), self.spec)",
+          "Describing a single method a third-party library already has",
+          "Letting unrelated classes opt in just by having a method"
+        ],
+        "answer": 1
+      },
+      "explanation": "ABCs shine when you control the hierarchy and want shared implementation plus an instantiation-time check. Protocols shine at the edges, where you can't or won't force inheritance."
+    }
+  ]
+}

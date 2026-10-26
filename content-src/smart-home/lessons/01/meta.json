@@ -1,0 +1,81 @@
+{
+  "id": "smart-home-1-blueprint",
+  "title": "Describe the house",
+  "minutes": 15,
+  "xp": 90,
+  "concepts": [
+    "Enum",
+    "dataclass",
+    "frozen",
+    "type hints",
+    "properties"
+  ],
+  "tasks": [
+    "Room and Kind enums with lowercase string values",
+    "DeviceSpec: a frozen dataclass (id, kind, room, label defaulting to \"\") with a read-only title property",
+    "CATALOG: five hand-written specs plus the lights and motion sensors built by comprehensions",
+    "catalog(): the same list as plain JSON-friendly dicts, for the scene"
+  ],
+  "unlocks": [
+    "sh-blueprint"
+  ],
+  "explanation": "Enums make the set of rooms and device kinds closed, so a typo is an error instead of a silent bug. A frozen dataclass gives every spec equality, hashing and a readable repr for free. The scene only understands JSON, so catalog() converts the enum members with .value on the way out. That conversion step (domain objects inside, plain data at the boundary) comes back in every chapter.",
+  "hints": [
+    {
+      "title": "Enum members",
+      "content": "Each member is NAME = \"value\", for example HALL = \"hall\" inside class Room(Enum). The test checks the order HALL, LIVING, KITCHEN, BEDROOM."
+    },
+    {
+      "title": "The dataclass",
+      "content": "Put @dataclass(frozen=True) above the class and list the fields with type hints: id: str, kind: Kind, room: Room, then label: str = \"\" (the field with a default goes last). For title, add @property and return self.label or self.id.replace(\"_\", \" \").title()."
+    },
+    {
+      "title": "Comprehensions and the hook",
+      "content": "CATALOG += [DeviceSpec(f\"{room.value}_light\", Kind.LIGHT, room) for room in Room] adds the four lights. catalog() is a list comprehension building {\"id\": spec.id, \"kind\": spec.kind.value, \"room\": spec.room.value, \"title\": spec.title} for each spec."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "Given `class Room(Enum): HALL = \"hall\"`, what does `Room.HALL == \"hall\"` evaluate to?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "True",
+          "False",
+          "It raises a TypeError",
+          "It depends on the Python version"
+        ],
+        "answer": 1
+      },
+      "explanation": "An Enum member is an object in its own right, not its value, so it is not equal to the plain string. Use `Room.HALL.value == \"hall\"` or look the member up with `Room(\"hall\")`."
+    },
+    {
+      "prompt": "Which of these dataclass fields is a bug waiting to happen?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "`name: str = \"\"`",
+          "`count: int = 0`",
+          "`items: list[str] = []`",
+          "`tags: tuple[str, ...] = ()`"
+        ],
+        "answer": 2
+      },
+      "explanation": "A list default would be one shared object for every instance, so dataclasses refuse it with a ValueError. Write `field(default_factory=list)` to get a fresh list each time. Strings, ints and tuples are immutable, so sharing them is harmless."
+    },
+    {
+      "prompt": "Why does `catalog()` return `spec.kind.value` instead of `spec.kind`?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Enum members are slower to send",
+          "The scene needs JSON, and an Enum member is not a JSON value",
+          "Python forbids returning an Enum from a function",
+          "`.value` makes the id unique"
+        ],
+        "answer": 1
+      },
+      "explanation": "Everything that crosses from your code to the scene travels as JSON: strings, numbers, booleans, lists, dicts. Domain objects such as enum members are for the code inside; plain values are for the boundary."
+    }
+  ]
+}

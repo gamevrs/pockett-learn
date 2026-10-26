@@ -1,0 +1,82 @@
+{
+  "id": "smart-home-9-event-bus",
+  "title": "The observer pattern: an event bus",
+  "minutes": 28,
+  "xp": 190,
+  "concepts": [
+    "observer pattern",
+    "publish / subscribe",
+    "unsubscribe handles",
+    "delivery order",
+    "frozen dataclass events",
+    "wildcards"
+  ],
+  "tasks": [
+    "Event: a frozen dataclass (name, payload with a default factory, seq) with to_dict()",
+    "EventBus.subscribe (returns an unsubscribe function), listener_count and a bounded history",
+    "EventBus.emit: copy the payload, number the event, deliver to named handlers then \"*\" handlers, skipping cancelled ones",
+    "bus, world_event, event_log and a first listener, lights_follow, connected with connect_lights"
+  ],
+  "unlocks": [
+    "sh-eventlog"
+  ],
+  "explanation": "The bus is the only thing that knows both sides: publishers call emit(), subscribers call subscribe(), and neither imports the other. emit() works on a copy of the listener list and checks each subscription's active flag, so handlers can safely subscribe or unsubscribe while an event is in flight. History is written before delivery, which is why a log shows an event before the events its handlers cause.",
+  "hints": [
+    {
+      "title": "Building blocks",
+      "content": "In __init__: self._subscriptions = {}, self._next_seq = 1, self.history = deque(maxlen=history_size). subscribe: create _Subscription(handler), append it with setdefault(name, []).append(...), and return an inner unsubscribe() that sets active = False and removes it from the list if still present."
+    },
+    {
+      "title": "emit",
+      "content": "event = Event(name, dict(payload or {}), self._next_seq); bump _next_seq; append to history; listeners = list(self._subscriptions.get(name, [])); if name != \"*\": listeners += self._subscriptions.get(\"*\", []); loop and count each subscription that is active and for which self._deliver(subscription, event) is True."
+    },
+    {
+      "title": "The hooks",
+      "content": "world_event returns {\"ok\": True, \"delivered\": bus.emit(name, payload)}. event_log returns [e.to_dict() for e in list(bus.history)[-limit:]]. lights_follow is one strict line: devices[f\"{event.payload['room']}_light\"].execute(\"on\"). connect_lights returns target.subscribe(\"motion\", lights_follow)."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "Why does `emit()` loop over a *copy* of the listeners list?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Copies are faster to iterate",
+          "A handler may subscribe or unsubscribe during delivery, and changing a list while looping over it skips or repeats items",
+          "Python forbids looping over the original list",
+          "So that handlers receive a copy of the event"
+        ],
+        "answer": 1
+      },
+      "explanation": "Mutating a list you are iterating is a classic source of skipped handlers. A snapshot taken at the start makes the rules simple: who is called is decided when `emit` begins, and an `active` flag lets cancelled subscriptions opt out."
+    },
+    {
+      "prompt": "What is the main advantage of `subscribe()` returning an unsubscribe *function* instead of offering `bus.off(handler)`?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "It is the only way Python can remove an item from a list",
+          "It removes exactly the registration you made, even for anonymous lambdas or a function subscribed twice",
+          "It makes emit() faster",
+          "It prevents the handler from ever being called again by any bus"
+        ],
+        "answer": 1
+      },
+      "explanation": "`off(handler)` needs to find the handler again, which is impossible for a lambda you did not keep a reference to and ambiguous if the same function was registered twice. The returned closure remembers the exact subscription."
+    },
+    {
+      "prompt": "Which statement about the observer pattern is true?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Publishers must keep a list of every subscriber's class",
+          "Publishers and subscribers only share event names and payloads, so either side can change without the other noticing",
+          "Subscribers are called in random order",
+          "Observers can only watch one publisher"
+        ],
+        "answer": 1
+      },
+      "explanation": "That decoupling is the whole point: the motion sensor emits `motion`, and lights, counters and alarms can come and go without editing it."
+    }
+  ]
+}

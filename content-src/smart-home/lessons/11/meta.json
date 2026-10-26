@@ -1,0 +1,67 @@
+{
+  "id": "smart-home-11-wiring",
+  "title": "Wiring the house to the bus",
+  "minutes": 22,
+  "xp": 160,
+  "concepts": [
+    "wiring / composition",
+    "events vs commands",
+    "fail fast and isolate",
+    "setup and teardown",
+    "publishing derived events"
+  ],
+  "tasks": [
+    "wire_home(target, devs): subscribe handlers for motion, motion_clear and temperature on whatever bus and devices are passed in",
+    "The thermostat handler publishes a heating event, but only when the heating state changes",
+    "Count visits from motion events and return the list of unsubscribe handles",
+    "Connect the hub's own bus and devices, then drive the house from the scene and read the log"
+  ],
+  "unlocks": [
+    "sh-wiring"
+  ],
+  "explanation": "wire_home takes the bus and devices as parameters, so the same function wires the real hub and the throwaway objects the tests create. The handlers are short because the resilient bus catches their failures: a reading with no value becomes one KeyError in the dead-letter box instead of defensive code everywhere. Publishing heating only on change keeps the log meaningful, and returning the handles gives the caller a clean way to undo everything.",
+  "hints": [
+    {
+      "title": "The motion handlers",
+      "content": "Inside wire_home define def on_motion(event): sensor = devs.get(f\"{event.payload.get('room')}_motion\"); if sensor is not None: sensor.execute(\"trigger\"). on_motion_clear is the same with \"clear\". For visits, check room in visit_counts before calling count_visit(room)."
+    },
+    {
+      "title": "The thermostat handler",
+      "content": "thermostat = devs.get(\"thermostat\"); return if it is None. Remember was_heating = thermostat.heating, call thermostat.execute(\"measure\", event.payload[\"value\"]), and if thermostat.heating != was_heating emit target.emit(\"heating\", {\"on\": thermostat.heating})."
+    },
+    {
+      "title": "Returning handles",
+      "content": "End wire_home with return [target.subscribe(\"motion\", on_motion), target.subscribe(\"motion\", on_visit), target.subscribe(\"motion_clear\", on_motion_clear), target.subscribe(\"temperature\", on_temperature)]. Outside the function: wiring = wire_home(bus, devices)."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "Which event name follows the \"name what happened\" convention?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "`turn_on_hall_light`",
+          "`heating`",
+          "`please_lock_door`",
+          "`do_goodnight`"
+        ],
+        "answer": 1
+      },
+      "explanation": "Events are facts (`heating` changed, `motion` was seen). Names like `turn_on_hall_light` are commands: they presume exactly one consequence and tie the publisher to the receiver."
+    },
+    {
+      "prompt": "`on_temperature` reads `event.payload[\"value\"]` without checking that the key exists. Why is that acceptable here?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "KeyError can never happen",
+          "The resilient bus catches and records the failure, so the handler can stay short and fail fast",
+          "Python silently supplies a default",
+          "The payload is validated by the scene before sending"
+        ],
+        "answer": 1
+      },
+      "explanation": "Handlers trust their input; the boundary (the bus) deals with the rare bad event by filing it as a dead letter. Defensive checks in every handler would duplicate that work."
+    }
+  ]
+}

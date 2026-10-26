@@ -1,0 +1,67 @@
+{
+  "id": "smart-home-6-callbacks",
+  "title": "Callbacks and lambdas",
+  "minutes": 20,
+  "xp": 130,
+  "concepts": [
+    "callbacks",
+    "lambda",
+    "sorted(key=)",
+    "inversion of control",
+    "limits of lambdas"
+  ],
+  "tasks": [
+    "on_motion(room, callback) and motion_detected(room): a registry of callbacks, run in order",
+    "count_visit as a named callback and a lambda that switches a room's light on, registered for every room",
+    "busiest_rooms(): rank the rooms with sorted() and a lambda key",
+    "Walk through the house in the scene and watch the lights follow you"
+  ],
+  "unlocks": [
+    "sh-traffic"
+  ],
+  "explanation": "The sensor code never mentions lights or counters: it just calls whatever was registered, which is inversion of control. The lambda is the right size for a one-line adapter, while count_visit got a name because you may want to test or reuse it. busiest_rooms() uses a tuple key (-visits, name) to sort most-visited first with alphabetical tie-breaks. The limits you listed (no removal, one failure breaks the rest) are the reasons the observer pattern exists.",
+  "hints": [
+    {
+      "title": "The registry",
+      "content": "on_motion: motion_callbacks.setdefault(room, []).append(callback). In motion_detected, look up devices.get(f\"{room}_motion\"), return an error dict if it is None, call sensor.execute(\"trigger\"), then loop over motion_callbacks.get(room, []) calling callback(room)."
+    },
+    {
+      "title": "Wiring every room",
+      "content": "for room in Room: on_motion(room.value, count_visit) and on_motion(room.value, lambda name: devices[f\"{name}_light\"].execute(\"on\")). The lambda uses its own parameter name, which is why it is safe inside the loop."
+    },
+    {
+      "title": "Ranking",
+      "content": "ranked = sorted(visit_counts, key=lambda name: (-visit_counts[name], name)) gives the room names in order. Then build [{\"room\": name, \"visits\": visit_counts[name]} for name in ranked]."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "Which of these CANNOT be written as a lambda?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "`lambda room: room.upper()`",
+          "`lambda a, b: a if a > b else b`",
+          "A function whose body assigns to a variable and then returns it",
+          "`lambda: None`"
+        ],
+        "answer": 2
+      },
+      "explanation": "A lambda body is a single expression. Assignments, `raise`, `try`, loops and multi-step logic are statements, so they need a `def`. The conditional expression `a if a > b else b` is still one expression, which is why the second option is fine."
+    },
+    {
+      "prompt": "Three callbacks are registered for the hall. The second one raises an exception. With the simple registry from this lesson, what happens?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "The third callback still runs and the error is logged",
+          "The exception propagates out of motion_detected and the third callback never runs",
+          "Python retries the second callback",
+          "All three callbacks are cancelled and then re-run"
+        ],
+        "answer": 1
+      },
+      "explanation": "A plain `for callback in callbacks: callback(room)` loop has no protection. Making an event system robust to bad listeners is one of the jobs of the event bus you will build in chapter 3."
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "id": "smart-home-13-generators",
+  "title": "Generators and iterators: lazy event streams",
+  "minutes": 25,
+  "xp": 180,
+  "concepts": [
+    "generators",
+    "yield / yield from",
+    "islice",
+    "lazy evaluation",
+    "__iter__ / __next__",
+    "StopIteration"
+  ],
+  "tasks": [
+    "matching(events, *names) and newest_first(source): generator functions that stream events",
+    "recent_events(name, limit): newest matches via islice, returned oldest first, without copying the history",
+    "day_slots(step) validated eagerly (return an inner generator) and daylight_map(step) for the scene",
+    "EventCursor: an iterator class that resumes where it stopped, plus reader and unread()"
+  ],
+  "unlocks": [
+    "sh-timeline"
+  ],
+  "explanation": "A pipeline of generators (newest_first, then matching, then islice) only touches as many events as it needs to find the answer. day_slots splits into an eager checker and a lazy worker because the body of a generator does not run until the first next(). EventCursor shows the iterator protocol by hand: __iter__ returns self, __next__ raises StopIteration, and the saved sequence number makes it resumable, which a generator never is.",
+  "hints": [
+    {
+      "title": "Generators",
+      "content": "def matching(events, *names): for event in events: if not names or event.name in names: yield event. newest_first is a single line: yield from reversed(source.history)."
+    },
+    {
+      "title": "Pipelines and the day",
+      "content": "recent_events: stream = matching(newest_first(bus), name) if name else newest_first(bus); picked = list(islice(stream, max(0, int(limit)))); picked.reverse(); then return [e.to_dict() for e in picked]. day_slots checks step < 1 and raises ValueError, then returns _slots(step), a separate generator with for minute in range(0, 1440, step): yield minute, is_dark_at(minute)."
+    },
+    {
+      "title": "The cursor",
+      "content": "__init__ stores the bus and self._last_seq = 0. __iter__ returns self. __next__ loops over self._source.history; for the first event with seq > self._last_seq, update _last_seq and return it; after the loop raise StopIteration. reader = EventCursor(bus); unread is [e.to_dict() for e in reader]."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "What does this print?\n\n~~~python\ndef count_up():\n    print(\"start\")\n    yield 1\n\ng = count_up()\nprint(\"made it\")\nnext(g)\n~~~",
+      "question": {
+        "type": "choice",
+        "options": [
+          "start, then made it",
+          "made it, then start",
+          "Only made it",
+          "Only start"
+        ],
+        "answer": 1
+      },
+      "explanation": "Calling a generator function builds a generator object without running its body. `start` is printed on the first `next()`. That is also why an argument check at the top of a generator function is delayed."
+    },
+    {
+      "prompt": "Why is `recent_events` built from `newest_first` + `matching` + `islice` instead of filtering a full list copy?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Generators are required by the scene",
+          "It only walks as far back through the history as it needs to find the requested number of matches",
+          "A list cannot be filtered in Python",
+          "islice sorts the events"
+        ],
+        "answer": 1
+      },
+      "explanation": "Lazy pipelines pull items one at a time, so asking for the last 3 door events stops after finding them, however long the history is."
+    },
+    {
+      "prompt": "You loop over a generator twice. What does the second loop do?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Repeats all the items",
+          "Produces nothing: the generator is exhausted",
+          "Raises a RuntimeError",
+          "Restarts and recomputes lazily"
+        ],
+        "answer": 1
+      },
+      "explanation": "A generator is a one-way stream. If you need to pass over the data again, create a new generator, or keep a resumable iterator object like `EventCursor` when you want to pick up where you left off."
+    }
+  ]
+}

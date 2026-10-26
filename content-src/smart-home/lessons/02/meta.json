@@ -1,0 +1,67 @@
+{
+  "id": "smart-home-2-contract",
+  "title": "Devices and the Device contract",
+  "minutes": 20,
+  "xp": 120,
+  "concepts": [
+    "abc.ABC",
+    "@abstractmethod",
+    "template method",
+    "factory registry",
+    "custom exceptions"
+  ],
+  "tasks": [
+    "Device(ABC): abstract state() and execute(), plus a concrete describe() every subclass inherits",
+    "Light(Device): a 0-100 level with turn_on, turn_off, set_level, and execute for on / off / dim",
+    "FACTORIES, build_devices(specs) and devices: build objects by looking classes up in a dict",
+    "snapshot() and command(): the two functions the scene calls, which never raise"
+  ],
+  "unlocks": [
+    "sh-lights"
+  ],
+  "explanation": "The ABC turns the contract into something Python enforces: you cannot create a Device, or a subclass that forgets part of the contract. describe() is written once in the base class and relies on each subclass's state(). FACTORIES maps a Kind to a class, so adding a device type later is one dictionary entry. command() is the boundary: it converts ValueErrors into an error dict so the dashboard never sees a traceback.",
+  "hints": [
+    {
+      "title": "The base class",
+      "content": "class Device(ABC): put @abstractmethod above def state(self) and def execute(self, action, value=None). __init__ stores self.spec = spec. describe() returns {\"id\": self.id, \"kind\": self.spec.kind.value, \"room\": self.room.value, **self.state()}."
+    },
+    {
+      "title": "The light",
+      "content": "Call super().__init__(spec) then set self.level = 0. execute() is an if/elif chain on action: \"on\" calls turn_on(), \"off\" calls turn_off(), \"dim\" calls set_level(value), and else raises UnsupportedAction(f\"{self.id} cannot {action!r}\"). set_level converts with _number(level, \"light level\"), checks 0 <= n <= 100, and stores round(n)."
+    },
+    {
+      "title": "Factory and boundary",
+      "content": "FACTORIES = {Kind.LIGHT: Light}. build_devices returns {spec.id: FACTORIES[spec.kind](spec) for spec in specs if spec.kind in FACTORIES}. command() looks the device up with devices.get(device_id), returns an error dict if it is None, then wraps device.execute(action, value) in try/except ValueError."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "You write `class Dimmer(Device)` and forget to implement `execute()`. When does Python complain?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "When the class statement runs",
+          "When you create a `Dimmer(...)` object",
+          "When you first call `execute()`",
+          "Never: abstract methods are only a convention"
+        ],
+        "answer": 1
+      },
+      "explanation": "Abstract methods are enforced at instantiation: `Dimmer(spec)` raises `TypeError: Can't instantiate abstract class ...` and names the missing method. Defining the class is allowed, which is what lets you build a chain of partly-abstract helper classes."
+    },
+    {
+      "prompt": "`describe()` is defined once on `Device` but returns different data for a `Light` and a `DoorLock`. What makes that work?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "describe() is copied into each subclass",
+          "describe() calls self.state(), which each subclass implements differently",
+          "Python picks the data based on the class name",
+          "describe() uses isinstance() to check the type"
+        ],
+        "answer": 1
+      },
+      "explanation": "This is the template-method idea. The base class fixes the shared skeleton (identity first, state after) and delegates the varying part to an abstract method. `self.state()` runs the *subclass's* version because `self` is the real object."
+    }
+  ]
+}

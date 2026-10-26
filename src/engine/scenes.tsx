@@ -24,4 +24,8 @@ export const SCENES: Record<string, ComponentType<SceneProps>> = {
   launch: load(() => import("@/scenes/launch/LaunchScene")),
   beatlab: load(() => import("@/scenes/beatlab/BeatLabScene")),
   sqldesk: load(() => import("@/scenes/sqldesk/SqlDeskScene")),
+  "signal-lab": load(() => import("@/scenes/signal-lab/SignalLabScene")),
+  "cargo-control": load(() => import("@/scenes/cargo-control/CargoControlScene")),
+  "store-api": load(() => import("@/scenes/store-api/StoreApiScene")),
+  "smart-home": load(() => import("@/scenes/smart-home/SmartHomeScene")),
 };

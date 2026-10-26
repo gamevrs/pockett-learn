@@ -1,0 +1,68 @@
+{
+  "id": "smart-home-7-closures",
+  "title": "Closures and function factories",
+  "minutes": 22,
+  "xp": 150,
+  "concepts": [
+    "closures",
+    "nonlocal",
+    "function factories",
+    "late binding",
+    "functools.partial",
+    "multicast chain"
+  ],
+  "tasks": [
+    "dim_lights(level) and blinds_to(position): factories that return routines",
+    "chain(*routines): combine routines into one, like a multicast delegate",
+    "make_counter() with nonlocal, and make_toggle(device_id) with ROOM_TOGGLES built safely in a loop",
+    "PRESETS, preset_uses (one counter each), run_preset(name) and preset_names()"
+  ],
+  "unlocks": [
+    "sh-scenes"
+  ],
+  "explanation": "dim_lights(15) and dim_lights(70) are two different functions because each call to the factory creates a new level variable for its routine to capture. make_counter relies on nonlocal so bump can rebind count. ROOM_TOGGLES goes through make_toggle on purpose: a lambda written directly in the loop would share one variable and every toggle would hit the last room.",
+  "hints": [
+    {
+      "title": "Factories",
+      "content": "def dim_lights(level): define an inner def routine(devs) that does apply_to(select(devs.values(), by_kind(Kind.LIGHT)), lambda light: light.execute(\"dim\", level)), then return routine (no parentheses). blinds_to is the same with Kind.BLINDS and \"position\"."
+    },
+    {
+      "title": "State and chaining",
+      "content": "make_counter: count = 0 outside, def bump(): nonlocal count; count += 1; return count, and return bump. chain(*routines) defines def combined(devs): for routine in routines: routine(devs) and returns combined. make_toggle(device_id) returns a toggle() that flips devices[device_id]."
+    },
+    {
+      "title": "Tables",
+      "content": "ROOM_TOGGLES = {room.value: make_toggle(f\"{room.value}_light\") for room in Room}. PRESETS maps names to chain(dim_lights(15), blinds_to(0)) and friends. preset_uses = {name: make_counter() for name in PRESETS}; run_preset calls preset_uses[name]() for the count."
+    }
+  ],
+  "checks": [
+    {
+      "prompt": "What does this print?\n\n~~~python\nfns = []\nfor n in [1, 2, 3]:\n    fns.append(lambda: n)\nprint([f() for f in fns])\n~~~",
+      "question": {
+        "type": "choice",
+        "options": [
+          "[1, 2, 3]",
+          "[3, 3, 3]",
+          "[0, 0, 0]",
+          "It raises a NameError"
+        ],
+        "answer": 1
+      },
+      "explanation": "Each lambda captures the *variable* `n`, not its value at that moment. After the loop `n` is 3, so every call returns 3. Fix it with a factory, `lambda n=n: n`, or `functools.partial`."
+    },
+    {
+      "prompt": "When is `nonlocal` required inside a closure?",
+      "question": {
+        "type": "choice",
+        "options": [
+          "Whenever the closure reads an outer variable",
+          "When the closure rebinds (assigns to) an outer variable",
+          "When the closure calls an outer function",
+          "When the closure appends to an outer list"
+        ],
+        "answer": 1
+      },
+      "explanation": "Reading, calling and mutating (`items.append(...)`) all work without a declaration. Only assignment such as `count += 1` makes Python treat the name as local, so you must say `nonlocal count` to rebind the outer one."
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+{
+  "slug": "smart-home",
+  "title": "Smart Home Hub",
+  "tagline": "Wire up devices with callbacks, interfaces and the observer pattern.",
+  "pitch": "You are the brain of a house. Describe its devices, give them a contract, pass behaviour around as functions, then let a real event bus tie sensors, lights, locks and a thermostat together. By the end, rules like \"motion after sunset turns the hall light on\" run on code you wrote, and an automation panel shows which rule fired and why.",
+  "emoji": "🏠",
+  "difficulty": "Advanced",
+  "hours": 7,
+  "sceneId": "smart-home",
+  "prerequisites": [
+    "cargo-control"
+  ],
+  "accent": {
+    "from": "#34d399",
+    "to": "#0d9488"
+  },
+  "controls": [
+    "Click a room to walk there",
+    "Click a device to inspect it",
+    "Drag the clock to change the hour",
+    "Slide the outdoor temperature"
+  ],
+  "skills": [
+    "enums & dataclasses",
+    "ABCs & Protocols",
+    "functions as values",
+    "callbacks & lambdas",
+    "closures",
+    "decorators",
+    "observer pattern",
+    "dependency injection",
+    "generators & iterators",
+    "rule engines"
+  ],
+  "features": [
+    {
+      "id": "sh-blueprint",
+      "title": "Floor plan",
+      "blurb": "Every device in your catalog appears on the plan.",
+      "emoji": "🗺️"
+    },
+    {
+      "id": "sh-lights",
+      "title": "Smart lights",
+      "blurb": "Your Light objects glow in their rooms and obey commands.",
+      "emoji": "💡"
+    },
+    {
+      "id": "sh-lock",
+      "title": "Door lock",
+      "blurb": "The front door lock is a real object that locks and unlocks.",
+      "emoji": "🔒"
+    },
+    {
+      "id": "sh-climate",
+      "title": "Thermostat",
+      "blurb": "Your thermostat heats the house and decides when to switch on.",
+      "emoji": "🌡️"
+    },
+    {
+      "id": "sh-sensors",
+      "title": "Motion sensors",
+      "blurb": "Walk through the house and watch your sensors react.",
+      "emoji": "📡"
+    },
+    {
+      "id": "sh-comfort",
+      "title": "Speaker & blinds",
+      "blurb": "Music and blinds join the house, through small interfaces.",
+      "emoji": "🔊"
+    },
+    {
+      "id": "sh-routines",
+      "title": "Routines",
+      "blurb": "One tap runs a function from your routine table.",
+      "emoji": "🧰"
+    },
+    {
+      "id": "sh-traffic",
+      "title": "Traffic map",
+      "blurb": "Callbacks count visits and light the rooms you use most.",
+      "emoji": "👣"
+    },
+    {
+      "id": "sh-scenes",
+      "title": "Scenes",
+      "blurb": "Movie, Reading and Morning: functions built by function factories.",
+      "emoji": "🎬"
+    },
+    {
+      "id": "sh-audit",
+      "title": "Audit trail",
+      "blurb": "A decorator records every command the house receives.",
+      "emoji": "📜"
+    },
+    {
+      "id": "sh-eventlog",
+      "title": "Event log",
+      "blurb": "Every event on your bus streams into the log.",
+      "emoji": "📻"
+    },
+    {
+      "id": "sh-resilience",
+      "title": "Dead letters",
+      "blurb": "Handlers that crash are caught and shown, and the rest carry on.",
+      "emoji": "🛟"
+    },
+    {
+      "id": "sh-wiring",
+      "title": "Live wiring",
+      "blurb": "Sensors and thermostat now react to events, not special cases.",
+      "emoji": "🔌"
+    },
+    {
+      "id": "sh-phone",
+      "title": "Phone & clock",
+      "blurb": "Injected clock, daylight and notifier: alerts land on the phone.",
+      "emoji": "📱"
+    },
+    {
+      "id": "sh-timeline",
+      "title": "Timeline filters",
+      "blurb": "Generators stream filtered history and draw the day and night strip.",
+      "emoji": "⏱️"
+    },
+    {
+      "id": "sh-automations",
+      "title": "Automations",
+      "blurb": "Rules fire from events, and the panel shows which fired and why.",
+      "emoji": "⚡"
+    }
+  ],
+  "chapters": [
+    {
+      "id": "blueprint",
+      "title": "Blueprint",
+      "blurb": "Model the house with enums and dataclasses, then give every device a contract.",
+      "lessons": [
+        "01",
+        "02",
+        "03",
+        "04"
+      ]
+    },
+    {
+      "id": "delegates",
+      "title": "Delegates",
+      "blurb": "Functions are values: pass them, store them, return them, wrap them.",
+      "lessons": [
+        "05",
+        "06",
+        "07",
+        "08"
+      ]
+    },
+    {
+      "id": "observer",
+      "title": "Observer",
+      "blurb": "Build an event bus so the house reacts without everything knowing everything.",
+      "lessons": [
+        "09",
+        "10",
+        "11"
+      ]
+    },
+    {
+      "id": "brain",
+      "title": "The brain",
+      "blurb": "Inject dependencies, stream events lazily, and compose rules into automations.",
+      "lessons": [
+        "12",
+        "13",
+        "14"
+      ]
+    }
+  ]
+}
