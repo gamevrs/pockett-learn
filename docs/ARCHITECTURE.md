@@ -84,6 +84,7 @@ interface Runtime {
   throws after the time budget: 2 s for a run, 60 ms per hook call, 1 s per check.
 - **SQL setup.** `Project.setup` (schema + seed rows) runs before the learner's statements on a
   fresh database every time, so runs are deterministic and checks can `query()` the end state.
+- **SQL schema-design courses.** The SQL runtime also hands scenes `log` (a diary of every statement that returns no rows: verb, one-line text, rows changed, rows changed indirectly by triggers or foreign-key actions) and, per table or view, the stored CREATE text, column flags (NOT NULL, default, primary-key position, generated), foreign keys, indexes and triggers. A comment line `-- expect error` directly above a statement says "the database should refuse this": the refusal is logged (and printed) instead of stopping the run, and a statement that is accepted anyway is logged without an error. Checks get `log` as an extra argument, so a lesson can verify that a probe was refused for the right reason. Schema Studio (`schema-studio`) is built on this; `scripts/gen-schema-studio-demo.mjs` freezes its finished run into the scene's demo data.
 - **Compiled languages** (C#, C++, Go, Rust) run on Vercel Sandbox, a Firecracker microVM per run, via
   `/api/run` (code in `src/server/runner`). See "The compiled-language runner" below. Without
   `RUNNER_SNAPSHOT_ID` the route answers 503 and those courses show "coming soon".

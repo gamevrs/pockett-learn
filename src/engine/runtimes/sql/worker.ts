@@ -56,7 +56,7 @@ scope.onmessage = async (event) => {
         scope.postMessage({
           kind: "run",
           id: req.id,
-          payload: { stdout: run.stdout, error: run.error, tables: describeTables(run.db), results: run.results, result: last ?? null, rows: asObjects(last) },
+          payload: { stdout: run.stdout, error: run.error, tables: describeTables(run.db), results: run.results, result: last ?? null, rows: asObjects(last), log: run.log },
         });
       } else {
         const results = run.error ? [] : runSqlTests(run, req.tests);

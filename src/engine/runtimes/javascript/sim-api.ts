@@ -152,4 +152,18 @@ export const DEFAULT_ROUTES: Route[] = [
     },
   },
   { method: "GET", path: "/api/slow", latency: 3000, handle: () => json({ ok: true }) },
+  // a partner weather feed for the bike-share API project: deterministic per zone
+  {
+    method: "GET",
+    path: "/upstream/forecast/:zone",
+    latency: 120,
+    handle: (_req, p) => json(forecastFor(p.zone)),
+  },
 ];
+
+/** Deterministic pretend forecast for a zone name (the same zone always gets the same weather). */
+export function forecastFor(zone: string): { zone: string; tempC: number; rain: boolean; windKph: number } {
+  let h = 2166136261;
+  for (let i = 0; i < zone.length; i++) h = Math.imul(h ^ zone.charCodeAt(i), 16777619) >>> 0;
+  return { zone, tempC: 8 + (h % 15), rain: (h >>> 8) % 3 === 0, windKph: 4 + ((h >>> 12) % 26) };
+}

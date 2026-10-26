@@ -90,11 +90,16 @@ import {
 } from "lucide-react";
 import { Boxes, Calculator, KanbanSquare, Repeat, Route, Rows3, ScanBarcode, Signpost, Tag, Truck } from "lucide-react";
 import { Target as SaTarget, TrendingUp as SaTrend, Trophy as SaTrophy, ChartColumn as SaColumns, Gauge as SaGauge, CalendarDays as SaCalendar, Gavel as SaGavel, Award as SaAward, LayoutGrid as SaGrid, Swords as SaSwords, ChevronsUp as SaChevrons, Flame as SaFlame, ArrowUpDown as SaUpDown, Wrench as SaWrench, ScanSearch as SaScan, Crown as SaCrown } from "lucide-react";
+import { PencilRuler as SsRuler, BrickWall as SsWall, Link2 as SsLink, ArrowLeftRight as SsSwap, ScanSearch as SsScan, ListFilter as SsFilter, Eye as SsEye, Undo2 as SsUndo, DatabaseZap as SsBolt, Milestone as SsMilestone, CalendarCheck as SsCalendar } from "lucide-react";
 import { FileJson as FfFileJson, Puzzle as FfPuzzle, ScanLine as FfScanLine, ShoppingCart as FfShoppingCart, Sparkles as FfSparkles } from "lucide-react";
 import { Megaphone as EaMegaphone, Hash as EaHash, Timer as EaTimer, Star as EaStar, Trophy as EaTrophy, ChartColumn as EaChart, Radio as EaRadio, LifeBuoy as EaLifeBuoy, RotateCw as EaLoop, Globe as EaGlobe, Hand as EaHand, RefreshCw as EaRefresh, Rewind as EaRewind, Workflow as EaWorkflow } from "lucide-react";
 import { DoorOpen as RsDoor, Siren as RsSiren, Radar as RsRadar, NotebookText as RsNotebook, Vault as RsVault, Shell as RsShell, Inbox as RsInbox } from "lucide-react";
 import { Atom as RcAtom, MemoryStick as RcMemory, Blocks as RcBlocks, ChartCandlestick as RcCandles, UserRound as RcUser, Grid3x3 as RcGrid, Droplets as RcDroplets, Siren as RcSiren } from "lucide-react";
 import { IdCard as GoId, PackageOpen as GoParcel, ScanLine as GoScan, Signpost as GoSign, Ban as GoBan, Truck as GoTruck, Milestone as GoMilestone, ArrowDownUp as GoSort, Warehouse as GoWarehouse, Repeat as GoRepeat, Layers as GoLayers, ChartBar as GoBars, Scale as GoScale, ShieldCheck as GoShield, FileJson as GoJson, Flag as GoFlag, Terminal as GoTerminal, Split as GoSplit, ServerCog as GoServerCog } from "lucide-react";
+import { Ship as HpShip, Hourglass as HpHourglass, FileDiff as HpDiff, FileSignature as HpContract, Shapes as HpShapes, Plug as HpPlug } from "lucide-react";
+import { Landmark as ChLandmark, Scale as ChScale, BookOpenCheck as ChPosting, ShieldCheck as ChShield, Coins as ChCoins, Repeat1 as ChRepeat, Send as ChSend, ListTodo as ChQueue, Skull as ChSkull, FileSearch as ChAudit, ArchiveX as ChArchive, Building2 as ChBuilding, ScanSearch as ChPlan, Files as ChFiles, ReceiptText as ChReceipt, ChartNoAxesCombined as ChRollup, BadgeCheck as ChBadge, GitCompareArrows as ChMigrate, LockKeyhole as ChLock } from "lucide-react";
+import { Inbox as CaInbox, Plug as CaPlug, Network as CaNetwork, Repeat1 as CaRepeat, Archive as CaArchive, HeartPulse as CaHeart, Mailbox as CaMailbox, ToggleRight as CaToggle, Files as CaFiles } from "lucide-react";
+import { SlidersVertical as FlFaders, CirclePlay as FlGo, Eye as FlEye, Funnel as FlFunnel, CalendarRange as FlRange, ChartNoAxesGantt as FlGantt, Hand as FlHand, Mailbox as FlMailbox, Unplug as FlUnplug, Lamp as FlLamp, Network as FlNetwork, Drama as FlDrama } from "lucide-react";
 
 /**
  * Line icons for projects and unlockable features. The UI uses these instead of emoji so the
@@ -124,7 +129,7 @@ const PROJECT_ICONS: Record<string, LucideIcon> = {
   "season-analytics": ChartLine,
   "schema-studio": Table2,
   "csharp-basics": Hash,
-  "csharp-delegates": Workflow,
+  "csharp-delegates": FlDrama,
   "csharp-api": Server,
   "ai-foundations": OaApple,
   "ai-neural": OaSprout,
@@ -142,6 +147,8 @@ const PROJECT_ICONS: Record<string, LucideIcon> = {
   "go-inventory": GoWarehouse,
   "go-pipeline": GoSplit,
   "go-api": GoServerCog,
+  "counting-house": ChLandmark,
+  "csharp-linq": HpShip,
 };
 
 const FEATURE_ICONS: Record<string, LucideIcon> = {
@@ -260,6 +267,24 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   "sa-strategy": SaWrench,
   "sa-plan": SaScan,
   "sa-championship": SaCrown,
+  // Schema Studio
+  "ss-sketch": SsRuler,
+  "ss-tables": Table2,
+  "ss-firewall": SsWall,
+  "ss-keys": KeyRound,
+  "ss-checks": ListChecks,
+  "ss-links": SsLink,
+  "ss-refactor": Split,
+  "ss-junction": SsSwap,
+  "ss-plan": SsScan,
+  "ss-smart-indexes": SsFilter,
+  "ss-views": SsEye,
+  "ss-audit": History,
+  "ss-tx": SsUndo,
+  "ss-upsert": SsBolt,
+  "ss-json": Braces,
+  "ss-migrations": SsMilestone,
+  "ss-bookings": SsCalendar,
   // Cinder Depot
   "cs-console": Terminal,
   "cs-robot": Bot,
@@ -275,6 +300,28 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   "cs-parcels": KanbanSquare,
   "cs-safety": ShieldCheck,
   "cs-shift": Flag,
+  // Crux Desk
+  "ca-console": Terminal,
+  "ca-requests": CaInbox,
+  "ca-routes": Route,
+  "ca-pipeline": Layers,
+  "ca-di": CaNetwork,
+  "ca-endpoints": CaPlug,
+  "ca-problems": TriangleAlert,
+  "ca-store": Database,
+  "ca-auth": KeyRound,
+  "ca-ratelimit": Gauge,
+  "ca-idempotency": CaRepeat,
+  "ca-cache": CaArchive,
+  "ca-logs": ScrollText,
+  "ca-latency": ChartBar,
+  "ca-health": CaHeart,
+  "ca-resilience": ShieldAlert,
+  "ca-outbox": CaMailbox,
+  "ca-flags": CaToggle,
+  "ca-tests": ListChecks,
+  "ca-versions": CaFiles,
+  "ca-report": ClipboardList,
   // Graph Gateway
   "gql-explorer": Terminal,
   "gql-catalogue": Store,
@@ -389,6 +436,83 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   "oa-fit": OaPuzzle,
   "oa-features": OaFlask,
   "oa-sorter": OaBot,
+  // Dockline (JavaScript Professional)
+  "api-wire": Activity,
+  "api-pipeline": Workflow,
+  "api-routes": Route,
+  "api-logs": ScrollText,
+  "api-stations": MapIcon,
+  "api-validation": ClipboardCheck,
+  "api-problems": ShieldAlert,
+  "api-paging": Rows3,
+  "api-auth": KeyRound,
+  "api-authz": ShieldCheck,
+  "api-idempotency": Repeat,
+  "api-ratelimit": Gauge,
+  "api-cache": History,
+  "api-retry": EaRefresh,
+  "api-breaker": Zap,
+  "api-shutdown": Power,
+  "api-tests": FlaskConical,
+  "api-graph-query": Braces,
+  "api-graph": Waypoints,
+  // Halyard Port (C# Intermediate)
+  "hp-console": Terminal,
+  "hp-structures": GoWarehouse,
+  "hp-board": Table2,
+  "hp-groups": ChartBar,
+  "hp-joins": Merge,
+  "hp-lazy": HpHourglass,
+  "hp-records": HpDiff,
+  "hp-lanes": Split,
+  "hp-contracts": HpContract,
+  "hp-generics": HpShapes,
+  "hp-ext": HpPlug,
+  "hp-lookup": ScanSearch,
+  "hp-parser": MessageSquareText,
+  "hp-faults": TriangleAlert,
+  "hp-json": FfFileJson,
+  "hp-inbox": RsInbox,
+  "hp-report": ClipboardCheck,
+  // Counting House
+  "ch-trial": ChScale,
+  "ch-posting": ChPosting,
+  "ch-guards": ChShield,
+  "ch-money": ChCoins,
+  "ch-idem": ChRepeat,
+  "ch-outbox": ChSend,
+  "ch-queue": ChQueue,
+  "ch-dead": ChSkull,
+  "ch-audit": ChAudit,
+  "ch-retention": ChArchive,
+  "ch-tenants": ChBuilding,
+  "ch-plans": ChPlan,
+  "ch-pages": ChFiles,
+  "ch-statement": ChReceipt,
+  "ch-rollup": ChRollup,
+  "ch-quality": ChBadge,
+  "ch-migrations": ChMigrate,
+  "ch-close": ChLock,
+  // Footlight (C# Advanced)
+  "fl-console": Terminal,
+  "fl-cues": ClipboardList,
+  "fl-faders": FlFaders,
+  "fl-chain": Link2,
+  "fl-go": FlGo,
+  "fl-bus": RadioTower,
+  "fl-observers": FlEye,
+  "fl-props": Package,
+  "fl-iter": Footprints,
+  "fl-linq": FlFunnel,
+  "fl-runsheet": FlRange,
+  "fl-timeline": FlGantt,
+  "fl-hold": FlHand,
+  "fl-channel": FlMailbox,
+  "fl-retry": EaRefresh,
+  "fl-breaker": FlUnplug,
+  "fl-lifetimes": FlLamp,
+  "fl-wiring": FlNetwork,
+  "fl-show": FlDrama,
 };
 
 export function ProjectIcon({ slug, className = "h-4 w-4" }: { slug: string; className?: string }) {

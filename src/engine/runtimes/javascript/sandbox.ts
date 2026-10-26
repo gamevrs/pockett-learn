@@ -1,5 +1,6 @@
 import { SimNetwork, type Route } from "./sim-network.ts";
 import { DEFAULT_ROUTES } from "./sim-api.ts";
+import { hmacSha256 } from "./crypto-shim.ts";
 
 /**
  * The asynchronous world a learner's program lives in: timers, a clock and a network, all
@@ -354,6 +355,7 @@ export class Sandbox {
       Date: makeDate(sched),
       performance: PerformanceShim,
       AbortSignal: makeAbortSignal(sched),
+      hmacSha256,
     };
   }
 

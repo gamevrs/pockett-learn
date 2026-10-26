@@ -22,7 +22,7 @@ export function isRunnerLanguage(value: unknown): value is RunnerLanguage {
 
 export const LIMITS = {
   /** Bytes of source accepted. */
-  maxSource: 64 * 1024,
+  maxSource: 160 * 1024,
   /** Bytes of stdin accepted. */
   maxStdin: 64 * 1024,
   /** Bytes of stdout returned (more is cut off). */

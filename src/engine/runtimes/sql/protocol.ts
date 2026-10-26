@@ -1,6 +1,6 @@
 import type { SqlValue } from "sql.js";
 import type { RunError, TestCase, TestResult } from "../../types.ts";
-import type { ResultSet, TableInfo } from "./engine.ts";
+import type { ResultSet, StatementLog, TableInfo } from "./engine.ts";
 
 /** Messages between the SQL runtime (main thread) and its Web Worker. Types only. */
 
@@ -15,6 +15,8 @@ export interface RunPayload {
   results: ResultSet[];
   result: ResultSet | null;
   rows: Record<string, SqlValue>[];
+  /** The statement diary: DDL, DML, transactions and refused statements. */
+  log: StatementLog[];
 }
 
 export interface GradePayload {

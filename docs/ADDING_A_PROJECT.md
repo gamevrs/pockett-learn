@@ -81,3 +81,14 @@ The JavaScript runtime runs the learner's file as an async function body, so top
 - While the file and the checks run, time is virtual: when the program is idle the clock jumps to the next timer, so sleeping 5 s costs a millisecond. A Promise that can never settle fails with a clear message; a runaway `setInterval` hits a timer cap.
 - Checks get a `sim` helper: `sim.now()`, `await sim.tick(ms)`, `await sim.run()`, `sim.pending()` and `sim.network` (`failNext(urlPrefix, times, 503 | "network" | "hang")`, `setLatency`, `entries()`), plus `assertRejects(promiseOrFn, expected?)` and `assertThrows(fn, expected?)`.
 - After `run()` the program goes live (real timers and latency). Scenes call `program.callAsync(path, ...args)` to await a learner's async function and read `program.env.network` for the request log.
+
+## Scenes that make sound
+
+Audio is off by default and is controlled app-wide (navbar speaker, and a speaker in the stage title bar). A scene that makes sound must:
+
+- get its `AudioContext` from `getAudioContext()` and connect to `getAudioOutput()` (the shared master gain) in `src/lib/sound/audio.ts`; never `new AudioContext()` and never `ctx.destination`. Both return `null` while sound is off or before the first user interaction, so the scene must keep working silently then (Beat Lab falls back to a silent clock);
+- follow changes live with `subscribeProgress` + `isAudible()` (volume and mute are applied by the master gain; the scene only decides what to do when it flips);
+- show a gentle "Sound is off — turn it on" button (`enableAudio()`) when the person starts it while muted; never un-mute for them;
+- add its `sceneId` to `AUDIO_SCENE_IDS` so the stage shows the sound control and the "Sound off" chip.
+
+`node scripts/ui-check.mjs --only audio` drives all of this with real input.

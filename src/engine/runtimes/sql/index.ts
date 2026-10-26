@@ -118,7 +118,7 @@ export const sqlRuntime: Runtime = {
     // Scenes read the outcome as plain data: the tables, every result set, and the last one.
     const program = createStaticProgram({
       stdout: p.stdout,
-      vars: { tables: p.tables, results: p.results, result: p.result, rows: p.rows, error: p.error },
+      vars: { tables: p.tables, results: p.results, result: p.result, rows: p.rows, error: p.error, log: p.log },
     });
     return { stdout: p.stdout, error: p.error, durationMs, program: p.error ? null : program };
   },

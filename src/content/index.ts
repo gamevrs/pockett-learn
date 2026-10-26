@@ -9,9 +9,15 @@ import { cargoControl } from "./projects/cargo-control";
 import { storeApi } from "./projects/store-api";
 import { smartHome } from "./projects/smart-home";
 import { csharpBasics } from "./projects/csharp-basics";
+import { csharpLinq } from "./projects/csharp-linq";
+import { csharpDelegates } from "./projects/csharp-delegates";
+import { csharpApi } from "./projects/csharp-api";
 import { seasonAnalytics } from "./projects/season-analytics";
+import { schemaStudio } from "./projects/schema-studio";
+import { countingHouse } from "./projects/counting-house";
 import { formForge } from "./projects/form-forge";
 import { eventArena } from "./projects/event-arena";
+import { jsApi } from "./projects/js-api";
 import { graphqlGateway } from "./projects/graphql-gateway";
 import { rustBasics } from "./projects/rust-basics";
 import { goBasics } from "./projects/go-basics";
@@ -19,7 +25,7 @@ import { cppBasics } from "./projects/cpp-basics";
 import { aiFoundations } from "./projects/ai-foundations";
 
 /** Every playable project, in the order shown in the picker. */
-export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs, signalLab, cargoControl, storeApi, smartHome, seasonAnalytics, csharpBasics, formForge, eventArena, graphqlGateway, rustBasics, goBasics, cppBasics, aiFoundations];
+export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs, signalLab, cargoControl, storeApi, smartHome, seasonAnalytics, schemaStudio, countingHouse, csharpBasics, csharpLinq, csharpDelegates, csharpApi, formForge, eventArena, jsApi, graphqlGateway, rustBasics, goBasics, cppBasics, aiFoundations];
 
 /**
  * Planned (not yet built) projects. They fill out each language's path (Beginner → Intermediate →
@@ -181,11 +187,11 @@ const PLANNED: UpcomingProject[] = [
     slug: "csharp-api",
     language: "csharp",
     difficulty: "Professional",
-    title: "ASP.NET-style API",
-    tagline: "Build a routed, CRUD web API in the .NET style.",
-    emoji: "🌐",
+    title: "Crux Desk",
+    tagline: "Build a climbing-gym booking API from the ground up: routing, middleware, DI, auth and resilience.",
+    emoji: "🧗",
     accent: { from: "#8b5cf6", to: "#4c1d95" },
-    skills: ["routing", "CRUD", "dependency injection", "middleware"],
+    skills: ["routing", "middleware", "dependency injection", "authentication", "resilience"],
   },
   {
     slug: "rust-inventory",
