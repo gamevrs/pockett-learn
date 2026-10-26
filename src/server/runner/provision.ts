@@ -66,6 +66,9 @@ function stepScripts(cwd: string): { name: string; script: string; timeoutMs: nu
 apt-get update -y
 apt-get install -y --no-install-recommends g++ libc6-dev curl ca-certificates tar gzip xz-utils procps util-linux coreutils findutils
 apt-get install -y --no-install-recommends libssl3t64 || apt-get install -y --no-install-recommends libssl3 || true
+# .NET needs ICU unless it runs in invariant mode; install whichever libicuNN this release ships (best effort)
+ICU=$(apt-cache search --names-only '^libicu[0-9]+$' | awk '{print $1}' | sort -V | tail -n 1)
+[ -n "$ICU" ] && apt-get install -y --no-install-recommends "$ICU" || true
 g++ --version | head -n 1
 setpriv --version | head -n 1`,
     },
@@ -84,7 +87,8 @@ id pkbuild; id pkrun`,
       script: String.raw`curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
 bash /tmp/dotnet-install.sh --channel 10.0 --install-dir /opt/dotnet --no-path
 ln -sf /opt/dotnet/dotnet /usr/local/bin/dotnet
-/opt/dotnet/dotnet --version`,
+# learner code runs in invariant-globalization mode (run.sh); build steps do too, so ICU is never required
+DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 /opt/dotnet/dotnet --version`,
     },
     {
       name: "Go (latest stable)",
@@ -99,7 +103,7 @@ curl -fsSL "https://go.dev/dl/$V.linux-$GOARCH.tar.gz" | tar -C /usr/local -xzf 
       name: "Roslyn host (ReadyToRun publish)",
       timeoutMs: 10 * min,
       script: `${RID}
-export HOME=/root DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_ROOT=/opt/dotnet PATH=/opt/dotnet:$PATH
+export HOME=/root DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_ROOT=/opt/dotnet DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 PATH=/opt/dotnet:$PATH
 cd '${cwd}/${SETUP_DIR}'
 if ! dotnet publish Runner.csproj -c Release -r "$RID" --self-contained false -p:PublishReadyToRun=true -o /opt/pockett/runner; then
   echo "ReadyToRun publish failed, falling back to plain IL (slower first compile)"
