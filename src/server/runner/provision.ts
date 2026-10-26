@@ -103,7 +103,7 @@ curl -fsSL "https://go.dev/dl/$V.linux-$GOARCH.tar.gz" | tar -C /usr/local -xzf 
       name: "Roslyn host (ReadyToRun publish)",
       timeoutMs: 10 * min,
       script: `${RID}
-export HOME=/root DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_ROOT=/opt/dotnet DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 PATH=/opt/dotnet:$PATH
+export HOME=/root DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_ROOT=/opt/dotnet DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 DOTNET_EnableWriteXorExecute=0 PATH=/opt/dotnet:$PATH
 cd '${cwd}/${SETUP_DIR}'
 if ! dotnet publish Runner.csproj -c Release -r "$RID" --self-contained false -p:PublishReadyToRun=true -o /opt/pockett/runner; then
   echo "ReadyToRun publish failed, falling back to plain IL (slower first compile)"

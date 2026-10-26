@@ -161,7 +161,9 @@ chown -R pkbuild:pkbuild "$B"; chmod 755 "$B"
 chown -R pkrun:pkrun "$S"; chmod 700 "$S"
 
 PATHX=/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin
-DOTNETENV="DOTNET_ROOT=/opt/dotnet DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 DOTNET_TieredPGO=0 DOTNET_EnableDiagnostics=0"
+# EnableWriteXorExecute=0: W^X double-maps JIT memory through a memfd, which "ulimit -f" caps, so CoreCLR
+# would fail to start with "Out Of Memory". Turning it off also makes startup faster.
+DOTNETENV="DOTNET_ROOT=/opt/dotnet DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1 DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 DOTNET_TieredPGO=0 DOTNET_EnableDiagnostics=0 DOTNET_EnableWriteXorExecute=0"
 BENV="setpriv --reuid=pkbuild --regid=pkbuild --clear-groups --no-new-privs env -i PATH=$PATHX HOME=/home/pkbuild TMPDIR=$B LANG=C.UTF-8 GOCACHE=/home/pkbuild/.cache/go-build GOPATH=/home/pkbuild/go CGO_ENABLED=0 GOTOOLCHAIN=local GOPROXY=off GOTELEMETRY=off $DOTNETENV"
 RENV="setpriv --reuid=pkrun --regid=pkrun --clear-groups --no-new-privs env -i PATH=$PATHX HOME=$S TMPDIR=$S LANG=C.UTF-8 GOMEMLIMIT=512MiB $DOTNETENV"
 
