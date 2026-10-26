@@ -15,7 +15,7 @@ src/
       python.ts             Pyodide (python/host.ts + python/prelude.ts)
       javascript/           acorn loop-guard instrumentation + scoped execution
       sql/                  SQLite via sql.js, result sets + schema for scenes
-      remote.ts             C# / C++ / Go via /api/run → a sandboxed Piston runner (RUNNER_URL)
+      remote.ts             C# / C++ / Go via /api/run → a Vercel Sandbox microVM (src/server/runner)
     stage-style.ts        Pockett Stage design system for 3D demos (see STAGE_DESIGN_SYSTEM.md)
     compose.ts            the cumulative file (starter / reference solution per lesson)
     scene.ts, scene-kit   SceneProps contract + keyboard/touch input
@@ -84,9 +84,9 @@ interface Runtime {
   throws after the time budget: 2 s for a run, 60 ms per hook call, 1 s per check.
 - **SQL setup.** `Project.setup` (schema + seed rows) runs before the learner's statements on a
   fresh database every time, so runs are deterministic and checks can `query()` the end state.
-- **Compiled languages** need the runner. `/api/run` forwards to `RUNNER_URL` (a Piston-compatible
-  service) with compile/run timeouts and memory limits; the browser never sees the runner's
-  address or token. Without `RUNNER_URL` the route answers 503 and those courses show "coming soon".
+- **Compiled languages** (C#, C++, Go) run on Vercel Sandbox, a Firecracker microVM per run, via
+  `/api/run` (code in `src/server/runner`). See "The compiled-language runner" below. Without
+  `RUNNER_SNAPSHOT_ID` the route answers 503 and those courses show "coming soon".
 
 Adding a language: implement `Runtime` in `src/engine/runtimes/<lang>`, register it in
 `runtimes/index.ts` and `languages.ts`, and teach `scripts/validate-content.mjs` to run it.
@@ -96,6 +96,41 @@ Adding a language: implement `Runtime` in `src/engine/runtimes/<lang>`, register
 `Project.difficulty` is a tier: Beginner → Intermediate → Advanced → Professional (`TIERS` in `engine/types.ts`). The projects page renders one **path** per language, with a numbered tier ladder; each tier lists built projects (cards) and planned ones (`PLANNED` in `content/index.ts`, filtered by `PROJECTS` slugs into `UPCOMING`, so a built project replaces its planned entry automatically). `Project.prerequisites` feed the hub's "Recommended first" line. See ADDING_A_PROJECT.md.
 
 Python projects can declare Pyodide `packages` (e.g. `sqlite3`); `RunOptions.packages` carries them to `python/host.ts`, which loads each once per page. Lessons can add ungraded `checks` ("Check your understanding") rendered by `components/workspace/LessonChecks.tsx`.
+
+### The compiled-language runner
+
+- **Snapshot.** A Sandbox snapshot holds the toolchains: .NET 10 (LTS) runtime plus `/opt/pockett/runner`, a
+  ReadyToRun-compiled Roslyn host; g++ with a precompiled `bits/stdc++.h`; Go (official tarball) with a warm
+  std build cache; two unprivileged users (`pkbuild`, `pkrun`); and `/opt/pockett/run.sh`. Build it with
+  `POST /api/run/setup` (bearer `RUNNER_ADMIN_TOKEN`, 404 if unset, `maxDuration` 800 s) or
+  `node scripts/runner/build-snapshot.mjs`; both run the same routine (`provision.ts`), warm the caches by
+  compiling and running a program per language, then self-test the saved snapshot through the real run path.
+  Set the printed id as `RUNNER_SNAPSHOT_ID` and redeploy. Rebuild when you change `assets.ts` or want newer toolchains.
+- **Per request** (`execute.ts`): create a sandbox from the snapshot (1-2 vCPU, `deny-all` network incl. DNS,
+  60 s lifetime, not persistent), write the source and stdin, run `run.sh` as root with a random report marker,
+  parse the report (`result.ts`), then stop the sandbox after the response (`after()`, backed by the sandbox's own
+  timeout). `run.sh` compiles as `pkbuild` (10 s, `timeout`), runs as `pkrun` (3 s wall, no write access outside its
+  scratch dir; stdout capped by `ulimit -f` and `head -c` at 100 KB; 256 processes; 1 GiB address space for C++/Go,
+  256 MiB GC heap for .NET) and prints stdout, stderr, exit code, compiler output and timings. Auth is the
+  deployment's Vercel OIDC token, picked up by the SDK; there are no long-lived secrets.
+- **Line numbers.** Sources are never wrapped or renamed (`Program.cs`, `main.cpp`, `main.go`), so compiler
+  diagnostics and stack traces already use the learner's own lines. C# compiles in-process with Roslyn (debug build,
+  portable pdb) and runs as a normal `dotnet program.dll`, so `Program.cs:line N` appears in exception traces; the
+  usings that `dotnet new console` turns on are supplied as a separate hidden file.
+- **Response mapping.** `{ stdout, stderr, exitCode, compileError, timedOut }`. Compiler output goes to `compileError`
+  (temp paths and tool banners stripped); a timeout is exit 137 with a friendly message; silent crashes (segfault,
+  divide by zero) get an explanation. Errors: 400/413 bad input, 429 rate limited or busy, 502 runner failure,
+  503 not set up or snapshot gone.
+- **Abuse protection.** 64 KB source and stdin limits, a per-IP sliding window (30/min) and a global in-flight cap (8),
+  both in memory per server instance (best effort on serverless; Vercel's firewall and Sandbox quotas are the hard backstop).
+- **Strategies** (`RUNNER_MODE`). `fresh` (default) is one microVM per run: the strongest isolation, because nothing a
+  learner does can be observed by the next. `pool` keeps up to `RUNNER_POOL_SIZE` warm microVMs per server instance for
+  ~4 minutes / 40 runs and skips the create cost; every run still gets fresh scratch dirs, a root-owned toolchain, and
+  all `pkrun`/`pkbuild` processes and temp files are killed and deleted afterwards. The trade-off: learners then
+  share a VM over time (no network, no secrets in it, but a determined learner could leave something behind that
+  `pkbuild`'s caches or /tmp allow). Use it only if measured create latency is too high.
+- **Verify a deployment** with `node scripts/runner/smoke.mjs https://your.site --repeat 5` (hello, stdin, compile error,
+  infinite loop and runtime exception per language, with latency). Offline checks: `node scripts/runner/test.mjs`.
 
 ## Quality gates
 

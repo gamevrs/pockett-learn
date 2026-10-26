@@ -13,7 +13,7 @@ export interface LanguageInfo {
   monaco: string;
   /** Line comment prefix, used for the "YOUR TURN" marker in starters. */
   comment: string;
-  /** Where code executes. "server" languages need the remote runner (RUNNER_URL). */
+  /** Where code executes. "server" languages need the remote runner (RUNNER_SNAPSHOT_ID, see /api/run). */
   runsIn: "browser" | "server";
   /** One line for course cards. */
   engine: string;

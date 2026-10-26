@@ -10,11 +10,13 @@
     "typecheck": "tsc --noEmit",
     "validate": "node scripts/validate-content.mjs",
     "tune:garage": "node scripts/tune-garage.mjs",
-    "test:sync": "node scripts/test-sync-merge.mjs"
+    "test:sync": "node scripts/test-sync-merge.mjs",
+    "test:runner": "node scripts/runner/test.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@supabase/supabase-js": "^2.118.0",
+    "@vercel/sandbox": "3.6.1",
     "acorn": "^8.19.0",
     "acorn-walk": "^8.3.5",
     "canvas-confetti": "^1.9.4",

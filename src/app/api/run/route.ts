@@ -1,79 +1,95 @@
+import { after } from "next/server";
+import { APIError } from "@vercel/sandbox";
+import { LIMITS, isRunnerLanguage } from "@/server/runner/config";
+import { runSandboxed, runnerMode } from "@/server/runner/execute";
+import { ConcurrencyGate, SlidingWindowLimiter, clientIp } from "@/server/runner/limits";
+import { RunnerProtocolError } from "@/server/runner/result";
+
 /**
- * Proxy to the sandboxed code runner for compiled languages (C#, C++, Go).
+ * Sandboxed code runner for compiled languages (C#, C++, Go).
  *
- * RUNNER_URL points at a Piston-compatible service (https://github.com/engineer-man/piston), e.g.
- * a small self-hosted container. RUNNER_TOKEN, if set, is sent as the Authorization header.
- * The browser never talks to the runner directly, so its address and token stay private.
+ * Each request runs in a Vercel Sandbox (Firecracker microVM, no network) created from the toolchain
+ * snapshot in RUNNER_SNAPSHOT_ID. Build that snapshot with POST /api/run/setup or
+ * scripts/runner/build-snapshot.mjs. Auth is the deployment's Vercel OIDC token (picked up by the SDK).
+ *
+ * POST { language, source, stdin? } -> { stdout, stderr, exitCode, compileError, timedOut }
+ *   or { error } with a non-2xx status. The browser side is src/engine/runtimes/remote.ts.
  */
 
-const PISTON_LANGUAGE: Record<string, { language: string; file: string }> = {
-  csharp: { language: "csharp.net", file: "Program.cs" },
-  cpp: { language: "c++", file: "main.cpp" },
-  go: { language: "go", file: "main.go" },
-};
+// Compile (<= 10 s) + run (<= 3 s) + sandbox create/teardown, with headroom.
+export const maxDuration = 60;
 
-const MAX_SOURCE = 64 * 1024;
+function envInt(name: string, fallback: number): number {
+  const n = Number(process.env[name]);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
 
-interface PistonStage {
-  stdout?: string;
-  stderr?: string;
-  code?: number | null;
-  signal?: string | null;
+// Per server instance (best effort on serverless; see src/server/runner/limits.ts).
+const perIp = new SlidingWindowLimiter(envInt("RUNNER_RATE_PER_MIN", 30), 60_000);
+const inFlight = new ConcurrencyGate(envInt("RUNNER_MAX_CONCURRENCY", 8));
+
+function reply(body: Record<string, unknown>, status = 200, headers: Record<string, string> = {}) {
+  return Response.json(body, { status, headers: { "Cache-Control": "no-store", ...headers } });
+}
+
+function tooBusy(retryAfterSeconds: number, why: "fast" | "busy" = "busy") {
+  const error = why === "fast"
+    ? "You're running code very quickly. Wait a few seconds and try again."
+    : "The code runner is busy right now. Wait a few seconds and run again.";
+  return reply({ error }, 429, { "Retry-After": String(retryAfterSeconds) });
 }
 
 export async function POST(request: Request) {
-  const runner = process.env.RUNNER_URL;
-  if (!runner) {
-    return Response.json({ error: "The code runner for this language isn't set up yet." }, { status: 503 });
+  const snapshotId = process.env.RUNNER_SNAPSHOT_ID;
+  if (!snapshotId) return reply({ error: "The code runner isn't set up yet." }, 503);
+
+  // Browsers on other sites have no business calling this.
+  if (request.headers.get("sec-fetch-site") === "cross-site") return reply({ error: "Not allowed." }, 403);
+
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > 4 * (LIMITS.maxSource + LIMITS.maxStdin)) {
+    return reply({ error: "That program is too large to run." }, 413);
   }
 
-  let body: { language?: string; source?: string; stdin?: string };
+  let body: { language?: unknown; source?: unknown; stdin?: unknown };
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Invalid request." }, { status: 400 });
+    return reply({ error: "Invalid request." }, 400);
   }
-  const target = PISTON_LANGUAGE[body.language ?? ""];
-  if (!target || typeof body.source !== "string") {
-    return Response.json({ error: "Unsupported language." }, { status: 400 });
+  if (typeof body !== "object" || body === null || !isRunnerLanguage(body.language) || typeof body.source !== "string") {
+    return reply({ error: "Unsupported language." }, 400);
   }
-  if (body.source.length > MAX_SOURCE) {
-    return Response.json({ error: "That program is too large to run." }, { status: 413 });
+  const stdin = typeof body.stdin === "string" ? body.stdin : "";
+  if (Buffer.byteLength(body.source, "utf8") > LIMITS.maxSource || Buffer.byteLength(stdin, "utf8") > LIMITS.maxStdin) {
+    return reply({ error: "That program is too large to run." }, 413);
   }
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (process.env.RUNNER_TOKEN) headers.Authorization = process.env.RUNNER_TOKEN;
+  const limited = perIp.hit(clientIp(request.headers));
+  if (!limited.ok) return tooBusy(Math.ceil(limited.retryAfterMs / 1000), "fast");
+  const release = inFlight.tryAcquire();
+  if (!release) return tooBusy(3);
 
-  let res: Response;
   try {
-    res = await fetch(`${runner.replace(/\/$/, "")}/api/v2/execute`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        language: target.language,
-        version: "*",
-        files: [{ name: target.file, content: body.source }],
-        stdin: typeof body.stdin === "string" ? body.stdin.slice(0, MAX_SOURCE) : "",
-        compile_timeout: 10_000,
-        run_timeout: 3_000,
-        run_memory_limit: 256 * 1024 * 1024,
-      }),
-      signal: AbortSignal.timeout(20_000),
-    });
-  } catch {
-    return Response.json({ error: "The code runner didn't respond. Try again in a moment." }, { status: 502 });
+    const { result, timings } = await runSandboxed(
+      snapshotId,
+      { language: body.language, source: body.source, stdin },
+      (work) => after(() => work),
+    );
+    console.log(`[runner] ${body.language} mode=${runnerMode()} create=${timings.createMs}ms exec=${timings.execMs}ms total=${timings.totalMs}ms reused=${timings.reused} exit=${result.exitCode} compileError=${Boolean(result.compileError)} timedOut=${result.timedOut}`);
+    return reply({ ...result });
+  } catch (err) {
+    console.error("[runner] run failed", err);
+    if (err instanceof RunnerProtocolError) {
+      return reply({ error: "The code runner returned something unexpected. Try again in a moment." }, 502);
+    }
+    if (err instanceof APIError) {
+      const status = err.response.status;
+      if (status === 429) return tooBusy(5);
+      if (status === 404 || status === 410) return reply({ error: "The code runner needs to be rebuilt. Please try again later." }, 503);
+    }
+    return reply({ error: "The code runner didn't respond. Try again in a moment." }, 502);
+  } finally {
+    release();
   }
-  if (!res.ok) {
-    return Response.json({ error: `The code runner returned an error (${res.status}).` }, { status: 502 });
-  }
-
-  const data = (await res.json()) as { compile?: PistonStage; run?: PistonStage };
-  const compileFailed = data.compile && data.compile.code !== 0 && data.compile.code !== undefined && data.compile.code !== null;
-  const timedOut = data.run?.signal === "SIGKILL";
-  return Response.json({
-    stdout: (data.run?.stdout ?? "").slice(0, 100_000),
-    stderr: timedOut ? "Your program ran for too long and was stopped. Is there a loop that never ends?" : (data.run?.stderr ?? "").slice(0, 20_000),
-    exitCode: timedOut ? 137 : (data.run?.code ?? null),
-    compileError: compileFailed ? (data.compile?.stderr || data.compile?.stdout || "Compilation failed.") : null,
-  });
 }

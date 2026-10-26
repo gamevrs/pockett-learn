@@ -4,10 +4,11 @@ import { crashedResults, type Runtime } from "./types";
 import type { LanguageId, RunError, TestCase, TestResult } from "../types";
 
 /**
- * Compiled languages (C#, C++, Go) run on the pockett runner: /api/run forwards the source to a
- * sandboxed Piston-compatible service (RUNNER_URL). Programs can't be called back synchronously
- * from a scene, so scenes read what the program printed: `stdout`, plus any lines of the form
- * `@scene {json}` merged into the program's variables.
+ * Compiled languages (C#, C++, Go) run on the pockett runner: /api/run compiles and runs the source
+ * in a Vercel Sandbox microVM (src/server/runner). The file is compiled exactly as written, so the
+ * line numbers in compiler errors and stack traces are the learner's own. Programs can't be called
+ * back synchronously from a scene, so scenes read what the program printed: `stdout`, plus any lines
+ * of the form `@scene {json}` merged into the program's variables.
  *
  * Checks are JavaScript over the output: `stdout`, `lines`, `scene` (merged @scene data), and the
  * assert helpers.
@@ -33,14 +34,20 @@ async function execute(language: LanguageId, source: string, setup?: string): Pr
 }
 
 function lineFrom(text: string): number | null {
-  // gcc "main.cpp:12:5:", dotnet "(12,5)", go "main.go:12:5:"
-  const m = /:(\d+):\d+:/.exec(text) ?? /\((\d+),\d+\)/.exec(text);
+  // gcc "main.cpp:12:5:", go "./main.go:12:5:", Roslyn "Program.cs(12,5):",
+  // .NET stack trace "in Program.cs:line 12", Go panic trace "main.go:12 +0x1d"
+  const m = /:(\d+):\d+:/.exec(text) ?? /\((\d+),\d+\)/.exec(text) ?? /:line (\d+)/.exec(text) ?? /\.go:(\d+)\b/.exec(text);
   return m ? Number(m[1]) : null;
+}
+
+/** First few meaningful lines of a crash report (blank lines dropped, .NET's boilerplate prefix removed). */
+function summarize(text: string): string {
+  return text.trim().replace(/^Unhandled exception\.\s*/, "").split("\n").filter((l) => l.trim() !== "").slice(0, 6).join("\n");
 }
 
 function toError(r: RemoteResult): RunError | null {
   if (r.compileError) return { type: "CompileError", message: r.compileError.trim().split("\n").slice(0, 6).join("\n"), line: lineFrom(r.compileError) };
-  if (r.exitCode && r.exitCode !== 0) return { type: "RuntimeError", message: (r.stderr || `exited with code ${r.exitCode}`).trim().split("\n").slice(0, 6).join("\n"), line: lineFrom(r.stderr) };
+  if (r.exitCode && r.exitCode !== 0) return { type: "RuntimeError", message: summarize(r.stderr || `exited with code ${r.exitCode}`), line: lineFrom(r.stderr) };
   return null;
 }
 
