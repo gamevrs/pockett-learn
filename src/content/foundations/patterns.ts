@@ -326,48 +326,48 @@ assert Checkout(Drone()).shipping(9) == 20, "Checkout should work with any objec
       steps: [
         {
           kind: "explain",
-          title: "A station that knows too much",
-          body: "A weather station has to update a phone app, a window display and a log file whenever the temperature changes:\n\n" +
+          title: "A lighthouse that knows too much",
+          body: "A lighthouse has to warn a passing ship, the harbour office and the keeper's logbook whenever the fog thickens:\n\n" +
             py(`
-class WeatherStation:
-    def set_temperature(self, t):
-        self.temperature = t
-        phone_app.show(t)
-        window_display.refresh(t)
-        log_file.write(t)
-        # the garden sprinkler wants this too...
+class Lighthouse:
+    def set_fog(self, level):
+        self.fog = level
+        ship_radio.warn(level)
+        harbour_office.refresh(level)
+        logbook.write(level)
+        # the ferry company wants these warnings too...
 `) +
-            "\n\nThe station is **hard-wired** to every display. It has to know their names and their methods.",
+            "\n\nThe lighthouse is **hard-wired** to every receiver. It has to know their names and their methods.",
         },
         {
           kind: "question",
-          title: "Mute the phone",
-          body: "A user turns off phone notifications while the program runs. With this code, what's needed?",
+          title: "Quiet the ship",
+          body: "The ship sails out of range and should stop receiving warnings while the program runs. With this code, what's needed?",
           question: {
             type: "choice",
             options: [
-              "Nothing: the phone app can just ignore the call.",
-              "Edit set_temperature, or add a flag check inside it, then redeploy.",
-              "Delete the phone_app object.",
-              "Restart the weather station.",
+              "Nothing: ship_radio can just ignore the call.",
+              "Edit set_fog, or add a flag check inside it, then redeploy.",
+              "Delete the ship_radio object.",
+              "Switch the lighthouse lamp off and on again.",
             ],
             answer: 1,
           },
-          explanation: "Who gets told is **baked into the station's code**, so it can't change at runtime. Every new listener, and every listener that wants to stop, means editing the station.",
+          explanation: "Who gets told is **baked into the lighthouse's code**, so it can't change at runtime. Every new listener, and every listener that wants to stop, means editing the lighthouse.",
         },
         {
           kind: "explain",
           title: "Subscribe, publish",
-          body: "**Observer** flips it around. The station keeps a plain **list of subscribers**. Anyone can subscribe or unsubscribe. When a reading comes in, the station loops over the list and calls `update(value)` on each one, without knowing what they are.\n\nSubscribe a few observers and publish.",
-          widget: { type: "observer", props: { initial: ["phone", "logger"] } },
+          body: "**Observer** flips it around. The lighthouse keeps a plain **list of subscribers**. Anyone can subscribe or unsubscribe. When a new fog level comes in, the lighthouse loops over the list and calls `update(value)` on each one, without knowing what they are.\n\nSubscribe a few observers and publish.",
+          widget: { type: "observer", props: { initial: ["ship", "logbook"] } },
         },
         {
           kind: "question",
           title: "Only these two",
-          body: "Make the **next reading** reach only the **window display** and the **logger**. Change the subscriptions, then publish.",
-          widget: { type: "observer", props: { initial: ["phone", "sprinkler"] } },
-          question: { type: "widget", goal: { lastDelivered: ["window", "logger"] } },
-          explanation: "You rewired who hears the news **while the program ran**, and the station's code didn't change once. It just walks whatever list it has.",
+          body: "Make the **next fog level** reach only the **harbour office** and the **logbook**. Change the subscriptions, then publish.",
+          widget: { type: "observer", props: { initial: ["ship", "ferry"] } },
+          question: { type: "widget", goal: { lastDelivered: ["harbour", "logbook"] } },
+          explanation: "You rewired who hears the news **while the program ran**, and the lighthouse's code didn't change once. It just walks whatever list it has.",
         },
         {
           kind: "explain",
@@ -379,22 +379,22 @@ class WeatherStation:
           kind: "question",
           title: "Count the calls",
           body: py(`
-station = Station()
-station.subscribe(phone)
-station.subscribe(logger)
-station.publish(21)
-station.unsubscribe(phone)
-station.publish(25)
+lighthouse = Lighthouse()
+lighthouse.subscribe(ship)
+lighthouse.subscribe(logbook)
+lighthouse.publish(21)
+lighthouse.unsubscribe(ship)
+lighthouse.publish(25)
 `) + "\n\nHow many `update` calls happen in total?",
           question: { type: "number", answer: 3 },
-          explanation: "The first publish reaches phone and logger (2 calls). After phone unsubscribes, the second reaches only logger (1 call). **2 + 1 = 3**.",
+          explanation: "The first publish reaches ship and logbook (2 calls). After ship unsubscribes, the second reaches only logbook (1 call). **2 + 1 = 3**.",
         },
         {
           kind: "code",
           title: "Build a subject",
-          body: "Fill in `subscribe`, `unsubscribe` and `publish`. `publish` calls `update(value)` on every current subscriber. The tests subscribe an `Alarm` class your station has never heard of.",
+          body: "Fill in `subscribe`, `unsubscribe` and `publish`. `publish` calls `update(value)` on every current subscriber. The tests subscribe an `Alarm` class your lighthouse has never heard of.",
           language: "python",
-          starter: `class Station:
+          starter: `class Lighthouse:
     def __init__(self):
         self.observers = []
 
@@ -418,7 +418,7 @@ class Recorder:
     def update(self, value):
         self.seen.append(value)
 `,
-          solution: `class Station:
+          solution: `class Lighthouse:
     def __init__(self):
         self.observers = []
 
@@ -444,7 +444,7 @@ class Recorder:
             {
               id: "t1",
               description: "Every subscriber gets the reading",
-              assertionCode: `s = Station()
+              assertionCode: `s = Lighthouse()
 a = Recorder()
 b = Recorder()
 s.subscribe(a)
@@ -455,7 +455,7 @@ assert a.seen == [21] and b.seen == [21], "After publish(21), both recorders sho
             {
               id: "t2",
               description: "Unsubscribed observers stop hearing",
-              assertionCode: `s = Station()
+              assertionCode: `s = Lighthouse()
 a = Recorder()
 b = Recorder()
 s.subscribe(a)
@@ -475,11 +475,11 @@ assert b.seen == [21, 25], "b is still subscribed and should have seen both read
     def update(self, value):
         if value > 30:
             self.rang = True
-s = Station()
+s = Lighthouse()
 alarm = Alarm()
 s.subscribe(alarm)
 s.publish(35)
-assert alarm.rang, "The station should call update() on any subscriber, not just Recorders"`,
+assert alarm.rang, "The lighthouse should call update() on any subscriber, not just Recorders"`,
             },
           ],
           hints: ["Lists have `append` and `remove`.", "publish: `for observer in self.observers:` then `observer.update(value)`."],
@@ -503,13 +503,13 @@ assert alarm.rang, "The station should call update() on any subscriber, not just
         {
           kind: "question",
           title: "Leaving politely",
-          body: "A settings screen subscribes to the station when it opens. The user closes the screen. What should the screen do?",
+          body: "A fog-map screen subscribes to the lighthouse when it opens. The user closes the screen. What should the screen do?",
           question: {
             type: "choice",
             options: [
               "Nothing: closed screens are cleaned up automatically.",
-              "Unsubscribe, or the station keeps calling it and keeps it alive in memory.",
-              "Delete the station.",
+              "Unsubscribe, or the lighthouse keeps calling it and keeps it alive in memory.",
+              "Demolish the lighthouse.",
               "Publish a final reading.",
             ],
             answer: 1,
@@ -868,67 +868,67 @@ print(price_with_tax(100, settings))
         {
           kind: "explain",
           title: "A class for every combination",
-          body: "A coffee shop models its drinks with inheritance:\n\n" +
+          body: "A courier models its shipments with inheritance:\n\n" +
             py(`
-class Coffee: ...
-class CoffeeWithMilk(Coffee): ...
-class CoffeeWithCaramel(Coffee): ...
-class CoffeeWithMilkAndCaramel(Coffee): ...
-class CoffeeWithMilkAndShot(Coffee): ...
-class CoffeeWithMilkAndCaramelAndShot(Coffee): ...
-# ...and a customer wants double caramel
+class Parcel: ...
+class WrappedParcel(Parcel): ...
+class TrackedParcel(Parcel): ...
+class WrappedTrackedParcel(Parcel): ...
+class WrappedInsuredParcel(Parcel): ...
+class WrappedTrackedInsuredParcel(Parcel): ...
+# ...and a customer wants a second layer of wrap
 `) +
             "\n\nEvery new add-on doubles the number of classes.",
         },
         {
           kind: "question",
           title: "How bad does it get?",
-          body: "The shop has **5 add-ons**, and each can be on or off. Counting plain coffee, how many classes would cover every combination?",
+          body: "The courier offers **5 label options**, and each can be on or off. Counting the plain parcel, how many classes would cover every combination?",
           question: { type: "number", answer: 32, unit: "classes" },
-          explanation: "Each add-on doubles the count, just like bits: 2⁵ = **32**. And that's without doubles (two shots) or ordering. Inheritance fixes combinations at the time you write the code.",
+          explanation: "Each add-on doubles the count, just like bits: 2⁵ = **32**. And that's without repeats (two layers of wrap) or ordering. Inheritance fixes combinations at the time you write the code.",
         },
         {
           kind: "explain",
           title: "Wrap instead",
-          body: "A **decorator** wraps a drink and *is* a drink itself: it has the same `cost()` and `description()`. Each wrapper asks the drink inside, then adds its own bit. Because wrappers are drinks, you can wrap a wrapper.\n\nAdd layers, tap one to move or remove it, and watch the cost build from the inside out.",
-          widget: { type: "decorator", props: { initial: ["milk"] } },
+          body: "A **decorator** wraps a shipment and *is* a shipment itself: it has the same `cost()` and `description()`. Each wrapper asks the shipment inside, then adds its own bit. Because wrappers are shipments, you can wrap a wrapper.\n\nAdd layers, tap one to move or remove it, and watch the cost build from the inside out.",
+          widget: { type: "decorator", props: { initial: ["wrap"] } },
         },
         {
           kind: "question",
           title: "Build a $3.10 order",
-          body: "Start from plain coffee ($2.00) and wrap it until the order costs exactly **$3.10**.",
-          widget: { type: "decorator", props: { addons: ["milk", "caramel", "shot", "cream"] } },
+          body: "Start from a plain parcel ($2.00 postage) and wrap it until the label costs exactly **$3.10**.",
+          widget: { type: "decorator", props: { addons: ["wrap", "track", "insure", "sign"] } },
           question: { type: "widget", goal: { cost: 3.1 } },
-          explanation: "Milk ($0.50) and whipped cream ($0.60) add up to $1.10 on top of $2.00. Two small classes covered a combination that would have needed its own subclass.",
+          explanation: "Bubble wrap ($0.50) and a signature ($0.60) add up to $1.10 on top of $2.00. Two small classes covered a combination that would have needed its own subclass.",
         },
         {
           kind: "explain",
           title: "The roles",
-          body: "Plain coffee and every add-on share one **component** interface. The **decorator** holds an `inner` component, and its methods call `inner` and add to the result.",
+          body: "The plain parcel and every label option share one **component** interface. The **decorator** holds an `inner` component, and its methods call `inner` and add to the result.",
           widget: { type: "pattern-roles", props: { pattern: "decorator", highlight: ["decorator"] } },
         },
         {
           kind: "question",
           title: "Order matters",
-          body: "This order is `Shot(HalfPrice(Coffee()))`: the discount only halves the coffee, so it costs $1.90. **Reorder the two layers** so the half-price deal covers the whole drink.",
-          widget: { type: "decorator", props: { addons: ["shot", "half"], initial: ["half", "shot"] } },
-          question: { type: "widget", goal: { layers: ["shot", "half"] } },
-          explanation: "`HalfPrice(Shot(Coffee()))` halves everything inside it: (2.00 + 0.90) ÷ 2 = **$1.45**. Each layer only sees what's *inside* it, so the outer layers get the last word.",
+          body: "This label is `Insurance(HalfPrice(Parcel()))`: the half-price deal only halves the postage, so it costs $1.90. **Reorder the two layers** so the half-price deal covers the whole label.",
+          widget: { type: "decorator", props: { addons: ["insure", "half"], initial: ["half", "insure"] } },
+          question: { type: "widget", goal: { layers: ["insure", "half"] } },
+          explanation: "`HalfPrice(Insurance(Parcel()))` halves everything inside it: (2.00 + 0.90) ÷ 2 = **$1.45**. Each layer only sees what's *inside* it, so the outer layers get the last word.",
         },
         {
           kind: "code",
           title: "Write a decorator",
-          body: "`Milk` is done for you. Write `Caramel` the same way: it wraps an inner drink, adds 0.70 to the cost and `\", caramel\"` to the description.",
+          body: "`BubbleWrap` is done for you. Write `Tracking` the same way: it wraps an inner shipment, adds 0.70 to the cost and `\", tracking\"` to the description.",
           language: "python",
-          starter: `class Coffee:
+          starter: `class Parcel:
     def cost(self):
         return 2.0
 
     def description(self):
-        return "Coffee"
+        return "Parcel"
 
 
-class Milk:
+class BubbleWrap:
     def __init__(self, inner):
         self.inner = inner
 
@@ -936,23 +936,23 @@ class Milk:
         return self.inner.cost() + 0.5
 
     def description(self):
-        return self.inner.description() + ", milk"
+        return self.inner.description() + ", bubble wrap"
 
 
-class Caramel:
-    # TODO: wrap an inner drink like Milk does;
-    # add 0.7 to the cost and ", caramel" to the description
+class Tracking:
+    # TODO: wrap an inner shipment like BubbleWrap does;
+    # add 0.7 to the cost and ", tracking" to the description
     pass
 `,
-          solution: `class Coffee:
+          solution: `class Parcel:
     def cost(self):
         return 2.0
 
     def description(self):
-        return "Coffee"
+        return "Parcel"
 
 
-class Milk:
+class BubbleWrap:
     def __init__(self, inner):
         self.inner = inner
 
@@ -960,10 +960,10 @@ class Milk:
         return self.inner.cost() + 0.5
 
     def description(self):
-        return self.inner.description() + ", milk"
+        return self.inner.description() + ", bubble wrap"
 
 
-class Caramel:
+class Tracking:
     def __init__(self, inner):
         self.inner = inner
 
@@ -971,26 +971,26 @@ class Caramel:
         return self.inner.cost() + 0.7
 
     def description(self):
-        return self.inner.description() + ", caramel"
+        return self.inner.description() + ", tracking"
 `,
           tests: [
             {
               id: "t1",
-              description: "Caramel(Coffee()) costs 2.70",
-              assertionCode: `d = Caramel(Coffee())
-assert round(d.cost(), 2) == 2.7, "Caramel(Coffee()).cost() should be 2.7"
-assert d.description() == "Coffee, caramel", "description should be 'Coffee, caramel'"`,
+              description: "Tracking(Parcel()) costs 2.70",
+              assertionCode: `d = Tracking(Parcel())
+assert round(d.cost(), 2) == 2.7, "Tracking(Parcel()).cost() should be 2.7"
+assert d.description() == "Parcel, tracking", "description should be 'Parcel, tracking'"`,
             },
             {
               id: "t2",
-              description: "Caramel can wrap Milk",
-              assertionCode: `d = Caramel(Milk(Coffee()))
-assert round(d.cost(), 2) == 3.2, "Caramel(Milk(Coffee())).cost() should be 3.2"
-assert d.description() == "Coffee, milk, caramel", "description should be 'Coffee, milk, caramel'"`,
+              description: "Tracking can wrap BubbleWrap",
+              assertionCode: `d = Tracking(BubbleWrap(Parcel()))
+assert round(d.cost(), 2) == 3.2, "Tracking(BubbleWrap(Parcel())).cost() should be 3.2"
+assert d.description() == "Parcel, bubble wrap, tracking", "description should be 'Parcel, bubble wrap, tracking'"`,
             },
-            { id: "t3", description: "Double caramel stacks", assertionCode: `assert round(Caramel(Caramel(Coffee())).cost(), 2) == 3.4, "Two caramel layers should cost 3.4"` },
+            { id: "t3", description: "Two tracking layers stack", assertionCode: `assert round(Tracking(Tracking(Parcel())).cost(), 2) == 3.4, "Two tracking layers should cost 3.4"` },
           ],
-          hints: ["Copy Milk's three methods into Caramel and change the numbers and the text.", "`cost` returns `self.inner.cost() + 0.7`."],
+          hints: ["Copy BubbleWrap's three methods into Tracking and change the numbers and the text.", "`cost` returns `self.inner.cost() + 0.7`."],
         },
         {
           kind: "question",
@@ -1019,7 +1019,7 @@ print(ask())
             options: ["PLEASE, PASS THE SALT!", "please, PASS THE SALT!", "please, pass the salt", "PASS THE SALT!please, "],
             answer: 0,
           },
-          explanation: "Decorators apply bottom-up, so `ask` is `shout(polite(ask))`. The inner wrapper makes \"please, pass the salt\", then the outer one upper-cases it and adds \"!\". Same rule as the coffee: the **outer layer gets the last word**.",
+          explanation: "Decorators apply bottom-up, so `ask` is `shout(polite(ask))`. The inner wrapper makes \"please, pass the salt\", then the outer one upper-cases it and adds \"!\". Same rule as the parcel label: the **outer layer gets the last word**.",
         },
         {
           kind: "question",
@@ -1201,7 +1201,7 @@ assert checkout(BankAdapter(LegacyBank()), 5) == "paid", "checkout should accept
             ],
             answer: 1,
           },
-          explanation: "Ask *what the outside looks like*. A decorated coffee is still a coffee (same methods). An adapted bank looks like a **different thing**: a payment gateway.",
+          explanation: "Ask *what the outside looks like*. A decorated parcel is still a parcel (same methods). An adapted bank looks like a **different thing**: a payment gateway.",
         },
         {
           kind: "question",

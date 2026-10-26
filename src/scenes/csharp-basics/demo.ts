@@ -1,7 +1,7 @@
 import { createStaticProgram, type ProgramHandle } from "@/engine/program";
 
 /**
- * What the finished C# Foundations program prints (the real output of the reference solution,
+ * What the finished Cinder Depot program prints (the real output of the reference solution,
  * frozen), so the landing page can show the depot board without calling the code runner.
  */
 

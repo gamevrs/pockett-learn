@@ -6,15 +6,15 @@ import type { WidgetProps } from "@/learn/widget";
 import { Caption, money } from "./ui";
 
 /**
- * Decorator: wrap a plain coffee in add-ons. Each wrapper holds the drink inside it and adds to
+ * Decorator: wrap a plain parcel in label options. Each wrapper holds the parcel inside it and adds to
  * cost() and description(). Stack, reorder and remove layers; watch the price compose.
  */
 
 const ADDONS = {
-  milk: { label: "Milk", cls: "Milk", desc: "milk", apply: (c: number) => c + 50, rule: "+ $0.50" },
-  caramel: { label: "Caramel", cls: "Caramel", desc: "caramel", apply: (c: number) => c + 70, rule: "+ $0.70" },
-  shot: { label: "Extra shot", cls: "Shot", desc: "extra shot", apply: (c: number) => c + 90, rule: "+ $0.90" },
-  cream: { label: "Whipped cream", cls: "Cream", desc: "cream", apply: (c: number) => c + 60, rule: "+ $0.60" },
+  wrap: { label: "Bubble wrap", cls: "BubbleWrap", desc: "bubble wrap", apply: (c: number) => c + 50, rule: "+ $0.50" },
+  track: { label: "Tracking", cls: "Tracking", desc: "tracking", apply: (c: number) => c + 70, rule: "+ $0.70" },
+  insure: { label: "Insurance", cls: "Insurance", desc: "insurance", apply: (c: number) => c + 90, rule: "+ $0.90" },
+  sign: { label: "Signature", cls: "Signature", desc: "signature", apply: (c: number) => c + 60, rule: "+ $0.60" },
   half: { label: "Half price", cls: "HalfPrice", desc: "half price", apply: (c: number) => Math.round(c / 2), rule: "× ½" },
 } as const;
 type AddonId = keyof typeof ADDONS;
@@ -41,8 +41,8 @@ interface Layer {
 
 function compute(layers: AddonId[]) {
   let cents = BASE_CENTS;
-  const steps: { label: string; rule: string; cents: number }[] = [{ label: "Coffee", rule: "", cents }];
-  let description = "Coffee";
+  const steps: { label: string; rule: string; cents: number }[] = [{ label: "Parcel", rule: "", cents }];
+  let description = "Parcel";
   for (const id of layers) {
     const a = ADDONS[id];
     cents = a.apply(cents);
@@ -85,14 +85,14 @@ export function Decorator({ props, onChange, revealed }: WidgetProps<DecoratorPr
     setSelected(null);
   };
 
-  const expr = ids.reduce((inner, id) => `${ADDONS[id].cls}(${inner})`, "Coffee()");
+  const expr = ids.reduce((inner, id) => `${ADDONS[id].cls}(${inner})`, "Parcel()");
 
   // outermost first, each box nested inside the previous one
   const renderFrom = (i: number): React.ReactNode => {
     if (i < 0) {
       return (
         <div className="rounded-lg border border-[var(--line-strong)] bg-surface px-3 py-2.5 text-center">
-          <p className="text-sm font-semibold text-ink">Coffee</p>
+          <p className="text-sm font-semibold text-ink">Parcel</p>
           <p className="font-mono text-[11px] text-ink-2">cost() = $2.00</p>
         </div>
       );
@@ -138,7 +138,7 @@ export function Decorator({ props, onChange, revealed }: WidgetProps<DecoratorPr
 
       <div className="mt-4 grid gap-4 sm:grid-cols-[1.1fr_1fr]">
         <div className="min-w-0">
-          <Caption>The order, outside in</Caption>
+          <Caption>The label, outside in</Caption>
           <div className="mt-2">{renderFrom(layers.length - 1)}</div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {selIndex >= 0 && !revealed ? (

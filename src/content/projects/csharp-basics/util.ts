@@ -1,5 +1,5 @@
 /**
- * Authoring helpers for the C# Foundations course.
+ * Authoring helpers for the Cinder Depot course.
  *
  *  - `cs` is String.raw: C# source and the JavaScript check code go through it untouched, so
  *    `\n`, `\"` and `\t` stay exactly as written.

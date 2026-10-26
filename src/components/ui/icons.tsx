@@ -92,11 +92,16 @@ import { Boxes, Calculator, KanbanSquare, Repeat, Route, Rows3, ScanBarcode, Sig
 import { Target as SaTarget, TrendingUp as SaTrend, Trophy as SaTrophy, ChartColumn as SaColumns, Gauge as SaGauge, CalendarDays as SaCalendar, Gavel as SaGavel, Award as SaAward, LayoutGrid as SaGrid, Swords as SaSwords, ChevronsUp as SaChevrons, Flame as SaFlame, ArrowUpDown as SaUpDown, Wrench as SaWrench, ScanSearch as SaScan, Crown as SaCrown } from "lucide-react";
 import { FileJson as FfFileJson, Puzzle as FfPuzzle, ScanLine as FfScanLine, ShoppingCart as FfShoppingCart, Sparkles as FfSparkles } from "lucide-react";
 import { Megaphone as EaMegaphone, Hash as EaHash, Timer as EaTimer, Star as EaStar, Trophy as EaTrophy, ChartColumn as EaChart, Radio as EaRadio, LifeBuoy as EaLifeBuoy, RotateCw as EaLoop, Globe as EaGlobe, Hand as EaHand, RefreshCw as EaRefresh, Rewind as EaRewind, Workflow as EaWorkflow } from "lucide-react";
+import { DoorOpen as RsDoor, Siren as RsSiren, Radar as RsRadar, NotebookText as RsNotebook, Vault as RsVault, Shell as RsShell, Inbox as RsInbox } from "lucide-react";
+import { Atom as RcAtom, MemoryStick as RcMemory, Blocks as RcBlocks, ChartCandlestick as RcCandles, UserRound as RcUser, Grid3x3 as RcGrid, Droplets as RcDroplets, Siren as RcSiren } from "lucide-react";
+import { IdCard as GoId, PackageOpen as GoParcel, ScanLine as GoScan, Signpost as GoSign, Ban as GoBan, Truck as GoTruck, Milestone as GoMilestone, ArrowDownUp as GoSort, Warehouse as GoWarehouse, Repeat as GoRepeat, Layers as GoLayers, ChartBar as GoBars, Scale as GoScale, ShieldCheck as GoShield, FileJson as GoJson, Flag as GoFlag, Terminal as GoTerminal, Split as GoSplit, ServerCog as GoServerCog } from "lucide-react";
 
 /**
  * Line icons for projects and unlockable features. The UI uses these instead of emoji so the
  * product reads consistently and professionally. Content keeps its `emoji` field for exports.
  */
+
+import { Apple as OaApple, ChartColumn as OaStats, ChartScatter as OaScatter, FlaskConical as OaFlask, Grid3x3 as OaGrid, Headset as OaHeadset, Languages as OaLanguages, Mountain as OaMountain, DollarSign as OaDollar, Scale as OaScale, Scissors as OaScissors, Sprout as OaSprout, Target as OaTarget, Thermometer as OaThermo, TrendingUp as OaTrend, Vote as OaVote, Bot as OaBot, Puzzle as OaPuzzle, SlidersHorizontal as OaSliders } from "lucide-react";
 
 const PROJECT_ICONS: Record<string, LucideIcon> = {
   garage: Car,
@@ -121,6 +126,22 @@ const PROJECT_ICONS: Record<string, LucideIcon> = {
   "csharp-basics": Hash,
   "csharp-delegates": Workflow,
   "csharp-api": Server,
+  "ai-foundations": OaApple,
+  "ai-neural": OaSprout,
+  "ai-language": OaLanguages,
+  "ai-assistant": OaHeadset,
+  "rust-basics": Waves,
+  "rust-inventory": ScrollText,
+  "rust-traits": Workflow,
+  "rust-server": KeyRound,
+  "cpp-basics": RcAtom,
+  "cpp-memory": RcMemory,
+  "cpp-engine": RcBlocks,
+  "cpp-exchange": RcCandles,
+  "go-basics": GoParcel,
+  "go-inventory": GoWarehouse,
+  "go-pipeline": GoSplit,
+  "go-api": GoServerCog,
 };
 
 const FEATURE_ICONS: Record<string, LucideIcon> = {
@@ -174,7 +195,7 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   tower: Merge,
   strategy: GitBranch,
   pitlog: Save,
-  // Cargo Control
+  // Cargo Bay
   "cc-gate": Container,
   "cc-scale": Scale,
   "cc-tally": ChartBar,
@@ -239,7 +260,7 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   "sa-strategy": SaWrench,
   "sa-plan": SaScan,
   "sa-championship": SaCrown,
-  // C# Foundations
+  // Cinder Depot
   "cs-console": Terminal,
   "cs-robot": Bot,
   "cs-dispatch": Calculator,
@@ -254,7 +275,7 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   "cs-parcels": KanbanSquare,
   "cs-safety": ShieldCheck,
   "cs-shift": Flag,
-  // GraphQL Gateway
+  // Graph Gateway
   "gql-explorer": Terminal,
   "gql-catalogue": Store,
   "gql-variables": Braces,
@@ -300,6 +321,74 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   "arena-retry": EaRefresh,
   "arena-replay": EaRewind,
   "arena-pipeline": EaWorkflow,
+  // Reef Station (Halcyon Reef Station)
+  "rs-console": Terminal,
+  "rs-oxygen": Wind,
+  "rs-pressure": Gauge,
+  "rs-airlock": RsDoor,
+  "rs-alarms": RsSiren,
+  "rs-pumps": Repeat,
+  "rs-sensors": RsRadar,
+  "rs-divelog": RsNotebook,
+  "rs-vault": RsVault,
+  "rs-tether": Cable,
+  "rs-radio": RadioTower,
+  "rs-drones": Bot,
+  "rs-orders": ClipboardList,
+  "rs-catalogue": RsShell,
+  "rs-intake": RsInbox,
+  "rs-report": Flag,
+  // Reactor Core (C++)
+  "rc-console": Terminal,
+  "rc-core": RcAtom,
+  "rc-power": Zap,
+  "rc-operator": RcUser,
+  "rc-interlocks": ShieldCheck,
+  "rc-ramp": ChartLine,
+  "rc-rods": RcGrid,
+  "rc-coolant": RcDroplets,
+  "rc-telemetry": Radio,
+  "rc-sensors": Gauge,
+  "rc-tally": ChartBar,
+  "rc-analysis": ListOrdered,
+  "rc-control": SlidersHorizontal,
+  "rc-state": Workflow,
+  "rc-alarms": RcSiren,
+  "rc-shift": ClipboardList,
+  // Gopher Post (Go)
+  "go-console": GoTerminal,
+  "go-plate": GoId,
+  "go-bay": GoWarehouse,
+  "go-scanner": GoScan,
+  "go-gate": GoSign,
+  "go-belt": GoRepeat,
+  "go-queue": GoLayers,
+  "go-chutes": GoBars,
+  "go-weigh": GoScale,
+  "go-rejects": GoBan,
+  "go-vans": GoTruck,
+  "go-routers": GoMilestone,
+  "go-sorter": GoSort,
+  "go-safety": GoShield,
+  "go-manifest": GoJson,
+  "go-shift": GoFlag,
+  // Orchard Vision (AI & Machine Learning)
+  "oa-belt": OaApple,
+  "oa-stats": OaStats,
+  "oa-matrix": OaGrid,
+  "oa-scale": OaScale,
+  "oa-neighbour": OaScatter,
+  "oa-knn": OaVote,
+  "oa-split": OaScissors,
+  "oa-confusion": OaTarget,
+  "oa-line": OaTrend,
+  "oa-descent": OaMountain,
+  "oa-price": OaDollar,
+  "oa-ripeness": OaThermo,
+  "oa-threshold": OaSliders,
+  "oa-fit": OaPuzzle,
+  "oa-features": OaFlask,
+  "oa-sorter": OaBot,
 };
 
 export function ProjectIcon({ slug, className = "h-4 w-4" }: { slug: string; className?: string }) {

@@ -1,7 +1,7 @@
 import { createStaticProgram, type ProgramHandle } from "@/engine/program";
 
 /**
- * A JavaScript stand-in for a finished Cargo Control program (the reference solution, ported), so
+ * A JavaScript stand-in for a finished Cargo Bay program (the reference solution, ported), so
  * the landing page can run the depot without loading Python. It implements exactly the functions
  * the scene calls once every lesson is passed.
  */

@@ -72,7 +72,7 @@ const PRESETS = {
     title: "Observer",
     rows: [
       {
-        boxes: [{ id: "subject", name: "Subject", example: "WeatherStation", kind: "class", members: ["observers", "subscribe(o)", "unsubscribe(o)", "publish(value)"], job: "Keeps a list of whoever subscribed and, when something changes, calls update() on each one. It doesn't know what they are." }],
+        boxes: [{ id: "subject", name: "Subject", example: "Lighthouse", kind: "class", members: ["observers", "subscribe(o)", "unsubscribe(o)", "publish(value)"], job: "Keeps a list of whoever subscribed and, when something changes, calls update() on each one. It doesn't know what they are." }],
         link: "notifies each",
       },
       {
@@ -123,18 +123,18 @@ const PRESETS = {
     title: "Decorator",
     rows: [
       {
-        boxes: [{ id: "component", name: "Component", example: "Drink", kind: "interface", members: ["cost()", "description()"], job: "The interface everyone shares: plain drinks and wrappers alike. That's why wrappers can wrap wrappers." }],
+        boxes: [{ id: "component", name: "Component", example: "Shipment", kind: "interface", members: ["cost()", "description()"], job: "The interface everyone shares: plain parcels and wrappers alike. That's why wrappers can wrap wrappers." }],
         link: "implemented by",
       },
       {
         boxes: [
-          { id: "base", name: "Concrete component", example: "Coffee", kind: "class", members: ["cost()", "description()"], job: "The plain object at the centre. It knows nothing about add-ons." },
-          { id: "decorator", name: "Decorator", example: "AddOn", kind: "class", members: ["inner", "cost()", "description()"], job: "Holds an inner Drink and is itself a Drink. Its methods call the inner one and add a little on top." },
+          { id: "base", name: "Concrete component", example: "Parcel", kind: "class", members: ["cost()", "description()"], job: "The plain object at the centre. It knows nothing about label options." },
+          { id: "decorator", name: "Decorator", example: "LabelOption", kind: "class", members: ["inner", "cost()", "description()"], job: "Holds an inner Shipment and is itself a Shipment. Its methods call the inner one and add a little on top." },
         ],
         link: "subclassed by",
       },
       {
-        boxes: [{ id: "concrete", name: "Concrete decorators", example: "Milk · Caramel · Shot", kind: "class", many: true, members: ["cost() = inner.cost() + extra"], job: "Each adds one thing. Stack them in any combination and order at runtime instead of writing a class per combination." }],
+        boxes: [{ id: "concrete", name: "Concrete decorators", example: "BubbleWrap · Tracking · Insurance", kind: "class", many: true, members: ["cost() = inner.cost() + extra"], job: "Each adds one thing. Stack them in any combination and order at runtime instead of writing a class per combination." }],
       },
     ],
   },

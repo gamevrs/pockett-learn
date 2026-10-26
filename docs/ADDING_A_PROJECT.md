@@ -30,6 +30,12 @@ Every language is a path from zero to hero. A project's `difficulty` is its tier
 - **`prerequisites?: string[]`** lists slugs worth finishing first. The hub shows them as "Recommended first" (links for built projects, plain text for planned ones).
 - Pick the tier by what the learner needs to already know: Beginner assumes nothing, Intermediate real-world input handling (strings, errors, data), Advanced design patterns, Professional production-style systems (APIs, databases, tests).
 
+## Tracks (AI & Machine Learning)
+
+Some paths are not a language. A project can set `track: "ai"` (`Project.track`, `UpcomingProject.track`) and then appears on its own path on `/projects` ("AI & Machine Learning", Beginner to Professional, its own filter chip) instead of inside its language's path. It keeps its `language` (AI projects are Python) and its runtime; only the grouping changes, and the card sticker reads "AI · Beginner". Track metadata (label, short label, blurb) lives in `TRACKS` in `src/engine/languages.ts`; the path rendering is in `components/projects/ProjectBrowser.tsx`. Plan the later tiers as `PLANNED` entries with the same `track`, and give every slug an icon.
+
+The AI track ships with `ai-foundations` (Orchard Vision: NumPy, k-NN, train/test, gradient descent, logistic regression) and plans `ai-neural`, `ai-language` and `ai-assistant`. Its lessons rely on NumPy (`packages: ["numpy"]`), so write tests that behave the same on NumPy 1.26 and 2.x: convert scalars with `float()`/`int()` before exposing them, use `argsort(kind="stable")`, and draw randomness from a seeded generator written into the lesson (the course's `Rng`) rather than from `numpy.random`.
+
 ## Python packages
 
 Pyodide ships some standard-library modules as separate packages (`sqlite3` is the common one). List them in `Project.packages` (Python only):

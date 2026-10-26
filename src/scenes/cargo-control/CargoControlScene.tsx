@@ -9,7 +9,7 @@ import { blueprintRows, type Inspection, type Outcome, type Row, type RowId, typ
 import { DepotSim, type Counts, type Snapshot } from "./sim";
 
 /**
- * Cargo Control: a depot gate, a conveyor of crates, and a control room that is entirely your Python.
+ * Cargo Bay: a depot gate, a conveyor of crates, and a control room that is entirely your Python.
  *
  * Each crate's manifest arrives as raw text. The scene calls the learner's functions, newest lesson
  * first (see inspect.ts), and shows the answers. Nothing here decides anything about a crate: if a

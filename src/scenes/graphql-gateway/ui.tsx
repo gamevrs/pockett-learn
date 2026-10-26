@@ -3,7 +3,7 @@
 import React from "react";
 import { Lock } from "lucide-react";
 
-/** Shared building blocks for the GraphQL Gateway scene (Pockett Stage look: neutral greys, lime = your code). */
+/** Shared building blocks for the Graph Gateway scene (Pockett Stage look: neutral greys, lime = your code). */
 
 export const INPUT =
   "h-7 min-w-0 rounded-md border border-white/12 bg-white/[0.04] px-2 text-[11px] text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#c5ee8a]/60 disabled:cursor-not-allowed disabled:opacity-50";

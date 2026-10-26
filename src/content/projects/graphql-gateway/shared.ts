@@ -1,5 +1,5 @@
 /**
- * Shared pieces for the GraphQL Gateway lessons.
+ * Shared pieces for the Graph Gateway lessons.
  *
  * Authoring notes: Python goes in String.raw (no backticks, no ${ inside). Lesson prose uses normal
  * template strings with escaped backticks and ~~~python / ~~~graphql / ~~~json fences. SDL inside

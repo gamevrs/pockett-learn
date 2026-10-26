@@ -36,7 +36,7 @@ const COLORS = [
 
 const GRADIENT = [
   { name: "Fold", hex: "#4a771d", at: "0%", small: "#3f6a16", dark: true },
-  { name: "Mid", hex: "#7eaa45", at: "40%", small: "#5f8d2c at 50%", dark: true },
+  { name: "Mid", hex: "#7eaa45", at: "40%", small: "#5f8d2c at 50%", dark: false },
   { name: "Body", hex: "#c5ee8a", at: "82%", small: "#c5ee8a at 92%", dark: false },
 ] as const;
 
@@ -44,8 +44,8 @@ const NEUTRALS = [
   { name: "Page", light: "#f6f5f1", dark: "#0a0a0a" },
   { name: "Surface", light: "#ffffff", dark: "#121212" },
   { name: "Text", light: "#121211", dark: "#fafafa" },
-  { name: "Secondary text", light: "#56554f", dark: "#a3a3a3" },
-  { name: "Tertiary text", light: "#8a8880", dark: "#737373" },
+  { name: "Secondary text", light: "#4a4943", dark: "#a3a3a3" },
+  { name: "Tertiary text", light: "#67655f", dark: "#8a8a8a" },
 ] as const;
 
 const BOILERPLATE_50 =

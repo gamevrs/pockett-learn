@@ -315,6 +315,129 @@ export function ProjectArt({ slug }: { slug: string }) {
           <rect x="212" y="162" width="104" height="6" rx="3" fill="url(#g-csharp-basics)" />
         </g>
       )}
+      {slug === "go-basics" && (
+        <g>
+          {/* a top-down sorting floor: an intake belt of crates, four chutes dropping into vans, and a reject bin */}
+          <rect x="24" y="30" width="276" height="26" rx="6" fill="#ffffff" opacity=".06" />
+          <path d="M24 34 H300 M24 52 H300" stroke="#ffffff" strokeOpacity=".16" strokeDasharray="3 5" />
+          {[
+            [40, 26, true],
+            [78, 20, false],
+            [112, 30, true],
+            [156, 18, false],
+            [190, 24, true],
+            [230, 22, false],
+          ].map(([x, w, on], i) => (
+            <rect key={i} x={x as number} y="37" width={w as number} height="12" rx="3" fill={on ? "url(#g-go-basics)" : "#ffffff"} opacity={on ? 0.95 : 0.22} />
+          ))}
+          <rect x="270" y="26" width="4" height="34" rx="2" fill="url(#g-go-basics)" />
+          <rect x="286" y="26" width="4" height="34" rx="2" fill="url(#g-go-basics)" opacity=".5" />
+          {[60, 130, 200, 270].map((x, i) => (
+            <g key={x}>
+              <rect x={x - 7} y="56" width="14" height="96" rx="4" fill="#ffffff" opacity=".07" />
+              <path d={`M${x - 7} 56 V152 M${x + 7} 56 V152`} stroke="#ffffff" strokeOpacity=".18" />
+              <path d={`M${x} 62 L${x + (i % 2 ? -5 : 5)} 90`} stroke="url(#g-go-basics)" strokeWidth="3" strokeLinecap="round" />
+              <rect x={x - 28} y="154" width="56" height="38" rx="7" fill="#101010" stroke="#ffffff" strokeOpacity=".18" />
+              <rect x={x - 22} y="178" width="44" height="6" rx="3" fill="#ffffff" opacity=".14" />
+              <rect x={x - 22} y="178" width={[34, 14, 24, 42][i]} height="6" rx="3" fill="url(#g-go-basics)" />
+              <circle cx={x - 15} cy="166" r="3" fill="#ffffff" opacity=".4" />
+              <circle cx={x + 15} cy="166" r="3" fill="#ffffff" opacity=".4" />
+            </g>
+          ))}
+          <rect x="326" y="76" width="50" height="76" rx="8" fill="none" stroke="#ffffff" strokeOpacity=".3" strokeDasharray="5 4" />
+          {[0, 1, 2].map((i) => (
+            <rect key={i} x="334" y={86 + i * 17} width={[34, 26, 30][i]} height="9" rx="4.5" fill="url(#g-go-basics)" opacity={0.9 - i * 0.2} />
+          ))}
+          <path d="M300 43 H340 V76" fill="none" stroke="#ffffff" strokeOpacity=".22" strokeDasharray="4 5" />
+        </g>
+      )}
+      {slug === "cpp-basics" && (
+        <g>
+          {/* a tokamak ring with its plasma path, a row of fuel rods, a dial and three coolant loops */}
+          <g transform="rotate(-14 128 100)">
+            <ellipse cx="128" cy="100" rx="94" ry="38" fill="none" stroke="#ffffff" strokeOpacity=".08" strokeWidth="16" />
+            <ellipse cx="128" cy="100" rx="94" ry="38" fill="none" stroke="#ffffff" strokeOpacity=".16" strokeWidth="1" />
+            <ellipse cx="128" cy="100" rx="86" ry="31" fill="none" stroke="url(#g-cpp-basics)" strokeWidth="3" strokeDasharray="16 10" strokeLinecap="round" />
+            <ellipse cx="128" cy="100" rx="40" ry="13" fill="none" stroke="#ffffff" strokeOpacity=".14" strokeWidth="1" />
+            <circle cx="128" cy="100" r="7" fill="url(#g-cpp-basics)" />
+            <circle cx="128" cy="100" r="14" fill="none" stroke="url(#g-cpp-basics)" strokeOpacity=".4" />
+          </g>
+          {[22, 34, 16, 40, 28, 12, 36, 24, 38, 18, 30, 26].map((h, i) => (
+            <g key={i}>
+              <rect x={38 + i * 16} y="156" width="9" height="40" rx="3" fill="#ffffff" opacity=".1" />
+              <rect x={38 + i * 16} y={196 - h} width="9" height={h} rx="3" fill={i === 5 ? "#ffffff" : "url(#g-cpp-basics)"} opacity={i === 5 ? 0.35 : 0.9} />
+            </g>
+          ))}
+          <path d="M 273.96 117.26 A 44 44 0 1 1 346.04 117.26" fill="none" stroke="#ffffff" strokeOpacity=".14" strokeWidth="7" strokeLinecap="round" />
+          <path d="M 273.96 117.26 A 44 44 0 0 1 325.05 50.64" fill="none" stroke="url(#g-cpp-basics)" strokeWidth="7" strokeLinecap="round" />
+          <line x1="310" y1="92" x2="321.6" y2="60" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx="310" cy="92" r="5" fill="#101010" stroke="#ffffff" strokeOpacity=".6" strokeWidth="1.5" />
+          <rect x="296" y="124" width="28" height="5" rx="2.5" fill="#ffffff" opacity=".28" />
+          {[0, 1, 2].map((i) => (
+            <rect
+              key={i}
+              x="264"
+              y={146 + i * 18}
+              width="108"
+              height="11"
+              rx="5.5"
+              fill="none"
+              stroke={i === 0 ? "url(#g-cpp-basics)" : "#ffffff"}
+              strokeOpacity={i === 0 ? 0.95 : 0.22}
+              strokeWidth="2"
+              strokeDasharray={i === 2 ? "5 6" : undefined}
+            />
+          ))}
+        </g>
+      )}
+      {slug === "rust-basics" && (
+        <g>
+          {/* the surface, then Halcyon Reef Station as four stepped decks with the first rooms lit */}
+          <rect x="0" y="52" width="400" height="168" fill="#ffffff" opacity=".03" />
+          <path d="M0 52 q25 -6 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0" fill="none" stroke="url(#g-rust-basics)" strokeWidth="2" opacity=".7" />
+          <path d="M200 76 V30" stroke="#ffffff" strokeOpacity=".4" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="200" cy="28" r="4" fill="url(#g-rust-basics)" />
+          <circle cx="200" cy="28" r="11" fill="none" stroke="url(#g-rust-basics)" strokeWidth="1.5" opacity=".5" />
+          <circle cx="200" cy="28" r="19" fill="none" stroke="url(#g-rust-basics)" strokeWidth="1" opacity=".25" />
+          {[
+            [3, 3],
+            [4, 3],
+            [4, 1],
+            [5, 0],
+          ].map(([count, lit], row) => {
+            const w = (count as number) * 34 + ((count as number) - 1) * 5;
+            return Array.from({ length: count as number }).map((_, i) => (
+              <rect
+                key={`${row}-${i}`}
+                x={200 - w / 2 + i * 39}
+                y={76 + row * 24}
+                width="34"
+                height="18"
+                rx="5"
+                fill={i < (lit as number) ? "url(#g-rust-basics)" : "#ffffff"}
+                opacity={i < (lit as number) ? 0.9 : 0.1}
+              />
+            ));
+          })}
+          <path d="M0 184 Q60 172 130 182 T260 180 T400 178 V220 H0 Z" fill="#ffffff" opacity=".07" />
+          {[40, 62, 352, 372].map((x, i) => (
+            <path key={x} d={`M${x} 184 q${i % 2 ? 6 : -6} -12 0 -${24 + (i % 3) * 8}`} fill="none" stroke="url(#g-rust-basics)" strokeWidth="3" strokeLinecap="round" opacity=".45" />
+          ))}
+          {[
+            [92, 150, 3],
+            [100, 128, 2],
+            [316, 140, 3],
+            [322, 112, 2],
+          ].map(([cx, cy, r], i) => (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke="#ffffff" strokeOpacity=".4" />
+          ))}
+          <g transform="translate(300 176)">
+            <rect x="-13" y="-7" width="26" height="14" rx="7" fill="url(#g-rust-basics)" />
+            <rect x="-6" y="-3" width="12" height="5" rx="2.5" fill="#0c0d0b" />
+            <path d="M-15 -10 H-6 M6 -10 H15" stroke="#ffffff" strokeOpacity=".7" strokeWidth="2" strokeLinecap="round" />
+          </g>
+        </g>
+      )}
       {slug === "form-forge" && (
         <g>
           {/* a checkout form on the left, the clean JSON it produces on the right */}
@@ -411,6 +534,52 @@ export function ProjectArt({ slug }: { slug: string }) {
               <text x="372" y={69 + i * 30} textAnchor="end" fontSize="10" fontFamily="var(--font-mono)" fill="#ffffff" opacity={i === 0 ? 0.9 : 0.4}>{[141, 138, 132, 132][i]}</text>
             </g>
           ))}
+        </g>
+      )}
+      {slug === "ai-foundations" && (
+        <g>
+          {/* feature-space plot: three clusters, soft decision regions and a query with its neighbours */}
+          <rect x="28" y="26" width="226" height="136" rx="10" fill="#151515" stroke="#ffffff" strokeOpacity=".08" />
+          <path d="M28 120 C 90 124, 130 100, 160 26 H38 a10 10 0 0 0 -10 10 Z" fill="#ffffff" opacity=".035" />
+          <path d="M160 26 C 176 70, 212 92, 254 98 V36 a10 10 0 0 0 -10 -10 Z" fill="#ffffff" opacity=".06" />
+          <path d="M44 148 C 96 132, 150 118, 190 150" fill="none" stroke="#ffffff" strokeOpacity=".16" strokeDasharray="4 5" />
+          <path d="M150 62 C 176 82, 206 96, 238 94" fill="none" stroke="#ffffff" strokeOpacity=".16" strokeDasharray="4 5" />
+          {[[70, 132], [84, 124], [96, 136], [108, 128], [78, 142], [92, 118], [112, 140], [66, 120], [100, 146], [120, 132]].map(([x, y], i) => (
+            <circle key={`a${i}`} cx={x} cy={y} r="3.4" fill="#ffffff" opacity=".3" />
+          ))}
+          {[[138, 96], [150, 88], [162, 100], [146, 106], [158, 82], [170, 92], [134, 84], [152, 114], [168, 108], [126, 98]].map(([x, y], i) => (
+            <circle key={`b${i}`} cx={x} cy={y} r="3.4" fill="url(#g-ai-foundations)" opacity={i === 3 || i === 9 ? 0.45 : 1} />
+          ))}
+          {[[210, 50], [222, 58], [200, 62], [230, 48], [214, 70], [238, 66], [196, 46], [224, 82]].map(([x, y], i) => (
+            <circle key={`c${i}`} cx={x} cy={y} r="3.4" fill="#ffffff" opacity=".62" />
+          ))}
+          <g stroke="url(#g-ai-foundations)" strokeWidth="1.2" strokeLinecap="round" opacity=".9">
+            <path d="M124 108 L138 96" />
+            <path d="M124 108 L126 98" />
+            <path d="M124 108 L120 132" strokeDasharray="2 3" />
+          </g>
+          <circle cx="124" cy="108" r="7" fill="#151515" stroke="url(#g-ai-foundations)" strokeWidth="2.4" />
+          <circle cx="124" cy="108" r="14" fill="url(#glow-ai-foundations)" opacity=".5" />
+
+          {/* loss curve and precision / recall bars */}
+          <rect x="270" y="26" width="102" height="62" rx="8" fill="#151515" stroke="#ffffff" strokeOpacity=".08" />
+          <path d="M280 38 C 292 62, 312 72, 332 75 S 356 77, 362 77" fill="none" stroke="url(#g-ai-foundations)" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="362" cy="77" r="3.5" fill="url(#g-ai-foundations)" />
+          <rect x="270" y="100" width="102" height="62" rx="8" fill="#151515" stroke="#ffffff" strokeOpacity=".08" />
+          {[0.9, 0.7, 0.52].map((v, i) => (
+            <g key={i}>
+              <rect x="282" y={112 + i * 16} width="78" height="6" rx="3" fill="#ffffff" opacity=".1" />
+              <rect x="282" y={112 + i * 16} width={78 * v} height="6" rx="3" fill={i === 0 ? "url(#g-ai-foundations)" : "#ffffff"} opacity={i === 0 ? 1 : 0.34} />
+            </g>
+          ))}
+
+          {/* the belt */}
+          <rect x="28" y="176" width="344" height="16" rx="8" fill="#1d1d1d" stroke="#ffffff" strokeOpacity=".08" />
+          <path d="M44 184 H356" stroke="#ffffff" strokeOpacity=".18" strokeDasharray="3 9" />
+          <circle cx="82" cy="170" r="9" fill="#ffffff" opacity=".34" />
+          <path d="M198 178 C 190 176, 188 164, 194 158 C 198 152, 208 152, 210 160 C 214 168, 210 176, 198 178 Z" fill="url(#g-ai-foundations)" />
+          <circle cx="318" cy="171" r="7" fill="#ffffff" opacity=".62" />
+          <path d="M254 156 V196" stroke="url(#g-ai-foundations)" strokeWidth="1.5" strokeDasharray="3 3" opacity=".8" />
         </g>
       )}
     </svg>

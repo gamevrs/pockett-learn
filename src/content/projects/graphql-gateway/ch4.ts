@@ -1177,7 +1177,7 @@ Measure it: for product 1, count the requests and bytes each approach needs. You
 - **Per-endpoint rate limiting and monitoring** that the infrastructure already understands.
 - Small teams that cannot afford the extra concepts (N+1, cost limits, authorization per field).
 
-Many companies use both: GraphQL for client-facing screens, REST or RPC between services. And you can put a GraphQL gateway in front of existing REST services, which is exactly the role of this project: a *backend for frontends*.
+Many companies use both: GraphQL for client-facing screens, REST or RPC between services. And you can put a gateway for GraphQL in front of existing REST services, which is exactly the role of this project: a *backend for frontends*.
 
 ### Common mistakes
 

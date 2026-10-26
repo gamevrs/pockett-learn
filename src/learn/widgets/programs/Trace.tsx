@@ -171,7 +171,7 @@ export function Trace({ props, onChange, revealed }: WidgetProps<TraceProps>) {
             const inner = (
               <>
                 <span className={`w-1 shrink-0 ${ran ? "bg-[#c5ee8a]" : isPicked ? "bg-white/60" : ""}`} aria-hidden />
-                <span className={`w-9 shrink-0 select-none pr-3 text-right tabular-nums ${ran ? "text-[#c5ee8a]" : "text-white/35"}`}>{n}</span>
+                <span className={`w-9 shrink-0 select-none pr-3 text-right tabular-nums ${ran ? "text-[#c5ee8a]" : "text-white/55"}`}>{n}</span>
                 <span className="w-4 shrink-0 select-none text-[#c5ee8a]/80" aria-hidden>
                   {next ? "›" : ""}
                 </span>

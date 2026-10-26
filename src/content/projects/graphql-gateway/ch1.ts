@@ -108,7 +108,7 @@ GraphQL is not a free upgrade. In return for flexible clients you take on:
 - Expecting an error status code. A failed GraphQL request still returns a body with \`errors\`, so check the body.
 - Returning \`None\` for a field declared \`String!\`. That breaks the promise the schema made.
 - Letting \`execute\` raise. A gateway should *always* answer with a JSON-able dict, even for garbage input.`,
-    mission: `The mobile team is tired of chaining five REST calls to paint one screen. You are building the **GraphQL gateway** in front of the shop: one endpoint that answers exactly the question a client asks.
+    mission: `The mobile team is tired of chaining five REST calls to paint one screen. You are building the **gateway** in front of the shop, speaking GraphQL: one endpoint that answers exactly the question a client asks.
 
 Start small: a schema with three fields, a function \`execute(request)\` that runs a query and returns \`{"data": ..., "errors": ...}\`. As soon as you Run, the **Explorer** lights up and you can type real queries against your own code.`,
     tasks: [

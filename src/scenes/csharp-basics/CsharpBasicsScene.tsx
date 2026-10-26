@@ -26,7 +26,7 @@ import {
 } from "./panels";
 
 /**
- * Cinder Street Depot: the live board for the C# Foundations course.
+ * Cinder Street Depot: the live board for the Cinder Depot course.
  *
  * C# runs on the pockett runner, so the board can't call the program back. It draws what the
  * program printed: stdout for the console, and every `Depot.Show("key", value)` line (an

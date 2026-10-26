@@ -1,7 +1,7 @@
 import type { Chapter } from "@/engine/types";
 
 /**
- * Cargo Control, chapter 4: Control room.
+ * Cargo Bay, chapter 4: Control room.
  * Operational logging, then the finished parse -> validate -> decide -> log pipeline.
  */
 const py = String.raw;

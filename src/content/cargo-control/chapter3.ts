@@ -1,7 +1,7 @@
 import type { Chapter } from "@/engine/types";
 
 /**
- * Cargo Control, chapter 3: Paperwork.
+ * Cargo Bay, chapter 3: Paperwork.
  * Reading and writing JSON, then validating what comes in: collecting every problem,
  * checking formats with regular expressions, and driving it all from a schema.
  */

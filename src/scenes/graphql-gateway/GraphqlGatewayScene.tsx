@@ -12,7 +12,7 @@ import { LabPane } from "./Lab";
 import { Notice } from "./ui";
 
 /**
- * GraphQL Gateway: an explorer, a mobile client app, a query-plan panel, a docs browser and a lab,
+ * Graph Gateway: an explorer, a mobile client app, a query-plan panel, a docs browser and a lab,
  * all powered by the learner's execute(request).
  *
  * The scene plays the GraphQL client. Every pane builds {query, variables, operationName, headers}

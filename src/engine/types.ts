@@ -17,6 +17,9 @@ export const TIERS: Difficulty[] = ["Beginner", "Intermediate", "Advanced", "Pro
 /** Languages a project can be written in. See src/engine/languages.ts for what each supports. */
 export type LanguageId = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go" | "rust";
 
+/** Cross-language learning tracks. A tracked project is shown on its track's path, not its language's. */
+export type Track = "ai";
+
 export interface TestCase {
   id: string;
   description: string;
@@ -106,6 +109,12 @@ export interface Project {
   packages?: string[];
   /** Slugs of projects worth finishing first. Shown on the hub as "Recommended first". */
   prerequisites?: string[];
+  /**
+   * A cross-language track this project belongs to. Tracked projects form their own path on the
+   * projects page (e.g. "ai" = AI & Machine Learning) instead of appearing in the path of their
+   * language.
+   */
+  track?: Track;
   title: string;
   tagline: string;
   pitch: string;
@@ -126,6 +135,8 @@ export interface Project {
 export interface UpcomingProject {
   slug: string;
   language?: LanguageId;
+  /** See `Project.track`. */
+  track?: Track;
   /** The tier it will sit on in its language's path. */
   difficulty?: Difficulty;
   /** What it will teach, as short tags. */

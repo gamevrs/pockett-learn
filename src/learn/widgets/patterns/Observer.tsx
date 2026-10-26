@@ -1,31 +1,31 @@
 "use client";
 
 import React, { useState } from "react";
-import { Bell, BellOff, Droplets, Monitor, Radio, ScrollText, Smartphone, Watch } from "lucide-react";
+import { Anchor, Bell, BellOff, Radio, ScrollText, Ship, Waves } from "lucide-react";
 import type { WidgetProps } from "@/learn/widget";
 import { Caption } from "./ui";
 
 /**
- * Observer: a subject (a weather station) with observers you can subscribe and unsubscribe.
- * "Publish" sends the next reading, and only current subscribers get an update() call.
+ * Observer: a subject (a lighthouse broadcasting fog levels) with observers you can subscribe and
+ * unsubscribe. "Publish" sends the next reading, and only current subscribers get an update() call.
  */
 
-const ICONS = { phone: Smartphone, window: Monitor, logger: ScrollText, sprinkler: Droplets, watch: Watch } as const;
+const ICONS = { ship: Ship, harbour: Anchor, logbook: ScrollText, ferry: Waves } as const;
 
 const DEFAULT_OBSERVERS = [
-  { id: "phone", name: "Phone app" },
-  { id: "window", name: "Window display" },
-  { id: "logger", name: "Logger" },
-  { id: "sprinkler", name: "Sprinkler" },
+  { id: "ship", name: "Ship radio" },
+  { id: "harbour", name: "Harbour office" },
+  { id: "logbook", name: "Keeper's logbook" },
+  { id: "ferry", name: "Ferry company" },
 ];
 
-const READINGS = [21, 19, 24, 17, 22, 26, 18, 23];
+const READINGS = [21, 34, 48, 29, 56, 40, 18, 62];
 
 export interface ObserverProps {
   observers?: { id: string; name: string }[];
   /** Ids subscribed at the start. */
   initial?: string[];
-  /** Subject name shown on the station card. */
+  /** Subject name shown on the subject card. */
   subject?: string;
   unit?: string;
 }
@@ -39,7 +39,7 @@ export interface ObserverState {
 
 export function Observer({ props, onChange, revealed }: WidgetProps<ObserverProps>) {
   const observers = props.observers ?? DEFAULT_OBSERVERS;
-  const unit = props.unit ?? "°C";
+  const unit = props.unit ?? "%";
   const [subscribed, setSubscribed] = useState<string[]>(() => (props.initial ?? []).filter((id) => observers.some((o) => o.id === id)));
   const [published, setPublished] = useState(0);
   const [lastDelivered, setLastDelivered] = useState<string[]>([]);
@@ -81,7 +81,7 @@ export function Observer({ props, onChange, revealed }: WidgetProps<ObserverProp
             </span>
             <div className="min-w-0">
               <Caption>Subject</Caption>
-              <p className="truncate font-semibold text-ink">{props.subject ?? "Weather station"}</p>
+              <p className="truncate font-semibold text-ink">{props.subject ?? "Lighthouse"}</p>
             </div>
           </div>
           <button type="button" className="btn btn-primary !h-10 shrink-0" onClick={publish} disabled={revealed}>

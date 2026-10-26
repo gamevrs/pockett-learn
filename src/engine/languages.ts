@@ -1,4 +1,4 @@
-import type { LanguageId } from "./types.ts";
+import type { LanguageId, Track } from "./types.ts";
 
 /**
  * Everything the UI needs to know about a language, without loading its runtime.
@@ -41,3 +41,22 @@ export const LANGUAGES: Record<LanguageId, LanguageInfo> = {
 export function languageInfo(id: LanguageId | undefined): LanguageInfo {
   return LANGUAGES[id ?? "python"];
 }
+
+/** A cross-language learning track: its projects form their own path on the projects page. */
+export interface TrackInfo {
+  id: Track;
+  label: string;
+  /** Short label for card stickers. */
+  short: string;
+  /** One line shown at the top of the track's path. */
+  blurb: string;
+}
+
+export const TRACKS: Record<Track, TrackInfo> = {
+  ai: {
+    id: "ai",
+    label: "AI & Machine Learning",
+    short: "AI",
+    blurb: "Teach machines to learn. From your first dataset to neural networks, language models and production AI systems.",
+  },
+};

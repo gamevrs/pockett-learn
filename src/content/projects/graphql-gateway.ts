@@ -5,7 +5,7 @@ import { chapter3 } from "./graphql-gateway/ch3.ts";
 import { chapter4 } from "./graphql-gateway/ch4.ts";
 
 /**
- * GraphQL Gateway: put a GraphQL API in front of the Pocket Store shop, using the real library
+ * Graph Gateway: put a GraphQL API in front of the Pocket Store shop, using the real library
  * (graphql-core 3, the reference implementation that Strawberry, Ariadne and Graphene build on).
  *
  * The scene plays a GraphQL client: it builds {query, variables, operationName, headers} requests and
@@ -23,10 +23,10 @@ export const graphqlGateway: Project = {
   // graphql-core is pure Python; Pyodide installs it from PyPI with micropip (exact version pinned).
   packages: ["sqlite3", "micropip:graphql-core==3.2.13"],
   prerequisites: ["store-api"],
-  title: "GraphQL Gateway",
+  title: "Graph Gateway",
   tagline: "Put a typed GraphQL API in front of the shop with graphql-core.",
   pitch:
-    "Mobile and web clients want exactly the fields they ask for, in one round trip. Build a GraphQL gateway on the shop's SQLite database with the real library (graphql-core, the engine under Strawberry, Ariadne and Graphene): a schema in SDL, resolvers and context, mutations with structured errors, a DataLoader that kills the N+1 problem, cursor pagination, field-level authorization, query depth and cost limits, introspection and tests. A GraphiQL-style explorer, a live query plan and a client app all run on your code.",
+    "Mobile and web clients want exactly the fields they ask for, in one round trip. Build a gateway for GraphQL on the shop's SQLite database with the real library (graphql-core, the engine under Strawberry, Ariadne and Graphene): a schema in SDL, resolvers and context, mutations with structured errors, a DataLoader that kills the N+1 problem, cursor pagination, field-level authorization, query depth and cost limits, introspection and tests. A GraphiQL-style explorer, a live query plan and a client app all run on your code.",
   emoji: "🕸️",
   difficulty: "Professional",
   hours: 10,

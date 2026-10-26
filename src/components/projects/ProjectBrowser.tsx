@@ -2,15 +2,24 @@
 
 import React, { useState } from "react";
 import { Check, Clock } from "lucide-react";
-import { TIERS, type Difficulty, type LanguageId, type UpcomingProject } from "@/engine/types";
-import { LANGUAGES } from "@/engine/languages";
+import { TIERS, type Difficulty, type LanguageId, type Track, type UpcomingProject } from "@/engine/types";
+import { LANGUAGES, TRACKS } from "@/engine/languages";
 import { useProgress } from "@/data/progress/store";
 import type { summarize } from "@/content";
 import { ProjectCard, UpcomingCard } from "./ProjectCard";
 
 type Summary = ReturnType<typeof summarize>;
 
-const ORDER: LanguageId[] = ["python", "javascript", "sql", "csharp", "cpp", "go", "rust"];
+/** A path is a language, or a cross-language track such as AI & Machine Learning. */
+type PathId = LanguageId | Track;
+
+const ORDER: PathId[] = ["python", "ai", "javascript", "sql", "csharp", "cpp", "go", "rust"];
+
+const isTrack = (id: PathId): id is Track => id in TRACKS;
+
+function pathInfo(id: PathId): { label: string; blurb: string; runsIn: "browser" | "server" } {
+  return isTrack(id) ? { label: TRACKS[id].label, blurb: TRACKS[id].blurb, runsIn: "browser" } : LANGUAGES[id];
+}
 
 /** What each rung of the ladder means, in a few words. */
 const TIER_NOTE: Record<Difficulty, string> = {
@@ -34,16 +43,16 @@ export function ProjectBrowser({
   upcoming: UpcomingProject[];
 }) {
   const progress = useProgress();
-  const [filter, setFilter] = useState<LanguageId | "all">("all");
+  const [filter, setFilter] = useState<PathId | "all">("all");
 
-  const builtIn = (id: LanguageId) => projects.filter((p) => p.language === id);
-  const plannedIn = (id: LanguageId) => upcoming.filter((u) => (u.language ?? "python") === id);
-  const hasPath = (id: LanguageId) => builtIn(id).length + plannedIn(id).length > 0;
+  const builtIn = (id: PathId) => projects.filter((p) => (isTrack(id) ? p.track === id : p.language === id && !p.track));
+  const plannedIn = (id: PathId) => upcoming.filter((u) => (isTrack(id) ? u.track === id : (u.language ?? "python") === id && !u.track));
+  const hasPath = (id: PathId) => builtIn(id).length + plannedIn(id).length > 0;
 
   const visible = filter === "all" ? ORDER.filter(hasPath) : [filter];
   const soon = filter !== "all" && !hasPath(filter);
 
-  const tab = (id: LanguageId | "all", label: string, count?: number) => (
+  const tab = (id: PathId | "all", label: string, count?: number) => (
     <button
       key={id}
       onClick={() => setFilter(id)}
@@ -61,9 +70,9 @@ export function ProjectBrowser({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by language">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by language or track">
         {tab("all", "All")}
-        {ORDER.map((id) => tab(id, LANGUAGES[id].label, builtIn(id).length))}
+        {ORDER.map((id) => tab(id, pathInfo(id).label, builtIn(id).length))}
       </div>
 
       {soon ? (
@@ -71,9 +80,9 @@ export function ProjectBrowser({
           <span className="grid h-10 w-10 place-items-center rounded-full bg-surface text-brand">
             <Clock className="h-5 w-5" />
           </span>
-          <h2 className="font-display text-2xl">{LANGUAGES[filter as LanguageId].label} is coming soon</h2>
+          <h2 className="font-display text-2xl">{pathInfo(filter as PathId).label} is coming soon</h2>
           <p className="max-w-lg text-ink-2">
-            {LANGUAGES[filter as LanguageId].label} courses are being written and will open as soon as they are ready.
+            {pathInfo(filter as PathId).label} courses are being written and will open as soon as they are ready.
           </p>
           <button className="btn btn-sm mt-1" onClick={() => setFilter("all")}>
             See available courses
@@ -104,13 +113,13 @@ function LanguagePath({
   lessonIds,
   completed,
 }: {
-  language: LanguageId;
+  language: PathId;
   built: Summary[];
   planned: UpcomingProject[];
   lessonIds: Record<string, string[]>;
   completed: Record<string, unknown>;
 }) {
-  const info = LANGUAGES[language];
+  const info = pathInfo(language);
   const allLessons = built.flatMap((p) => lessonIds[p.slug] ?? []);
   const done = allLessons.filter((id) => completed[id]).length;
   const pct = allLessons.length ? Math.round((done / allLessons.length) * 100) : 0;

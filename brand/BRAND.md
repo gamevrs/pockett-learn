@@ -106,8 +106,8 @@ Radial gradient centred on the V tip, squashed vertically so it hugs the fold. S
 | Page | `#f6f5f1` (246, 245, 241) | `#0a0a0a` (10, 10, 10) |
 | Surface | `#ffffff` | `#121212` |
 | Text | `#121211` | `#fafafa` |
-| Secondary text | `#56554f` (6.9:1 on page) | `#a3a3a3` |
-| Tertiary text | `#8a8880` | `#737373` |
+| Secondary text | `#4a4943` (8.3:1 on page) | `#a3a3a3` |
+| Tertiary text | `#67655f` (5.3:1 on page) | `#8a8a8a` (5.7:1 on page) |
 | Hairlines | `#e5e3dc` | `rgba(255,255,255,0.08)` |
 
 On dark surfaces the pastel itself is the accent for text and lines (15.1:1 on #0a0a0a).
@@ -121,7 +121,7 @@ On dark surfaces the pastel itself is the accent for text and lines (15.1:1 on #
 | Code | **Geist Mono** | 400, 500 | Code, filenames, the small caps eyebrow labels. 13-14 px / 1.6. |
 | Wordmark | Geist 600, outlined | n/a | Supplied as vector outlines only. |
 
-All three families are open source (SIL Open Font License) and free to use from Google Fonts. `brand/fonts/` carries the variable files the build uses to render the social images.
+All three families are open source (SIL Open Font License) and free to use from Google Fonts. `brand/fonts/` carries the variable files the build uses to render the social images. Each family's SIL OFL 1.1 licence text sits beside its file (`*-OFL.txt`).
 
 ## 4. Voice and tone
 

@@ -208,7 +208,7 @@ export function StageShell({
                   ? "border-white/10 bg-white/[0.06] text-white"
                   : spot
                     ? "border-[#c5ee8a]/60 text-white"
-                    : "border-white/[0.06] text-white/35"
+                    : "border-white/[0.06] text-white/55"
               }`}
             >
               {alive ? <FeatureIcon id={f.id} className="h-3 w-3 text-[#c5ee8a]" /> : <Lock className="h-3 w-3" />}

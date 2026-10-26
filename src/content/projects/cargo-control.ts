@@ -5,7 +5,7 @@ import { chapter3 } from "../cargo-control/chapter3.ts";
 import { chapter4 } from "../cargo-control/chapter4.ts";
 
 /**
- * Cargo Control: run a shipping depot that never crashes, however broken the paperwork.
+ * Cargo Bay: run a shipping depot that never crashes, however broken the paperwork.
  * Intermediate Python: exceptions, context managers, JSON, validation and logging.
  *
  * The scene (src/scenes/cargo-control) calls these learner functions, each only once the lesson
@@ -29,7 +29,7 @@ import { chapter4 } from "../cargo-control/chapter4.ts";
 export const cargoControl: Project = {
   slug: "cargo-control",
   prerequisites: ["signal-lab"],
-  title: "Cargo Control",
+  title: "Cargo Bay",
   tagline: "Keep a shipping depot running with exceptions, JSON and validation.",
   pitch:
     "You run the control system of a busy shipping depot. Cargo manifests arrive as JSON, and half of them are broken: missing fields, wrong types, bad container IDs, impossible weights, text that is not even JSON. Your code decides what gets loaded, quarantined or rejected, explains why, and never, ever crashes.",

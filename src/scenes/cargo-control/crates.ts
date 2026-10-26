@@ -1,5 +1,5 @@
 /**
- * Cargo Control: the crates. Pure data and helpers (no DOM, no React), so the scene, the demo
+ * Cargo Bay: the crates. Pure data and helpers (no DOM, no React), so the scene, the demo
  * program and any test can share them.
  *
  * Every well-formed container ID below carries a correct ISO 6346 check digit.

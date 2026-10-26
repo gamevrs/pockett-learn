@@ -93,7 +93,7 @@ export function CodeBlock({ code, language = "python" }: { code: string; languag
     <code>
       {lines.map((line, li) => (
         <React.Fragment key={li}>
-          {highlightLine(line, SYNTAX[language] ?? SYNTAX.python)}
+          {highlightLine(line, language)}
           {li < lines.length - 1 ? "\n" : null}
         </React.Fragment>
       ))}
@@ -111,13 +111,41 @@ export function PythonCode({ code }: { code: string }) {
   return <CodeBlock code={code} language="python" />;
 }
 
-function highlightLine(line: string, syntax: (typeof SYNTAX)[CodeLanguage]): React.ReactNode[] {
-  const out: React.ReactNode[] = [];
+/** Code-block palette (the blocks are always dark). Mirrors the dark Monaco theme in CodeEditor.tsx. */
+const COLOR = {
+  string: "#fcd34d",
+  number: "#ffb86b",
+  keyword: "#c5ee8a",
+  call: "#7fd4ff",
+  comment: "#8a8a8a",
+  /** braces and fixed placeholders inside a string: ACCENT 500 */
+  brace: "#abd373",
+  /** format spec after ":" / "!r" */
+  spec: "#9db1a3",
+  /** plain code, same as the block's own text colour */
+  plain: "#e5e5e5",
+} as const;
+
+const TOKEN_RE = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][A-Za-z_0-9$]*)/g;
+// Python's and C#'s triple-quoted strings (on one line) come first so """ isn't read as "" + ".
+const TRIPLE_TOKEN_RE = /("""[\s\S]*?"""|'''[\s\S]*?'''|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][A-Za-z_0-9$]*)/g;
+
+function highlightLine(line: string, language: CodeLanguage): React.ReactNode[] {
+  const syntax = SYNTAX[language] ?? SYNTAX.python;
   // strip the comment first so words inside it aren't highlighted
   const cm = syntax.comment.exec(line);
   const commentAt = cm && !insideString(line, cm.index) ? cm.index : -1;
   const body = commentAt >= 0 ? line.slice(0, commentAt) : line;
-  const re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][A-Za-z_0-9$]*)/g;
+  const out = highlightCode(body, language);
+  if (commentAt >= 0) out.push(<span key="c" style={{ color: COLOR.comment }}>{line.slice(commentAt)}</span>);
+  return out;
+}
+
+/** Highlights code that contains no comment: strings, numbers, keywords, calls. Also used for the expressions inside `{}` holes. */
+function highlightCode(body: string, language: CodeLanguage): React.ReactNode[] {
+  const syntax = SYNTAX[language] ?? SYNTAX.python;
+  const out: React.ReactNode[] = [];
+  const re = language === "python" || language === "csharp" ? TRIPLE_TOKEN_RE : TOKEN_RE;
   let last = 0;
   let n = 0;
   for (const m of body.matchAll(re)) {
@@ -126,16 +154,220 @@ function highlightLine(line: string, syntax: (typeof SYNTAX)[CodeLanguage]): Rea
     const [tok, str, num, word] = m;
     const key = n++;
     const kw = word && syntax.keywords.has(syntax.caseInsensitive ? word.toLowerCase() : word);
-    if (str) out.push(<span key={key} style={{ color: "#fcd34d" }}>{tok}</span>);
-    else if (num) out.push(<span key={key} style={{ color: "#ffb86b" }}>{tok}</span>);
-    else if (kw) out.push(<span key={key} style={{ color: "#c5ee8a" }}>{tok}</span>);
-    else if (word && /^\s*\(/.test(body.slice(idx + tok.length))) out.push(<span key={key} style={{ color: "#7fd4ff" }}>{tok}</span>);
+    if (str) {
+      const kind = interpolationKind(language, tok, body.slice(0, idx));
+      out.push(kind ? <span key={key} style={{ color: COLOR.string }}>{interpolatedString(tok, kind, language)}</span> : <span key={key} style={{ color: COLOR.string }}>{tok}</span>);
+    } else if (num) out.push(<span key={key} style={{ color: COLOR.number }}>{tok}</span>);
+    else if (kw) out.push(<span key={key} style={{ color: COLOR.keyword }}>{tok}</span>);
+    else if (word && /^\s*\(/.test(body.slice(idx + tok.length))) out.push(<span key={key} style={{ color: COLOR.call }}>{tok}</span>);
     else out.push(tok);
     last = idx + tok.length;
   }
   if (last < body.length) out.push(body.slice(last));
-  if (commentAt >= 0) out.push(<span key="c" style={{ color: "#8a8a8a" }}>{line.slice(commentAt)}</span>);
   return out;
+}
+
+// ───────────── string interpolation ─────────────
+
+type InterpolationKind =
+  | "expr-braces" // Python f-string, C# $"..." : {expr[:spec]} holes, {{ }} escapes
+  | "template" // JavaScript `...${expr}...`
+  | "rust" // {} {0} {:?} fixed placeholders and {name} / {name:.2} inline arguments
+  | "cpp" // std::format {} {0:.2f} plus printf %d
+  | "go"; // fmt verbs %d %s %v %.2f
+
+/** Which interpolation rules apply to this string literal, or null for a plain string. */
+function interpolationKind(language: CodeLanguage, tok: string, before: string): InterpolationKind | null {
+  const q = tok[0];
+  switch (language) {
+    case "python":
+      return /(?:^|[^\w])(?:[rR][fF]|[fF][rR]|[fF])$/.test(before) && q !== "`" ? "expr-braces" : null;
+    case "csharp":
+      return /(?:\$@?|@\$)$/.test(before) && q === '"' ? "expr-braces" : null;
+    case "javascript":
+      return q === "`" ? "template" : null;
+    case "rust":
+      return q === '"' ? "rust" : null;
+    case "cpp":
+      return q === '"' ? "cpp" : null;
+    case "go":
+      return q === '"' || q === "`" ? "go" : null;
+    default:
+      return null;
+  }
+}
+
+/** Index just past the quoted literal that starts at s[i], or -1 if it never closes. */
+function skipQuoted(s: string, i: number): number {
+  const q = s[i];
+  for (let j = i + 1; j < s.length; j++) {
+    if (s[j] === "\\") j++;
+    else if (s[j] === q) return j + 1;
+  }
+  return -1;
+}
+
+/** Index of the "}" closing a hole whose contents start at `from`, skipping nested brackets and strings. -1 if unclosed. */
+function holeEnd(s: string, from: number): number {
+  let depth = 0;
+  for (let i = from; i < s.length; i++) {
+    const c = s[i];
+    if (c === '"' || c === "'" || c === "`") {
+      const end = skipQuoted(s, i);
+      if (end < 0) return -1;
+      i = end - 1;
+    } else if (c === "(" || c === "[" || c === "{") depth++;
+    else if (c === ")" || c === "]") depth--;
+    else if (c === "}") {
+      if (depth === 0) return i;
+      depth--;
+    }
+  }
+  return -1;
+}
+
+/** Splits `expr:spec` (and Python's `expr!r`) at the first top-level ":"; `spec` includes the colon. */
+function splitSpec(hole: string, python: boolean): { expr: string; conversion: string; spec: string } {
+  let depth = 0;
+  let colon = -1;
+  for (let i = 0; i < hole.length && colon < 0; i++) {
+    const c = hole[i];
+    if (c === '"' || c === "'" || c === "`") {
+      const end = skipQuoted(hole, i);
+      if (end < 0) break;
+      i = end - 1;
+    } else if (c === "(" || c === "[" || c === "{") depth++;
+    else if (c === ")" || c === "]" || c === "}") depth--;
+    else if (c === ":" && depth === 0 && hole[i + 1] !== ":" && hole[i - 1] !== ":") colon = i;
+  }
+  let expr = colon >= 0 ? hole.slice(0, colon) : hole;
+  const spec = colon >= 0 ? hole.slice(colon) : "";
+  let conversion = "";
+  if (python) {
+    const conv = /!([rsa])\s*$/.exec(expr);
+    if (conv) {
+      conversion = expr.slice(conv.index);
+      expr = expr.slice(0, conv.index);
+    }
+  }
+  return { expr, conversion, spec };
+}
+
+/** Renders a string literal's contents with its interpolated parts picked out. Plain text inherits the string colour. */
+function interpolatedString(tok: string, kind: InterpolationKind, language: CodeLanguage): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  let text = "";
+  let k = 0;
+  const flush = () => {
+    if (text) parts.push(text);
+    text = "";
+  };
+  const span = (content: React.ReactNode, color: string) => {
+    flush();
+    parts.push(
+      <span key={k++} style={{ color }}>
+        {content}
+      </span>,
+    );
+  };
+
+  const triple = /^("""|''')/.test(tok) ? 3 : 1;
+  const open = tok.slice(0, triple);
+  const close = tok.slice(tok.length - triple);
+  const s = tok.slice(triple, tok.length - triple);
+  text = open;
+
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c === "\\" && !(kind === "go" && tok[0] === "`")) {
+      text += s.slice(i, i + 2);
+      i++;
+      continue;
+    }
+
+    if (kind === "template") {
+      if (c === "$" && s[i + 1] === "{") {
+        const end = holeEnd(s, i + 2);
+        if (end > 0) {
+          span("${", COLOR.brace);
+          span(highlightCode(s.slice(i + 2, end), language), COLOR.plain);
+          span("}", COLOR.brace);
+          i = end;
+          continue;
+        }
+      }
+    } else if (kind === "expr-braces") {
+      if ((c === "{" && s[i + 1] === "{") || (c === "}" && s[i + 1] === "}")) {
+        text += c + c;
+        i++;
+        continue;
+      }
+      if (c === "{") {
+        const end = holeEnd(s, i + 1);
+        if (end > 0) {
+          const { expr, conversion, spec } = splitSpec(s.slice(i + 1, end), language === "python");
+          span("{", COLOR.brace);
+          span(highlightCode(expr, language), COLOR.plain);
+          if (conversion) span(conversion, COLOR.spec);
+          if (spec) span(spec, COLOR.spec);
+          span("}", COLOR.brace);
+          i = end;
+          continue;
+        }
+      }
+    } else if (kind === "rust" || kind === "cpp") {
+      if ((c === "{" && s[i + 1] === "{") || (c === "}" && s[i + 1] === "}") || (c === "%" && s[i + 1] === "%" && kind === "cpp")) {
+        text += c + s[i + 1];
+        i++;
+        continue;
+      }
+      if (c === "{") {
+        const end = s.indexOf("}", i + 1);
+        const hole = end > 0 ? s.slice(i + 1, end) : "";
+        if (end > 0 && !/[{"'\\]/.test(hole)) {
+          const named = /^([A-Za-z_]\w*)(:[^{}]*)?$/.exec(hole);
+          if (kind === "rust" && named) {
+            // an inline argument: {name} / {name:.2}; the name is an expression
+            span("{", COLOR.brace);
+            span(named[1], COLOR.plain);
+            if (named[2]) span(named[2], COLOR.spec);
+            span("}", COLOR.brace);
+            i = end;
+            continue;
+          }
+          if (/^(\d+|[A-Za-z_]\w*)?(:[^{}]*)?$/.test(hole)) {
+            span(`{${hole}}`, COLOR.brace);
+            i = end;
+            continue;
+          }
+        }
+      }
+      if (c === "%" && kind === "cpp") {
+        const verb = /^%[-+ #0]*(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:hh|h|ll|l|j|z|t|L)?[diouxXeEfFgGaAcspn]/.exec(s.slice(i));
+        if (verb) {
+          span(verb[0], COLOR.brace);
+          i += verb[0].length - 1;
+          continue;
+        }
+      }
+    } else if (kind === "go" && c === "%") {
+      if (s[i + 1] === "%") {
+        text += "%%";
+        i++;
+        continue;
+      }
+      const verb = /^%(?:\[\d+\])?[-+# 0]*(?:\*|\d+)?(?:\.(?:\*|\d+)?)?[vTtbcdoOqxXUeEfFgGsp]/.exec(s.slice(i));
+      if (verb) {
+        span(verb[0], COLOR.brace);
+        i += verb[0].length - 1;
+        continue;
+      }
+    }
+    text += c;
+  }
+  text += close;
+  flush();
+  return parts;
 }
 
 /** True if position `at` sits inside a string literal on this line. */

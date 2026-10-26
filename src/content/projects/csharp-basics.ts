@@ -5,7 +5,7 @@ import { chapter3 } from "./csharp-basics/ch3.ts";
 import { chapter4 } from "./csharp-basics/ch4.ts";
 
 /**
- * C# Foundations: run Cinder Street Depot, a warehouse of delivery robots, with one growing C#
+ * Cinder Depot: run Cinder Street Depot, a warehouse of delivery robots, with one growing C#
  * program. Each lesson adds a system to the depot board.
  *
  * How it works (C# runs on the pockett runner, see docs/ARCHITECTURE.md):
@@ -36,7 +36,7 @@ export const csharpBasics: Project = {
   language: "csharp",
   // stdin for the whole course: the label lesson reads these four lines
   setup: "  Mika Okafor  \n12\nharbour library\n7x\n",
-  title: "C# Foundations",
+  title: "Cinder Depot",
   tagline: "Types, methods and classes: your first steps in C#.",
   pitch:
     "Run Cinder Street Depot, a warehouse of delivery robots, with one growing C# program. You start with a silent console and finish with a fleet of objects, parcels on a status board and a shift report, all driven by code you wrote. The build board shows your output, your data and, when something is wrong, the compiler's error with its line number.",

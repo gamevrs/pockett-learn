@@ -13,8 +13,9 @@
   --surface: #ffffff;
   --surface-2: #f3f2ed;
   --ink: #121211;
-  --ink-2: #56554f;
-  --ink-3: #8a8880;
+  --ink-2: #4a4943;
+  /* tertiary text: 5.0:1 on --bg-2, 5.4:1 on white (was #8a8880, 3.0:1 to 3.5:1) */
+  --ink-3: #67655f;
   --line: #e5e3dc;
   --line-strong: #d2d0c8;
   --tint: #eef7dd;
@@ -49,7 +50,8 @@
   --surface-2: #1a1a1a;
   --ink: #fafafa;
   --ink-2: #a3a3a3;
-  --ink-3: #737373;
+  /* tertiary text: 5.0:1 on --surface-2, 5.7:1 on the page (was #737373, 3.7:1 to 4.2:1) */
+  --ink-3: #8a8a8a;
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.16);
   --tint: #161b0f;

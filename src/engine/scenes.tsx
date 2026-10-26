@@ -29,8 +29,12 @@ export const SCENES: Record<string, ComponentType<SceneProps>> = {
   "store-api": load(() => import("@/scenes/store-api/StoreApiScene")),
   "smart-home": load(() => import("@/scenes/smart-home/SmartHomeScene")),
   "csharp-basics": load(() => import("@/scenes/csharp-basics/CsharpBasicsScene")),
+  "go-basics": load(() => import("@/scenes/go-basics/GoBasicsScene")),
   "season-analytics": load(() => import("@/scenes/season-analytics/SeasonAnalyticsScene")),
   "graphql-gateway": load(() => import("@/scenes/graphql-gateway/GraphqlGatewayScene")),
   "form-forge": load(() => import("@/scenes/form-forge/FormForgeScene")),
   "event-arena": load(() => import("@/scenes/event-arena/EventArenaScene")),
+  "rust-basics": load(() => import("@/scenes/rust-basics/RustBasicsScene")),
+  "cpp-basics": load(() => import("@/scenes/cpp-basics/ReactorCoreScene")),
+  "ai-foundations": load(() => import("@/scenes/ai-foundations/AiFoundationsScene")),
 };

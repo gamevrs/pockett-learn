@@ -1,7 +1,7 @@
 import type { Chapter } from "@/engine/types";
 
 /**
- * Cargo Control, chapter 2: Errors with meaning.
+ * Cargo Bay, chapter 2: Errors with meaning.
  * Raising, a custom exception hierarchy, chaining, and context managers (class and generator).
  */
 const py = String.raw;

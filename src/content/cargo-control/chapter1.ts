@@ -1,7 +1,7 @@
 import type { Chapter } from "@/engine/types";
 
 /**
- * Cargo Control, chapter 1: Crashes.
+ * Cargo Bay, chapter 1: Crashes.
  * Reading a traceback, catching exceptions on purpose, and guaranteeing cleanup.
  *
  * Authoring notes: Python goes in String.raw (no backticks and no ${ inside). Prose uses normal

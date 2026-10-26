@@ -14,7 +14,7 @@ import { FeatureIcon } from "@/components/ui/icons";
 
 const lessons = flattenLessons(garage);
 const PILL = "inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[0.8rem] transition-colors hover:border-[var(--line-strong)]";
-const PILL_ON = "!border-transparent bg-ink !text-bg";
+const PILL_ON = "!border-transparent !bg-ink !text-bg";
 
 export function UnlockExplorer() {
   const [step, setStep] = useState(0); // 0 = blueprint, n = first n lessons passed
@@ -64,9 +64,9 @@ export function UnlockExplorer() {
         </div>
 
         <div className="mt-5 flex-1 rounded-xl border border-white/10 bg-[#0a0a0a] p-4 text-white">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-white/40">{current ? `lesson ${step} · ${current.title}` : "main.py"}</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-white/55">{current ? `lesson ${step} · ${current.title}` : "main.py"}</p>
           <pre className="mt-3 overflow-x-auto font-mono text-[13px] leading-relaxed text-[#eef0e8]">
-            {current ? <PythonCode code={current.solutionAdd} /> : <span className="text-white/35"># (empty)</span>}
+            {current ? <PythonCode code={current.solutionAdd} /> : <span className="text-white/55"># (empty)</span>}
           </pre>
         </div>
 

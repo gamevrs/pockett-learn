@@ -1005,33 +1005,36 @@ def total_area(shapes):
           body: `Family trees look tidy until reality disagrees:
 
 ~~~python
-class Bird:
-    def fly(self):
-        return "flap flap"
+class Drive:
+    def read(self):
+        return "bytes from disk"
 
-class Penguin(Bird):   # a penguin is a bird...
+    def write(self, data):
+        return "saved " + data
+
+class ReadOnlyDrive(Drive):   # a read-only drive is a drive...
     pass
 
-Penguin().fly()        # ...which now claims it can fly
+ReadOnlyDrive().write("report")   # ...which now claims it can save
 ~~~
 
-Every Bird gets \`fly()\`, including the ones that can't. And any change to a base class ripples into every subclass, wanted or not. This is the **fragile base class** problem.`,
+Every Drive gets \`write()\`, including the ones that can't. And any change to a base class ripples into every subclass, wanted or not. This is the **fragile base class** problem.`,
         },
         {
           kind: "question",
-          title: "Fix the penguin",
+          title: "Fix the read-only drive",
           body: "What's the cleanest fix?",
           question: {
             type: "choice",
             options: [
-              "Override fly() in Penguin to raise an error",
-              "Give birds a movement part: a Penguin has Swim, an Eagle has Fly",
-              "Delete fly() from Bird and paste a copy into every bird that flies",
-              "Make Penguin inherit from Fish instead",
+              "Override write() in ReadOnlyDrive to raise an error",
+              "Give drives a list of abilities: a ReadOnlyDrive has Read, a DiskDrive has Read and Write",
+              "Delete write() from Drive and paste a copy into every drive that can save",
+              "Make ReadOnlyDrive inherit from Printer instead",
             ],
             answer: 1,
           },
-          explanation: "Raising an error works, but breaks every piece of code that trusted \"all birds can fly\". Copy-pasting duplicates code. A movement part says exactly what's true about each bird, instead of forcing one family tree to fit every case.",
+          explanation: "Raising an error works, but breaks every piece of code that trusted \"every drive can write\". Copy-pasting duplicates code. A list of abilities says exactly what's true about each drive, instead of forcing one family tree to fit every case.",
         },
         {
           kind: "question",
@@ -1365,10 +1368,10 @@ def area(shape):
         },
         {
           kind: "question",
-          title: "The bird that can't",
-          body: "Code that takes any `Bird` and calls `fly()` crashes when it's handed a `Penguin(Bird)` whose `fly()` raises an error. Which principle is broken?",
+          title: "The drive that can't",
+          body: "Code that takes any `Drive` and calls `write()` crashes when it's handed a `ReadOnlyDrive(Drive)` whose `write()` raises an error. Which principle is broken?",
           question: { type: "choice", options: SOLID, answer: 2 },
-          explanation: "A subclass must keep its parent's promises. If a Penguin can't do what every Bird does, it shouldn't be a Bird subclass in this design. That's a sign to reach for composition.",
+          explanation: "A subclass must keep its parent's promises. If a ReadOnlyDrive can't do what every Drive does, it shouldn't be a Drive subclass in this design. That's a sign to reach for composition.",
         },
         {
           kind: "question",
