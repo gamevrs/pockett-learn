@@ -262,6 +262,22 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Reset throws the learner's work away, so the first click only arms it (and Ctrl+Z still brings the text back)
+  const [confirmingReset, setConfirmingReset] = useState(false);
+  useEffect(() => {
+    if (!confirmingReset) return;
+    const t = setTimeout(() => setConfirmingReset(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirmingReset]);
+  const requestReset = () => {
+    if (code !== starterFor(project, index, submittedCode(progress)) && !confirmingReset) {
+      setConfirmingReset(true);
+      return;
+    }
+    setConfirmingReset(false);
+    reset();
+  };
+
   const reset = () => {
     sound.playClick();
     const fresh = starterFor(project, index, submittedCode(progress));
@@ -395,8 +411,12 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
                     <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" /> {lang.fileName}
                     <span className="hidden truncate font-sans font-medium text-ink-3 sm:inline">· your whole {project.title} program</span>
                   </span>
-                  <button onClick={reset} className="flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-ink-3 hover:bg-surface-2 hover:text-ink">
-                    <RotateCcw className="h-3.5 w-3.5" /> Reset lesson
+                  <button
+                    onClick={requestReset}
+                    aria-live="polite"
+                    className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${confirmingReset ? "bg-bad/10 font-medium text-bad" : "text-ink-3 hover:bg-surface-2 hover:text-ink"}`}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> {confirmingReset ? "Click again to discard your code" : "Reset lesson"}
                   </button>
                 </div>
                 <div className="min-h-0 flex-1">

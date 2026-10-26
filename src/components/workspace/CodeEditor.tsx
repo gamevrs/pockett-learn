@@ -142,23 +142,23 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
   // not come from the editor itself (Reset lesson, switching language).
   const [initialValue] = useState(value);
   const knownValue = useRef(value);
-  /** Texts we reported through onChange whose echo (the parent's re-render) has not arrived yet. */
-  const pendingEcho = useRef<string[]>([]);
+  /**
+   * Everything the editor reported through onChange in the last few seconds. A value coming back down that is one
+   * of these is an old snapshot of the learner's own typing (a lagging render, a draft saved a moment ago, a cloud
+   * pull): the editor already moved past it, so writing it into the model would erase newer keystrokes.
+   */
+  const recentlyTyped = useRef<{ text: string; at: number }[]>([]);
   const handleChange = (v: string | undefined) => {
     const text = v ?? "";
     knownValue.current = text;
-    pendingEcho.current.push(text);
-    if (pendingEcho.current.length > 200) pendingEcho.current.shift();
+    const now = performance.now();
+    recentlyTyped.current = [...recentlyTyped.current.filter((h) => now - h.at < 5000), { text, at: now }].slice(-400);
     onChange(text);
   };
   useEffect(() => {
-    const echoed = pendingEcho.current.indexOf(value);
-    if (echoed >= 0) {
-      // our own typing coming back (renders can skip or lag behind keystrokes; older echoes are dropped with it)
-      pendingEcho.current.splice(0, echoed + 1);
-      return;
-    }
-    pendingEcho.current = [];
+    const now = performance.now();
+    if (recentlyTyped.current.some((h) => h.text === value && now - h.at < 5000)) return;
+    recentlyTyped.current = [];
     knownValue.current = value;
     const editor = editorRef.current;
     const model = editor?.getModel();
@@ -197,6 +197,7 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
     });
     const model = editor.getModel();
     if (model) {
+      model.setEOL(monaco.editor.EndOfLineSequence.LF); // typed newlines were CRLF on Windows, mixed with the LF starters
       setModelContext(model, contextRef.current);
       if (model.getValue() !== knownValue.current) model.setValue(knownValue.current); // remounted (language switch) after the seed went stale
     }
