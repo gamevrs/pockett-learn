@@ -108,7 +108,7 @@ Python projects can declare Pyodide `packages` (e.g. `sqlite3`); `RunOptions.pac
   compiling and running a program per language, then self-test the saved snapshot through the real run path.
   Set the printed id as `RUNNER_SNAPSHOT_ID` and redeploy. Rebuild when you change `assets.ts` or want newer toolchains.
 - **Per request** (`execute.ts`): create a sandbox from the snapshot (1-2 vCPU, `deny-all` network incl. DNS,
-  60 s lifetime, not persistent), write the source and stdin, run `run.sh` as root with a random report marker,
+  about 25 s hard lifetime, not persistent), write the source and stdin, run `run.sh` as root with a random report marker,
   parse the report (`result.ts`), then stop the sandbox after the response (`after()`, backed by the sandbox's own
   timeout). `run.sh` compiles as `pkbuild` (10 s, `timeout`), runs as `pkrun` (3 s wall, no write access outside its
   scratch dir; stdout capped by `ulimit -f` and `head -c` at 100 KB; 256 processes; 1 GiB address space for C++/Go,
@@ -137,6 +137,14 @@ Python projects can declare Pyodide `packages` (e.g. `sqlite3`); `RunOptions.pac
   all `pkrun`/`pkbuild` processes and temp files are killed and deleted afterwards. The trade-off: learners then
   share a VM over time (no network, no secrets in it, but a determined learner could leave something behind that
   `pkbuild`'s caches or /tmp allow). Use it only if measured create latency is too high.
+- **Cost controls.** Sandboxes bill for the time they run (and snapshots for storage), so nothing is allowed to linger. Code: `cost.ts` (pure helpers, unit-tested), constants in `config.ts`, `limits.ts`, `execute.ts`, `provision.ts`, `app/api/run/sweep/route.ts`, `vercel.json`.
+  - *Per-run ceiling.* A fresh run sandbox is created with a platform `timeout` of compile + run + 12 s (`RUN_SANDBOX_TIMEOUT_MS`, about 25 s, derived from `LIMITS`), so one run can never bill more than that even if the function dies; the `runCommand` backstop (23 s) sits below it and `after()` stops the VM as soon as the response is sent.
+  - *Pool idle ceiling.* `RUNNER_MODE=pool` (off by default) trades a small idle cost for latency: a warm VM bills while it waits. Each pool VM has a hard timeout of 4 min 30 s, and a check deferred with `after()` after every run stops VMs idle for 40 s, so an idle VM costs at most about 40 s and no VM outlives 4.5 min. Keep `fresh` unless create latency is measured to be a problem.
+  - *Sweeper.* Sandboxes are named `pk-run-`, `pk-pool-`, `pk-setup-` plus a random suffix. A Vercel Cron job calls `GET /api/run/sweep` every 10 minutes (needs the `CRON_SECRET` env var, which Vercel sends as the bearer token; 404 if unset, 401 if wrong), lists the project's sandboxes and stops live ones older than 2 min (run), 6.5 min (pool) or 25 min (setup, and any name we don't recognise), logging each one. It is a backstop; normally it finds nothing.
+  - *Snapshot clean-up.* `provision.ts` deletes a snapshot whose self-test failed, and after a good build deletes all older snapshots of the project except the new one and the current `RUNNER_SNAPSHOT_ID` (plus any ids in `RUNNER_KEEP_SNAPSHOT_IDS`). Deletions are best effort and listed in the report's `cleanup`. The live snapshot never expires. Note: if you switch `RUNNER_SNAPSHOT_ID` but don't redeploy before the next setup run, the running deployment still sees the old id; put the new id in `RUNNER_KEEP_SNAPSHOT_IDS` too, or redeploy first.
+  - *Kill switch.* `RUNNER_DISABLED=1` makes `/api/run` answer 503 with the friendly "isn't available" message before it touches the SDK; redeploy after changing the variable.
+  - *Rate guards.* Per-IP limit, in-flight cap, and a global per-instance cap on sandbox creations per minute (`RUNNER_MAX_CREATES_PER_MIN`, default 120; over it the route answers 429).
+  - *Recommended (owner, in Vercel).* Turn on Spend Management for the team with a monthly cap and an alert threshold, so the account stops or warns before a surprise bill, whatever the code does.
 - **Verify a deployment** with `node scripts/runner/smoke.mjs https://your.site --repeat 5` (hello, stdin, compile error,
   infinite loop and runtime exception per language, with latency). Offline checks: `node scripts/runner/test.mjs`.
 - **Adding a language to the snapshot** (Rust was the last): the live snapshot is immutable, so the new code is safe to

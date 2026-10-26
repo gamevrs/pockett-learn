@@ -1,7 +1,8 @@
-import { Sandbox } from "@vercel/sandbox";
+import { Sandbox, Snapshot } from "@vercel/sandbox";
 import { PCH_SH, RUNNER_CS, RUNNER_CSPROJ, RUN_SH } from "./assets.ts";
-import { LANGUAGES, SNAPSHOT_PATHS } from "./config.ts";
+import { LANGUAGES, SETUP_SANDBOX_TIMEOUT_MS, SNAPSHOT_PATHS } from "./config.ts";
 import type { RunnerLanguage } from "./config.ts";
+import { parseIdList, sandboxName, selectSnapshotsToDelete } from "./cost.ts";
 import { execOnSandbox, runFresh } from "./execute.ts";
 import { SAMPLES, WARMUP, checkSample } from "./samples.ts";
 
@@ -12,6 +13,11 @@ import { SAMPLES, WARMUP, checkSample } from "./samples.ts";
  *   warm caches (Go std build cache, C++ precompiled bits/stdc++.h, Rust std) filled by compiling and running
  *   a program in each language. Then it self-tests the snapshot by running SAMPLES through the same
  *   code path /api/run uses.
+ *
+ * Snapshot hygiene (storage is billed per snapshot): a snapshot that fails its self-test is deleted at
+ * once; after a good build, every older snapshot of the project is deleted except the new one and the one
+ * currently in RUNNER_SNAPSHOT_ID (so the live site keeps working until the owner switches the variable).
+ * Deletions are best effort and reported in `cleanup`; they never fail the setup.
  *
  * Used by POST /api/run/setup and scripts/runner/build-snapshot.mjs.
  */
@@ -30,9 +36,21 @@ export interface SelfTestRow {
   totalMs: number;
 }
 
+export interface CleanupReport {
+  /** The just-built snapshot was deleted because its self-test failed. */
+  newSnapshotDeleted: boolean;
+  /** Snapshot ids that were deleted. */
+  deleted: string[];
+  /** Snapshot ids deliberately kept (the new one when it passed, and the live RUNNER_SNAPSHOT_ID). */
+  kept: string[];
+  /** Deletions (or the listing) that failed; harmless, but those snapshots may still be billed. */
+  errors: string[];
+}
+
 export interface SetupReport {
   ok: boolean;
   snapshotId: string;
+  cleanup: CleanupReport;
   baseImage: string;
   steps: StepReport[];
   selfTest: SelfTestRow[];
@@ -150,6 +168,39 @@ du -sh /opt/dotnet /opt/pockett /usr/local/go /opt/rust 2>/dev/null || true`,
   ];
 }
 
+async function deleteSnapshotQuietly(id: string, cleanup: CleanupReport, say: (line: string) => void): Promise<boolean> {
+  try {
+    const snap = await Snapshot.get({ snapshotId: id, signal: AbortSignal.timeout(30_000) });
+    await snap.delete({ signal: AbortSignal.timeout(30_000) });
+    cleanup.deleted.push(id);
+    say(`deleted snapshot ${id}`);
+    return true;
+  } catch (err) {
+    const message = `could not delete snapshot ${id}: ${err instanceof Error ? err.message : String(err)}`;
+    cleanup.errors.push(message);
+    say(message);
+    return false;
+  }
+}
+
+/** Best effort: removes superseded snapshots. Keeps `keep` (never deletes those) and never throws. */
+async function pruneOldSnapshots(keep: string[], cleanup: CleanupReport, say: (line: string) => void) {
+  try {
+    const page = await Snapshot.list({ limit: 100, signal: AbortSignal.timeout(30_000) });
+    const all = await page.toArray();
+    const doomed = selectSnapshotsToDelete(
+      all.map((s) => ({ id: s.id, status: s.status, createdAt: s.createdAt })),
+      keep,
+    );
+    say(`snapshot clean-up: ${all.length} found, keeping ${keep.length}, deleting ${doomed.length}`);
+    for (const id of doomed) await deleteSnapshotQuietly(id, cleanup, say);
+  } catch (err) {
+    const message = `snapshot clean-up skipped: ${err instanceof Error ? err.message : String(err)}`;
+    cleanup.errors.push(message);
+    say(message);
+  }
+}
+
 export async function buildSnapshot(log: (line: string) => void = () => {}): Promise<SetupReport> {
   const started = performance.now();
   const steps: StepReport[] = [];
@@ -157,9 +208,11 @@ export async function buildSnapshot(log: (line: string) => void = () => {}): Pro
 
   say(`creating setup sandbox from ${BASE_IMAGE}`);
   const sandbox = await Sandbox.create({
+    name: sandboxName("setup"),
     image: BASE_IMAGE,
     resources: { vcpus: 4 },
-    timeout: 20 * 60_000,
+    // Hard lifetime of the build VM; the finally below stops it sooner, and the sweeper backs that up.
+    timeout: SETUP_SANDBOX_TIMEOUT_MS,
     persistent: false,
     // Installing toolchains needs the network. Only this build sandbox has it; run sandboxes are deny-all.
     networkPolicy: "allow-all",
@@ -199,6 +252,7 @@ export async function buildSnapshot(log: (line: string) => void = () => {}): Pro
     const final = await sandbox.runCommand({ cmd: "bash", args: ["-c", `rm -rf /tmp/* /var/tmp/*; rm -f '${cwd}'/Program.cs '${cwd}'/main.cpp '${cwd}'/main.go '${cwd}'/main.rs '${cwd}'/stdin.txt; chown -R pkbuild:pkbuild /home/pkbuild; sync`], sudo: true, timeoutMs: 2 * 60_000 });
     if (final.exitCode !== 0) throw new Error(`Final cleanup failed:\n${tail(await final.output("both"))}`);
 
+    // The snapshot that ends up live must not expire; a failed one is deleted below.
     say("saving snapshot (never expires)");
     const t = performance.now();
     const snapshot = await sandbox.snapshot({ expiration: 0 });
@@ -221,16 +275,28 @@ export async function buildSnapshot(log: (line: string) => void = () => {}): Pro
     for (const language of Object.keys(LANGUAGES) as RunnerLanguage[]) {
       hello[language] = median(selfTest.filter((r) => r.language === language && r.sample === "hello" && r.ok).map((r) => r.totalMs));
     }
+    const ok = selfTest.every((r) => r.ok);
+    const cleanup: CleanupReport = { newSnapshotDeleted: false, deleted: [], kept: [], errors: [] };
+    if (!ok) {
+      // A broken snapshot is useless and bills for storage: remove it.
+      cleanup.newSnapshotDeleted = await deleteSnapshotQuietly(snapshotId, cleanup, say);
+    } else {
+      const live = process.env.RUNNER_SNAPSHOT_ID?.trim();
+      const keep = [snapshotId, live, ...parseIdList(process.env.RUNNER_KEEP_SNAPSHOT_IDS)].filter((x): x is string => Boolean(x));
+      cleanup.kept = [...new Set(keep)];
+      await pruneOldSnapshots(cleanup.kept, cleanup, say);
+    }
     const report: SetupReport = {
-      ok: selfTest.every((r) => r.ok),
+      ok,
       snapshotId,
+      cleanup,
       baseImage: BASE_IMAGE,
       steps,
       selfTest,
       latency: { createMsMedian: median(selfTest.filter((r) => r.ok).map((r) => r.createMs)), helloTotalMsMedian: hello },
       totalMs: Math.round(performance.now() - started),
     };
-    say(report.ok ? "self-test passed" : "self-test FAILED, see report");
+    say(report.ok ? "self-test passed" : "self-test FAILED, see report (the new snapshot was deleted)");
     return report;
   } finally {
     // snapshot() already stopped it on success; this covers every failure path. Safe to call twice.

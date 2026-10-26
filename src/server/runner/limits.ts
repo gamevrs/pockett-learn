@@ -1,3 +1,5 @@
+import { positiveInt } from "./cost.ts";
+
 /**
  * Best-effort abuse protection for /api/run. Both limiters live in module memory, so on serverless
  * every warm instance has its own counters: a determined attacker can spread across instances.
@@ -86,4 +88,29 @@ export function clientIp(headers: { get(name: string): string | null }): string 
   if (real) return real;
   const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   return forwarded || "unknown";
+}
+
+/** Thrown when this instance has created too many sandboxes in the last minute (a global cost guard). */
+export class RunnerBusyError extends Error {
+  readonly retryAfterMs: number;
+  constructor(retryAfterMs: number) {
+    super("Too many sandboxes were created in the last minute.");
+    this.name = "RunnerBusyError";
+    this.retryAfterMs = retryAfterMs;
+  }
+}
+
+/**
+ * Per-instance cap on sandbox creations per minute, on top of the per-IP limit: a ceiling on cost
+ * even when abuse is spread across many addresses. RUNNER_MAX_CREATES_PER_MIN overrides the default.
+ */
+export const DEFAULT_MAX_CREATES_PER_MIN = 120;
+
+let creations: SlidingWindowLimiter | null = null;
+
+/** Call right before creating a sandbox; throws RunnerBusyError when over the cap. */
+export function takeCreateSlot(): void {
+  creations ??= new SlidingWindowLimiter(positiveInt(process.env.RUNNER_MAX_CREATES_PER_MIN, DEFAULT_MAX_CREATES_PER_MIN), 60_000, Date.now, 4);
+  const taken = creations.hit("all");
+  if (!taken.ok) throw new RunnerBusyError(taken.retryAfterMs);
 }

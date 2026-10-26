@@ -30,6 +30,9 @@ try {
   }
   console.log(`\nMedian sandbox create: ${report.latency.createMsMedian}ms. Hello-world total by language: ${JSON.stringify(report.latency.helloTotalMsMedian)}`);
   console.log(`\nSnapshot id: ${report.snapshotId}`);
+  const c = report.cleanup;
+  console.log(`Snapshot clean-up: deleted ${c.deleted.length ? c.deleted.join(", ") : "none"}; kept ${c.kept.length ? c.kept.join(", ") : "none"}${c.newSnapshotDeleted ? "; the new snapshot was deleted (failed self-test)" : ""}`);
+  for (const e of c.errors) console.log(`  clean-up warning: ${e}`);
   if (report.ok) {
     console.log(`Next: set RUNNER_SNAPSHOT_ID=${report.snapshotId} (Vercel project settings > Environment Variables) and redeploy.`);
   } else {

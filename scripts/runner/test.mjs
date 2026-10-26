@@ -11,10 +11,11 @@ import { join } from "node:path";
 import { PCH_SH, RUNNER_CS, RUNNER_CSPROJ, RUN_SH } from "../../src/server/runner/assets.ts";
 import { checkAdmin, safeEqual } from "../../src/server/runner/auth.ts";
 import { TIMEOUT_MESSAGE } from "../../src/server/runner/config.ts";
-import { ConcurrencyGate, SlidingWindowLimiter, clientIp } from "../../src/server/runner/limits.ts";
+import { ConcurrencyGate, DEFAULT_MAX_CREATES_PER_MIN, RunnerBusyError, SlidingWindowLimiter, clientIp, takeCreateSlot } from "../../src/server/runner/limits.ts";
 import { RunnerProtocolError, cleanToolOutput, parseRunnerOutput } from "../../src/server/runner/result.ts";
 import { SAMPLES, checkSample } from "../../src/server/runner/samples.ts";
-import { LANGUAGES } from "../../src/server/runner/config.ts";
+import { LANGUAGES, LIMITS, POOL_MAX_AGE_MS, POOL_SANDBOX_TIMEOUT_MS, RUN_COMMAND_TIMEOUT_MS, RUN_SANDBOX_TIMEOUT_MS, SETUP_SANDBOX_TIMEOUT_MS, SWEEP_MAX_AGE_ANY_MS, SWEEP_MAX_AGE_MS } from "../../src/server/runner/config.ts";
+import { parseIdList, pastSweepLookback, positiveInt, runnerDisabled, sandboxKind, sandboxName, selectSnapshotsToDelete, slotExpired, sweepDecision } from "../../src/server/runner/cost.ts";
 import { lineFrom, parseRustPanic, parseRustcError, toError } from "../../src/engine/runtimes/remote-output.ts";
 
 let n = 0;
@@ -251,6 +252,105 @@ check("rust: config and run.sh know the language", () => {
   assert.match(RUN_SH, /rust\) SRC=main\.rs/);
   assert.match(RUN_SH, /rustc --edition 2021 -C opt-level=1 -C debuginfo=0 -C codegen-units=4/);
   assert.match(RUN_SH, /RUSTUP_HOME=\/opt\/rust\/rustup CARGO_HOME=\/opt\/rust\/cargo/);
+});
+
+// ---- cost controls ----
+check("lifetimes: run sandbox is compile + run + 12 s, command backstop sits below it, pool/setup are bounded", () => {
+  assert.equal(RUN_SANDBOX_TIMEOUT_MS, (LIMITS.compileSeconds + LIMITS.runSeconds + 12) * 1000);
+  assert.ok(RUN_SANDBOX_TIMEOUT_MS <= 30_000, "per-run ceiling stays small");
+  assert.ok(RUN_COMMAND_TIMEOUT_MS < RUN_SANDBOX_TIMEOUT_MS);
+  assert.ok(RUN_COMMAND_TIMEOUT_MS > (LIMITS.compileSeconds + LIMITS.runSeconds) * 1000, "backstop above the in-VM budgets");
+  assert.equal(POOL_SANDBOX_TIMEOUT_MS, POOL_MAX_AGE_MS + 30_000);
+  assert.ok(SETUP_SANDBOX_TIMEOUT_MS <= SWEEP_MAX_AGE_MS.setup, "sweeper never beats the setup VM's own lifetime");
+  assert.ok(SWEEP_MAX_AGE_MS.run > RUN_SANDBOX_TIMEOUT_MS && SWEEP_MAX_AGE_MS.pool > POOL_SANDBOX_TIMEOUT_MS, "sweeper is only a backstop");
+});
+
+check("names: sandboxName/sandboxKind round-trip, unknown names are not ours", () => {
+  for (const kind of ["run", "pool", "setup"]) {
+    const name = sandboxName(kind);
+    assert.match(name, new RegExp("^pk-" + kind + "-[0-9a-f]{12}$"));
+    assert.equal(sandboxKind(name), kind);
+  }
+  assert.notEqual(sandboxName("run"), sandboxName("run"));
+  assert.equal(sandboxKind("pk-weird-abc"), null);
+  assert.equal(sandboxKind("pk-runner"), null);
+  assert.equal(sandboxKind("sb-123"), null);
+  assert.equal(sandboxKind(""), null);
+});
+
+check("sweep: per-kind age thresholds, only live sandboxes are stopped", () => {
+  const now = 1_000_000_000_000;
+  const at = (name, status, ageMs) => sweepDecision({ name, status, createdAt: now - ageMs }, now);
+  assert.equal(at("pk-run-aaaaaaaaaaaa", "running", 119_000).stop, false);
+  assert.equal(at("pk-run-aaaaaaaaaaaa", "running", 121_000).stop, true);
+  assert.equal(at("pk-run-aaaaaaaaaaaa", "pending", 121_000).stop, true);
+  assert.equal(at("pk-run-aaaaaaaaaaaa", "stopped", 3_600_000).stop, false);
+  assert.equal(at("pk-run-aaaaaaaaaaaa", "stopping", 3_600_000).stop, false);
+  assert.equal(at("pk-pool-aaaaaaaaaaaa", "running", SWEEP_MAX_AGE_MS.pool - 1000).stop, false);
+  assert.equal(at("pk-pool-aaaaaaaaaaaa", "running", SWEEP_MAX_AGE_MS.pool + 1000).stop, true);
+  // The 20-minute setup VM is not killed while it legitimately runs, but is after 25 minutes.
+  assert.equal(at("pk-setup-aaaaaaaaaaaa", "running", 20 * 60_000).stop, false);
+  assert.equal(at("pk-setup-aaaaaaaaaaaa", "running", 26 * 60_000).stop, true);
+  // Unrecognised names (older code): the 25-minute cap.
+  assert.equal(at("random-name", "running", 10 * 60_000).stop, false);
+  assert.equal(at("random-name", "running", SWEEP_MAX_AGE_ANY_MS + 1000).stop, true);
+  assert.equal(at("random-name", "running", SWEEP_MAX_AGE_ANY_MS + 1000).kind, "any");
+  assert.equal(at("pk-run-aaaaaaaaaaaa", "running", -5000).stop, false, "clock skew never counts as old");
+});
+
+check("sweep: lookback ends paging past 24 h", () => {
+  const now = 2_000_000_000_000;
+  assert.equal(pastSweepLookback(now - 3_600_000, now), false);
+  assert.equal(pastSweepLookback(now - 25 * 3_600_000, now), true);
+});
+
+check("pool: idle, age and use limits retire only idle slots", () => {
+  const limits = { maxAgeMs: 240_000, maxUses: 40, idleMs: 40_000 };
+  const now = 10_000_000;
+  const slot = (o) => ({ busy: false, bornAt: now - 10_000, lastUsedAt: now - 5_000, uses: 3, ...o });
+  assert.equal(slotExpired(slot({}), now, limits), false);
+  assert.equal(slotExpired(slot({ lastUsedAt: now - 40_000 }), now, limits), true, "idle too long");
+  assert.equal(slotExpired(slot({ bornAt: now - 240_000 }), now, limits), true, "too old");
+  assert.equal(slotExpired(slot({ uses: 40 }), now, limits), true, "used up");
+  assert.equal(slotExpired(slot({ busy: true, bornAt: now - 999_999, lastUsedAt: 0, uses: 99 }), now, limits), false, "never retire a busy slot");
+});
+
+check("snapshots: keep the new and the live one, delete the rest, skip already-deleted", () => {
+  const snaps = [
+    { id: "snap_new", status: "created" },
+    { id: "snap_live", status: "created" },
+    { id: "snap_old1", status: "created" },
+    { id: "snap_old2", status: "failed" },
+    { id: "snap_gone", status: "deleted" },
+    { id: "snap_old1", status: "created" },
+  ];
+  assert.deepEqual(selectSnapshotsToDelete(snaps, ["snap_new", "snap_live"]), ["snap_old1", "snap_old2"]);
+  assert.deepEqual(selectSnapshotsToDelete(snaps, ["snap_new", undefined]), ["snap_live", "snap_old1", "snap_old2"]);
+  assert.deepEqual(selectSnapshotsToDelete(snaps, snaps.map((s) => s.id)), []);
+  assert.deepEqual(selectSnapshotsToDelete([], ["snap_new"]), []);
+  assert.deepEqual(parseIdList(" a, b  c,,"), ["a", "b", "c"]);
+  assert.deepEqual(parseIdList(undefined), []);
+});
+
+check("kill switch: RUNNER_DISABLED parsing", () => {
+  for (const v of ["1", "true", "TRUE", " yes ", "on"]) assert.equal(runnerDisabled(v), true, v);
+  for (const v of [undefined, "", "0", "false", "no", "off"]) assert.equal(runnerDisabled(v), false, String(v));
+  assert.equal(positiveInt("7", 3), 7);
+  assert.equal(positiveInt("0", 3), 3);
+  assert.equal(positiveInt("abc", 3), 3);
+  assert.equal(positiveInt(undefined, 3), 3);
+});
+
+check("creation guard: global per-minute cap throws RunnerBusyError with a retry hint", () => {
+  process.env.RUNNER_MAX_CREATES_PER_MIN = "3";
+  try {
+    // The guard reads the env once, on first use.
+    for (let i = 0; i < 3; i++) takeCreateSlot();
+    assert.throws(() => takeCreateSlot(), (err) => err instanceof RunnerBusyError && err.retryAfterMs > 0 && err.retryAfterMs <= 60_000);
+  } finally {
+    delete process.env.RUNNER_MAX_CREATES_PER_MIN;
+  }
+  assert.equal(DEFAULT_MAX_CREATES_PER_MIN, 120);
 });
 
 // ---- embedded scripts ----

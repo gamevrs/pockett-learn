@@ -2,7 +2,8 @@ import { after } from "next/server";
 import { APIError } from "@vercel/sandbox";
 import { LIMITS, UNAVAILABLE_MESSAGE, isRunnerLanguage } from "@/server/runner/config";
 import { runSandboxed, runnerMode } from "@/server/runner/execute";
-import { ConcurrencyGate, SlidingWindowLimiter, clientIp } from "@/server/runner/limits";
+import { runnerDisabled } from "@/server/runner/cost";
+import { ConcurrencyGate, RunnerBusyError, SlidingWindowLimiter, clientIp } from "@/server/runner/limits";
 import { RunnerProtocolError, RunnerUnavailableError } from "@/server/runner/result";
 
 /**
@@ -40,6 +41,9 @@ function tooBusy(retryAfterSeconds: number, why: "fast" | "busy" = "busy") {
 }
 
 export async function POST(request: Request) {
+  // Kill switch: RUNNER_DISABLED=1 stops all spending at once, before anything (even parsing) happens.
+  if (runnerDisabled(process.env.RUNNER_DISABLED)) return reply({ error: UNAVAILABLE_MESSAGE }, 503, { "Retry-After": "300" });
+
   const snapshotId = process.env.RUNNER_SNAPSHOT_ID;
   if (!snapshotId) return reply({ error: "Running code isn't available yet. Please try again later." }, 503);
 
@@ -80,6 +84,7 @@ export async function POST(request: Request) {
     return reply({ ...result });
   } catch (err) {
     console.error("[runner] run failed", err);
+    if (err instanceof RunnerBusyError) return tooBusy(Math.max(1, Math.ceil(err.retryAfterMs / 1000)));
     if (err instanceof RunnerUnavailableError) return reply({ error: UNAVAILABLE_MESSAGE }, 503);
     if (err instanceof RunnerProtocolError) {
       return reply({ error: "Something unexpected happened. Try again in a moment." }, 502);

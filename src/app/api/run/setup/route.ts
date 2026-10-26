@@ -7,6 +7,10 @@ import { buildSnapshot } from "@/server/runner/provision";
  *
  *   curl -X POST -H "Authorization: Bearer $RUNNER_ADMIN_TOKEN" https://<your-domain>/api/run/setup
  *
+ * Cost: the build sandbox is stopped when this finishes (and has a 20-minute platform lifetime); a snapshot
+ * that fails its self-test is deleted, and after a good build older snapshots are deleted except the new one
+ * and the current RUNNER_SNAPSHOT_ID. The report's `cleanup` lists every deletion.
+ *
  * Answers 404 when RUNNER_ADMIN_TOKEN isn't set, so the route doesn't advertise itself.
  * The install downloads toolchains and takes several minutes: 800 s is the Pro / Fluid compute maximum.
  */
@@ -32,7 +36,9 @@ export async function POST(request: Request) {
         ...report,
         next: report.ok
           ? `Set RUNNER_SNAPSHOT_ID=${report.snapshotId} in the project's environment variables and redeploy.`
-          : `The snapshot ${report.snapshotId} was created but failed its self-test (see selfTest). Don't use it until that's fixed.`,
+          : report.cleanup.newSnapshotDeleted
+            ? `The snapshot ${report.snapshotId} failed its self-test (see selfTest) and was deleted. Keep RUNNER_SNAPSHOT_ID as it is.`
+            : `The snapshot ${report.snapshotId} failed its self-test (see selfTest) and could not be deleted automatically (see cleanup.errors): delete it by hand and don't use it.`,
         log,
       },
       { status: report.ok ? 200 : 500, headers: { "Cache-Control": "no-store" } },
