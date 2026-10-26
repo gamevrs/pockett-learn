@@ -1,5 +1,5 @@
 import React from "react";
-import { Binary, Boxes, CircuitBoard, Code, Cpu, ListTree, MemoryStick, Microchip, Network, Puzzle, SquareTerminal, type LucideIcon } from "lucide-react";
+import { Activity, Binary, Bot, Boxes, CircuitBoard, Code, Cpu, Database, Gauge, LifeBuoy, ListTree, MemoryStick, Microchip, Network, Puzzle, Rocket, ShieldCheck, SquareTerminal, TrafficCone, type LucideIcon } from "lucide-react";
 
 const ICONS: Record<string, LucideIcon> = {
   binary: Binary,
@@ -13,6 +13,14 @@ const ICONS: Record<string, LucideIcon> = {
   terminal: SquareTerminal,
   network: Network,
   tree: ListTree,
+  database: Database,
+  gauge: Gauge,
+  rocket: Rocket,
+  activity: Activity,
+  lifebuoy: LifeBuoy,
+  cone: TrafficCone,
+  shield: ShieldCheck,
+  bot: Bot,
 };
 
 export function ModuleIcon({ icon, className = "h-5 w-5" }: { icon: string; className?: string }) {
