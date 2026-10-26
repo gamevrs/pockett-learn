@@ -129,6 +129,11 @@ interface Item {
   range: { startLineNumber: number; endLineNumber: number; startColumn: number; endColumn: number };
 }
 
+/** Monaco needs an explicit insertText: without it the list renders, but accepting an item (Enter, Tab, click) throws. */
+function withInsertText(items: Item[]): Item[] {
+  return items.map((i) => (i.insertText === undefined ? { ...i, insertText: i.label } : i));
+}
+
 function userMembers(monaco: Monaco, scan: Scan, owner: string, range: Item["range"], seen = new Set<string>()): Item[] {
   const out: Item[] = [];
   const K = monaco.languages.CompletionItemKind;
@@ -441,9 +446,11 @@ export function registerEditorTools(monaco: Monaco): void {
 
   for (const language of OWN_LANGUAGES) {
     K.registerCompletionItemProvider(language, {
-      triggerCharacters: language === "sql" ? [".", " "] : [".", ":"],
-      provideCompletionItems(model: Model, position: Position) {
+      // ":" only matters for "::" in Rust and C++; it must never open the list after "if x:" or "case 1:"
+      triggerCharacters: language === "rust" || language === "cpp" ? [".", ":"] : ["."],
+      provideCompletionItems(model: Model, position: Position, context?: { triggerCharacter?: string }) {
         try {
+          if (context?.triggerCharacter === ":" && !/::$/.test(model.getLineContent(position.lineNumber).slice(0, position.column - 1))) return { suggestions: [] };
           const scan = getScan(model, language);
           if (inStringOrComment(scan, position.lineNumber, position.column)) return { suggestions: [] };
           const word = model.getWordUntilPosition(position);
@@ -452,18 +459,18 @@ export function registerEditorTools(monaco: Monaco): void {
           const beforeWord = lineText.slice(0, word.startColumn - 1);
           if (language === "sql") {
             const items = sqlCompletions(monaco, model, scan, position, range, beforeWord);
-            return { suggestions: items ?? [] };
+            return { suggestions: withInsertText(items ?? []) };
           }
           if (/\.\s*$/.test(beforeWord)) {
             const items = memberCompletions(monaco, scan, beforeWord.replace(/\.\s*$/, ""), position.lineNumber, range);
-            return { suggestions: items ?? [] };
+            return { suggestions: withInsertText(items ?? []) };
           }
           if ((language === "rust" || language === "cpp") && /::\s*$/.test(beforeWord)) {
             const items = pathCompletions(monaco, scan, beforeWord.replace(/::\s*$/, ""), range);
-            return { suggestions: items ?? [] };
+            return { suggestions: withInsertText(items ?? []) };
           }
           if (/(?:^|[^\w])(?:\d)$/.test(beforeWord + word.word) && !word.word) return { suggestions: [] };
-          return { suggestions: generalCompletions(monaco, scan, position.lineNumber, range, word.word) };
+          return { suggestions: withInsertText(generalCompletions(monaco, scan, position.lineNumber, range, word.word)) };
         } catch {
           return { suggestions: [] };
         }

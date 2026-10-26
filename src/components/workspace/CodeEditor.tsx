@@ -136,6 +136,38 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
     onSubmitRef.current = onSubmit;
   });
 
+  // The editor owns its text while the learner types. Feeding it `value` on every keystroke made a slow render
+  // (heavy 3D scene beside it) write an older text back over newer keystrokes: characters vanished and accepted
+  // suggestions were undone. So `value` only seeds the editor, and later changes are applied only when they did
+  // not come from the editor itself (Reset lesson, switching language).
+  const [initialValue] = useState(value);
+  const knownValue = useRef(value);
+  /** Texts we reported through onChange whose echo (the parent's re-render) has not arrived yet. */
+  const pendingEcho = useRef<string[]>([]);
+  const handleChange = (v: string | undefined) => {
+    const text = v ?? "";
+    knownValue.current = text;
+    pendingEcho.current.push(text);
+    if (pendingEcho.current.length > 200) pendingEcho.current.shift();
+    onChange(text);
+  };
+  useEffect(() => {
+    const echoed = pendingEcho.current.indexOf(value);
+    if (echoed >= 0) {
+      // our own typing coming back (renders can skip or lag behind keystrokes; older echoes are dropped with it)
+      pendingEcho.current.splice(0, echoed + 1);
+      return;
+    }
+    pendingEcho.current = [];
+    knownValue.current = value;
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    if (!editor || !model || model.getValue() === value) return;
+    editor.pushUndoStop();
+    editor.executeEdits("pockett-external", [{ range: model.getFullModelRange(), text: value, forceMoveMarkers: true }]);
+    editor.pushUndoStop();
+  }, [value]);
+
   const reveal = () => {
     const editor = editorRef.current;
     const model = editor?.getModel();
@@ -164,7 +196,10 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
       onSubmitRef.current();
     });
     const model = editor.getModel();
-    if (model) setModelContext(model, contextRef.current);
+    if (model) {
+      setModelContext(model, contextRef.current);
+      if (model.getValue() !== knownValue.current) model.setValue(knownValue.current); // remounted (language switch) after the seed went stale
+    }
     reveal();
   };
 
@@ -228,8 +263,8 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
     <Editor
       height="100%"
       language={language}
-      value={value}
-      onChange={(v) => onChange(v ?? "")}
+      defaultValue={initialValue}
+      onChange={handleChange}
       beforeMount={beforeMount}
       onMount={handleMount}
       theme={theme === "dark" ? "pockett-dark" : "pockett-light"}

@@ -24,7 +24,7 @@ export const KEYWORDS: Record<string, string[]> = {
 export const PY_BUILTINS: DocTable = {
   print: ["print(*values, sep=' ', end='\\n')", "Shows the values on screen, separated by spaces, then starts a new line."],
   len: ["len(obj)", "How many items a string, list, dict or other collection holds."],
-  range: ["range(stop) / range(start, stop, step)", "A sequence of whole numbers, handy for loops. It stops just before stop."],
+  range: ["range(start, stop, step)", "A sequence of whole numbers, handy for loops. With one argument, range(n) counts from 0 up to just before n."],
   input: ["input(prompt='')", "Waits for the user to type a line and gives it back as a string."],
   int: ["int(x=0, base=10)", "Turns a number or numeric string into a whole number (cuts off decimals)."],
   float: ["float(x=0.0)", "Turns a number or numeric string into a decimal number."],

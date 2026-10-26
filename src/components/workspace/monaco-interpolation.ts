@@ -272,6 +272,8 @@ function rust(g: Grammar): Grammar {
     // inline arguments: {name} and {name:.2}, the name is an expression
     [/(\{)([A-Za-z_]\w*)(\})/, [DELIM, "variable", DELIM]],
     [/(\{)([A-Za-z_]\w*)(:[^{}"\\]*)(\})/, [DELIM, "variable", SPEC, DELIM]],
+    // a hole still being typed ({na, closing brace not there yet): colour the name so suggestions can pop up
+    [/(\{)([A-Za-z_]\w*)(?=["),:]|$)/, [DELIM, "variable"]],
     [/[{}]/, "string"],
     [/@escapes/, "string.escape"],
     [/\\./, "string.escape.invalid"],
