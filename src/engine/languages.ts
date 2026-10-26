@@ -17,15 +17,23 @@ export interface LanguageInfo {
   runsIn: "browser" | "server";
   /** One line for course cards. */
   engine: string;
+  /** One line about the language, shown at the top of its path on the projects page. */
+  blurb: string;
 }
 
 export const LANGUAGES: Record<LanguageId, LanguageInfo> = {
-  python: { id: "python", label: "Python", fileName: "main.py", monaco: "python", comment: "#", runsIn: "browser", engine: "Python 3.12 via WebAssembly" },
-  javascript: { id: "javascript", label: "JavaScript", fileName: "main.js", monaco: "javascript", comment: "//", runsIn: "browser", engine: "Your browser's JavaScript engine" },
-  sql: { id: "sql", label: "SQL", fileName: "query.sql", monaco: "sql", comment: "--", runsIn: "browser", engine: "SQLite via WebAssembly" },
-  csharp: { id: "csharp", label: "C#", fileName: "Program.cs", monaco: "csharp", comment: "//", runsIn: "server", engine: ".NET on the pockett runner" },
-  cpp: { id: "cpp", label: "C++", fileName: "main.cpp", monaco: "cpp", comment: "//", runsIn: "server", engine: "g++ on the pockett runner" },
-  go: { id: "go", label: "Go", fileName: "main.go", monaco: "go", comment: "//", runsIn: "server", engine: "Go on the pockett runner" },
+  python: { id: "python", label: "Python", fileName: "main.py", monaco: "python", comment: "#", runsIn: "browser", engine: "Python 3.12 via WebAssembly",
+    blurb: "Readable, versatile and the best first language. From your first loop to a REST API." },
+  javascript: { id: "javascript", label: "JavaScript", fileName: "main.js", monaco: "javascript", comment: "//", runsIn: "browser", engine: "Your browser's JavaScript engine",
+    blurb: "The language of the web. Learn it from variables to async code and APIs." },
+  sql: { id: "sql", label: "SQL", fileName: "query.sql", monaco: "sql", comment: "--", runsIn: "browser", engine: "SQLite via WebAssembly",
+    blurb: "The language of data. Ask databases questions, then design them well." },
+  csharp: { id: "csharp", label: "C#", fileName: "Program.cs", monaco: "csharp", comment: "//", runsIn: "server", engine: ".NET on the pockett runner",
+    blurb: "Typed, modern and everywhere, from games to backends." },
+  cpp: { id: "cpp", label: "C++", fileName: "main.cpp", monaco: "cpp", comment: "//", runsIn: "server", engine: "g++ on the pockett runner",
+    blurb: "Fast and close to the machine." },
+  go: { id: "go", label: "Go", fileName: "main.go", monaco: "go", comment: "//", runsIn: "server", engine: "Go on the pockett runner",
+    blurb: "Simple, concurrent and built for servers." },
 };
 
 export function languageInfo(id: LanguageId | undefined): LanguageInfo {

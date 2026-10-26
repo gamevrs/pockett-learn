@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { PROJECTS, getProject } from "@/content";
+import { PROJECTS, getProject, resolvePrerequisites } from "@/content";
 import { ProjectHub } from "@/components/projects/ProjectHub";
 
 interface PageProps {
@@ -23,7 +23,7 @@ async function Hub({ params }: PageProps) {
   const { slug } = await params;
   const project = getProject(slug);
   if (!project) notFound();
-  return <ProjectHub project={project} />;
+  return <ProjectHub project={project} prerequisites={resolvePrerequisites(project)} />;
 }
 
 export default function ProjectPage({ params }: PageProps) {

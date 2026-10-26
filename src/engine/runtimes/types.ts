@@ -7,6 +7,8 @@ export interface RunOptions {
   onStatus?: StatusListener;
   /** Hidden code that runs first (Project.setup), e.g. a SQL schema and seed rows. */
   setup?: string;
+  /** Python only: Pyodide packages to load first (e.g. "sqlite3"). Loaded once, then cached. */
+  packages?: string[];
 }
 
 export interface RunOutcome {

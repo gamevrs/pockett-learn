@@ -9,7 +9,7 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { ENGINE_PRELUDE } from "../src/engine/python/prelude.ts";
 import { solutionThrough, starterFor } from "../src/engine/compose.ts";
-import { flattenLessons, languageOf, YOUR_TURN_MARKER } from "../src/engine/types.ts";
+import { flattenLessons, languageOf, TIERS, YOUR_TURN_MARKER } from "../src/engine/types.ts";
 import { executeJs, runJsTests } from "../src/engine/runtimes/javascript/engine.ts";
 import { executeSql, runSqlTests } from "../src/engine/runtimes/sql/engine.ts";
 import { readFileSync } from "node:fs";
@@ -32,6 +32,9 @@ for (const file of files) {
   const featureIds = new Set(project.features.map((f) => f.id));
   const unlocked = new Set();
   const ids = new Set();
+  if (!TIERS.includes(project.difficulty)) problems.push(`${project.slug}: difficulty must be one of ${TIERS.join(", ")}`);
+  if (project.packages && languageOf(project) !== "python") problems.push(`${project.slug}: packages only apply to Python projects`);
+  if (project.prerequisites?.includes(project.slug)) problems.push(`${project.slug}: lists itself as a prerequisite`);
 
   lessons.forEach((lesson, i) => {
     const tag = `${project.slug}/${lesson.id}`;
@@ -41,14 +44,27 @@ for (const file of files) {
     if (lesson.hints.length < 2) warn.push(`${tag}: fewer than 2 hints`);
     if (lesson.tests.length < 2) problems.push(`${tag}: needs at least 2 tests`);
     if (lesson.tasks.length < 2) warn.push(`${tag}: fewer than 2 tasks`);
+    for (const [ci, check] of (lesson.checks ?? []).entries()) {
+      const ctag = `${tag} check ${ci + 1}`;
+      const q = check.question;
+      if (!check.prompt || !check.explanation) problems.push(`${ctag}: needs a prompt and an explanation`);
+      if (q.type === "widget") problems.push(`${ctag}: widget questions are not supported in project lessons`);
+      if (q.type === "choice") {
+        const answers = Array.isArray(q.answer) ? q.answer : [q.answer];
+        if (q.options.length < 2) problems.push(`${ctag}: choice needs at least 2 options`);
+        if (answers.some((a) => !Number.isInteger(a) || a < 0 || a >= q.options.length)) problems.push(`${ctag}: choice answer out of range`);
+      }
+      if (q.type === "text" && q.answer.length === 0) problems.push(`${ctag}: text question without accepted answers`);
+    }
     for (const u of lesson.unlocks) {
       if (!featureIds.has(u)) problems.push(`${tag}: unlocks unknown feature "${u}"`);
       unlocked.add(u);
     }
     const language = languageOf(project);
     const setup = project.setup ?? "";
-    cases.push({ label: `${tag}::solution`, language, setup, source: solutionThrough(project, i), tests: lesson.tests, expect: "pass" });
-    cases.push({ label: `${tag}::starter`, language, setup, source: starterFor(project, i, {}), tests: lesson.tests, expect: "fail" });
+    const packages = project.packages ?? [];
+    cases.push({ label: `${tag}::solution`, language, setup, packages, source: solutionThrough(project, i), tests: lesson.tests, expect: "pass" });
+    cases.push({ label: `${tag}::starter`, language, setup, packages, source: starterFor(project, i, {}), tests: lesson.tests, expect: "fail" });
   });
   for (const f of featureIds) if (!unlocked.has(f)) problems.push(`${project.slug}: feature "${f}" is never unlocked by any lesson`);
 }
@@ -130,7 +146,9 @@ const toResult = (c, error, tests) => ({ label: c.label, error, results: tests.m
 const results = [];
 for (const c of cases) {
   if (c.language === "python") {
-    results.push(pyResults.shift());
+    const r = pyResults.shift();
+    if (r.warn) warn.push(`${r.label}: ${r.warn}`);
+    results.push(r);
   } else if (c.language === "javascript") {
     const run = executeJs(c.source);
     results.push(run.ok ? toResult(c, null, runJsTests(run.scope, c.tests)) : toResult(c, run.error, []));

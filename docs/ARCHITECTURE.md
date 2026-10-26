@@ -91,6 +91,12 @@ interface Runtime {
 Adding a language: implement `Runtime` in `src/engine/runtimes/<lang>`, register it in
 `runtimes/index.ts` and `languages.ts`, and teach `scripts/validate-content.mjs` to run it.
 
+## Tiers and paths
+
+`Project.difficulty` is a tier: Beginner → Intermediate → Advanced → Professional (`TIERS` in `engine/types.ts`). The projects page renders one **path** per language, with a numbered tier ladder; each tier lists built projects (cards) and planned ones (`PLANNED` in `content/index.ts`, filtered by `PROJECTS` slugs into `UPCOMING`, so a built project replaces its planned entry automatically). `Project.prerequisites` feed the hub's "Recommended first" line. See ADDING_A_PROJECT.md.
+
+Python projects can declare Pyodide `packages` (e.g. `sqlite3`); `RunOptions.packages` carries them to `python/host.ts`, which loads each once per page. Lessons can add ungraded `checks` ("Check your understanding") rendered by `components/workspace/LessonChecks.tsx`.
+
 ## Quality gates
 
 - `pnpm validate`: runs every lesson through the real engine for its language (CPython for Python, the browser engines' own code in Node for JavaScript and SQL). Every lesson's reference solution must pass all tests and its starter must fail at least one (so nothing ships pre-solved or broken), and every feature must be unlocked by some lesson.

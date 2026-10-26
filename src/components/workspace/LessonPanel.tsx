@@ -8,6 +8,7 @@ import type { LessonContext } from "@/content";
 import { CodeBlock, Prose } from "@/components/ui/Prose";
 import { languageOf } from "@/engine/types";
 import { sound } from "@/lib/sound/sound";
+import { LessonChecks } from "./LessonChecks";
 
 type Tab = "mission" | "learn" | "hints";
 
@@ -113,6 +114,9 @@ export function LessonPanel({ ctx, feature, alreadyDone, attempts, hintsSeen, on
         {tab === "learn" && (
           <div className="rise">
             <Prose source={lesson.learn} language={languageOf(ctx.project)} />
+            {lesson.checks && lesson.checks.length > 0 && (
+              <LessonChecks key={lesson.id} checks={lesson.checks} lessonId={lesson.id} language={languageOf(ctx.project)} />
+            )}
           </div>
         )}
 

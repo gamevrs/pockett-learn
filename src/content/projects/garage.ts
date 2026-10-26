@@ -96,6 +96,26 @@ print("SYSTEMS GO")`,
             { id: "t4", description: "Uses three separate lines", assertionCode: `assert len(__stdout__.strip().splitlines()) >= 3, "Use one print() per line (three lines total)"` },
           ],
           unlocks: ["ignition"],
+          checks: [
+            {
+              prompt: "What does `print(\"Hello\")` do?",
+              question: {
+                type: "choice",
+                options: ["Sends the text Hello to the screen", "Stores the word Hello for later", "Ignores the line, like a comment", "Prints the quote marks too"],
+                answer: 0,
+              },
+              explanation: "`print()` sends whatever you give it to the screen. The quotes only mark where the text starts and ends, so they are not printed.",
+            },
+            {
+              prompt: "Which of these lines does Python skip completely?",
+              question: {
+                type: "choice",
+                options: ["`print(\"skip me\")`", "`# print(\"skip me\")`", "`print('skip me')`"],
+                answer: 1,
+              },
+              explanation: "Everything after a `#` is a comment: a note for humans that Python never runs.",
+            },
+          ],
         },
         {
           id: "garage-2-paint",
@@ -155,6 +175,22 @@ assert 100 <= top_speed <= 300, "top_speed should be between 100 and 300"` },
             { id: "t4", description: "has_turbo is True or False", assertionCode: `assert type(has_turbo) is bool, "has_turbo must be True or False (capital letter, no quotes)"` },
           ],
           unlocks: ["paint"],
+          checks: [
+            {
+              prompt: "What type is the value `41.5`?",
+              question: { type: "text", answer: ["float"], placeholder: "str, int, float or bool" },
+              explanation: "A number with a decimal point is a `float`. Whole numbers like `3` are `int`, text in quotes is `str`, and `True` / `False` are `bool`.",
+            },
+            {
+              prompt: "Which line stores the text `Bolt` in a variable called `car_name`?",
+              question: {
+                type: "choice",
+                options: ["`car_name = Bolt`", "`car_name = \"Bolt\"`", "`\"car_name\" = Bolt`", "`car_name == \"Bolt\"`"],
+                answer: 1,
+              },
+              explanation: "Text needs quotes, and a single `=` stores a value. Without quotes Python would look for a variable named `Bolt`, and `==` compares instead of storing.",
+            },
+          ],
         },
         {
           id: "garage-3-engine",

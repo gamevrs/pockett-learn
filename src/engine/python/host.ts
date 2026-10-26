@@ -17,6 +17,7 @@ interface PyProxy {
 
 interface PyodideInstance {
   runPython(code: string, options?: { globals?: PyProxy }): PyProxy;
+  loadPackage(names: string | string[]): Promise<unknown>;
 }
 
 declare global {
@@ -53,6 +54,33 @@ export function loadPyodideOnce(onStatus?: StatusListener): Promise<PyodideInsta
   });
 
   return window.__pockettPyodide;
+}
+
+/** Packages already (or being) loaded this page, so repeat runs skip the work entirely. */
+const loadingPackages = new Map<string, Promise<void>>();
+
+/**
+ * Load Pyodide packages (e.g. "sqlite3", which CPython bundles but Pyodide ships separately).
+ * Each package is fetched once per page; later runs resolve immediately.
+ */
+async function ensurePackages(py: PyodideInstance, packages: string[] | undefined, onStatus?: StatusListener) {
+  const wanted = [...new Set(packages ?? [])];
+  const pending = wanted.filter((name) => !loadingPackages.has(name));
+  if (pending.length) {
+    onStatus?.(`Loading ${pending.join(", ")}…`);
+    const load = py.loadPackage(pending).then(() => undefined);
+    for (const name of pending) {
+      loadingPackages.set(
+        name,
+        load.catch((err) => {
+          // allow a retry after a failed download
+          loadingPackages.delete(name);
+          throw err;
+        }),
+      );
+    }
+  }
+  await Promise.all(wanted.map((name) => loadingPackages.get(name)));
 }
 
 /** Fire-and-forget warm-up so the first Run feels instant. */
@@ -95,9 +123,10 @@ function createNamespace(py: PyodideInstance) {
   return mod;
 }
 
-export async function runProgram(source: string, onStatus?: StatusListener): Promise<RunOutcome> {
+export async function runProgram(source: string, onStatus?: StatusListener, packages?: string[]): Promise<RunOutcome> {
   const started = performance.now();
   const py = await loadPyodideOnce(onStatus);
+  await ensurePackages(py, packages, onStatus);
   onStatus?.("Running your code…");
   const mod = createNamespace(py);
   try {
@@ -121,9 +150,11 @@ export async function gradeProgram(
   source: string,
   tests: TestCase[],
   onStatus?: StatusListener,
+  packages?: string[],
 ): Promise<GradeOutcome> {
   const started = performance.now();
   const py = await loadPyodideOnce(onStatus);
+  await ensurePackages(py, packages, onStatus);
   onStatus?.("Grading…");
   const mod = createNamespace(py);
   try {

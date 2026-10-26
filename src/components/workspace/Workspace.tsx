@@ -136,7 +136,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     if (index === 0 && !done) return;
     const my = epoch.current;
     void loadRuntime(language)
-      .then((rt) => rt.run(codeRef.current, { onStatus: setStatusText, setup: project.setup }))
+      .then((rt) => rt.run(codeRef.current, { onStatus: setStatusText, setup: project.setup, packages: project.packages }))
       .then((out) => {
         if (my !== epoch.current) {
           out.program?.dispose();
@@ -153,7 +153,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
       .finally(() => {
         if (my === epoch.current) setStatus("idle");
       });
-  }, [index, done, language, project.setup]);
+  }, [index, done, language, project.setup, project.packages]);
 
   // autosave the draft shortly after typing stops
   useEffect(() => {
@@ -177,7 +177,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
 
     try {
       const rt = await loadRuntime(language);
-      const out = await rt.run(code, { onStatus: setStatusText, setup: project.setup });
+      const out = await rt.run(code, { onStatus: setStatusText, setup: project.setup, packages: project.packages });
       if (my !== epoch.current) {
         out.program?.dispose();
         return;
@@ -210,7 +210,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
         sound.playError();
       } else {
         setStatusText("Checking your work…");
-        const graded = await rt.grade(code, lesson.tests, { onStatus: setStatusText, setup: project.setup });
+        const graded = await rt.grade(code, lesson.tests, { onStatus: setStatusText, setup: project.setup, packages: project.packages });
         nextResults = graded.results;
       }
       if (my !== epoch.current) return;

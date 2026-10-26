@@ -64,19 +64,31 @@ export function ProjectCard({ project, lessonIds }: { project: Summary; lessonId
   );
 }
 
-export function UpcomingCard({ project }: { project: UpcomingProject }) {
+/** A project on the roadmap: visibly quieter than a real card, and not a link. */
+export function UpcomingCard({ project, showLanguage }: { project: UpcomingProject; showLanguage?: boolean }) {
   return (
-    <div
-      className="flex items-center gap-4 rounded-2xl border border-dashed border-[var(--line-strong)] p-4"
-    >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface-2 text-ink-3">
-        <ProjectIcon slug={project.slug} className="h-5 w-5" />
-      </span>
-      <div className="min-w-0">
-        <p className="font-medium">{project.title}</p>
-        <p className="text-sm text-ink-2">{project.tagline}</p>
+    <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-[var(--line-strong)] p-4">
+      <div className="flex items-center gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-2 text-ink-3">
+          <ProjectIcon slug={project.slug} className="h-[18px] w-[18px]" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium text-ink-2">{project.title}</p>
+          {showLanguage && project.language && <p className="text-xs text-ink-3">{languageInfo(project.language).label}</p>}
+        </div>
+        <span className="chip shrink-0">Planned</span>
       </div>
-      <span className="chip ml-auto shrink-0">Soon</span>
+      <p className="text-sm leading-relaxed text-ink-3">{project.tagline}</p>
+      {project.skills && project.skills.length > 0 && (
+        <div className="mt-auto flex flex-wrap gap-1">
+          {project.skills.slice(0, 4).map((s) => (
+            <span key={s} className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[0.68rem] text-ink-3">
+              {s}
+            </span>
+          ))}
+          {project.skills.length > 4 && <span className="px-1 py-0.5 text-[0.68rem] text-ink-3">+{project.skills.length - 4}</span>}
+        </div>
+      )}
     </div>
   );
 }

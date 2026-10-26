@@ -6,7 +6,13 @@
  * Python program drives that scene, and every lesson `unlocks` scene features.
  */
 
-export type Difficulty = "Beginner" | "Intermediate" | "Advanced";
+import type { Question } from "../learn/types.ts";
+
+/** The tier a project sits on in its language's path, zero to hero. */
+export type Difficulty = "Beginner" | "Intermediate" | "Advanced" | "Professional";
+
+/** Tiers in path order. */
+export const TIERS: Difficulty[] = ["Beginner", "Intermediate", "Advanced", "Professional"];
 
 /** Languages a project can be written in. See src/engine/languages.ts for what each supports. */
 export type LanguageId = "python" | "javascript" | "sql" | "csharp" | "cpp" | "go";
@@ -60,6 +66,19 @@ export interface Lesson {
   tests: TestCase[];
   /** Feature ids that come alive when this lesson is passed. */
   unlocks: string[];
+  /**
+   * Optional "Check your understanding" questions shown at the end of the Learn tab. They are
+   * ungraded for progress (they never gate Submit): quick retrieval practice on the concept.
+   */
+  checks?: LessonCheck[];
+}
+
+export interface LessonCheck {
+  /** The question shown above the answer input. Mini-markdown, inline code allowed. */
+  prompt: string;
+  question: Question;
+  /** Shown once the learner answers (or reveals) it. */
+  explanation: string;
 }
 
 export interface Chapter {
@@ -75,6 +94,14 @@ export interface Project {
   language?: LanguageId;
   /** Hidden code run before the learner's (e.g. SQL schema + seed data). */
   setup?: string;
+  /**
+   * Python only: Pyodide packages to load before running, e.g. ["sqlite3"]. They are fetched once
+   * per page and cached. The content validator runs Python in local CPython and warns if a
+   * listed package cannot be imported there.
+   */
+  packages?: string[];
+  /** Slugs of projects worth finishing first. Shown on the hub as "Recommended first". */
+  prerequisites?: string[];
   title: string;
   tagline: string;
   pitch: string;
@@ -95,6 +122,10 @@ export interface Project {
 export interface UpcomingProject {
   slug: string;
   language?: LanguageId;
+  /** The tier it will sit on in its language's path. */
+  difficulty?: Difficulty;
+  /** What it will teach, as short tags. */
+  skills?: string[];
   title: string;
   tagline: string;
   emoji: string;

@@ -5,6 +5,6 @@ import type { Runtime } from "./types";
 export const pythonRuntime: Runtime = {
   language: "python",
   preload: preloadPython,
-  run: (source, options) => runProgram(source, options?.onStatus),
-  grade: (source, tests, options) => gradeProgram(source, tests, options?.onStatus),
+  run: (source, options) => runProgram(source, options?.onStatus, options?.packages),
+  grade: (source, tests, options) => gradeProgram(source, tests, options?.onStatus, options?.packages),
 };

@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Check, Clock } from "lucide-react";
-import { featuresUnlockedBy, flattenLessons, languageOf, type Project } from "@/engine/types";
+import { featuresUnlockedBy, flattenLessons, languageOf, TIERS, type Project } from "@/engine/types";
+import type { PrerequisiteRef } from "@/content";
 import { languageInfo } from "@/engine/languages";
 import type { ProgramHandle } from "@/engine/program";
 import { latestBuild } from "@/engine/compose";
@@ -13,7 +14,7 @@ import { StageShell, type StageStatus } from "@/components/stage/StageShell";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { FeatureIcon, ProjectIcon } from "@/components/ui/icons";
 
-export function ProjectHub({ project }: { project: Project }) {
+export function ProjectHub({ project, prerequisites = [] }: { project: Project; prerequisites?: PrerequisiteRef[] }) {
   const progress = useProgress();
   const lessons = flattenLessons(project);
   const doneIds = Object.keys(progress.completed).filter((id) => lessons.some((l) => l.id === id));
@@ -41,7 +42,7 @@ export function ProjectHub({ project }: { project: Project }) {
     if (!build) return;
     let cancelled = false;
     loadRuntime(languageOf(project))
-      .then((rt) => rt.run(build.code, { setup: project.setup }))
+      .then((rt) => rt.run(build.code, { setup: project.setup, packages: project.packages }))
       .then((out) => {
         if (cancelled) {
           out.program?.dispose();
@@ -84,9 +85,42 @@ export function ProjectHub({ project }: { project: Project }) {
               <ProjectIcon slug={project.slug} className="h-5 w-5" />
             </span>
             <h1 className="font-display mt-5 text-[2.5rem] sm:text-[3.25rem]">{project.title}</h1>
-            <p className="mt-2 text-sm text-ink-3">
-              {languageInfo(project.language).label} · {project.difficulty} · about {project.hours} hours · {lessons.length} lessons
+            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-3">
+              <span>{languageInfo(project.language).label}</span>
+              <span aria-hidden>·</span>
+              <span
+                className="inline-flex items-center gap-1.5 text-ink-2"
+                title={`Tier ${TIERS.indexOf(project.difficulty) + 1} of ${TIERS.length} on the ${languageInfo(project.language).label} path`}
+              >
+                <span className="flex gap-0.5" aria-hidden>
+                  {TIERS.map((t, i) => (
+                    <span key={t} className={`h-1.5 w-3.5 rounded-full ${i <= TIERS.indexOf(project.difficulty) ? "bg-primary" : "bg-[var(--line-strong)]"}`} />
+                  ))}
+                </span>
+                {project.difficulty}
+              </span>
+              <span aria-hidden>·</span>
+              <span>about {project.hours} hours</span>
+              <span aria-hidden>·</span>
+              <span>{lessons.length} lessons</span>
             </p>
+            {prerequisites.length > 0 && (
+              <p className="mt-3 text-sm text-ink-2">
+                <span className="text-ink-3">Recommended first: </span>
+                {prerequisites.map((p, i) => (
+                  <React.Fragment key={p.slug}>
+                    {i > 0 && ", "}
+                    {p.available ? (
+                      <Link href={`/projects/${p.slug}`} className="font-medium text-ink underline underline-offset-4 hover:text-brand">
+                        {p.title}
+                      </Link>
+                    ) : (
+                      <span className="text-ink-2">{p.title} (planned)</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </p>
+            )}
             <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-2 sm:text-lg">{project.pitch}</p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">

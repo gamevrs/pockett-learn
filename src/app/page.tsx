@@ -14,6 +14,17 @@ import { ModuleIcon } from "@/learn/module-icons";
 const LESSON_COUNT = PROJECTS.reduce((n, p) => n + flattenLessons(p).length, 0);
 const GARAGE = PROJECTS.find((p) => p.slug === "garage") ?? PROJECTS[0];
 
+/** A few planned projects for the landing teaser: the next rung up in as many languages as possible. */
+const NEXT_UP = (() => {
+  const seen = new Set<string>();
+  return UPCOMING.filter((u) => {
+    const lang = u.language ?? "python";
+    if (seen.has(lang)) return false;
+    seen.add(lang);
+    return true;
+  }).slice(0, 3);
+})();
+
 const STATS = [
   { value: String(PROJECTS.length), label: "Guided projects" },
   { value: String(LESSON_COUNT), label: "Hands-on lessons" },
@@ -255,9 +266,15 @@ export default function HomePage() {
             <ProjectCard key={p.slug} project={summarize(p)} lessonIds={flattenLessons(p).map((l) => l.id)} />
           ))}
         </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          {UPCOMING.map((u) => (
-            <UpcomingCard key={u.slug} project={u} />
+        <p className="mt-10 max-w-2xl text-sm text-ink-2">
+          Each language grows into a path from Beginner to Professional. Here is a taste of what is planned next.{" "}
+          <Link href="/projects" className="font-medium text-ink underline underline-offset-4">
+            See every path
+          </Link>
+        </p>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          {NEXT_UP.map((u) => (
+            <UpcomingCard key={u.slug} project={u} showLanguage />
           ))}
         </div>
 
