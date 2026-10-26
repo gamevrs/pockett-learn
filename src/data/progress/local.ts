@@ -1,4 +1,4 @@
-import { EMPTY_PROGRESS, type ProgressRepository, type ProgressState } from "./types";
+import { EMPTY_PROGRESS, normalizeAudio, type ProgressRepository, type ProgressState } from "./types";
 
 const KEY = "pockett_progress_v2";
 
@@ -10,7 +10,10 @@ export const localRepository: ProgressRepository = {
       if (!raw) return EMPTY_PROGRESS;
       const parsed = JSON.parse(raw) as Partial<ProgressState>;
       if (parsed.version !== 2) return EMPTY_PROGRESS;
-      return { ...EMPTY_PROGRESS, ...parsed } as ProgressState;
+      // `soundEnabled` was the old on-by-default flag: ignore it, so nobody is un-muted by a default they never chose
+      const { soundEnabled: legacySound, audio, ...rest } = parsed as Partial<ProgressState> & { soundEnabled?: boolean };
+      void legacySound;
+      return { ...EMPTY_PROGRESS, ...rest, audio: normalizeAudio(audio) } as ProgressState;
     } catch {
       return EMPTY_PROGRESS;
     }

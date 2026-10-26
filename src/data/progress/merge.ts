@@ -1,4 +1,4 @@
-import type { CompletedLesson, ProgressState } from "./types";
+import type { AudioSettings, CompletedLesson, ProgressState } from "./types";
 
 /** Cloud rows as stored in Supabase (see supabase/migrations). */
 export interface CompletionRow {
@@ -20,6 +20,21 @@ export interface ProfileRow {
   streak: number;
   best_streak: number;
   last_active_date: string | null;
+  /** Optional: only present once supabase/migrations/0004_audio_settings.sql is applied */
+  audio_enabled?: boolean | null;
+  audio_volume?: number | null;
+  audio_updated_at?: string | null;
+}
+
+/** Newest change wins. A cloud row that was never written (no timestamp) is ignored, so the default stays muted. */
+export function mergeAudio(local: AudioSettings, profile: ProfileRow | null): AudioSettings {
+  if (!profile?.audio_updated_at || typeof profile.audio_enabled !== "boolean") return local;
+  const cloudAt = Date.parse(profile.audio_updated_at) || 0;
+  const localAt = local.at ? Date.parse(local.at) || 0 : 0;
+  if (cloudAt <= localAt) return local;
+  const v = profile.audio_volume;
+  const volume = typeof v === "number" && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : local.volume;
+  return { enabled: profile.audio_enabled, volume, at: profile.audio_updated_at };
 }
 
 /**
@@ -75,5 +90,6 @@ export function mergeProgress(
     streak: cloudNewer ? profile!.streak : local.streak,
     lastActiveDate: cloudNewer ? profile!.last_active_date : local.lastActiveDate,
     bestStreak: Math.max(local.bestStreak, profile?.best_streak ?? 0),
+    audio: mergeAudio(local.audio, profile),
   };
 }

@@ -22,7 +22,26 @@ export interface ProgressState {
   draftsAt: Record<string, string>;
   attempts: Record<string, number>;
   hintsSeen: Record<string, number>;
-  soundEnabled: boolean;
+  /** Audio for the whole app (UI sounds and demo scenes). Off until the person turns it on. */
+  audio: AudioSettings;
+}
+
+export interface AudioSettings {
+  /** The person has explicitly opted in. Default false; the legacy `soundEnabled` flag is ignored. */
+  enabled: boolean;
+  /** Master volume, 0..1 */
+  volume: number;
+  /** ISO time of the last change on any device (newest wins when syncing) */
+  at?: string;
+}
+
+export const DEFAULT_AUDIO: AudioSettings = { enabled: false, volume: 0.6 };
+
+/** Accepts whatever is in storage or the cloud and returns a safe AudioSettings (muted when unsure). */
+export function normalizeAudio(raw: unknown): AudioSettings {
+  const a = (raw && typeof raw === "object" ? raw : {}) as Partial<AudioSettings>;
+  const volume = typeof a.volume === "number" && Number.isFinite(a.volume) ? Math.min(1, Math.max(0, a.volume)) : DEFAULT_AUDIO.volume;
+  return { enabled: a.enabled === true, volume, ...(typeof a.at === "string" ? { at: a.at } : {}) };
 }
 
 /**
@@ -48,5 +67,5 @@ export const EMPTY_PROGRESS: ProgressState = {
   draftsAt: {},
   attempts: {},
   hintsSeen: {},
-  soundEnabled: true,
+  audio: DEFAULT_AUDIO,
 };

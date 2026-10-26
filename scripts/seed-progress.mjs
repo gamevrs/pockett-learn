@@ -14,4 +14,4 @@ flattenLessons(project).slice(0, n).forEach((l, i) => {
 });
 const today = new Date();
 const pad = (v) => String(v).padStart(2, "0");
-console.log(JSON.stringify({ version: 2, xp, streak: 3, bestStreak: 3, lastActiveDate: `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`, completed, drafts: {}, attempts: {}, hintsSeen: {}, soundEnabled: false }));
+console.log(JSON.stringify({ version: 2, xp, streak: 3, bestStreak: 3, lastActiveDate: `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`, completed, drafts: {}, attempts: {}, hintsSeen: {}, audio: { enabled: false, volume: 0.6 } }));

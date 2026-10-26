@@ -32,6 +32,8 @@ import {
   type Transport,
 } from "./sequencer";
 import { BeatSynth } from "./synth";
+import { subscribeProgress } from "@/data/progress/store";
+import { isAudible } from "@/lib/sound/audio";
 
 // ───────────────────────── static tables ─────────────────────────
 
@@ -148,7 +150,8 @@ interface Fired {
   crash: boolean;
 }
 
-export type AudioState = "unsupported" | "off" | "suspended" | "on";
+/** "muted" = the person has sound switched off (the default): nothing is created, the silent clock drives the visuals. */
+export type AudioState = "unsupported" | "muted" | "off" | "suspended" | "on";
 export interface Ui {
   playing: boolean;
   audio: AudioState;
@@ -188,6 +191,9 @@ export class Runtime {
   // transport + audio
   synth: BeatSynth | null = null;
   private audioFailed = false;
+  private offAudioSettings: (() => void) | null = null;
+  private lastAudible = false;
+  private onCtxState = () => this.pushUi();
   playing = false;
   private userStopped = false;
   private transport: Transport = createTransport();
@@ -228,11 +234,18 @@ export class Runtime {
     this.modelKey = "";
     this.lastProgram = null;
     this.lastUnlocked = null;
+    this.lastAudible = isAudible();
+    // volume / mute changed anywhere (navbar, stage control, another tab): follow it right away
+    this.offAudioSettings?.();
+    this.offAudioSettings = subscribeProgress(() => this.onAudioSettings());
     this.pushUi();
   }
 
   detach() {
+    this.offAudioSettings?.();
+    this.offAudioSettings = null;
     this.halt();
+    this.synth?.ctx.removeEventListener("statechange", this.onCtxState);
     this.synth?.dispose();
     this.synth = null;
     this.onUi = null;
@@ -254,8 +267,18 @@ export class Runtime {
     this.synth?.silence();
   }
 
+  private onAudioSettings() {
+    const audible = isAudible();
+    if (audible === this.lastAudible) return;
+    this.lastAudible = audible;
+    // switched on while playing: build the synth now (this runs inside the click that unmuted, so the browser allows it)
+    if (audible && this.playing && this.props.interactive && !this.synth?.running) void this.ensureAudio(false);
+    this.pushUi();
+  }
+
   private audioState(): AudioState {
     if (this.audioFailed) return "unsupported";
+    if (!isAudible()) return "muted";
     if (!this.synth) return "off";
     return this.synth.running ? "on" : "suspended";
   }
@@ -331,6 +354,10 @@ export class Runtime {
 
   async ensureAudio(gesture: boolean): Promise<void> {
     if (!this.props.interactive) return;
+    if (!isAudible()) {
+      this.pushUi();
+      return;
+    }
     if (!this.synth) {
       if (this.audioFailed) return;
       if (!gesture && !hasTransientActivation()) return;
@@ -341,7 +368,7 @@ export class Runtime {
         return;
       }
       this.synth = s;
-      s.ctx.onstatechange = () => this.pushUi();
+      s.ctx.addEventListener("statechange", this.onCtxState);
       this.applyAudioSettings();
     }
     await this.synth.resume();
@@ -393,7 +420,7 @@ export class Runtime {
       await this.ensureAudio(true);
       return;
     }
-    if (this.synth?.running || !this.props.interactive) {
+    if (this.synth?.running || !this.props.interactive || !isAudible()) {
       this.stop(true);
       return;
     }

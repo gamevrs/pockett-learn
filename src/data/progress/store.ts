@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { localRepository } from "./local";
-import { EMPTY_PROGRESS, type ProgressRepository, type ProgressState } from "./types";
+import { EMPTY_PROGRESS, normalizeAudio, type AudioSettings, type ProgressRepository, type ProgressState } from "./types";
 
 /** Swap this for a Supabase-backed repository when accounts arrive. */
 function getRepository(): ProgressRepository {
@@ -123,8 +123,12 @@ export function recordHint(lessonId: string, count: number) {
   commit({ ...s, hintsSeen: { ...s.hintsSeen, [lessonId]: count } });
 }
 
-export function setSoundEnabled(enabled: boolean) {
-  commit({ ...read(), soundEnabled: enabled });
+/** Change the app-wide audio settings (see src/lib/sound/audio.ts for the Web Audio side). */
+export function setAudio(patch: Partial<Pick<AudioSettings, "enabled" | "volume">>) {
+  const s = read();
+  const next = normalizeAudio({ ...s.audio, ...patch, at: new Date().toISOString() });
+  if (next.enabled === s.audio.enabled && next.volume === s.audio.volume) return;
+  commit({ ...s, audio: next });
 }
 
 export interface CompletionResult {
@@ -181,7 +185,8 @@ export function completeLesson(lessonId: string, xp: number, code: string): Comp
 }
 
 export function resetAllProgress() {
-  commit(EMPTY_PROGRESS);
+  // volume and mute belong to this device, not to the learner's progress
+  commit({ ...EMPTY_PROGRESS, audio: read().audio });
 }
 
 export function submittedCode(state: ProgressState): Record<string, string> {

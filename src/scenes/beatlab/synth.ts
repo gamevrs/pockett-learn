@@ -2,10 +2,14 @@
  * Beat Lab voices: every sound is synthesised from oscillators and a noise buffer.
  * No samples, no network. Kept free of React so the scene can own its lifecycle.
  *
- * Signal path:  voice -> track bus (gain + pan) -> run bus -> master -> compressor -> limiter -> speakers
+ * Signal path:  voice -> track bus (gain + pan) -> run bus -> master -> compressor -> limiter -> app master -> speakers
  *                                                                                      \-> analyser
- * Nothing here ever throws into the caller: a missing / closed AudioContext just means silence.
+ * "app master" is the shared gain from src/lib/sound/audio.ts (the navbar / stage volume control); the synth never
+ * owns an AudioContext and never touches ctx.destination, so muting and volume apply to it instantly.
+ * Nothing here ever throws into the caller: a missing AudioContext just means silence.
  */
+
+import { getAudioContext, getAudioOutput, isAudible } from "@/lib/sound/audio";
 
 export type BusId = "kick" | "snare" | "clap" | "hats" | "bass" | "fx";
 const BUS_IDS: BusId[] = ["kick", "snare", "clap", "hats", "bass", "fx"];
@@ -14,14 +18,6 @@ export interface BusMix {
   volume: number;
   pan: number;
   mute: boolean;
-}
-
-type AudioContextCtor = typeof AudioContext;
-
-function getContextCtor(): AudioContextCtor | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as { AudioContext?: AudioContextCtor; webkitAudioContext?: AudioContextCtor };
-  return w.AudioContext ?? w.webkitAudioContext ?? null;
 }
 
 interface Bus {
@@ -33,6 +29,7 @@ export class BeatSynth {
   readonly ctx: AudioContext;
   readonly analyser: AnalyserNode;
   private master: GainNode;
+  private limiter: DynamicsCompressorNode;
   private run!: GainNode;
   private buses = {} as Record<BusId, Bus>;
   private mix: Record<BusId, BusMix>;
@@ -40,7 +37,7 @@ export class BeatSynth {
   private disposed = false;
   private masterLevel = 0.8;
 
-  private constructor(ctx: AudioContext) {
+  private constructor(ctx: AudioContext, out: AudioNode) {
     this.ctx = ctx;
     this.mix = {} as Record<BusId, BusMix>;
     for (const id of BUS_IDS) this.mix[id] = { volume: 1, pan: 0, mute: false };
@@ -61,6 +58,7 @@ export class BeatSynth {
     limiter.ratio.value = 20;
     limiter.attack.value = 0.001;
     limiter.release.value = 0.08;
+    this.limiter = limiter;
 
     this.analyser = ctx.createAnalyser();
     this.analyser.fftSize = 256;
@@ -68,7 +66,7 @@ export class BeatSynth {
 
     this.master.connect(comp);
     comp.connect(limiter);
-    limiter.connect(ctx.destination);
+    limiter.connect(out);
     limiter.connect(this.analyser);
 
     // one second of white noise, reused by snare / clap / hats / crash
@@ -80,19 +78,23 @@ export class BeatSynth {
     this.buildRun();
   }
 
-  /** Returns null when the browser has no Web Audio (or creating a context fails). */
+  /**
+   * Builds the synth on the shared app context. Returns null when sound is off (the default), before the first user
+   * interaction, or when the browser has no Web Audio; callers fall back to the silent clock.
+   */
   static create(): BeatSynth | null {
-    const Ctor = getContextCtor();
-    if (!Ctor) return null;
     try {
-      return new BeatSynth(new Ctor({ latencyHint: "interactive" }));
+      const ctx = getAudioContext();
+      const out = getAudioOutput();
+      return ctx && out ? new BeatSynth(ctx, out) : null;
     } catch {
       return null;
     }
   }
 
+  /** Audio is live: the shared context is running and the person has sound switched on. */
   get running(): boolean {
-    return !this.disposed && this.ctx.state === "running";
+    return !this.disposed && this.ctx.state === "running" && isAudible();
   }
 
   /** Seconds between "scheduled" and "heard"; the scene delays its visuals by this much. */
@@ -104,6 +106,7 @@ export class BeatSynth {
   async resume(): Promise<void> {
     if (this.disposed) return;
     try {
+      if (!isAudible()) return;
       if (this.ctx.state !== "running") await this.ctx.resume();
     } catch {
       /* autoplay policy: stay suspended, the scene shows a hint */
@@ -155,10 +158,12 @@ export class BeatSynth {
     if (this.disposed) return;
     this.disposed = true;
     try {
+      // the context is shared with the rest of the app: only unplug this synth from it
       this.master.gain.cancelScheduledValues(0);
       this.master.gain.value = 0;
       this.master.disconnect();
-      void this.ctx.close().catch(() => {});
+      this.limiter.disconnect();
+      this.analyser.disconnect();
     } catch {
       /* ignore */
     }

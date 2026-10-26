@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Check, ChevronLeft, ChevronRight, Code2, Flame, ListChecks, MonitorPlay, Play, RotateCcw, Send, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { ArrowRight, BookOpen, Check, ChevronLeft, ChevronRight, Code2, Flame, ListChecks, MonitorPlay, Play, RotateCcw, Send, X, Zap } from "lucide-react";
 import { featuresUnlockedBy, flattenLessons, languageOf, type RunError, type TestResult } from "@/engine/types";
 import type { Celebration } from "@/engine/scene";
 import type { ProgramHandle } from "@/engine/program";
@@ -18,13 +18,13 @@ import {
   recordHint,
   saveDraft,
   clearDraft,
-  setSoundEnabled,
   submittedCode,
   useProgress,
   type CompletionResult,
 } from "@/data/progress/store";
 import { StageShell, type StageStatus } from "@/components/stage/StageShell";
 import { sound } from "@/lib/sound/sound";
+import { SoundControl } from "@/components/audio/SoundControl";
 import { fireCelebrationConfetti } from "@/lib/ui/confetti";
 import { useHydrated } from "@/lib/hooks";
 import { CodeEditor } from "./CodeEditor";
@@ -326,13 +326,9 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
             <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-brand" />{progress.xp}</span>
             <span className="flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-brand" />{currentStreak(progress)}</span>
           </span>
-          <button
-            onClick={() => setSoundEnabled(!progress.soundEnabled)}
-            aria-label={progress.soundEnabled ? "Mute sounds" : "Unmute sounds"}
-            className="hidden h-8 w-8 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink sm:grid"
-          >
-            {progress.soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </button>
+          <div className="hidden sm:block">
+            <SoundControl variant="header" />
+          </div>
           {prev && (
             <Link href={lessonPath(prev.id)} aria-label={`Previous: ${prev.title}`} className="hidden h-8 w-8 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink sm:grid">
               <ChevronLeft className="h-4 w-4" />

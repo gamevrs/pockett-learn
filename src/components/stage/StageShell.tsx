@@ -7,6 +7,8 @@ import type { ProgramHandle } from "@/engine/program";
 import type { Celebration } from "@/engine/scene";
 import { SCENES } from "@/engine/scenes";
 import { FeatureIcon } from "@/components/ui/icons";
+import { SoundControl } from "@/components/audio/SoundControl";
+import { AUDIO_SCENE_IDS } from "@/lib/sound/audio";
 
 export type StageStatus = "idle" | "loading" | "running";
 
@@ -25,6 +27,8 @@ interface StageShellProps {
   hideControls?: boolean;
   /** Ask the scene to demonstrate itself (landing page). */
   autoplayScene?: boolean;
+  /** The scene makes sound, so the stage shows the sound control. Defaults to AUDIO_SCENE_IDS.has(project.sceneId). */
+  hasAudio?: boolean;
 }
 
 const NOOP_UNSUBSCRIBE = () => {};
@@ -42,6 +46,7 @@ export function StageShell({
   className = "",
   hideControls = false,
   autoplayScene = false,
+  hasAudio,
 }: StageShellProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [fullscreen, setFullscreen] = useState(false);
@@ -49,6 +54,7 @@ export function StageShell({
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const [expandedError, setExpandedError] = useState<string | null>(null);
   const Scene = SCENES[project.sceneId];
+  const showSound = interactive && (hasAudio ?? AUDIO_SCENE_IDS.has(project.sceneId));
 
   const subscribeToErrors = useCallback(
     (listener: () => void) => (program ? program.subscribe(listener) : NOOP_UNSUBSCRIBE),
@@ -115,6 +121,7 @@ export function StageShell({
             </span>
           ) : null}
         </div>
+        {showSound && <SoundControl variant="stage" className="shrink-0" />}
         {!hideControls && (
           <button
             onClick={toggleFullscreen}

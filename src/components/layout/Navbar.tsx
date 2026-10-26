@@ -3,13 +3,14 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Flame, Menu, Moon, Sun, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { Flame, Menu, Moon, Sun, X, Zap } from "lucide-react";
 
 const ICON_BTN = "grid h-8 w-8 place-items-center rounded-md text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink";
 import { useTheme } from "@/lib/theme/ThemeProvider";
-import { currentStreak, levelFor, setSoundEnabled, useProgress } from "@/data/progress/store";
+import { currentStreak, levelFor, useProgress } from "@/data/progress/store";
 import { displayNameOf, useAuth } from "@/data/auth/store";
 import { Logo } from "@/components/brand/Logo";
+import { SoundControl } from "@/components/audio/SoundControl";
 
 const LINKS = [
   { href: "/learn", label: "Foundations" },
@@ -33,7 +34,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 px-3 pt-3 sm:px-4">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 rounded-full border border-line bg-surface/90 pl-5 pr-[11px] shadow-[var(--shadow)] backdrop-blur-md">
+      <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 rounded-full border border-line bg-surface/90 pl-5 pr-[11px] shadow-[var(--shadow)] backdrop-blur-md">
         <div className="flex items-center gap-6">
           <Link href="/" aria-label="pockett home" className="flex h-8 items-center" onClick={() => setOpen(false)}>
             <Logo />
@@ -72,13 +73,7 @@ export function Navbar() {
             </span>
           </Link>
 
-          <button
-            onClick={() => setSoundEnabled(!progress.soundEnabled)}
-            aria-label={progress.soundEnabled ? "Mute sounds" : "Unmute sounds"}
-            className={`${ICON_BTN} hidden sm:grid`}
-          >
-            {progress.soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </button>
+          <SoundControl variant="navbar" />
 
           <button
             onClick={toggleTheme}

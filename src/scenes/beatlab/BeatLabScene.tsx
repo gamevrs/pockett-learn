@@ -5,6 +5,7 @@ import { Play, Square, Volume2, VolumeX } from "lucide-react";
 import type { SceneProps } from "@/engine/scene";
 import { useThreeStage } from "@/engine/three-kit";
 import { ACCENT, NEUTRAL } from "@/engine/stage-style";
+import { enableAudio } from "@/lib/sound/audio";
 import { STEPS, TRACK_IDS, midiName, midiToHzReference } from "./sequencer";
 import { Runtime, TRACKS, trackAlive, type PatternId, type Ui } from "./runtime";
 import { createBeatStage, formatHz, hudMode, type BeatStage, type StageLabels } from "./stage3d";
@@ -178,7 +179,10 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
   });
 
   const canPlay = interactive && !!program && unlocked.has("power");
-  const silent = ui.playing && ui.audio !== "on" && ui.audio !== "unsupported";
+  const muted = ui.audio === "muted";
+  const silent = ui.playing && ui.audio !== "on" && ui.audio !== "unsupported" && !muted;
+  // sound is switched off app-wide (the default): never un-mute for them, just offer it
+  const soundHint = interactive && ui.playing && muted;
   const displayFocus = !!focus && !unlocked.has(focus) && (focus === "power" || focus === "tempo");
   const ledFocus = focus === "arranger" && !unlocked.has("arranger");
 
@@ -324,6 +328,18 @@ export default function BeatLabScene({ program, unlocked, focus, celebration, in
 
       {/* bottom-right cluster (the row labels live on the left, so nothing here can collide with them) */}
       <div className="pointer-events-none absolute bottom-3 right-3 z-10 flex items-center gap-2">
+        {soundHint && (
+          <button
+            type="button"
+            onClick={enableAudio}
+            data-testid="beatlab-sound-hint"
+            title="Sound is off. Turn it on"
+            className="hud-btn hud-btn-on pointer-events-auto"
+          >
+            <VolumeX className="h-3.5 w-3.5" />
+            {narrow ? "Turn sound on" : "Sound is off — turn it on"}
+          </button>
+        )}
         {silent && interactive && (
           <div
             className="hud-btn hud-muted"

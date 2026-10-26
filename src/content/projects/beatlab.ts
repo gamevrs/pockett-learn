@@ -74,7 +74,7 @@ Use double quotes \`"like this"\` or single quotes \`'like this'\`. Just close t
 
 Boot it by printing three startup lines. The moment they run, the display lights up, shows your lines, and a metronome starts ticking out the beat.
 
-Browsers keep sound off until you click something. Press **Run**, then the **Play** button on the stage (or the spacebar) if you can't hear the click. Keep your volume low to start.`,
+Sound starts switched off. Turn it on with the speaker button in the stage's title bar (or at the top of the page), then press **Run** and the **Play** button on the stage (or the spacebar). Keep your volume low to start.`,
           tasks: [
             "Print BEAT LAB ONLINE",
             "Print KICK. SNARE. HATS.",

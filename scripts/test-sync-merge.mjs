@@ -6,7 +6,7 @@ import { mergeProgress } from "../src/data/progress/merge.ts";
 
 const XP = { a: 50, b: 60, c: 80 };
 const xpOf = (id) => XP[id] ?? 0;
-const base = { version: 2, xp: 0, streak: 0, bestStreak: 0, lastActiveDate: null, completed: {}, drafts: {}, draftsAt: {}, attempts: {}, hintsSeen: {}, soundEnabled: true };
+const base = { version: 2, xp: 0, streak: 0, bestStreak: 0, lastActiveDate: null, completed: {}, drafts: {}, draftsAt: {}, attempts: {}, hintsSeen: {}, audio: { enabled: false, volume: 0.6 } };
 const done = (at, code, attempts = 1) => ({ at, code, attempts });
 let n = 0;
 const check = (name, fn) => { fn(); n++; console.log("ok  ", name); };
@@ -65,6 +65,21 @@ check("newer local draft beats an older cloud draft", () => {
   const local = { ...base, drafts: { a: "fresh" }, draftsAt: { a: "2026-10-24T00:00:00Z" } };
   const m = mergeProgress(local, null, [], [{ lesson_id: "a", code: "old", hints_seen: 0, updated_at: "2026-10-02T00:00:00Z" }], xpOf);
   assert.equal(m.drafts.a, "fresh");
+});
+
+check("audio: a cloud row that was never written (or has no columns yet) leaves the device muted", () => {
+  const prof = { xp: 0, streak: 0, best_streak: 0, last_active_date: null };
+  assert.deepEqual(mergeProgress(base, { ...prof, audio_enabled: true, audio_volume: 0.9, audio_updated_at: null }, [], [], xpOf).audio, base.audio);
+  assert.deepEqual(mergeProgress(base, prof, [], [], xpOf).audio, base.audio);
+});
+
+check("audio: newest explicit choice wins, volume clamped", () => {
+  const prof = { xp: 0, streak: 0, best_streak: 0, last_active_date: null };
+  const local = { ...base, audio: { enabled: true, volume: 0.3, at: "2026-10-20T00:00:00Z" } };
+  const newerCloud = mergeProgress(local, { ...prof, audio_enabled: false, audio_volume: 7, audio_updated_at: "2026-10-25T00:00:00Z" }, [], [], xpOf).audio;
+  assert.deepEqual(newerCloud, { enabled: false, volume: 1, at: "2026-10-25T00:00:00Z" });
+  const olderCloud = mergeProgress(local, { ...prof, audio_enabled: false, audio_volume: 0.9, audio_updated_at: "2026-10-01T00:00:00Z" }, [], [], xpOf).audio;
+  assert.deepEqual(olderCloud, local.audio);
 });
 
 console.log(`\n${n} merge checks passed`);

@@ -1,28 +1,21 @@
-import { getProgress } from "@/data/progress/store";
+import { getAudioContext, getAudioOutput } from "./audio";
 
+/**
+ * Short UI sounds (success, level-up, click, error). They only play when the person has switched sound on, and
+ * they go through the shared master gain (src/lib/sound/audio.ts), so the volume control applies to them.
+ */
 class SoundSynthesizer {
-  private ctx: AudioContext | null = null;
-
-  private getContext(): AudioContext | null {
-    if (typeof window === "undefined") return null;
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) {
-        this.ctx = new AudioCtx();
-      }
-    }
-    if (this.ctx && this.ctx.state === "suspended") {
-      this.ctx.resume();
-    }
-    return this.ctx;
+  /** Context + master output, or null when sound is off (the default) / not allowed yet. */
+  private output(): { ctx: AudioContext; out: AudioNode } | null {
+    const ctx = getAudioContext();
+    const out = getAudioOutput();
+    return ctx && out ? { ctx, out } : null;
   }
 
   public playSuccess() {
-    const stats = getProgress();
-    if (!stats.soundEnabled) return;
-
-    const ctx = this.getContext();
-    if (!ctx) return;
+    const o = this.output();
+    if (!o) return;
+    const { ctx, out } = o;
 
     const now = ctx.currentTime;
     const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
@@ -39,7 +32,7 @@ class SoundSynthesizer {
       gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.22);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(out);
 
       osc.start(now + idx * 0.08);
       osc.stop(now + idx * 0.08 + 0.25);
@@ -47,11 +40,9 @@ class SoundSynthesizer {
   }
 
   public playLevelUp() {
-    const stats = getProgress();
-    if (!stats.soundEnabled) return;
-
-    const ctx = this.getContext();
-    if (!ctx) return;
+    const o = this.output();
+    if (!o) return;
+    const { ctx, out } = o;
 
     const now = ctx.currentTime;
     const chord = [440, 554.37, 659.25, 880, 1108.73]; // A Major triumph
@@ -68,7 +59,7 @@ class SoundSynthesizer {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(out);
 
       osc.start(now + idx * 0.06);
       osc.stop(now + 0.85);
@@ -76,11 +67,9 @@ class SoundSynthesizer {
   }
 
   public playClick() {
-    const stats = getProgress();
-    if (!stats.soundEnabled) return;
-
-    const ctx = this.getContext();
-    if (!ctx) return;
+    const o = this.output();
+    if (!o) return;
+    const { ctx, out } = o;
 
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
@@ -94,18 +83,16 @@ class SoundSynthesizer {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(out);
 
     osc.start(now);
     osc.stop(now + 0.035);
   }
 
   public playError() {
-    const stats = getProgress();
-    if (!stats.soundEnabled) return;
-
-    const ctx = this.getContext();
-    if (!ctx) return;
+    const o = this.output();
+    if (!o) return;
+    const { ctx, out } = o;
 
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
@@ -119,7 +106,7 @@ class SoundSynthesizer {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(out);
 
     osc.start(now);
     osc.stop(now + 0.26);

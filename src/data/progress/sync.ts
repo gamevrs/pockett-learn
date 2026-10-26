@@ -54,18 +54,23 @@ let ready = false; // true once the sign-in merge has finished
 let synced: ProgressState | null = null; // what the cloud holds, as of the last successful push
 let timer: ReturnType<typeof setTimeout> | null = null;
 let running = 0;
+/** False once the profiles.audio_* columns turn out not to exist yet (migration 0004 not applied): audio then stays device-local. */
+let audioColumns = true;
 
 async function pull(sb: SupabaseClient, uid: string) {
   setSync({ status: "syncing", error: null });
-  const [p, c, d] = await Promise.all([
+  const [p, c, d, a] = await Promise.all([
     sb.from("profiles").select("xp, streak, best_streak, last_active_date").eq("id", uid).maybeSingle(),
     sb.from("lesson_completions").select("lesson_id, project_slug, code, attempts, completed_at, updated_at").eq("user_id", uid),
     sb.from("lesson_drafts").select("lesson_id, code, hints_seen, updated_at").eq("user_id", uid),
+    // separate query: if the audio columns are not deployed yet this one fails and the rest of the sync carries on
+    sb.from("profiles").select("audio_enabled, audio_volume, audio_updated_at").eq("id", uid).maybeSingle(),
   ]);
   const err = p.error || c.error || d.error;
   if (err) throw err;
+  audioColumns = !a.error;
   if (uid !== userId) return; // signed out / switched account meanwhile
-  const merged = mergeProgress(getProgress(), p.data as ProfileRow | null, (c.data ?? []) as CompletionRow[], (d.data ?? []) as DraftRow[], (id) => LESSONS.get(id)?.xp ?? 0);
+  const merged = mergeProgress(getProgress(), (p.data ? { ...p.data, ...(a.data ?? {}) } : null) as ProfileRow | null, (c.data ?? []) as CompletionRow[], (d.data ?? []) as DraftRow[], (id) => LESSONS.get(id)?.xp ?? 0);
   synced = null; // force a full push of the merged state
   replaceProgress(merged);
   ready = true;
@@ -97,7 +102,9 @@ async function push(sb: SupabaseClient, uid: string) {
   const removedDrafts = before ? Object.keys(before.drafts).filter((id) => !(id in now.drafts)) : [];
 
   const profileChanged =
-    !before || before.xp !== now.xp || before.streak !== now.streak || before.bestStreak !== now.bestStreak || before.lastActiveDate !== now.lastActiveDate || before.soundEnabled !== now.soundEnabled;
+    !before || before.xp !== now.xp || before.streak !== now.streak || before.bestStreak !== now.bestStreak || before.lastActiveDate !== now.lastActiveDate;
+  const audioChanged =
+    audioColumns && !!now.audio.at && (!before || before.audio.enabled !== now.audio.enabled || before.audio.volume !== now.audio.volume || before.audio.at !== now.audio.at);
 
   const ops: PromiseLike<{ error: unknown }>[] = [];
   if (completionRows.length) ops.push(sb.from("lesson_completions").upsert(completionRows, { onConflict: "user_id,lesson_id" }));
@@ -108,8 +115,20 @@ async function push(sb: SupabaseClient, uid: string) {
     ops.push(
       sb
         .from("profiles")
-        .update({ xp: now.xp, streak: now.streak, best_streak: now.bestStreak, last_active_date: now.lastActiveDate, sound_enabled: now.soundEnabled })
+        .update({ xp: now.xp, streak: now.streak, best_streak: now.bestStreak, last_active_date: now.lastActiveDate })
         .eq("id", uid),
+    );
+  if (audioChanged)
+    ops.push(
+      sb
+        .from("profiles")
+        .update({ audio_enabled: now.audio.enabled, audio_volume: now.audio.volume, audio_updated_at: now.audio.at })
+        .eq("id", uid)
+        .then((r) => {
+          // missing column (migration not applied yet): stop trying, never fail the whole sync over a volume setting
+          if (r.error) audioColumns = false;
+          return { error: null };
+        }),
     );
 
   const results = await Promise.all(ops);
@@ -152,6 +171,7 @@ function onAuth() {
   userId = next;
   ready = false;
   synced = null;
+  audioColumns = true;
   if (timer) clearTimeout(timer);
   if (!next) {
     setSync(OFF);
