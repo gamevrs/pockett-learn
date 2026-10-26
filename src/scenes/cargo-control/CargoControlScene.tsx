@@ -18,7 +18,7 @@ import { DepotSim, type Counts, type Snapshot } from "./sim";
  */
 
 const OUTCOME: Record<Outcome, { label: string; text: string; border: string; bg: string }> = {
-  LOAD: { label: "LOAD", text: "text-[#bef264]", border: "border-[#a3e635]/50", bg: "bg-[#a3e635]/10" },
+  LOAD: { label: "LOAD", text: "text-[#d3f3a4]", border: "border-[#c5ee8a]/50", bg: "bg-[#c5ee8a]/10" },
   QUARANTINE: { label: "QUARANTINE", text: "text-[#fbbf24]", border: "border-[#fbbf24]/50", bg: "bg-[#fbbf24]/10" },
   REJECT: { label: "REJECT", text: "text-[#f87171]", border: "border-[#f87171]/50", bg: "bg-[#f87171]/10" },
   HELD: { label: "HELD", text: "text-white/70", border: "border-white/25", bg: "bg-white/[0.05]" },
@@ -82,9 +82,9 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className={`hud-panel mb-3 break-inside-avoid px-3 py-2.5 ${focus ? "border-[#a3e635]/35" : ""} ${flash ? "pop-in" : ""} ${className}`}>
+    <section className={`hud-panel mb-3 break-inside-avoid px-3 py-2.5 ${focus ? "border-[#c5ee8a]/35" : ""} ${flash ? "pop-in" : ""} ${className}`}>
       <header className="mb-2 flex min-w-0 items-center gap-2">
-        <span className="shrink-0 text-[#a3e635]">{icon}</span>
+        <span className="shrink-0 text-[#c5ee8a]">{icon}</span>
         <h3 className="hud-title min-w-0 flex-1 truncate">{title}</h3>
         {meta && <span className="hud-value hud-muted shrink-0 text-[10px]">{meta}</span>}
       </header>
@@ -95,7 +95,7 @@ function Panel({
 
 function LockedPanel({ title, lesson, clause, spot, children }: { title: string; lesson: number; clause: string; spot: boolean; children?: React.ReactNode }) {
   return (
-    <section className={`mb-3 break-inside-avoid rounded-[10px] border border-dashed px-3 py-2.5 ${spot ? "pulse-ring border-[#a3e635]/60" : "border-white/15"}`}>
+    <section className={`mb-3 break-inside-avoid rounded-[10px] border border-dashed px-3 py-2.5 ${spot ? "pulse-ring border-[#c5ee8a]/60" : "border-white/15"}`}>
       <header className="mb-2 flex min-w-0 items-center gap-2">
         <Lock className="h-3 w-3 shrink-0 text-white/35" aria-hidden />
         <h3 className="hud-label min-w-0 flex-1 truncate">{title}</h3>
@@ -123,7 +123,7 @@ function GhostLines({ widths }: { widths: number[] }) {
 const STATE_ICON: Record<RowState, React.ReactNode> = {
   locked: <Lock className="h-3 w-3 text-white/35" aria-hidden />,
   waiting: <Clock className="h-3 w-3 text-white/40" aria-hidden />,
-  ok: <Check className="h-3 w-3 text-[#a3e635]" aria-hidden />,
+  ok: <Check className="h-3 w-3 text-[#c5ee8a]" aria-hidden />,
   warn: <AlertTriangle className="h-3 w-3 text-[#fbbf24]" aria-hidden />,
   bad: <X className="h-3 w-3 text-[#f87171]" aria-hidden />,
   crash: <AlertTriangle className="h-3 w-3 text-[#f87171]" aria-hidden />,
@@ -143,7 +143,7 @@ const STATE_TEXT: Record<RowState, string> = {
 function InspectionRow({ row, spot, flash }: { row: Row; spot: boolean; flash: boolean }) {
   if (row.state === "locked") {
     return (
-      <li className={`rounded-lg border border-dashed px-2.5 py-2 ${spot ? "pulse-ring border-[#a3e635]/60" : "border-white/12"}`}>
+      <li className={`rounded-lg border border-dashed px-2.5 py-2 ${spot ? "pulse-ring border-[#c5ee8a]/60" : "border-white/12"}`}>
         <div className="flex min-w-0 items-center gap-2">
           {STATE_ICON.locked}
           <span className="hud-label min-w-0 flex-1 truncate">{row.title}</span>
@@ -159,7 +159,7 @@ function InspectionRow({ row, spot, flash }: { row: Row; spot: boolean; flash: b
   const crashed = row.state === "crash";
   return (
     <li
-      className={`rounded-lg border px-2.5 py-2 ${flash ? "pop-in" : ""} ${crashed ? "border-[#f87171]/45 bg-[#f87171]/[0.08]" : spot ? "border-[#a3e635]/35 bg-white/[0.03]" : "border-white/[0.07] bg-white/[0.02]"}`}
+      className={`rounded-lg border px-2.5 py-2 ${flash ? "pop-in" : ""} ${crashed ? "border-[#f87171]/45 bg-[#f87171]/[0.08]" : spot ? "border-[#c5ee8a]/35 bg-white/[0.03]" : "border-white/[0.07] bg-white/[0.02]"}`}
     >
       <div className="flex min-w-0 items-center gap-2">
         {STATE_ICON[row.state]}
@@ -212,8 +212,8 @@ function Belt({ snap, alive, playing }: { snap: Snapshot; alive: boolean; playin
       />
       {/* scanner */}
       <div className="pointer-events-none absolute inset-y-0 left-1/2 z-10 -translate-x-1/2">
-        <div className={`mx-auto h-full w-px ${alive ? "cc-scan bg-[#a3e635]" : "bg-white/15"}`} />
-        <span className={`hud-label absolute left-1/2 top-1 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-[#0a0a0a]/85 px-1.5 ${alive ? "text-[#bef264]" : "text-white/35"}`}>
+        <div className={`mx-auto h-full w-px ${alive ? "cc-scan bg-[#c5ee8a]" : "bg-white/15"}`} />
+        <span className={`hud-label absolute left-1/2 top-1 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-[#0a0a0a]/85 px-1.5 ${alive ? "text-[#d3f3a4]" : "text-white/35"}`}>
           <ScanLine className="h-3 w-3" aria-hidden />
           Scanner
         </span>
@@ -402,7 +402,7 @@ function Depot({ program, unlocked, focus, celebration, interactive }: SceneProp
         {chaos && !snap.halted && (
           <div
             className={`mb-2 flex items-center gap-2 rounded-lg border px-3 py-2 text-[11px] ${
-              chaosDone ? (chaos.crashed === 0 ? "border-[#a3e635]/40 bg-[#a3e635]/10 text-[#d9f99d]" : "border-[#f87171]/45 bg-[#f87171]/10 text-[#fecaca]") : "border-white/10 bg-white/[0.03] text-white/80"
+              chaosDone ? (chaos.crashed === 0 ? "border-[#c5ee8a]/40 bg-[#c5ee8a]/10 text-[#e0f6c1]" : "border-[#f87171]/45 bg-[#f87171]/10 text-[#fecaca]") : "border-white/10 bg-white/[0.03] text-white/80"
             }`}
             role="status"
           >
@@ -591,7 +591,7 @@ function Depot({ program, unlocked, focus, celebration, interactive }: SceneProp
                     spellCheck={false}
                     rows={7}
                     aria-label="Manifest text to send"
-                    className="w-full resize-y rounded-md border border-white/10 bg-black/40 p-2 font-mono text-[10.5px] leading-[1.45] text-white/85 outline-none focus:border-[#a3e635]/50"
+                    className="w-full resize-y rounded-md border border-white/10 bg-black/40 p-2 font-mono text-[10.5px] leading-[1.45] text-white/85 outline-none focus:border-[#c5ee8a]/50"
                   />
                   <button type="button" className="hud-btn hud-btn-on mt-1.5 !h-7 !px-3 text-[11px] disabled:opacity-40" disabled={!!snap.halted} onClick={() => sim.send(draft)}>
                     <Send className="h-3 w-3" />

@@ -127,7 +127,7 @@ function SandboxInner() {
     <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
       <p className="eyebrow">Sandbox</p>
       <h1 className="font-display mt-2 text-[2.25rem] sm:text-[2.75rem]">Code sandbox</h1>
-      <p className="mt-3 max-w-xl text-ink-2">No lessons, no tests. Just you and a real engine. Everything stays in your browser.</p>
+      <p className="mt-3 max-w-xl text-ink-2">No lessons, no tests. Just you and a real engine.</p>
 
       <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label="Language">
         {SANDBOX_LANGUAGES.map((id) => (

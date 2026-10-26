@@ -29,7 +29,7 @@ export const beatlab: Project = {
   difficulty: "Beginner",
   hours: 3,
   sceneId: "beatlab",
-  accent: { from: "#3dffd0", to: "#c6ff3d" },
+  accent: { from: "#3dffd0", to: "#d3f3a4" },
   controls: ["Space play / stop", "Click a row to hear it"],
   skills: ["print & strings", "variables & types", "string methods", "lists", "loops & if / else", "functions & math", "dictionaries", "classes"],
   features: [

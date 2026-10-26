@@ -18,6 +18,8 @@ interface PyProxy {
 interface PyodideInstance {
   runPython(code: string, options?: { globals?: PyProxy }): PyProxy;
   loadPackage(names: string | string[]): Promise<unknown>;
+  /** Import a Python module as a proxy (used for micropip). */
+  pyimport(name: string): { install(spec: string): Promise<unknown>; destroy(): void };
 }
 
 declare global {
@@ -34,14 +36,14 @@ export function loadPyodideOnce(onStatus?: StatusListener): Promise<PyodideInsta
   if (window.__pockettPyodide) return window.__pockettPyodide;
 
   window.__pockettPyodide = (async () => {
-    onStatus?.("Downloading the Python engine…");
+    onStatus?.("Getting ready…");
     if (!window.loadPyodide) {
       await new Promise<void>((resolve, reject) => {
         const script = document.createElement("script");
         script.src = `${PYODIDE_BASE}pyodide.js`;
         script.async = true;
         script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Could not download the Python engine. Check your connection."));
+        script.onerror = () => reject(new Error("Could not load Python. Check your connection and try again."));
         document.head.appendChild(script);
       });
     }
@@ -59,12 +61,53 @@ export function loadPyodideOnce(onStatus?: StatusListener): Promise<PyodideInsta
 /** Packages already (or being) loaded this page, so repeat runs skip the work entirely. */
 const loadingPackages = new Map<string, Promise<void>>();
 
+/** A package spec starting with this is a pure-Python PyPI wheel installed with micropip, e.g. "micropip:graphql-core==3.2.13". */
+const MICROPIP_PREFIX = "micropip:";
+
+/** PyPI requirement specs already (or being) installed this page. */
+const installingWheels = new Map<string, Promise<void>>();
+
+/**
+ * Install pure-Python PyPI wheels with micropip (loaded on demand). Each exact spec is installed
+ * once per page; the order of the project's list is kept, since a wheel may need an earlier one.
+ */
+async function ensureWheels(py: PyodideInstance, specs: string[], onStatus?: StatusListener) {
+  for (const spec of new Set(specs)) {
+    let install = installingWheels.get(spec);
+    if (!install) {
+      const label = spec.replace(/[=<>~!].*$/, "");
+      onStatus?.(`Installing ${label} from PyPI (first run only)…`);
+      install = (async () => {
+        await py.loadPackage("micropip");
+        const micropip = py.pyimport("micropip");
+        try {
+          await micropip.install(spec);
+        } finally {
+          micropip.destroy();
+        }
+      })().catch((err) => {
+        installingWheels.delete(spec); // allow a retry after a failed download
+        throw new Error(`Could not install ${label} from PyPI. Check your connection and try again. (${(err as Error)?.message ?? err})`);
+      });
+      installingWheels.set(spec, install);
+    }
+    await install;
+  }
+}
+
 /**
  * Load Pyodide packages (e.g. "sqlite3", which CPython bundles but Pyodide ships separately).
- * Each package is fetched once per page; later runs resolve immediately.
+ * Each package is fetched once per page; later runs resolve immediately. Specs prefixed with
+ * "micropip:" are pure-Python PyPI wheels installed through micropip.
  */
 async function ensurePackages(py: PyodideInstance, packages: string[] | undefined, onStatus?: StatusListener) {
-  const wanted = [...new Set(packages ?? [])];
+  const all = [...new Set(packages ?? [])];
+  const wanted = all.filter((name) => !name.startsWith(MICROPIP_PREFIX));
+  await ensureWheels(
+    py,
+    all.filter((name) => name.startsWith(MICROPIP_PREFIX)).map((name) => name.slice(MICROPIP_PREFIX.length)),
+    onStatus,
+  );
   const pending = wanted.filter((name) => !loadingPackages.has(name));
   if (pending.length) {
     onStatus?.(`Loading ${pending.join(", ")}…`);

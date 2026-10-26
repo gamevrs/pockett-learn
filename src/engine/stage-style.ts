@@ -28,17 +28,21 @@ export const NEUTRAL = {
   50: "#f4f4f4",
 } as const;
 
-/** The single accent (lime). Only for things the learner's code switched on. */
+/**
+ * The single accent (pastel lime, hue ~85deg). Only for things the learner's code switched on.
+ * 400 is the brand fill (same as --primary); 300 is its hover. 500-900 step down in lightness for
+ * steady glows, deep rubber and shaded faces. 700 is also the light-theme text olive (--brand).
+ */
 export const ACCENT = {
-  100: "#ecfccb",
-  200: "#d9f99d",
-  300: "#bef264",
-  400: "#a3e635", // brand
-  500: "#84cc16",
-  600: "#65a30d",
-  700: "#4d7c0f",
-  800: "#3f6212",
-  900: "#1a2e05",
+  100: "#effbe0",
+  200: "#e0f6c1",
+  300: "#d3f3a4",
+  400: "#c5ee8a", // brand
+  500: "#abd373",
+  600: "#83ab49",
+  700: "#4b7411",
+  800: "#354e12",
+  900: "#19240a",
 } as const;
 
 /** Signals: state the learner must notice. Never decorative. */

@@ -7,13 +7,13 @@ import { TONE_CHIP, statusText, statusTone } from "./session";
 /** Shared building blocks for the Pocket Store scene (Pockett Stage look: neutral greys, lime = your code). */
 
 export const INPUT =
-  "h-7 min-w-0 rounded-md border border-white/12 bg-white/[0.04] px-2 text-[11px] text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#a3e635]/60 disabled:cursor-not-allowed disabled:opacity-50";
+  "h-7 min-w-0 rounded-md border border-white/12 bg-white/[0.04] px-2 text-[11px] text-white placeholder:text-white/30 outline-none transition-colors focus:border-[#c5ee8a]/60 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const BTN =
   "inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-white/12 bg-white/[0.05] px-2.5 text-[11px] font-medium text-white/85 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-white/[0.05]";
 
 export const BTN_ON =
-  "inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-transparent bg-[#a3e635] px-3 text-[11px] font-semibold text-[#0a0a0a] transition-colors hover:bg-[#b4ec55] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#a3e635]";
+  "inline-flex h-7 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-transparent bg-[#c5ee8a] px-3 text-[11px] font-semibold text-[#0a0a0a] transition-colors hover:bg-[#d3f3a4] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#c5ee8a]";
 
 export function StatusChip({ status, withText = true }: { status: number; withText?: boolean }) {
   const tone = statusTone(status);
@@ -27,7 +27,7 @@ export function StatusChip({ status, withText = true }: { status: number; withTe
 
 const METHOD_TONE: Record<string, string> = {
   GET: "text-white/65",
-  POST: "text-[#bef264]",
+  POST: "text-[#d3f3a4]",
   PUT: "text-[#fbbf24]",
   PATCH: "text-[#fbbf24]",
   DELETE: "text-[#f87171]",
@@ -56,7 +56,7 @@ export function JsonView({ text, className = "" }: { text: string; className?: s
           {colon}
         </span>,
       );
-    } else if (str) parts.push(<span key={i++} className="text-[#d9f99d]">{tok}</span>);
+    } else if (str) parts.push(<span key={i++} className="text-[#e0f6c1]">{tok}</span>);
     else if (num) parts.push(<span key={i++} className="text-[#fcd34d]">{tok}</span>);
     else if (lit) parts.push(<span key={i++} className="text-white/50">{tok}</span>);
     last = idx + tok.length;
@@ -84,7 +84,7 @@ export function Locked({
   return (
     <div
       data-locked=""
-      className={`rounded-[10px] border border-dashed ${compact ? "px-3 py-2" : "px-3 py-3.5"} ${spot ? "pulse-ring border-[#a3e635]/60" : "border-white/15"}`}
+      className={`rounded-[10px] border border-dashed ${compact ? "px-3 py-2" : "px-3 py-3.5"} ${spot ? "pulse-ring border-[#c5ee8a]/60" : "border-white/15"}`}
     >
       <div className="flex min-w-0 items-center gap-2">
         <Lock className="h-3 w-3 shrink-0 text-white/35" aria-hidden />
@@ -146,7 +146,7 @@ export function PaneFrame({
   return (
     <div className={`hud-panel @container flex min-h-0 min-w-0 flex-1 flex-col !p-0 ${className}`}>
       <header className="flex min-w-0 shrink-0 items-center gap-2 border-b border-white/[0.07] px-3 py-2">
-        <span className="shrink-0 text-[#a3e635]">{icon}</span>
+        <span className="shrink-0 text-[#c5ee8a]">{icon}</span>
         <h3 className="hud-title min-w-0 truncate">{title}</h3>
         {meta && <span className="hud-value hud-muted min-w-0 truncate text-[10px]">{meta}</span>}
         <div className="ml-auto flex shrink-0 items-center gap-1.5">{actions}</div>
@@ -185,8 +185,8 @@ export function Tabs<T extends string>({
             {t.locked && <Lock className="h-2.5 w-2.5" aria-hidden />}
             {t.label}
             {t.badge !== undefined && t.badge !== 0 && <span className="hud-value rounded-full bg-white/10 px-1.5 text-[9.5px] text-white/70">{t.badge}</span>}
-            {fresh?.has(t.id) && <span className="h-1.5 w-1.5 rounded-full bg-[#a3e635]" aria-label="new" />}
-            {active && <span className="absolute inset-x-1.5 -bottom-px h-[2px] rounded-full bg-[#a3e635]" />}
+            {fresh?.has(t.id) && <span className="h-1.5 w-1.5 rounded-full bg-[#c5ee8a]" aria-label="new" />}
+            {active && <span className="absolute inset-x-1.5 -bottom-px h-[2px] rounded-full bg-[#c5ee8a]" />}
           </button>
         );
       })}
@@ -205,6 +205,6 @@ export function Notice({ tone, children }: { tone: "ok" | "warn" | "bad"; childr
       ? "border-[#f87171]/40 bg-[#f87171]/10 text-[#fca5a5]"
       : tone === "warn"
         ? "border-[#fbbf24]/35 bg-[#fbbf24]/10 text-[#fcd34d]"
-        : "border-[#a3e635]/30 bg-[#a3e635]/10 text-[#d9f99d]";
+        : "border-[#c5ee8a]/30 bg-[#c5ee8a]/10 text-[#e0f6c1]";
   return <div className={`rounded-md border px-2.5 py-1.5 text-[11px] leading-snug ${cls}`}>{children}</div>;
 }

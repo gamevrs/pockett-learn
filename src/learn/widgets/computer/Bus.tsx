@@ -201,9 +201,9 @@ export function Bus({ props, onChange, revealed }: WidgetProps<BusProps>) {
         {devices && (
           <div className="grid grid-cols-2 gap-2 sm:w-[15rem] sm:grid-cols-1">
             <Device title="Screen" sub="addr 14" icon="screen" on={target === "screen"}>
-              <div className="flex h-10 items-center overflow-hidden rounded-md bg-[#0a0a0a] px-2 font-mono text-[0.95rem] font-semibold tracking-wider text-[#a3e635]">
+              <div className="flex h-10 items-center overflow-hidden rounded-md bg-[#0a0a0a] px-2 font-mono text-[0.95rem] font-semibold tracking-wider text-[#c5ee8a]">
                 {screen.map(ch).join("")}
-                <span className="ml-px inline-block h-4 w-2 animate-pulse bg-[#a3e635]/70" />
+                <span className="ml-px inline-block h-4 w-2 animate-pulse bg-[#c5ee8a]/70" />
               </div>
             </Device>
             <Device title="Keyboard" sub="addr 15" icon="keyboard" on={target === "keyboard"}>

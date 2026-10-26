@@ -292,8 +292,8 @@ export const bitsModule: Module = {
         {
           kind: "explain",
           title: "Hex in the wild",
-          body: "You'll meet hex wherever bytes are shown to people. The best-known example is web colours: `#A3E635` is three bytes, **A3** for red, **E6** for green and **35** for blue. Drag a slider and watch its hex byte change.",
-          widget: { type: "rgb", props: { initial: [163, 230, 53] } },
+          body: "You'll meet hex wherever bytes are shown to people. The best-known example is web colours: `#C5EE8A` is three bytes, **C5** for red, **EE** for green and **8A** for blue. Drag a slider and watch its hex byte change.",
+          widget: { type: "rgb", props: { initial: [197, 238, 138] } },
         },
         {
           kind: "question",

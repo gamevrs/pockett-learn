@@ -141,7 +141,7 @@ export function AsmEncode({ props, onChange, status, goal }: WidgetProps<EncodeP
         <div className="flex justify-center gap-2 sm:gap-3">
           {code.map((n, i) => (
             <div key={i} className="flex min-w-0 flex-col items-center">
-              <span className={`grid h-14 w-16 place-items-center rounded-lg border font-mono text-2xl font-semibold tabular-nums sm:w-20 ${i === 0 ? "border-[#a3e635]/60 bg-[#a3e635]/10 text-[#a3e635]" : "border-white/15 bg-white/[0.04] text-white"}`}>{n}</span>
+              <span className={`grid h-14 w-16 place-items-center rounded-lg border font-mono text-2xl font-semibold tabular-nums sm:w-20 ${i === 0 ? "border-[#c5ee8a]/60 bg-[#c5ee8a]/10 text-[#c5ee8a]" : "border-white/15 bg-white/[0.04] text-white"}`}>{n}</span>
               <span className="mt-1 text-[0.65rem] font-medium text-white/55">{i === 0 ? "opcode" : i === 1 ? "A" : "B"}</span>
               {binary && <span className="font-mono text-[0.65rem] tabular-nums text-white/40">{(n >>> 0 & 255).toString(2).padStart(8, "0")}</span>}
             </div>

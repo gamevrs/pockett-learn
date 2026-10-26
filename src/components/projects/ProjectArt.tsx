@@ -76,8 +76,8 @@ export function ProjectArt({ slug }: { slug: string }) {
             <path d="M0 -44 C 16 -26, 16 8, 11 28 L -11 28 C -16 8, -16 -26, 0 -44 Z" fill="#f8f8f7" />
             <circle cx="0" cy="-8" r="6" fill="#0b0f18" stroke="url(#g-launch)" strokeWidth="2.5" />
             <path d="M-11 12 L -26 34 L -11 28 Z M 11 12 L 26 34 L 11 28 Z" fill="url(#g-launch)" />
-            <path d="M-7 28 Q 0 64 7 28 Z" fill="#ecfccb" />
-            <path d="M-4 28 Q 0 50 4 28 Z" fill="#d9f99d" />
+            <path d="M-7 28 Q 0 64 7 28 Z" fill="#effbe0" />
+            <path d="M-4 28 Q 0 50 4 28 Z" fill="#e0f6c1" />
           </g>
         </g>
       )}
@@ -237,6 +237,180 @@ export function ProjectArt({ slug }: { slug: string }) {
               <rect key={i} x={42 + i * 84} y="184" width="70" height="10" rx="4" opacity={i % 2 ? 0.25 : 0.9} />
             ))}
           </g>
+        </g>
+      )}
+      {slug === "graphql-gateway" && (
+        <g>
+          {/* a query on the left, the graph it walks on the right */}
+          <rect x="34" y="40" width="130" height="140" rx="8" fill="#101010" stroke="#ffffff" strokeOpacity=".1" />
+          <rect x="34" y="40" width="130" height="20" rx="8" fill="#1b1b1b" />
+          <rect x="44" y="46" width="24" height="8" rx="4" fill="url(#g-graphql-gateway)" />
+          {[
+            [0, 36],
+            [12, 54],
+            [12, 40],
+            [24, 62],
+            [24, 30],
+            [12, 24],
+            [0, 14],
+          ].map(([indent, w], i) => (
+            <rect key={i} x={46 + indent} y={74 + i * 14} width={w} height="5" rx="2.5" fill={i === 3 || i === 4 ? "url(#g-graphql-gateway)" : "#ffffff"} opacity={i === 3 || i === 4 ? 0.95 : 0.2} />
+          ))}
+          <g stroke="#ffffff" strokeOpacity=".18" strokeWidth="1.5" fill="none">
+            <path d="M262 62 L218 112 M262 62 L316 108 M218 112 L236 164 M316 108 L336 160 M218 112 L316 108 M316 108 L270 150" />
+          </g>
+          <path d="M262 62 L218 112 L236 164" stroke="url(#g-graphql-gateway)" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M164 110 H196" stroke="url(#g-graphql-gateway)" strokeWidth="2" strokeDasharray="4 4" />
+          {[
+            [262, 62, 11, true],
+            [218, 112, 9, true],
+            [316, 108, 9, false],
+            [236, 164, 8, true],
+            [336, 160, 8, false],
+            [270, 150, 7, false],
+          ].map(([cx, cy, r, on], i) => (
+            <circle key={i} cx={cx as number} cy={cy as number} r={r as number} fill={on ? "url(#g-graphql-gateway)" : "#151515"} stroke="#ffffff" strokeOpacity={on ? 0 : 0.25} />
+          ))}
+        </g>
+      )}
+      {slug === "csharp-basics" && (
+        <g>
+          {/* a console on the left, the warehouse floor with its patrol lane on the right */}
+          <rect x="30" y="38" width="150" height="144" rx="8" fill="#101010" stroke="#ffffff" strokeOpacity=".1" />
+          <rect x="30" y="38" width="150" height="20" rx="8" fill="#1b1b1b" />
+          <rect x="40" y="44" width="26" height="8" rx="4" fill="url(#g-csharp-basics)" />
+          {[
+            [0, 92, true],
+            [0, 60, false],
+            [10, 78, false],
+            [10, 44, false],
+            [0, 100, true],
+            [0, 52, false],
+            [10, 70, false],
+            [0, 30, false],
+          ].map(([indent, w, on], i) => (
+            <rect key={i} x={42 + (indent as number)} y={70 + i * 13} width={w as number} height="5" rx="2.5" fill={on ? "url(#g-csharp-basics)" : "#ffffff"} opacity={on ? 0.95 : 0.2} />
+          ))}
+          {Array.from({ length: 40 }).map((_, i) => {
+            const x = i % 8;
+            const y = Math.floor(i / 8);
+            const lane = x === 0 || x === 7 || y === 0 || y === 4;
+            return (
+              <rect
+                key={i}
+                x={212 + x * 20}
+                y={52 + y * 20}
+                width="17"
+                height="17"
+                rx="3"
+                fill={lane ? "url(#g-csharp-basics)" : "#ffffff"}
+                opacity={lane ? 0.35 : 0.07}
+              />
+            );
+          })}
+          <circle cx={212 + 5 * 20 + 8.5} cy={52 + 8.5} r="8" fill="url(#g-csharp-basics)" />
+          <circle cx={212 + 4 * 20 + 8.5} cy={52 + 8.5} r="5" fill="url(#g-csharp-basics)" opacity=".5" />
+          <circle cx={212 + 3 * 20 + 8.5} cy={52 + 8.5} r="3.5" fill="url(#g-csharp-basics)" opacity=".28" />
+          <rect x="212" y="162" width="156" height="6" rx="3" fill="#ffffff" opacity=".12" />
+          <rect x="212" y="162" width="104" height="6" rx="3" fill="url(#g-csharp-basics)" />
+        </g>
+      )}
+      {slug === "form-forge" && (
+        <g>
+          {/* a checkout form on the left, the clean JSON it produces on the right */}
+          <rect x="30" y="34" width="170" height="152" rx="10" fill="#101010" stroke="#ffffff" strokeOpacity=".1" />
+          {[0, 1, 2, 3].map((i) => (
+            <g key={i}>
+              <rect x="42" y={48 + i * 33} width={[44, 30, 52, 36][i]} height="4" rx="2" fill="#ffffff" opacity=".32" />
+              <rect
+                x="42"
+                y={57 + i * 33}
+                width="146"
+                height="17"
+                rx="4"
+                fill="#1b1b1b"
+                stroke={i === 0 ? "url(#g-form-forge)" : "#ffffff"}
+                strokeOpacity={i === 0 ? 1 : 0.14}
+                strokeDasharray={i === 3 ? "3 3" : undefined}
+              />
+              <rect x="49" y={63 + i * 33} width={[84, 62, 96, 28][i]} height="5" rx="2.5" fill={i < 3 ? "url(#g-form-forge)" : "#ffffff"} opacity={i === 0 ? 0.95 : i < 3 ? 0.55 : 0.2} />
+            </g>
+          ))}
+          <circle cx="177" cy="65" r="5" fill="url(#g-form-forge)" />
+          <path d="M174.5 65 l1.8 1.8 l3.2 -3.4" fill="none" stroke="#0c0d0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M205 110 H223" stroke="url(#g-form-forge)" strokeWidth="2" strokeLinecap="round" />
+          <path d="M220 104 l8 6 l-8 6" fill="none" stroke="url(#g-form-forge)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="234" y="34" width="140" height="152" rx="10" fill="#101010" stroke="#ffffff" strokeOpacity=".1" />
+          <rect x="246" y="46" width="30" height="12" rx="6" fill="url(#g-form-forge)" />
+          {(
+            [
+              [0, 54, 1],
+              [12, 40, 0],
+              [12, 62, 0],
+              [12, 34, 1],
+              [24, 54, 0],
+              [24, 44, 0],
+              [12, 48, 1],
+              [24, 66, 0],
+              [0, 20, 0],
+            ] as [number, number, number][]
+          ).map(([indent, w, on], i) => (
+            <rect key={i} x={248 + indent} y={72 + i * 12.5} width={w} height="5" rx="2.5" fill={on ? "url(#g-form-forge)" : "#ffffff"} opacity={on ? 0.9 : 0.2} />
+          ))}
+        </g>
+      )}
+      {slug === "event-arena" && (
+        <g>
+          {/* one emitter fanning events out to three listeners, and a request waterfall underneath */}
+          <circle cx="78" cy="96" r="44" fill="url(#glow-event-arena)" />
+          <circle cx="78" cy="96" r="22" fill="#121212" stroke="url(#g-event-arena)" strokeWidth="3" />
+          <circle cx="78" cy="96" r="7" fill="url(#g-event-arena)" />
+          <circle cx="78" cy="96" r="34" fill="none" stroke="url(#g-event-arena)" strokeOpacity=".35" strokeWidth="1.5" strokeDasharray="3 5" />
+          {[44, 96, 148].map((y, i) => (
+            <g key={y}>
+              <path d={`M100 96 C 160 96, 170 ${y}, 236 ${y}`} fill="none" stroke={i === 1 ? "url(#g-event-arena)" : "#ffffff"} strokeOpacity={i === 1 ? 0.9 : 0.18} strokeWidth="2" />
+              <circle cx={150} cy={96 + (y - 96) * 0.36} r="3.5" fill={i === 1 ? "url(#g-event-arena)" : "#ffffff"} opacity={i === 1 ? 1 : 0.35} />
+              <circle cx={196} cy={96 + (y - 96) * 0.86} r="3" fill={i === 1 ? "url(#g-event-arena)" : "#ffffff"} opacity={i === 1 ? 0.7 : 0.2} />
+              <rect x="236" y={y - 20} width="130" height="40" rx="8" fill="#101010" stroke={i === 1 ? "url(#g-event-arena)" : "#ffffff"} strokeOpacity={i === 1 ? 1 : 0.14} />
+              <rect x="248" y={y - 8} width={[46, 70, 38][i]} height="5" rx="2.5" fill="#ffffff" opacity=".35" />
+              <rect x="248" y={y + 4} width={[78, 52, 62][i]} height="5" rx="2.5" fill={i === 1 ? "url(#g-event-arena)" : "#ffffff"} opacity={i === 1 ? 0.9 : 0.18} />
+              <rect x="338" y={y - 8} width="16" height="16" rx="8" fill={i === 1 ? "url(#g-event-arena)" : "#ffffff"} opacity={i === 1 ? 0.95 : 0.12} />
+            </g>
+          ))}
+          {[0, 1, 2, 3].map((i) => (
+            <rect key={i} x={54 + [0, 34, 34, 120][i]} y={186 + i * 7} width={[84, 130, 60, 70][i]} height="4" rx="2" fill={i === 1 ? "url(#g-event-arena)" : "#ffffff"} opacity={i === 1 ? 0.95 : 0.16} />
+          ))}
+        </g>
+      )}
+      {slug === "season-analytics" && (
+        <g>
+          {/* a points-progression chart on the left, a standings table with move arrows on the right */}
+          <rect x="34" y="38" width="216" height="144" rx="8" fill="#101010" stroke="#ffffff" strokeOpacity=".08" />
+          {[70, 102, 134].map((y) => (
+            <path key={y} d={`M46 ${y} H238`} stroke="#ffffff" strokeOpacity=".07" />
+          ))}
+          {[
+            "M46 168 L86 164 L126 158 L166 150 L206 138 L238 130",
+            "M46 170 L86 160 L126 152 L166 140 L206 132 L238 118",
+            "M46 166 L86 162 L126 150 L166 146 L206 126 L238 104",
+            "M46 172 L86 168 L126 164 L166 160 L206 154 L238 148",
+          ].map((d, i) => (
+            <path key={i} d={d} fill="none" stroke="#ffffff" strokeOpacity={0.14 + i * 0.05} strokeWidth="1.5" strokeLinejoin="round" />
+          ))}
+          <path d="M46 168 L86 150 L126 130 L166 112 L206 82 L238 58" fill="none" stroke="url(#g-season-analytics)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+          {[86, 126, 166, 206].map((x, i) => (
+            <circle key={x} cx={x} cy={[150, 130, 112, 82][i]} r="2.5" fill="url(#g-season-analytics)" />
+          ))}
+          <circle cx="238" cy="58" r="5" fill="url(#g-season-analytics)" />
+          <circle cx="238" cy="58" r="12" fill="url(#glow-season-analytics)" />
+          {[0, 1, 2, 3].map((i) => (
+            <g key={i}>
+              <path d={i === 0 || i === 2 ? `M276 ${68 + i * 30} l5 -8 l5 8 z` : `M276 ${60 + i * 30} l5 8 l5 -8 z`} fill={i === 0 || i === 2 ? "url(#g-season-analytics)" : "#ffffff"} opacity={i === 0 || i === 2 ? 1 : 0.28} />
+              <rect x="296" y={60 + i * 30} width={[44, 38, 48, 30][i]} height="6" rx="3" fill="#ffffff" opacity={i === 0 ? 0.75 : 0.3} />
+              <rect x="296" y={72 + i * 30} width={[50, 44, 40, 32][i]} height="4" rx="2" fill={i === 0 ? "url(#g-season-analytics)" : "#ffffff"} opacity={i === 0 ? 1 : 0.16} />
+              <text x="372" y={69 + i * 30} textAnchor="end" fontSize="10" fontFamily="var(--font-mono)" fill="#ffffff" opacity={i === 0 ? 0.9 : 0.4}>{[141, 138, 132, 132][i]}</text>
+            </g>
+          ))}
         </g>
       )}
     </svg>

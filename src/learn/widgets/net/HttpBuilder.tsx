@@ -193,7 +193,7 @@ export function HttpBuilder({ props, onChange, revealed }: WidgetProps<HttpBuild
             {reqLines(method, path)
               .split("\n")
               .map((l, i) => (
-                <div key={i} className={i === 0 ? "font-semibold text-[#a3e635]" : l.includes(":") ? "text-[#e5e5e5]" : "text-white/70"}>
+                <div key={i} className={i === 0 ? "font-semibold text-[#c5ee8a]" : l.includes(":") ? "text-[#e5e5e5]" : "text-white/70"}>
                   {l || " "}
                 </div>
               ))}

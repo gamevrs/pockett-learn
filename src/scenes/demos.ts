@@ -7,6 +7,11 @@ import { signalLabDemoProgram } from "./signal-lab/demo";
 import { cargoControlDemoProgram } from "./cargo-control/demo";
 import { storeApiDemoProgram } from "./store-api/demo";
 import { smartHomeDemoProgram } from "./smart-home/demo";
+import { csharpBasicsDemoProgram } from "./csharp-basics/demo";
+import { seasonAnalyticsDemoProgram } from "./season-analytics/demo";
+import { graphqlGatewayDemoProgram } from "./graphql-gateway/demo";
+import { formForgeDemoProgram } from "./form-forge/demo";
+import { eventArenaDemoProgram } from "./event-arena/demo";
 
 /** Scripted stand-ins for a finished learner program, keyed by project slug. Used on the landing page. */
 export const DEMO_PROGRAMS: Record<string, () => ProgramHandle> = {
@@ -18,4 +23,9 @@ export const DEMO_PROGRAMS: Record<string, () => ProgramHandle> = {
   "cargo-control": cargoControlDemoProgram,
   "store-api": storeApiDemoProgram,
   "smart-home": smartHomeDemoProgram,
+  "csharp-basics": csharpBasicsDemoProgram,
+  "season-analytics": seasonAnalyticsDemoProgram,
+  "graphql-gateway": graphqlGatewayDemoProgram,
+  "form-forge": formForgeDemoProgram,
+  "event-arena": eventArenaDemoProgram,
 };

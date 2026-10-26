@@ -39,7 +39,7 @@ scripts/                validate-content, seed-progress, tune-garage
                               ▼
                        ProgramHandle  ◄── snapshot of JSON-able globals + callable names
                               │
-            Scene reads vars ─┤─ Scene calls hooks (JSON in/out, 0.25s watchdog each)
+            Scene reads vars ─┤─ Scene calls hooks (JSON in/out, 0.25s watchdog each; run_tests gets 2s)
                               │
  gradeProgram(code, tests) ───┘  separate namespace so tests can't disturb the live scene
         all pass ──► completeLesson() ──► unlock features ──► celebration
@@ -135,6 +135,7 @@ Python projects can declare Pyodide `packages` (e.g. `sqlite3`); `RunOptions.pac
 ## Quality gates
 
 - `pnpm validate`: runs every lesson through the real engine for its language (CPython for Python, the browser engines' own code in Node for JavaScript and SQL). Every lesson's reference solution must pass all tests and its starter must fail at least one (so nothing ships pre-solved or broken), and every feature must be unlocked by some lesson.
+  - Server languages (C#, C++, Go) need the live runner: `RUNNER_BASE_URL=https://www.pockett.ai pnpm validate csharp-basics`. Each case is sent to `${RUNNER_BASE_URL}/api/run` (throttled to the route's ~30 runs/min, retried on 429/5xx) and judged by `engine/runtimes/remote-output.ts`, the same code the browser uses. `RUNNER_CACHE=1` reuses answers for identical source while authoring, and a third argument (`pnpm validate csharp-basics 5-loops`) limits it to lessons whose id contains that text. Without `RUNNER_BASE_URL` those lessons are skipped with a warning.
 - `pnpm typecheck`, `pnpm build`, `eslint` (React Compiler rules are on).
 
 ## Accounts and cloud sync (Supabase)

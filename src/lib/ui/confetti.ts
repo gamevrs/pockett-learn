@@ -1,6 +1,6 @@
 import confetti from "canvas-confetti";
 
-export function fireCelebrationConfetti(colors: string[] = ["#a3e635", "#d9f99d", "#ffffff"]) {
+export function fireCelebrationConfetti(colors: string[] = ["#c5ee8a", "#abd373", "#83ab49", "#e0f6c1"]) {
   if (typeof window === "undefined") return;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 

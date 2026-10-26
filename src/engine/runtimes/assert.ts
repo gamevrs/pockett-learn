@@ -57,7 +57,52 @@ export const testHelpers = {
       throw new AssertionError(`${message ? `${message}: ` : ""}expected about ${expected}, got ${inspect(actual, 1)}`);
     }
   },
+  /**
+   * Asserts that `fn` throws (JavaScript checks). `expected` may be a string (the message must contain
+   * it, or the error name must equal it), a RegExp (tested against the message) or omitted.
+   * Returns the error so a check can inspect it further.
+   */
+  assertThrows(fn: () => unknown, expected?: string | RegExp, message?: string): unknown {
+    let thrown: unknown;
+    let threw = false;
+    try {
+      fn();
+    } catch (err) {
+      threw = true;
+      thrown = err;
+    }
+    if (!threw) throw new AssertionError(message ?? "expected the code to throw an error, but it finished normally");
+    matchesError(thrown, expected, message);
+    return thrown;
+  },
+  /**
+   * Async twin of assertThrows: awaits a Promise (or the Promise returned by calling a function)
+   * and asserts it rejects. Returns the rejection reason.
+   */
+  async assertRejects(promiseOrFn: unknown, expected?: string | RegExp, message?: string): Promise<unknown> {
+    let thrown: unknown;
+    let threw = false;
+    try {
+      await (typeof promiseOrFn === "function" ? (promiseOrFn as () => unknown)() : promiseOrFn);
+    } catch (err) {
+      threw = true;
+      thrown = err;
+    }
+    if (!threw) throw new AssertionError(message ?? "expected the Promise to reject, but it resolved");
+    matchesError(thrown, expected, message);
+    return thrown;
+  },
 };
+
+function matchesError(thrown: unknown, expected: string | RegExp | undefined, message?: string) {
+  if (expected === undefined) return;
+  const text = thrown instanceof Error ? thrown.message : String(thrown);
+  const name = thrown instanceof Error ? thrown.name : "";
+  const ok = typeof expected === "string" ? text.includes(expected) || name === expected : expected.test(text);
+  if (!ok) {
+    throw new AssertionError(`${message ? `${message}: ` : ""}expected an error matching ${String(expected)}, got ${name ? `${name}: ` : ""}${text}`);
+  }
+}
 
 /** How a failing check is reported to the learner. */
 export function describeFailure(err: unknown): string {

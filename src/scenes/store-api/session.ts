@@ -115,14 +115,14 @@ export type Tone = "ok" | "info" | "warn" | "bad";
 export const statusTone = (status: number): Tone => (status >= 500 || status <= 0 ? "bad" : status >= 400 ? "warn" : status >= 300 ? "info" : "ok");
 
 export const TONE_TEXT: Record<Tone, string> = {
-  ok: "text-[#bef264]",
+  ok: "text-[#d3f3a4]",
   info: "text-white/60",
   warn: "text-[#fbbf24]",
   bad: "text-[#f87171]",
 };
 
 export const TONE_CHIP: Record<Tone, string> = {
-  ok: "border-[#a3e635]/35 bg-[#a3e635]/10 text-[#bef264]",
+  ok: "border-[#c5ee8a]/35 bg-[#c5ee8a]/10 text-[#d3f3a4]",
   info: "border-white/15 bg-white/[0.05] text-white/70",
   warn: "border-[#fbbf24]/35 bg-[#fbbf24]/10 text-[#fbbf24]",
   bad: "border-[#f87171]/40 bg-[#f87171]/10 text-[#f87171]",

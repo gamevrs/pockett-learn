@@ -73,8 +73,7 @@ export function ProjectBrowser({
           </span>
           <h2 className="font-display text-2xl">{LANGUAGES[filter as LanguageId].label} is coming soon</h2>
           <p className="max-w-lg text-ink-2">
-            {LANGUAGES[filter as LanguageId].label} courses compile and run on a secure code runner, which is being set up now. Python,
-            JavaScript and SQL run right in your browser today.
+            {LANGUAGES[filter as LanguageId].label} courses are being written and will open as soon as they are ready.
           </p>
           <button className="btn btn-sm mt-1" onClick={() => setFilter("all")}>
             See available courses
@@ -135,7 +134,7 @@ function LanguagePath({
     <section aria-labelledby={`path-${language}`}>
       <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-line pb-6">
         <div className="min-w-0 max-w-xl">
-          <p className="eyebrow">{info.runsIn === "browser" ? "Runs in your browser" : "Needs the code runner"}</p>
+          <p className="eyebrow">Learning path</p>
           <h2 id={`path-${language}`} className="font-display mt-2 text-[2rem] sm:text-[2.5rem]">
             {info.label} path
           </h2>
@@ -163,7 +162,7 @@ function LanguagePath({
       {needsRunner && (
         <p className="mt-6 flex items-start gap-2 text-sm text-ink-2">
           <Clock className="mt-0.5 h-4 w-4 shrink-0 text-ink-3" />
-          {info.label} runs on a secure code runner, which is being set up. These projects are planned and will open once it is ready.
+          {info.label} courses are coming soon. These projects are planned and will open as they are written.
         </p>
       )}
 

@@ -60,10 +60,10 @@ function CodeIllustration() {
     <div className="w-full max-w-sm overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow)]">
       <div className="flex h-9 items-center border-b border-line px-4 font-mono text-[11px] text-ink-3">main.py</div>
       <pre className="overflow-x-auto bg-[#0a0a0a] px-4 py-4 font-mono text-[12.5px] leading-relaxed text-[#d4d4d4]">
-        <span className="text-[#a3e635]">def</span> <span className="text-[#7fd4ff]">throttle</span>(speed, target):{"\n"}
-        {"    "}<span className="text-[#a3e635]">if</span> speed &lt; target:{"\n"}
-        {"        "}<span className="text-[#a3e635]">return</span> <span className="text-[#ffb86b]">1.0</span>{"\n"}
-        {"    "}<span className="text-[#a3e635]">return</span> <span className="text-[#ffb86b]">0.0</span>
+        <span className="text-[#c5ee8a]">def</span> <span className="text-[#7fd4ff]">throttle</span>(speed, target):{"\n"}
+        {"    "}<span className="text-[#c5ee8a]">if</span> speed &lt; target:{"\n"}
+        {"        "}<span className="text-[#c5ee8a]">return</span> <span className="text-[#ffb86b]">1.0</span>{"\n"}
+        {"    "}<span className="text-[#c5ee8a]">return</span> <span className="text-[#ffb86b]">0.0</span>
       </pre>
     </div>
   );
@@ -131,7 +131,7 @@ export default function HomePage() {
         <div className="rise mx-auto max-w-4xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs text-ink-2">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Free coding courses · runs in your browser
+            Free coding courses · learn by building
           </span>
           <h1 className="font-display mt-6 text-balance text-[clamp(2.6rem,5.6vw,4.25rem)]">Learn to code by building things that work</h1>
           <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-ink-2 sm:text-lg">
@@ -280,7 +280,7 @@ export default function HomePage() {
 
         <div className="mt-20 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: Zap, t: "Instant feedback", d: "Your code runs right in the browser. No installs, no servers, no waiting." },
+            { icon: Zap, t: "Instant feedback", d: "Run your code and see the result instantly. Nothing to install." },
             { icon: TestTube2, t: "Real tests", d: "Every lesson is graded by assertions, the same way production code is." },
             { icon: Globe, t: "Free for everyone", d: "No paywall and no trial. Supported by a small number of ads." },
             { icon: Layers, t: "Your build persists", d: "Your project grows with you. Come back any time and keep going." },

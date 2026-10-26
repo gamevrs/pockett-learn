@@ -30,7 +30,7 @@ export interface PixelGridState {
   painted: number;
 }
 
-const DEFAULT_PALETTE = ["#FFFFFF", "#0A0A0A", "#A3E635", "#EF4444", "#3B82F6", "#FACC15", "#F97316"];
+const DEFAULT_PALETTE = ["#FFFFFF", "#0A0A0A", "#C5EE8A", "#EF4444", "#3B82F6", "#FACC15", "#F97316"];
 
 const bytesOf = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 

@@ -34,7 +34,7 @@ export function CodePane({
         {lines.map((line, i) => {
           const on = highlight.includes(i);
           return (
-            <div key={i} className={`border-l-2 pl-2.5 pr-3 ${on ? "border-[#a3e635] bg-[#a3e635]/[0.12]" : "border-transparent"}`}>
+            <div key={i} className={`border-l-2 pl-2.5 pr-3 ${on ? "border-[#c5ee8a] bg-[#c5ee8a]/[0.12]" : "border-transparent"}`}>
               {line === "" ? " " : <CodeBlock code={line} language="python" />}
             </div>
           );

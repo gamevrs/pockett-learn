@@ -64,9 +64,9 @@ export function CPane({ code, current, title, className = "" }: { code: string; 
           const n = i + 1;
           const on = current === n;
           return (
-            <li key={n} className={`flex min-w-max ${on ? "bg-[rgba(163,230,53,0.16)]" : ""}`} aria-current={on ? "step" : undefined}>
-              <span className={`w-1 shrink-0 ${on ? "bg-[#a3e635]" : ""}`} aria-hidden />
-              <span className={`w-8 shrink-0 select-none pr-3 text-right tabular-nums ${on ? "text-[#a3e635]" : "text-white/35"}`}>{n}</span>
+            <li key={n} className={`flex min-w-max ${on ? "bg-[rgba(197,238,138,0.16)]" : ""}`} aria-current={on ? "step" : undefined}>
+              <span className={`w-1 shrink-0 ${on ? "bg-[#c5ee8a]" : ""}`} aria-hidden />
+              <span className={`w-8 shrink-0 select-none pr-3 text-right tabular-nums ${on ? "text-[#c5ee8a]" : "text-white/35"}`}>{n}</span>
               <span className="whitespace-pre pr-4">{text ? <CodeBlock code={text} language="cpp" /> : " "}</span>
             </li>
           );

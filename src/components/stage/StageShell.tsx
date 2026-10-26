@@ -93,7 +93,7 @@ export function StageShell({
       <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-2 bg-gradient-to-b from-black/70 to-transparent px-3 py-2.5">
         <div className="flex min-w-0 shrink items-center gap-2 text-xs font-medium">
           <span
-            className={`h-2 w-2 shrink-0 rounded-full ${program ? "bg-[#a3e635]" : "bg-white/30"}`}
+            className={`h-2 w-2 shrink-0 rounded-full ${program ? "bg-[#c5ee8a]" : "bg-white/30"}`}
             aria-hidden
           />
           <span className="truncate text-white/80">
@@ -105,12 +105,12 @@ export function StageShell({
         <div className="pointer-events-none flex min-w-0 flex-1 justify-end">
           {status === "loading" ? (
             <span className="hud-tag max-w-full shrink-0 gap-1.5" role="status">
-              <span className="h-2.5 w-2.5 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-[#a3e635]" />
-              <span className="truncate">{statusText || "Booting Python…"}</span>
+              <span className="h-2.5 w-2.5 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-[#c5ee8a]" />
+              <span className="truncate">{statusText || (project.language && project.language !== "python" ? "Building your code…" : "Booting Python…")}</span>
             </span>
           ) : showEmpty ? (
             <span className="hud-tag max-w-full shrink-0 gap-1.5">
-              <Play className="h-3 w-3 shrink-0 text-[#d9f99d]" fill="currentColor" />
+              <Play className="h-3 w-3 shrink-0 text-[#e0f6c1]" fill="currentColor" />
               <span className="truncate">{emptyHint}</span>
             </span>
           ) : null}
@@ -175,7 +175,7 @@ export function StageShell({
             <div
               className="flex max-w-md items-center gap-3 rounded-xl border border-white/10 bg-[#111]/90 px-4 py-3 text-white shadow-2xl backdrop-blur"
             >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#a3e635] text-[#0a0a0a]">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#c5ee8a] text-[#0a0a0a]">
                 <Sparkles className="h-4 w-4" />
               </span>
               <div className="min-w-0">
@@ -207,11 +207,11 @@ export function StageShell({
                 alive
                   ? "border-white/10 bg-white/[0.06] text-white"
                   : spot
-                    ? "border-[#a3e635]/60 text-white"
+                    ? "border-[#c5ee8a]/60 text-white"
                     : "border-white/[0.06] text-white/35"
               }`}
             >
-              {alive ? <FeatureIcon id={f.id} className="h-3 w-3 text-[#a3e635]" /> : <Lock className="h-3 w-3" />}
+              {alive ? <FeatureIcon id={f.id} className="h-3 w-3 text-[#c5ee8a]" /> : <Lock className="h-3 w-3" />}
               {f.title}
             </span>
           );

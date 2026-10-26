@@ -5,7 +5,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ───────────── Design tokens ─────────────
-   Neutral greys (no tint), one accent (lime). Light = white, dark = near-black.
+   Neutral greys (no tint), one accent (pastel lime). Light = white, dark = near-black.
    --brand is the accent for text/lines; --primary is the filled accent for main actions. */
 :root {
   --bg: #f6f5f1;
@@ -17,14 +17,16 @@
   --ink-3: #8a8880;
   --line: #e5e3dc;
   --line-strong: #d2d0c8;
-  --tint: #ebf3da;
-  --brand: #4d7c0f;
-  --brand-light: #65a30d;
-  --brand-deep: #365314;
+  --tint: #eef7dd;
+  /* --brand is the deep olive used for text and thin lines on light surfaces (5.1:1 on the page, 5.5:1 on white);
+     the pastel itself is only ever a fill here, with dark ink on it. */
+  --brand: #4b7411;
+  --brand-light: #5f8d1a;
+  --brand-deep: #354e12;
   --brand-ink: #ffffff;
-  --brand-soft: rgba(101, 163, 13, 0.12);
-  --primary: #a3e635;
-  --primary-hover: #b4ec55;
+  --brand-soft: rgba(197, 238, 138, 0.4);
+  --primary: #c5ee8a;
+  --primary-hover: #d3f3a4;
   --primary-ink: #0a0a0a;
   /* single accent: legacy aliases point at it */
   --mint: var(--brand);
@@ -34,8 +36,9 @@
   --bad: #dc2626;
   --shadow: 0 1px 2px rgba(20, 20, 10, 0.04), 0 4px 16px -8px rgba(20, 20, 10, 0.08);
   --pop-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --accent-from: var(--brand);
-  --accent-to: var(--brand);
+  /* project key art always sits on a dark field, so it takes the pastel fill, not the light-theme olive */
+  --accent-from: var(--primary);
+  --accent-to: var(--primary);
   --stage-bg: #0a0a0a;
 }
 
@@ -49,14 +52,15 @@
   --ink-3: #737373;
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.16);
-  --tint: #141a0c;
-  --brand: #a3e635;
-  --brand-light: #bef264;
-  --brand-deep: #84cc16;
+  --tint: #161b0f;
+  /* on dark surfaces the pastel itself is the text/line colour (15:1 on #0a0a0a) */
+  --brand: #c5ee8a;
+  --brand-light: #d3f3a4;
+  --brand-deep: #abd373;
   --brand-ink: #0a0a0a;
-  --brand-soft: rgba(163, 230, 53, 0.1);
-  --primary: #a3e635;
-  --primary-hover: #b4ec55;
+  --brand-soft: rgba(197, 238, 138, 0.1);
+  --primary: #c5ee8a;
+  --primary-hover: #d3f3a4;
   --primary-ink: #0a0a0a;
   --good: #4ade80;
   --bad: #f87171;
@@ -109,8 +113,8 @@ body {
 }
 
 ::selection {
-  background: var(--brand);
-  color: var(--brand-ink);
+  background: var(--primary);
+  color: var(--primary-ink);
 }
 
 :focus-visible {

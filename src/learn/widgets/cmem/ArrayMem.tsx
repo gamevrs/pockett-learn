@@ -157,7 +157,7 @@ export function ArrayMem({ props, onChange, revealed }: WidgetProps<ArrayMemProp
         </div>
         {props.write !== undefined && (
           <>
-            <button type="button" onClick={doWrite} className={`${CODE_SURFACE} min-h-10 px-3 font-mono text-[0.8rem] hover:border-[#a3e635]/60`}>
+            <button type="button" onClick={doWrite} className={`${CODE_SURFACE} min-h-10 px-3 font-mono text-[0.8rem] hover:border-[#c5ee8a]/60`}>
               <CodeBlock code={`${name}[${i}] = ${type === "char" ? `'${props.write}'` : props.write};`} language="cpp" />
             </button>
             <button type="button" className="btn btn-ghost btn-sm !h-10" onClick={resetAll} disabled={wrote === null && !corrupted && vals.every((v, k) => v === initial[k])}>

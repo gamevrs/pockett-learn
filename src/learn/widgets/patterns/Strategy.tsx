@@ -92,7 +92,7 @@ export function Strategy({ props, onChange, revealed }: WidgetProps<StrategyProp
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-[1.25fr_1fr]">
-        <CodePane title="checkout.py · the context" badge={<span className="text-[#a3e635]">0 edits</span>} code={CONTEXT} highlight={[5]} />
+        <CodePane title="checkout.py · the context" badge={<span className="text-[#c5ee8a]">0 edits</span>} code={CONTEXT} highlight={[5]} />
         <div key={strategy} className="pop-in min-w-0">
           <CodePane title="the strategy it holds" code={s.code} highlight={[2]} />
         </div>

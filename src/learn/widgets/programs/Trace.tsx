@@ -166,22 +166,22 @@ export function Trace({ props, onChange, revealed }: WidgetProps<TraceProps>) {
             const isAnswer = Boolean(revealed && props.selectLine) && n === (props.answerLine ?? (startAt < total ? steps[startAt].line : -1));
             const pickRight = isAnswer;
             const rowClass = `flex w-full items-stretch text-left ${
-              ran ? "bg-[rgba(163,230,53,0.16)]" : isPicked ? "bg-white/[0.08]" : ""
+              ran ? "bg-[rgba(197,238,138,0.16)]" : isPicked ? "bg-white/[0.08]" : ""
             } ${props.selectLine && !revealed ? "min-h-10 cursor-pointer hover:bg-white/[0.06]" : ""}`;
             const inner = (
               <>
-                <span className={`w-1 shrink-0 ${ran ? "bg-[#a3e635]" : isPicked ? "bg-white/60" : ""}`} aria-hidden />
-                <span className={`w-9 shrink-0 select-none pr-3 text-right tabular-nums ${ran ? "text-[#a3e635]" : "text-white/35"}`}>{n}</span>
-                <span className="w-4 shrink-0 select-none text-[#a3e635]/80" aria-hidden>
+                <span className={`w-1 shrink-0 ${ran ? "bg-[#c5ee8a]" : isPicked ? "bg-white/60" : ""}`} aria-hidden />
+                <span className={`w-9 shrink-0 select-none pr-3 text-right tabular-nums ${ran ? "text-[#c5ee8a]" : "text-white/35"}`}>{n}</span>
+                <span className="w-4 shrink-0 select-none text-[#c5ee8a]/80" aria-hidden>
                   {next ? "›" : ""}
                 </span>
                 <span className="flex-1 whitespace-pre pr-4 py-px">{text ? <CodeBlock code={text} language="python" /> : " "}</span>
                 {isPicked && (
-                  <span className={`mr-3 self-center rounded px-1.5 text-[0.65rem] font-sans font-semibold ${pickRight ? "bg-[#a3e635] text-[#0a0a0a]" : revealed ? "bg-white/15 text-white/80" : "bg-white/15 text-white"}`}>
+                  <span className={`mr-3 self-center rounded px-1.5 text-[0.65rem] font-sans font-semibold ${pickRight ? "bg-[#c5ee8a] text-[#0a0a0a]" : revealed ? "bg-white/15 text-white/80" : "bg-white/15 text-white"}`}>
                     your pick
                   </span>
                 )}
-                {isAnswer && !isPicked && <span className="mr-3 self-center rounded bg-[#a3e635] px-1.5 text-[0.65rem] font-sans font-semibold text-[#0a0a0a]">answer</span>}
+                {isAnswer && !isPicked && <span className="mr-3 self-center rounded bg-[#c5ee8a] px-1.5 text-[0.65rem] font-sans font-semibold text-[#0a0a0a]">answer</span>}
               </>
             );
             return (

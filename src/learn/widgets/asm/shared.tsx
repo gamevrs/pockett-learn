@@ -3,7 +3,7 @@ import { ALL_OPS } from "./machine";
 
 /** Colours on the dark code surface (match the lesson code blocks). */
 export const C = {
-  op: "#a3e635",
+  op: "#c5ee8a",
   reg: "#7fd4ff",
   num: "#ffb86b",
   label: "#fcd34d",

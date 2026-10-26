@@ -65,7 +65,19 @@ export function formatTable(rs: ResultSet, limit = 20): string {
   return lines.join("\n");
 }
 
-export function executeSql(SQL: SqlJsStatic, source: string, setup = ""): SqlRun {
+/** Statements whose effect is reported as "N rows changed". Everything else (CREATE, DROP, PRAGMA…) is just "ok". */
+const DML_VERBS = new Set(["INSERT", "UPDATE", "DELETE", "REPLACE", "WITH"]);
+
+/** SQLite's running count of rows changed by INSERT/UPDATE/DELETE since the connection opened. */
+function totalChanges(db: Database): number {
+  return Number(db.exec("SELECT total_changes()")[0]?.values[0]?.[0] ?? 0);
+}
+
+/**
+ * `onStatement(line)` is called just before each statement runs (1-based line of its first
+ * character), so a host that has to give up on a runaway query can say where it was stuck.
+ */
+export function executeSql(SQL: SqlJsStatic, source: string, setup = "", onStatement?: (line: number) => void): SqlRun {
   const db = new SQL.Database();
   if (setup) db.exec(setup);
   const results: ResultSet[] = [];
@@ -78,8 +90,10 @@ export function executeSql(SQL: SqlJsStatic, source: string, setup = ""): SqlRun
       const start = statementStart(source, consumed);
       consumed = source.length - it.getRemainingSQL().length;
       try {
+        onStatement?.(lineAt(source, start));
         const columns = stmt.getColumnNames();
         const rows: SqlValue[][] = [];
+        const before = totalChanges(db);
         while (stmt.step()) if (rows.length < MAX_ROWS) rows.push(stmt.get());
         const sql = stmt.getSQL().trim();
         if (columns.length > 0) {
@@ -87,8 +101,11 @@ export function executeSql(SQL: SqlJsStatic, source: string, setup = ""): SqlRun
           results.push(rs);
           stdout += formatTable(rs) + "\n\n";
         } else {
-          const changed = db.getRowsModified();
-          stdout += `${sql.slice(statementStart(sql, 0)).split(/\s+/)[0].toUpperCase()} ok${changed ? ` · ${changed} row${changed === 1 ? "" : "s"} changed` : ""}\n\n`;
+          const verb = sql.slice(statementStart(sql, 0)).split(/[\s(]+/)[0].toUpperCase();
+          // total_changes() only moves when this very statement wrote rows; getRowsModified() is then fresh
+          // (it reports the last INSERT/UPDATE/DELETE, which for a CREATE VIEW would be a stale number).
+          const changed = DML_VERBS.has(verb) && totalChanges(db) > before ? db.getRowsModified() : 0;
+          stdout += `${verb} ok${changed ? ` · ${changed} row${changed === 1 ? "" : "s"} changed` : ""}\n\n`;
         }
       } catch (err) {
         error = { type: "SQLError", message: (err as Error).message, line: lineAt(source, start) };

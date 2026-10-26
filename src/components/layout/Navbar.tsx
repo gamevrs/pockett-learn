@@ -9,6 +9,7 @@ const ICON_BTN = "grid h-8 w-8 place-items-center rounded-md text-ink-2 transiti
 import { useTheme } from "@/lib/theme/ThemeProvider";
 import { currentStreak, levelFor, setSoundEnabled, useProgress } from "@/data/progress/store";
 import { displayNameOf, useAuth } from "@/data/auth/store";
+import { Logo } from "@/components/brand/Logo";
 
 const LINKS = [
   { href: "/learn", label: "Foundations" },
@@ -16,19 +17,6 @@ const LINKS = [
   { href: "/dashboard", label: "Progress" },
   { href: "/playground", label: "Sandbox" },
 ];
-
-export function Logo({ className = "" }: { className?: string }) {
-  return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
-      <svg aria-hidden viewBox="0 0 24 24" className="h-6 w-6 shrink-0">
-        <rect width="24" height="24" rx="6" fill="var(--primary)" />
-        <path d="M7 8.5 10.5 12 7 15.5" fill="none" stroke="var(--primary-ink)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M12.5 16h4.5" stroke="var(--primary-ink)" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-      <span className="text-[1.05rem] font-semibold tracking-[-0.02em]">pockett</span>
-    </span>
-  );
-}
 
 export function Navbar() {
   const pathname = usePathname();
@@ -45,9 +33,9 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 px-3 pt-3 sm:px-4">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 rounded-full border border-line bg-surface/90 pl-5 pr-2 shadow-[var(--shadow)] backdrop-blur-md">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 rounded-full border border-line bg-surface/90 pl-5 pr-[11px] shadow-[var(--shadow)] backdrop-blur-md">
         <div className="flex items-center gap-6">
-          <Link href="/" aria-label="pockett home" onClick={() => setOpen(false)}>
+          <Link href="/" aria-label="pockett home" className="flex h-8 items-center" onClick={() => setOpen(false)}>
             <Logo />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">

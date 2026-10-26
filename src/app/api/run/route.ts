@@ -35,13 +35,13 @@ function reply(body: Record<string, unknown>, status = 200, headers: Record<stri
 function tooBusy(retryAfterSeconds: number, why: "fast" | "busy" = "busy") {
   const error = why === "fast"
     ? "You're running code very quickly. Wait a few seconds and try again."
-    : "The code runner is busy right now. Wait a few seconds and run again.";
+    : "Busy right now. Wait a few seconds and run again.";
   return reply({ error }, 429, { "Retry-After": String(retryAfterSeconds) });
 }
 
 export async function POST(request: Request) {
   const snapshotId = process.env.RUNNER_SNAPSHOT_ID;
-  if (!snapshotId) return reply({ error: "The code runner isn't set up yet." }, 503);
+  if (!snapshotId) return reply({ error: "Running code isn't available yet. Please try again later." }, 503);
 
   // Browsers on other sites have no business calling this.
   if (request.headers.get("sec-fetch-site") === "cross-site") return reply({ error: "Not allowed." }, 403);
@@ -81,14 +81,14 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[runner] run failed", err);
     if (err instanceof RunnerProtocolError) {
-      return reply({ error: "The code runner returned something unexpected. Try again in a moment." }, 502);
+      return reply({ error: "Something unexpected happened. Try again in a moment." }, 502);
     }
     if (err instanceof APIError) {
       const status = err.response.status;
       if (status === 429) return tooBusy(5);
-      if (status === 404 || status === 410) return reply({ error: "The code runner needs to be rebuilt. Please try again later." }, 503);
+      if (status === 404 || status === 410) return reply({ error: "Running code isn't available right now. Please try again later." }, 503);
     }
-    return reply({ error: "The code runner didn't respond. Try again in a moment." }, 502);
+    return reply({ error: "Your code didn't run. Try again in a moment." }, 502);
   } finally {
     release();
   }

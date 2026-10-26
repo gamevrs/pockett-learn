@@ -1,15 +1,17 @@
 import React from "react";
 import Link from "next/link";
-import { Logo } from "./Navbar";
+import { Logo } from "@/components/brand/Logo";
 
 export function Footer() {
   return (
     <footer className="border-t border-line">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.6fr_1fr_1fr]">
         <div>
-          <Logo />
+          <Link href="/" aria-label="pockett home" className="inline-flex">
+            <Logo />
+          </Link>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-2">
-            Learn to code by building real, working projects in Python, JavaScript and SQL. Everything runs in your browser. Free, with no paywall.
+            Learn to code by building real, working projects, from your first line to professional-grade software. Free, with no paywall.
           </p>
         </div>
         <div>
@@ -31,8 +33,12 @@ export function Footer() {
       </div>
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-ink-3 sm:flex-row sm:justify-between sm:px-6">
-          <span>© pockett</span>
-          <span className="font-mono">Code runs in your browser via WebAssembly</span>
+          <span>© 2026 Gameverse, LLC</span>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-1">
+            <Link className="hover:text-ink" href="/brand">Brand &amp; press</Link>
+            <Link className="hover:text-ink" href="/privacy">Privacy</Link>
+            <Link className="hover:text-ink" href="/terms">Terms</Link>
+          </nav>
         </div>
       </div>
     </footer>

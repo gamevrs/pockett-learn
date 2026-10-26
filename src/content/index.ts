@@ -8,9 +8,14 @@ import { signalLab } from "./projects/signal-lab";
 import { cargoControl } from "./projects/cargo-control";
 import { storeApi } from "./projects/store-api";
 import { smartHome } from "./projects/smart-home";
+import { csharpBasics } from "./projects/csharp-basics";
+import { seasonAnalytics } from "./projects/season-analytics";
+import { formForge } from "./projects/form-forge";
+import { eventArena } from "./projects/event-arena";
+import { graphqlGateway } from "./projects/graphql-gateway";
 
 /** Every playable project, in the order shown in the picker. */
-export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs, signalLab, cargoControl, storeApi, smartHome];
+export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs, signalLab, cargoControl, storeApi, smartHome, seasonAnalytics, csharpBasics, formForge, eventArena, graphqlGateway];
 
 /**
  * Planned (not yet built) projects. They fill out each language's path (Beginner → Intermediate →
@@ -25,7 +30,7 @@ const PLANNED: UpcomingProject[] = [
     title: "Art Studio",
     tagline: "Generative art with loops and randomness.",
     emoji: "🎨",
-    accent: { from: "#ff5c9a", to: "#a3e635" },
+    accent: { from: "#ff5c9a", to: "#c5ee8a" },
     skills: ["loops", "randomness", "functions"],
   },
   {

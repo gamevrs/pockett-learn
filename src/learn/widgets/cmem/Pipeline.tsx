@@ -147,7 +147,7 @@ export function Pipeline({ props, onChange, revealed, status }: WidgetProps<Pipe
           <CPane code={SOURCES[variant]} title="hello.c" />
           <div className={`${CODE_SURFACE} p-3`}>
             <p className="mb-1 flex items-center gap-1.5 font-mono text-[11px] text-white/55">
-              <span className="text-[#a3e635]">$</span> gcc hello.c -o hello
+              <span className="text-[#c5ee8a]">$</span> gcc hello.c -o hello
             </p>
             <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-[0.78rem] leading-relaxed text-[#fca5a5]">{ERRORS[variant]}</pre>
           </div>

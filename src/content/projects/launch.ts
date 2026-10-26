@@ -33,7 +33,7 @@ export const launch: Project = {
   difficulty: "Beginner",
   hours: 3,
   sceneId: "launch",
-  accent: { from: "#84cc16", to: "#26d0ff" },
+  accent: { from: "#abd373", to: "#26d0ff" },
   controls: ["R relaunch", "Space skip countdown"],
   skills: ["print & strings", "variables & types", "loops & lists", "math & f-strings", "functions", "if / elif / else", "dictionaries", "classes"],
   features: [

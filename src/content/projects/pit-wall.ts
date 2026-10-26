@@ -164,7 +164,7 @@ export const pitWall: Project = {
   difficulty: "Beginner",
   hours: 2.5,
   sceneId: "sqldesk",
-  accent: { from: "#a3e635", to: "#4d7c0f" },
+  accent: { from: "#c5ee8a", to: "#4b7411" },
   controls: [],
   skills: ["SELECT & FROM", "WHERE", "ORDER BY & LIMIT", "aggregates", "GROUP BY & HAVING", "JOIN", "CASE & computed columns", "INSERT & UPDATE"],
   features: [

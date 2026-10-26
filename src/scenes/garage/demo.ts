@@ -7,7 +7,7 @@ export function garageDemoProgram(): ProgramHandle {
     stdout: "BOOT SEQUENCE START\nENGINE: OK\nSYSTEMS GO",
     vars: {
       car_name: "Bolt",
-      paint: "#a3e635",
+      paint: "#c5ee8a",
       top_speed: 180,
       has_turbo: true,
       acceleration: 20,

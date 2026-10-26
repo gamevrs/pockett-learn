@@ -39,7 +39,7 @@ const PANEL = Object.fromEntries(PANELS.map((p) => [p.id, p])) as Record<string,
 
 /** Regex group tints: the one place the stage uses several hues, because the groups must be told apart. */
 const GROUP_TINT: Record<string, string> = {
-  call: "#a3e635",
+  call: "#c5ee8a",
   freq: "#7dd3fc",
   az: "#fcd34d",
   el: "#c4b5fd",
@@ -105,9 +105,9 @@ function PanelFrame({
 }) {
   const def = PANEL[id];
   return (
-    <section data-panel={id} className={`hud-panel mb-3 break-inside-avoid px-3 py-2.5 ${focus ? "border-[#a3e635]/35" : ""} ${flash ? "pop-in" : ""}`}>
+    <section data-panel={id} className={`hud-panel mb-3 break-inside-avoid px-3 py-2.5 ${focus ? "border-[#c5ee8a]/35" : ""} ${flash ? "pop-in" : ""}`}>
       <header className="mb-2 flex min-w-0 items-center gap-2">
-        <span className="shrink-0 text-[#a3e635]">{icon ?? <FeatureIcon id={id} className="h-3.5 w-3.5" />}</span>
+        <span className="shrink-0 text-[#c5ee8a]">{icon ?? <FeatureIcon id={id} className="h-3.5 w-3.5" />}</span>
         <h3 className="hud-title min-w-0 flex-1 truncate">{def?.title ?? id}</h3>
         {meta && <span className="hud-value hud-muted shrink-0 text-[10px]">{meta}</span>}
       </header>
@@ -156,7 +156,7 @@ function Ghost({ id }: { id: string }) {
 function LockedPanel({ id, spot }: { id: string; spot: boolean }) {
   const def = PANEL[id];
   return (
-    <section data-panel={id} data-locked="" className={`mb-3 break-inside-avoid rounded-[10px] border border-dashed px-3 py-2.5 ${spot ? "pulse-ring border-[#a3e635]/60" : "border-white/15"}`}>
+    <section data-panel={id} data-locked="" className={`mb-3 break-inside-avoid rounded-[10px] border border-dashed px-3 py-2.5 ${spot ? "pulse-ring border-[#c5ee8a]/60" : "border-white/15"}`}>
       <header className="mb-2.5 flex min-w-0 items-center gap-2">
         <Lock className="h-3 w-3 shrink-0 text-white/35" aria-hidden />
         <h3 className="hud-label min-w-0 flex-1 truncate">{def.title}</h3>
@@ -187,7 +187,7 @@ function NeedsHook({ name }: { name: string }) {
 function Chip({ children, tone = "muted", title }: { children: React.ReactNode; tone?: "muted" | "lime" | "danger" | "warn"; title?: string }) {
   const cls =
     tone === "lime"
-      ? "border-[#a3e635]/40 text-[#bef264]"
+      ? "border-[#c5ee8a]/40 text-[#d3f3a4]"
       : tone === "danger"
         ? "border-[#f87171]/40 text-[#f87171]"
         : tone === "warn"
@@ -269,10 +269,10 @@ function Console({
   return (
     <section
       data-panel="console"
-      className={`hud-panel mb-3 px-3 py-2.5 ${streamLive ? "" : "border-dashed"} ${focus === "sl-stream" || focus === "sl-scrub" ? "border-[#a3e635]/35" : ""} ${flash.has("sl-stream") || flash.has("sl-scrub") ? "pop-in" : ""}`}
+      className={`hud-panel mb-3 px-3 py-2.5 ${streamLive ? "" : "border-dashed"} ${focus === "sl-stream" || focus === "sl-scrub" ? "border-[#c5ee8a]/35" : ""} ${flash.has("sl-stream") || flash.has("sl-scrub") ? "pop-in" : ""}`}
     >
       <header className="mb-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5">
-        <span className={streamLive ? "text-[#a3e635]" : "text-white/40"}>
+        <span className={streamLive ? "text-[#c5ee8a]" : "text-white/40"}>
           <Radio className="h-3.5 w-3.5" aria-hidden />
         </span>
         <h3 className="hud-title min-w-0 flex-1 truncate">Incoming stream</h3>
@@ -357,7 +357,7 @@ function Console({
             spellCheck={false}
             autoComplete="off"
             maxLength={160}
-            className="h-8 min-w-0 flex-1 rounded-full border border-white/12 bg-black/40 px-3 font-mono text-[11px] text-white placeholder:text-white/30 focus:border-[#a3e635]/50 focus:outline-none"
+            className="h-8 min-w-0 flex-1 rounded-full border border-white/12 bg-black/40 px-3 font-mono text-[11px] text-white placeholder:text-white/30 focus:border-[#c5ee8a]/50 focus:outline-none"
           />
           <button type="submit" className="hud-btn shrink-0" aria-label="Transmit this line">
             <Send className="h-3 w-3" aria-hidden />
@@ -418,8 +418,8 @@ function ReadoutPanel({ view }: { view: View }) {
 function ScanPanel({ view }: { view: View }) {
   const dot = (label: string, v: boolean | null) =>
     v === null ? null : (
-      <span key={label} className={`inline-flex items-center gap-1 font-mono text-[9.5px] uppercase tracking-wide ${v ? "text-[#bef264]" : "text-[#f87171]"}`}>
-        <span className={`h-1.5 w-1.5 rounded-full ${v ? "bg-[#a3e635]" : "bg-[#f87171]"}`} />
+      <span key={label} className={`inline-flex items-center gap-1 font-mono text-[9.5px] uppercase tracking-wide ${v ? "text-[#d3f3a4]" : "text-[#f87171]"}`}>
+        <span className={`h-1.5 w-1.5 rounded-full ${v ? "bg-[#c5ee8a]" : "bg-[#f87171]"}`} />
         {label}
       </span>
     );
@@ -434,7 +434,7 @@ function ScanPanel({ view }: { view: View }) {
             start: f.start,
             end: f.end,
             node: (t, k) => (
-              <mark key={k} className="rounded-[3px] bg-[#a3e635]/20 px-px text-[#d9f99d]">
+              <mark key={k} className="rounded-[3px] bg-[#c5ee8a]/20 px-px text-[#e0f6c1]">
                 {t}
               </mark>
             ),
@@ -489,7 +489,7 @@ function FieldsPanel({ view }: { view: View }) {
             start: s,
             end: e,
             node: (t, i) => (
-              <span key={i} className="rounded-[3px] bg-[#a3e635]/20 px-px text-[#d9f99d]">
+              <span key={i} className="rounded-[3px] bg-[#c5ee8a]/20 px-px text-[#e0f6c1]">
                 {t}
               </span>
             ),
@@ -606,7 +606,7 @@ function SearchPanel({ view, interactive, onQuery }: { view: View; interactive: 
           spellCheck={false}
           autoComplete="off"
           className={`h-8 w-full rounded-full border bg-black/40 px-3 font-mono text-[11px] text-white placeholder:text-white/30 focus:outline-none ${
-            s?.state === "invalid" ? "border-[#f87171]/50" : "border-white/12 focus:border-[#a3e635]/50"
+            s?.state === "invalid" ? "border-[#f87171]/50" : "border-white/12 focus:border-[#c5ee8a]/50"
           }`}
         />
       </div>
@@ -622,7 +622,7 @@ function SearchPanel({ view, interactive, onQuery }: { view: View; interactive: 
       {s?.state === "idle" && interactive && (
         <div className="mt-1 flex flex-wrap gap-1.5">
           {examples.map((q) => (
-            <button key={q} type="button" onClick={() => onQuery(q)} className="hud-tag !h-5 font-mono !text-[10px] font-medium hover:border-[#a3e635]/40">
+            <button key={q} type="button" onClick={() => onQuery(q)} className="hud-tag !h-5 font-mono !text-[10px] font-medium hover:border-[#c5ee8a]/40">
               {q}
             </button>
           ))}
@@ -639,7 +639,7 @@ function SearchPanel({ view, interactive, onQuery }: { view: View; interactive: 
                     start: h.start,
                     end: h.end,
                     node: (t, i) => (
-                      <mark key={i} className="rounded-[3px] bg-[#a3e635]/25 px-px text-[#d9f99d]">
+                      <mark key={i} className="rounded-[3px] bg-[#c5ee8a]/25 px-px text-[#e0f6c1]">
                         {t}
                       </mark>
                     ),
@@ -715,7 +715,7 @@ function SkyPanel({ view, interactive, onMinSnr }: { view: View; interactive: bo
             const [x, y] = proj(p.az, p.el);
             const isLatest = latest.get(p.call) === i;
             return (
-              <circle key={i} cx={x} cy={y} r={isLatest ? radius(p.snr) : Math.max(1.4, radius(p.snr) - 1.4)} fill="#a3e635" opacity={isLatest ? 0.95 : 0.28}>
+              <circle key={i} cx={x} cy={y} r={isLatest ? radius(p.snr) : Math.max(1.4, radius(p.snr) - 1.4)} fill="#c5ee8a" opacity={isLatest ? 0.95 : 0.28}>
                 <title>{`${p.call}  az ${p.az.toFixed(1)}  el ${p.el.toFixed(1)}  snr ${p.snr.toFixed(1)} dB`}</title>
               </circle>
             );
@@ -733,7 +733,7 @@ function SkyPanel({ view, interactive, onMinSnr }: { view: View; interactive: bo
                 aria-label={`${call} at azimuth ${p.az.toFixed(0)}`}
               >
                 <circle cx={x} cy={y} r={9} fill="transparent" />
-                <text x={right ? x + 6 : x - 6} y={y - 5} textAnchor={right ? "start" : "end"} fontSize="6.5" fill={picked === call ? "#d9f99d" : "rgba(255,255,255,0.7)"} fontFamily="var(--font-mono)">
+                <text x={right ? x + 6 : x - 6} y={y - 5} textAnchor={right ? "start" : "end"} fontSize="6.5" fill={picked === call ? "#e0f6c1" : "rgba(255,255,255,0.7)"} fontFamily="var(--font-mono)">
                   {call}
                 </text>
               </g>
@@ -766,7 +766,7 @@ function SkyPanel({ view, interactive, onMinSnr }: { view: View; interactive: bo
           value={view.minSnr}
           disabled={!interactive}
           onChange={(e) => onMinSnr(Number(e.target.value))}
-          className="h-4 min-w-0 flex-1 accent-[#a3e635]"
+          className="h-4 min-w-0 flex-1 accent-[#c5ee8a]"
         />
         <span className="hud-value w-12 shrink-0 text-right text-[10px]">{view.minSnr} dB</span>
       </div>
@@ -856,7 +856,7 @@ function ReportPanel({ view }: { view: View }) {
           </div>
         ))}
       </div>
-      <pre className="hud-log m-0 overflow-x-auto whitespace-pre text-[10.5px] leading-[1.5] text-[#d9f99d]">{r.text}</pre>
+      <pre className="hud-log m-0 overflow-x-auto whitespace-pre text-[10.5px] leading-[1.5] text-[#e0f6c1]">{r.text}</pre>
     </>
   );
 }

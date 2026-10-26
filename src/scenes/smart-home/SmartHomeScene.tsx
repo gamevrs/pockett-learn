@@ -167,7 +167,7 @@ export default function SmartHomeScene({ program, unlocked, focus, celebration, 
           <div className="contents min-w-0 @3xl:block">
             <div className="order-1 min-w-0 @3xl:order-none">
             <StatusStrip view={view} />
-            <div ref={planRef} className={`mb-1 overflow-hidden rounded-[10px] border bg-[#0a0a0a] ${planSpot ? "pulse-ring border-[#a3e635]/60" : "border-white/[0.08]"}`}>
+            <div ref={planRef} className={`mb-1 overflow-hidden rounded-[10px] border bg-[#0a0a0a] ${planSpot ? "pulse-ring border-[#c5ee8a]/60" : "border-white/[0.08]"}`}>
               <FloorPlan
                 view={view}
                 unlocked={unlocked}
@@ -213,8 +213,8 @@ function Legend({ liveCount, hasProgram, blueprint }: { liveCount: number; hasPr
   return (
     <div className="hud-label flex flex-wrap items-center gap-x-3 gap-y-1 px-0.5 !text-[9.5px] !normal-case !tracking-normal text-white/45">
       {item(ring("rgba(255,255,255,0.35)", true), "not built yet")}
-      {item(ring("rgba(163,230,53,0.55)", true), "in your catalog")}
-      {item(ring("#a3e635", false), "running your code")}
+      {item(ring("rgba(197,238,138,0.55)", true), "in your catalog")}
+      {item(ring("#c5ee8a", false), "running your code")}
       <span className="ml-auto font-mono">{hasProgram ? `${liveCount} of 16 features live${blueprint ? "" : ""}` : "run your code to start"}</span>
     </div>
   );

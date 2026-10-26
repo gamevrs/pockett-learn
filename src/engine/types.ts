@@ -98,6 +98,10 @@ export interface Project {
    * Python only: Pyodide packages to load before running, e.g. ["sqlite3"]. They are fetched once
    * per page and cached. The content validator runs Python in local CPython and warns if a
    * listed package cannot be imported there.
+   *
+   * An entry written "micropip:name==1.2.3" is a pure-Python PyPI wheel (always pin an exact
+   * version) installed once per page with micropip, e.g. "micropip:graphql-core==3.2.13". The
+   * validator checks (and if needed pip-installs) that exact version locally.
    */
   packages?: string[];
   /** Slugs of projects worth finishing first. Shown on the hub as "Recommended first". */

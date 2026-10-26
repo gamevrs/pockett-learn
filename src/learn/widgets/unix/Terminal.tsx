@@ -121,7 +121,7 @@ function init(p: TerminalProps): Model {
 
 const TONE: Record<string, string> = {
   dir: "font-semibold text-[#7dd3fc]",
-  exec: "font-semibold text-[#a3e635]",
+  exec: "font-semibold text-[#c5ee8a]",
   match: "font-semibold text-[#fcd34d]",
   path: "text-[#7dd3fc]",
   err: "text-[#fca5a5]",
@@ -131,7 +131,7 @@ const TONE: Record<string, string> = {
 function Prompt({ line }: { line: Extract<Line, { kind: "cmd" }> }) {
   return (
     <>
-      <span className="font-semibold text-[#a3e635]">
+      <span className="font-semibold text-[#c5ee8a]">
         {line.user}@{line.host}
       </span>
       <span className="text-white/70">:</span>
@@ -384,7 +384,7 @@ export function Terminal({ props, onChange, status, goal }: WidgetProps<Terminal
       )}
 
       <div
-        className={`overflow-hidden rounded-xl border bg-[#0a0a0a] text-[#e5e5e5] transition-colors ${focused ? "border-[#a3e635]/45" : "border-white/10"}`}
+        className={`overflow-hidden rounded-xl border bg-[#0a0a0a] text-[#e5e5e5] transition-colors ${focused ? "border-[#c5ee8a]/45" : "border-white/10"}`}
         onMouseUp={() => {
           if (!window.getSelection()?.toString()) inputRef.current?.focus({ preventScroll: true });
         }}
@@ -454,7 +454,7 @@ export function Terminal({ props, onChange, status, goal }: WidgetProps<Terminal
               autoComplete="off"
               enterKeyHint="send"
               placeholder={lines.length === 0 && !blocked ? "type a command, then press Enter" : undefined}
-              className="min-w-0 flex-1 bg-transparent p-0 font-mono text-[16px] text-[#f5f5f5] caret-[#a3e635] outline-none placeholder:text-white/30 sm:text-[13px]"
+              className="min-w-0 flex-1 bg-transparent p-0 font-mono text-[16px] text-[#f5f5f5] caret-[#c5ee8a] outline-none placeholder:text-white/30 sm:text-[13px]"
             />
           </label>
         </div>
@@ -477,7 +477,7 @@ export function Terminal({ props, onChange, status, goal }: WidgetProps<Terminal
             aria-label="Enter: run the command"
             onPointerDown={(e) => e.preventDefault()}
             onClick={submit}
-            className="ml-auto flex h-10 min-w-12 shrink-0 items-center justify-center rounded-lg bg-[#a3e635] px-3 text-[#0a0a0a]"
+            className="ml-auto flex h-10 min-w-12 shrink-0 items-center justify-center rounded-lg bg-[#c5ee8a] px-3 text-[#0a0a0a]"
           >
             <CornerDownLeft className="h-4 w-4" />
           </button>

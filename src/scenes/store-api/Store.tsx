@@ -168,7 +168,7 @@ function Card({ p, onOpen, canAdd, onAdd }: { p: Product; onOpen: () => void; ca
       <button
         disabled={!canAdd || p.stock <= 0}
         onClick={onAdd}
-        className="mt-1.5 inline-flex h-6 items-center justify-center gap-1 rounded-full border border-white/12 text-[10.5px] font-medium text-white/80 transition-colors enabled:hover:bg-[#a3e635] enabled:hover:text-[#0a0a0a] disabled:opacity-40"
+        className="mt-1.5 inline-flex h-6 items-center justify-center gap-1 rounded-full border border-white/12 text-[10.5px] font-medium text-white/80 transition-colors enabled:hover:bg-[#c5ee8a] enabled:hover:text-[#0a0a0a] disabled:opacity-40"
         title={canAdd ? "Add to cart" : "The cart switches on with POST /orders (lesson 12)"}
       >
         <Plus className="h-3 w-3" aria-hidden /> {canAdd ? "Add" : "Cart: lesson 12"}
@@ -233,7 +233,7 @@ function ShopView({
                 key={c || "all"}
                 disabled={!interactive}
                 onClick={() => update({ category: c })}
-                className={`rounded-full border px-2 py-0.5 text-[10.5px] capitalize transition-colors ${filters.category === c ? "border-transparent bg-[#a3e635] font-semibold text-[#0a0a0a]" : "border-white/12 bg-white/[0.04] text-white/70 hover:bg-white/10"}`}
+                className={`rounded-full border px-2 py-0.5 text-[10.5px] capitalize transition-colors ${filters.category === c ? "border-transparent bg-[#c5ee8a] font-semibold text-[#0a0a0a]" : "border-white/12 bg-white/[0.04] text-white/70 hover:bg-white/10"}`}
               >
                 {c || "All"}
               </button>
@@ -241,7 +241,7 @@ function ShopView({
           </div>
         </div>
       ) : (
-        <div className={`rounded-lg border border-dashed px-2.5 py-2 ${focus === "store-search" ? "pulse-ring border-[#a3e635]/60" : "border-white/12"}`}>
+        <div className={`rounded-lg border border-dashed px-2.5 py-2 ${focus === "store-search" ? "pulse-ring border-[#c5ee8a]/60" : "border-white/12"}`}>
           <div className="flex gap-1.5" aria-hidden>
             <div className="h-7 flex-1 rounded-md bg-white/[0.04]" />
             <div className="h-7 w-14 rounded-full bg-white/[0.05]" />
@@ -271,7 +271,7 @@ function ShopView({
             ))}
           </select>
         ) : (
-          <span className={`rounded-md border border-dashed px-2 py-1 text-[10px] text-white/40 ${focus === "store-paging" ? "pulse-ring border-[#a3e635]/60" : "border-white/12"}`}>
+          <span className={`rounded-md border border-dashed px-2 py-1 text-[10px] text-white/40 ${focus === "store-paging" ? "pulse-ring border-[#c5ee8a]/60" : "border-white/12"}`}>
             Sort &amp; pages · needs ?sort= ?page= (lesson 7)
           </span>
         )}
@@ -493,7 +493,7 @@ function CartView({
       )}
 
       {order && entry && (
-        <div className="pop-in rounded-lg border border-[#a3e635]/35 bg-[#a3e635]/[0.07] p-2.5">
+        <div className="pop-in rounded-lg border border-[#c5ee8a]/35 bg-[#c5ee8a]/[0.07] p-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <StatusChip status={entry.result.status} />
             <p className="text-[12px] font-semibold text-white">Order #{String(order.id ?? "?")} placed</p>
@@ -764,7 +764,7 @@ function AdminView({
             </button>
             {editing && (
               <label className="flex cursor-pointer items-center gap-1.5 text-[10.5px] text-white/60" title="PUT sends the whole product; blank optional fields reset to their defaults">
-                <input type="checkbox" checked={usePut} onChange={(e) => setUsePut(e.target.checked)} className="h-3 w-3 accent-[#a3e635]" />
+                <input type="checkbox" checked={usePut} onChange={(e) => setUsePut(e.target.checked)} className="h-3 w-3 accent-[#c5ee8a]" />
                 use PUT (replace everything)
               </label>
             )}
@@ -826,7 +826,7 @@ function AdminView({
             ))}
           </ul>
           {!modifyOn && (
-            <p className={`border-t border-dashed px-2 py-1.5 text-[10px] text-white/40 ${focus === "store-modify" ? "pulse-ring border-[#a3e635]/60" : "border-white/12"}`}>
+            <p className={`border-t border-dashed px-2 py-1.5 text-[10px] text-white/40 ${focus === "store-modify" ? "pulse-ring border-[#c5ee8a]/60" : "border-white/12"}`}>
               Edit &amp; delete buttons need PUT · PATCH · DELETE (lesson 9)
             </p>
           )}
@@ -862,7 +862,7 @@ function AccountView({ session, snap, interactive }: { session: ApiSession; snap
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto overscroll-contain p-3">
       {snap.token ? (
-        <div className="space-y-2 rounded-lg border border-[#a3e635]/30 bg-[#a3e635]/[0.05] p-2.5">
+        <div className="space-y-2 rounded-lg border border-[#c5ee8a]/30 bg-[#c5ee8a]/[0.05] p-2.5">
           <p className="hud-label">Signed in</p>
           <p className="hud-value hud-accent text-[13px]">{snap.user?.email ?? "(unknown user)"}</p>
           <p className="text-[11px] text-white/60">

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "brand": "node brand/build.mjs",
     "validate": "node scripts/validate-content.mjs",
     "tune:garage": "node scripts/tune-garage.mjs",
     "test:sync": "node scripts/test-sync-merge.mjs",

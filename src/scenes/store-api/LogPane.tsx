@@ -109,7 +109,7 @@ export function LogPane({ session, snap, interactive, canReset }: { session: Api
         <span className={`hud-value ${counts.warn ? "text-[#fbbf24]" : "text-white/35"}`}>{counts.warn} client errors</span>
         <span className={`hud-value ${counts.bad ? "text-[#f87171]" : "text-white/35"}`}>{counts.bad} server errors</span>
         <label className="ml-auto flex cursor-pointer items-center gap-1.5 text-white/55">
-          <input type="checkbox" checked={errorsOnly} onChange={(e) => setErrorsOnly(e.target.checked)} className="h-3 w-3 accent-[#a3e635]" />
+          <input type="checkbox" checked={errorsOnly} onChange={(e) => setErrorsOnly(e.target.checked)} className="h-3 w-3 accent-[#c5ee8a]" />
           errors only
         </label>
       </div>

@@ -177,7 +177,7 @@ export function PointerPlayground({ props, onChange, revealed }: WidgetProps<Poi
               type="button"
               onClick={() => run(a)}
               disabled={locked || crashed}
-              className={`${CODE_SURFACE} min-h-10 px-3 font-mono text-[0.8rem] transition-colors hover:border-[#a3e635]/60 disabled:cursor-not-allowed disabled:opacity-40`}
+              className={`${CODE_SURFACE} min-h-10 px-3 font-mono text-[0.8rem] transition-colors hover:border-[#c5ee8a]/60 disabled:cursor-not-allowed disabled:opacity-40`}
             >
               <CodeBlock code={statement(a, pName)} language="cpp" />
             </button>

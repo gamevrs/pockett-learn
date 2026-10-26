@@ -20,6 +20,8 @@ def _guarded(fn, limit):
         ticks[0] += 1
         if ticks[0] % 400 == 0 and _time.monotonic() > deadline:
             raise _Timeout()
+        if event == "call" and frame.f_code.co_filename not in ("main.py", "<test>"):
+            return None  # library code (e.g. graphql-core): count calls but skip the costly per-line tracing
         return tracer
     previous = _sys.gettrace()
     _sys.settrace(tracer)
@@ -94,13 +96,15 @@ def _has_hook(path):
     except Exception:
         return False
 
+_HOOK_LIMITS = {"run_tests": 2.0}  # a learner's whole test suite may legitimately take longer than one frame
+
 def _call(path, args_json):
     sink = _io.StringIO()
     try:
         function = _resolve(path)
         args = _json.loads(args_json)
         with _ctx.redirect_stdout(sink), _ctx.redirect_stderr(sink):
-            value = _guarded(lambda: function(*args), 0.25)
+            value = _guarded(lambda: function(*args), _HOOK_LIMITS.get(path, 0.25))
         return _json.dumps({"ok": True, "value": _jsonable(value)})
     except BaseException as exc:
         info = _describe(exc, "main.py")

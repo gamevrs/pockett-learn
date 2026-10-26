@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: "%s · pockett",
   },
   description:
-    "Free, interactive coding lessons in Python, JavaScript and SQL. Build a self-driving car, a rocket flight computer, a drum machine or a race-data dashboard, and see every lesson work in a live demo. Runs in your browser.",
+    "Free, interactive coding lessons in Python, JavaScript and SQL. Build a self-driving car, a rocket flight computer, a drum machine or a race-data dashboard, and see every lesson work in a live demo.",
   keywords: ["learn python", "free coding course", "interactive programming", "python projects", "learn to code"],
 };
 

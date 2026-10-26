@@ -204,10 +204,10 @@ function PanelFrame({
   return (
     <section
       data-panel={id}
-      className={`hud-panel mb-3 break-inside-avoid px-3 py-2.5 ${focus ? "border-[#a3e635]/35" : ""} ${flash ? "pop-in" : ""}`}
+      className={`hud-panel mb-3 break-inside-avoid px-3 py-2.5 ${focus ? "border-[#c5ee8a]/35" : ""} ${flash ? "pop-in" : ""}`}
     >
       <header className="mb-2 flex min-w-0 items-center gap-2">
-        <span className="shrink-0 text-[#a3e635]">{icon}</span>
+        <span className="shrink-0 text-[#c5ee8a]">{icon}</span>
         <h3 className="hud-title min-w-0 flex-1 truncate">{title}</h3>
         {meta && <span className="hud-value hud-muted shrink-0 text-[10px]">{meta}</span>}
       </header>
@@ -269,7 +269,7 @@ function LockedPanel({ title, kind, lesson, clause, spot }: { title: string; kin
     <section
       data-panel={kind}
       data-locked=""
-      className={`mb-3 break-inside-avoid rounded-[10px] border border-dashed px-3 py-2.5 ${spot ? "pulse-ring border-[#a3e635]/60" : "border-white/15"}`}
+      className={`mb-3 break-inside-avoid rounded-[10px] border border-dashed px-3 py-2.5 ${spot ? "pulse-ring border-[#c5ee8a]/60" : "border-white/15"}`}
     >
       <header className="mb-2.5 flex min-w-0 items-center gap-2">
         <Lock className="h-3 w-3 shrink-0 text-white/35" aria-hidden />
@@ -524,7 +524,7 @@ const CALLS = /^(box|pit|watch|stay out|stay|push|save|hold)/i;
 
 function callStyle(v: string): string {
   const s = v.trim().toUpperCase();
-  if (s.startsWith("BOX") || s.startsWith("PIT")) return "border-transparent bg-[#a3e635] text-[#0a0a0a]";
+  if (s.startsWith("BOX") || s.startsWith("PIT")) return "border-transparent bg-[#c5ee8a] text-[#0a0a0a]";
   if (s.startsWith("WATCH") || s.startsWith("SAVE") || s.startsWith("HOLD")) return "hud-warning border-[#fbbf24]/35";
   return "hud-muted";
 }
@@ -611,7 +611,7 @@ function PitLog({ rs }: { rs: ResultSet }) {
           return (
             <li
               key={i}
-              className={`grid grid-cols-[2.4rem_2.6rem_minmax(0,1fr)_auto] items-center gap-2 rounded px-1.5 py-[3px] ${isNew ? "bg-[#a3e635]/[0.09]" : ""}`}
+              className={`grid grid-cols-[2.4rem_2.6rem_minmax(0,1fr)_auto] items-center gap-2 rounded px-1.5 py-[3px] ${isNew ? "bg-[#c5ee8a]/[0.09]" : ""}`}
             >
               <span className="hud-value hud-muted text-[10.5px] tabular-nums">{lapI >= 0 ? `L${fmt(lap)}` : ""}</span>
               <span className="hud-value truncate text-[11.5px] font-semibold">{codeI >= 0 ? fmt(row[codeI]) : ""}</span>

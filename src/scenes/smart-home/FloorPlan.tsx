@@ -45,7 +45,7 @@ export interface PlanProps {
 
 type Look = "ghost" | "blueprint" | "live";
 
-const strokeFor = (look: Look) => (look === "live" ? COLOR.lime : look === "blueprint" ? "rgba(163,230,53,0.55)" : "rgba(255,255,255,0.3)");
+const strokeFor = (look: Look) => (look === "live" ? COLOR.lime : look === "blueprint" ? "rgba(197,238,138,0.55)" : "rgba(255,255,255,0.3)");
 const dashFor = (look: Look) => (look === "live" ? undefined : "3 3");
 
 /** Where a device's caption goes: inward from the wall, clamped inside its room, never at the header band. */

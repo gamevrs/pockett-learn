@@ -123,7 +123,7 @@ function highlightLine(line: string, syntax: (typeof SYNTAX)[CodeLanguage]): Rea
     const kw = word && syntax.keywords.has(syntax.caseInsensitive ? word.toLowerCase() : word);
     if (str) out.push(<span key={key} style={{ color: "#fcd34d" }}>{tok}</span>);
     else if (num) out.push(<span key={key} style={{ color: "#ffb86b" }}>{tok}</span>);
-    else if (kw) out.push(<span key={key} style={{ color: "#a3e635" }}>{tok}</span>);
+    else if (kw) out.push(<span key={key} style={{ color: "#c5ee8a" }}>{tok}</span>);
     else if (word && /^\s*\(/.test(body.slice(idx + tok.length))) out.push(<span key={key} style={{ color: "#7fd4ff" }}>{tok}</span>);
     else out.push(tok);
     last = idx + tok.length;

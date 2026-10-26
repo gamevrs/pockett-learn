@@ -28,4 +28,9 @@ export const SCENES: Record<string, ComponentType<SceneProps>> = {
   "cargo-control": load(() => import("@/scenes/cargo-control/CargoControlScene")),
   "store-api": load(() => import("@/scenes/store-api/StoreApiScene")),
   "smart-home": load(() => import("@/scenes/smart-home/SmartHomeScene")),
+  "csharp-basics": load(() => import("@/scenes/csharp-basics/CsharpBasicsScene")),
+  "season-analytics": load(() => import("@/scenes/season-analytics/SeasonAnalyticsScene")),
+  "graphql-gateway": load(() => import("@/scenes/graphql-gateway/GraphqlGatewayScene")),
+  "form-forge": load(() => import("@/scenes/form-forge/FormForgeScene")),
+  "event-arena": load(() => import("@/scenes/event-arena/EventArenaScene")),
 };

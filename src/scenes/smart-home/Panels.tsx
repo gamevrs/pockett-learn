@@ -44,9 +44,9 @@ export function PanelFrame({
   children: React.ReactNode;
 }) {
   return (
-    <section data-panel={id} className={`hud-panel mb-3 break-inside-avoid px-3 py-2.5 ${focus ? "border-[#a3e635]/35" : ""} ${flash ? "pop-in" : ""}`}>
+    <section data-panel={id} className={`hud-panel mb-3 break-inside-avoid px-3 py-2.5 ${focus ? "border-[#c5ee8a]/35" : ""} ${flash ? "pop-in" : ""}`}>
       <header className="mb-2 flex min-w-0 items-center gap-2">
-        <span className="shrink-0 text-[#a3e635]">{icon}</span>
+        <span className="shrink-0 text-[#c5ee8a]">{icon}</span>
         <h3 className="hud-title min-w-0 flex-1 truncate">{title}</h3>
         {meta && <span className="hud-value hud-muted shrink-0 text-[10px]">{meta}</span>}
       </header>
@@ -62,7 +62,7 @@ export function LockedPanel({ id, title, lesson, clause, spot }: { id: string; t
     <section
       data-panel={id}
       data-locked=""
-      className={`mb-3 break-inside-avoid rounded-[10px] border border-dashed px-3 py-2.5 ${spot ? "pulse-ring border-[#a3e635]/60" : "border-white/15"}`}
+      className={`mb-3 break-inside-avoid rounded-[10px] border border-dashed px-3 py-2.5 ${spot ? "pulse-ring border-[#c5ee8a]/60" : "border-white/15"}`}
     >
       <header className="mb-2.5 flex min-w-0 items-center gap-2">
         <Lock className="h-3 w-3 shrink-0 text-white/35" aria-hidden />
@@ -138,7 +138,7 @@ export function WorldControls({ rt, view, unlocked }: { rt: HomeRuntime; view: V
           .map((d, i) => {
             const a = (i / view.dayMap.length) * 100;
             const b = ((i + 1) / view.dayMap.length) * 100;
-            const c = d.dark ? "#1d2430" : "#bef264";
+            const c = d.dark ? "#1d2430" : "#d3f3a4";
             return `${c} ${a.toFixed(2)}% ${b.toFixed(2)}%`;
           })
           .join(",")})`
@@ -192,7 +192,7 @@ export function WorldControls({ rt, view, unlocked }: { rt: HomeRuntime; view: V
             step={5}
             value={Math.round(view.minute)}
             onChange={(e) => rt.setMinute(Number(e.target.value))}
-            className="relative block h-5 w-full cursor-pointer appearance-none bg-transparent accent-[#a3e635] [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+            className="relative block h-5 w-full cursor-pointer appearance-none bg-transparent accent-[#c5ee8a] [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
           />
         </div>
         <div className="mt-1 flex flex-wrap gap-1.5">
@@ -217,7 +217,7 @@ export function WorldControls({ rt, view, unlocked }: { rt: HomeRuntime; view: V
           step={1}
           value={view.outdoor}
           onChange={(e) => rt.setOutdoor(Number(e.target.value))}
-          className="h-5 min-w-[7rem] flex-1 cursor-pointer accent-[#a3e635]"
+          className="h-5 min-w-[7rem] flex-1 cursor-pointer accent-[#c5ee8a]"
         />
         {unlocked.has("sh-eventlog") && (
           <button type="button" className="hud-btn !h-6 !px-2 !text-[10.5px]" onClick={() => rt.sendBrokenReading()} title="Publish a temperature event with no value">
@@ -297,7 +297,7 @@ export function Inspector({ rt, view, unlocked, selected }: { rt: HomeRuntime; v
   return (
     <section data-panel="inspector" className="hud-panel mb-3 px-3 py-2.5">
       <header className="mb-2 flex min-w-0 items-center gap-2">
-        <span className="shrink-0 text-[#a3e635]">
+        <span className="shrink-0 text-[#c5ee8a]">
           <Zap className="h-3.5 w-3.5" />
         </span>
         <h3 className="hud-title min-w-0 flex-1 truncate">{device ? device.title : "Device inspector"}</h3>
@@ -408,7 +408,7 @@ export function EventLogPanel({ rt, view, unlocked }: { rt: HomeRuntime; view: V
               type="button"
               onClick={() => rt.setFilter(f)}
               aria-pressed={view.filter === f}
-              className={`hud-tag !h-5 cursor-pointer !px-1.5 !text-[9.5px] font-medium ${view.filter === f ? "!border-transparent !bg-[#a3e635] !text-[#0a0a0a]" : "text-white/60"}`}
+              className={`hud-tag !h-5 cursor-pointer !px-1.5 !text-[9.5px] font-medium ${view.filter === f ? "!border-transparent !bg-[#c5ee8a] !text-[#0a0a0a]" : "text-white/60"}`}
             >
               {f || "all"}
             </button>
@@ -419,7 +419,7 @@ export function EventLogPanel({ rt, view, unlocked }: { rt: HomeRuntime; view: V
         </div>
       )}
       {view.unread && (
-        <div className="mb-2 rounded-md border border-[#a3e635]/25 bg-[#a3e635]/[0.05] px-2 py-1.5">
+        <div className="mb-2 rounded-md border border-[#c5ee8a]/25 bg-[#c5ee8a]/[0.05] px-2 py-1.5">
           <div className="flex items-center gap-2">
             <span className="hud-label hud-accent flex-1">Since you last looked: {view.unread.length} event{view.unread.length === 1 ? "" : "s"}</span>
             <button type="button" className="hud-label hover:text-white" onClick={() => rt.clearUnread()}>
@@ -499,7 +499,7 @@ export function PhonePanel({ view }: { view: View }) {
     <ul className="space-y-1.5">
       {lines.map((m, i) => (
         <li key={`${i}-${m.at}-${m.title}`} className="flex min-w-0 items-start gap-2 rounded-md bg-white/[0.05] px-2 py-1.5">
-          <Bell className="mt-0.5 h-3 w-3 shrink-0 text-[#a3e635]" aria-hidden />
+          <Bell className="mt-0.5 h-3 w-3 shrink-0 text-[#c5ee8a]" aria-hidden />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[11.5px] font-medium">{m.title}</span>
             {m.body && <span className="hud-muted block truncate text-[10.5px]">{m.body}</span>}
@@ -562,7 +562,7 @@ export function TrafficBar({ view }: { view: View }) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-0.5">
       <span className="hud-label inline-flex items-center gap-1.5">
-        <Footprints className="h-3 w-3 text-[#a3e635]" aria-hidden /> Busiest rooms
+        <Footprints className="h-3 w-3 text-[#c5ee8a]" aria-hidden /> Busiest rooms
       </span>
       {total === 0 ? (
         <span className="hud-muted text-[11px]">no visits yet: walk about</span>

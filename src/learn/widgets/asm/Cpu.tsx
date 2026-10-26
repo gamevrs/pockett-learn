@@ -234,7 +234,7 @@ function CpuView({
             <div className="flex h-9 items-center gap-2 border-b border-white/10 px-3 text-[0.7rem] font-medium text-white/50">
               <span className="font-mono">{mc === "only" ? "machine code" : "program.asm"}</span>
               {running ? (
-                <span className="rounded bg-[#a3e635]/15 px-1.5 py-0.5 font-sans text-[0.65rem] font-semibold text-[#a3e635]">loaded</span>
+                <span className="rounded bg-[#c5ee8a]/15 px-1.5 py-0.5 font-sans text-[0.65rem] font-semibold text-[#c5ee8a]">loaded</span>
               ) : (
                 <span className="rounded bg-white/10 px-1.5 py-0.5 font-sans text-[0.65rem] font-semibold text-white/70">editing</span>
               )}
@@ -393,7 +393,7 @@ function Editor({ lines, source, errLines, onChange, readOnly }: { lines: string
             autoComplete="off"
             autoCorrect="off"
             aria-label="Assembly program"
-            className={`relative block w-full resize-none overflow-hidden whitespace-pre bg-transparent py-2 pl-1 pr-4 text-transparent caret-[#a3e635] outline-none selection:bg-[#a3e635]/30 selection:text-transparent ${TEXT}`}
+            className={`relative block w-full resize-none overflow-hidden whitespace-pre bg-transparent py-2 pl-1 pr-4 text-transparent caret-[#c5ee8a] outline-none selection:bg-[#c5ee8a]/30 selection:text-transparent ${TEXT}`}
           />
         </div>
       </div>
@@ -412,12 +412,12 @@ function Listing({ lines, program, m, machineCode }: { lines: string[]; program:
           const isPc = addr !== null && addr === m.pc && !m.halted;
           const failed = isPc && m.error !== null;
           const ran = addr !== null && addr === m.last && m.steps > 0 && !isPc;
-          const bg = failed ? "bg-[#f87171]/15" : isPc ? "bg-[rgba(163,230,53,0.16)]" : ran ? "bg-white/[0.05]" : "";
+          const bg = failed ? "bg-[#f87171]/15" : isPc ? "bg-[rgba(197,238,138,0.16)]" : ran ? "bg-white/[0.05]" : "";
           return (
             <li key={i} className={`flex items-center ${ROW} ${bg}`} aria-current={isPc ? "step" : undefined}>
-              <span className={`h-full w-1 shrink-0 ${failed ? "bg-[#f87171]" : isPc ? "bg-[#a3e635]" : ""}`} aria-hidden />
-              <span className={`w-8 shrink-0 select-none pr-1.5 text-right text-[0.7rem] tabular-nums ${isPc ? "text-[#a3e635]" : "text-white/35"}`}>{addr ?? ""}</span>
-              <span className="w-4 shrink-0 select-none text-[#a3e635]" aria-hidden>
+              <span className={`h-full w-1 shrink-0 ${failed ? "bg-[#f87171]" : isPc ? "bg-[#c5ee8a]" : ""}`} aria-hidden />
+              <span className={`w-8 shrink-0 select-none pr-1.5 text-right text-[0.7rem] tabular-nums ${isPc ? "text-[#c5ee8a]" : "text-white/35"}`}>{addr ?? ""}</span>
+              <span className="w-4 shrink-0 select-none text-[#c5ee8a]" aria-hidden>
                 {isPc && !failed ? "›" : ""}
               </span>
               <span className="flex-1 whitespace-pre pr-4">{text ? highlightAsm(text) : " "}</span>
@@ -437,10 +437,10 @@ function MachineListing({ program, m }: { program: Program; m: Machine }) {
       {program.instrs.map((ins, addr) => {
         const isPc = addr === m.pc && !m.halted;
         return (
-          <li key={addr} className={`flex items-center ${ROW} ${isPc ? "bg-[rgba(163,230,53,0.16)]" : ""}`} aria-current={isPc ? "step" : undefined}>
-            <span className={`h-full w-1 shrink-0 ${isPc ? "bg-[#a3e635]" : ""}`} aria-hidden />
-            <span className={`w-8 shrink-0 pr-1.5 text-right text-[0.7rem] tabular-nums ${isPc ? "text-[#a3e635]" : "text-white/35"}`}>{addr}</span>
-            <span className="w-4 shrink-0 text-[#a3e635]" aria-hidden>
+          <li key={addr} className={`flex items-center ${ROW} ${isPc ? "bg-[rgba(197,238,138,0.16)]" : ""}`} aria-current={isPc ? "step" : undefined}>
+            <span className={`h-full w-1 shrink-0 ${isPc ? "bg-[#c5ee8a]" : ""}`} aria-hidden />
+            <span className={`w-8 shrink-0 pr-1.5 text-right text-[0.7rem] tabular-nums ${isPc ? "text-[#c5ee8a]" : "text-white/35"}`}>{addr}</span>
+            <span className="w-4 shrink-0 text-[#c5ee8a]" aria-hidden>
               {isPc ? "›" : ""}
             </span>
             <Code nums={ins.code} active={isPc} big />
@@ -455,7 +455,7 @@ function Code({ nums, active, big }: { nums: number[]; active: boolean; big?: bo
   return (
     <span className={`flex shrink-0 gap-1 pr-3 tabular-nums ${big ? "" : "pl-3"}`} aria-label={`machine code ${nums.join(" ")}`}>
       {nums.map((n, i) => (
-        <span key={i} className={`${big ? "w-9" : "w-7"} text-right ${i === 0 ? (active ? "text-[#a3e635]" : "text-[#d9f99d]/80") : active ? "text-white" : "text-white/60"}`}>
+        <span key={i} className={`${big ? "w-9" : "w-7"} text-right ${i === 0 ? (active ? "text-[#c5ee8a]" : "text-[#e0f6c1]/80") : active ? "text-white" : "text-white/60"}`}>
           {n}
         </span>
       ))}
@@ -472,9 +472,9 @@ function PythonPanel({ code, active }: { code: string; active: number }) {
         {lines.map((t, i) => {
           const on = active === i + 1;
           return (
-            <li key={i} className={`flex min-w-max items-center ${ROW} ${on ? "bg-[rgba(163,230,53,0.16)]" : ""}`}>
-              <span className={`h-full w-1 shrink-0 ${on ? "bg-[#a3e635]" : ""}`} aria-hidden />
-              <span className={`w-8 shrink-0 select-none pr-3 text-right text-[0.7rem] tabular-nums ${on ? "text-[#a3e635]" : "text-white/35"}`}>{i + 1}</span>
+            <li key={i} className={`flex min-w-max items-center ${ROW} ${on ? "bg-[rgba(197,238,138,0.16)]" : ""}`}>
+              <span className={`h-full w-1 shrink-0 ${on ? "bg-[#c5ee8a]" : ""}`} aria-hidden />
+              <span className={`w-8 shrink-0 select-none pr-3 text-right text-[0.7rem] tabular-nums ${on ? "text-[#c5ee8a]" : "text-white/35"}`}>{i + 1}</span>
               <span className="whitespace-pre pr-4">{t ? <CodeBlock code={t} language="python" /> : " "}</span>
             </li>
           );

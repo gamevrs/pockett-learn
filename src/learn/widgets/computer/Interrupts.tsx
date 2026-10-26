@@ -198,9 +198,9 @@ export function Interrupts({ props, onChange, revealed }: WidgetProps<Interrupts
         </div>
         <div className="rounded-xl border border-line bg-surface p-3">
           <Caption>Your program received</Caption>
-          <p className="mt-1 flex h-8 items-center overflow-hidden rounded-md bg-[#0a0a0a] px-2 font-mono text-[0.95rem] font-semibold tracking-wider text-[#a3e635]">
+          <p className="mt-1 flex h-8 items-center overflow-hidden rounded-md bg-[#0a0a0a] px-2 font-mono text-[0.95rem] font-semibold tracking-wider text-[#c5ee8a]">
             {s.typed}
-            <span className="ml-px inline-block h-4 w-2 animate-pulse bg-[#a3e635]/70" />
+            <span className="ml-px inline-block h-4 w-2 animate-pulse bg-[#c5ee8a]/70" />
           </p>
         </div>
       </div>

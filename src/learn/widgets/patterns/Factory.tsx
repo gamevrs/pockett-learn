@@ -135,7 +135,7 @@ export function Factory({ props, onChange, revealed }: WidgetProps<FactoryProps>
           <CodePane
             key={`${mode}-${f.name}`}
             title={f.name}
-            badge={f.edited ? <span className="text-[#a3e635]">edited</span> : <span>unchanged</span>}
+            badge={f.edited ? <span className="text-[#c5ee8a]">edited</span> : <span>unchanged</span>}
             code={f.code}
             highlight={f.highlight}
           />

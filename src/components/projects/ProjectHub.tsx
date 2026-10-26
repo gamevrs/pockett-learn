@@ -155,7 +155,9 @@ export function ProjectHub({ project, prerequisites = [] }: { project: Project; 
               statusText="Booting your build…"
               emptyHint={
                 bootFailed
-                  ? "Couldn't load Python. Check your connection and reload."
+                  ? languageOf(project) === "python"
+                    ? "Couldn't load Python. Check your connection and reload."
+                    : "Couldn't run your build. Check your connection and reload."
                   : doneIds.length === 0
                     ? "Pass lesson 1 to power it up"
                     : undefined

@@ -3,12 +3,17 @@ import { simple } from "acorn-walk";
 import type { Node } from "acorn";
 
 /**
- * Adds a `__guard()` call to the start of every loop body so a runaway loop throws instead of
- * freezing the tab. Insertions never add newlines, so line numbers in errors stay correct.
- * Throws acorn's SyntaxError (with `.loc`) for code that doesn't parse.
+ * Prepares the learner's file to run as the body of an async function:
+ *  - adds a `__guard()` call to the start of every loop body so a runaway loop throws instead of
+ *    freezing the tab;
+ *  - adds `__reg(...)` as the first statement, handing the runtime a closure that can `eval` inside
+ *    the file's scope (to read variables, call hooks and run tests) even while the file is still
+ *    awaiting something.
+ * Insertions never add newlines, so line numbers in errors stay correct.
+ * Top-level `await` is allowed. Throws acorn's SyntaxError (with `.loc`) for code that doesn't parse.
  */
 export function instrument(source: string): string {
-  const ast = parse(source, { ecmaVersion: "latest", sourceType: "script", locations: true });
+  const ast = parse(source, { ecmaVersion: "latest", sourceType: "script", locations: true, allowAwaitOutsideFunction: true });
   const edits: { at: number; text: string }[] = [];
   const guardBody = (body: Node & { type: string }) => {
     if (body.type === "BlockStatement") edits.push({ at: body.start + 1, text: "__guard();" });
@@ -26,6 +31,13 @@ export function instrument(source: string): string {
     WhileStatement: visit,
     DoWhileStatement: visit,
   });
+  // a leading "use strict" directive must stay first, so the registration goes after any directives
+  let at = 0;
+  for (const stmt of ast.body) {
+    if (stmt.type === "ExpressionStatement" && "directive" in stmt) at = stmt.end;
+    else break;
+  }
+  edits.push({ at, text: "__reg((__s) => eval(__s));" });
   // apply from the end so earlier offsets stay valid; at equal offsets keep insertion order
   edits.sort((a, b) => b.at - a.at);
   let out = source;

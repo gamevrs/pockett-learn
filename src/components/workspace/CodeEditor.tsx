@@ -38,7 +38,7 @@ const defineThemes: BeforeMount = (monaco) => {
     inherit: true,
     rules: [
       { token: "comment", foreground: "8a8a8a", fontStyle: "italic" },
-      { token: "keyword", foreground: "a3e635" },
+      { token: "keyword", foreground: "c5ee8a" },
       { token: "string", foreground: "fcd34d" },
       { token: "number", foreground: "ffb86b" },
       // built-ins (SQL functions, JS globals) and types: one cool tone, never magenta
@@ -53,8 +53,8 @@ const defineThemes: BeforeMount = (monaco) => {
       "editorLineNumber.foreground": "#4d4d4d",
       "editorLineNumber.activeForeground": "#bdbdbd",
       "editor.lineHighlightBackground": "#141414",
-      "editorCursor.foreground": "#a3e635",
-      "editor.selectionBackground": "#3f621280",
+      "editorCursor.foreground": "#c5ee8a",
+      "editor.selectionBackground": "#4b741166",
     },
   });
   monaco.editor.defineTheme("pockett-light", {
@@ -62,7 +62,7 @@ const defineThemes: BeforeMount = (monaco) => {
     inherit: true,
     rules: [
       { token: "comment", foreground: "8a8a8a", fontStyle: "italic" },
-      { token: "keyword", foreground: "4d7c0f" },
+      { token: "keyword", foreground: "4b7411" },
       { token: "string", foreground: "b45309" },
       { token: "number", foreground: "c2570c" },
       { token: "predefined", foreground: "0e7490" },
@@ -74,6 +74,8 @@ const defineThemes: BeforeMount = (monaco) => {
       "editor.background": "#ffffff",
       "editor.lineHighlightBackground": "#f6f5f1",
       "editorLineNumber.foreground": "#b5b3ab",
+      "editorCursor.foreground": "#4b7411",
+      "editor.selectionBackground": "#c5ee8a80",
     },
   });
 };

@@ -253,7 +253,7 @@ function Editor({
             </button>
           ))}
           <label className="ml-auto flex cursor-pointer items-center gap-1.5 text-[10.5px] text-white/60" title={hasToken ? "Adds Authorization: Bearer <your session token>" : "Sign in first to get a token"}>
-            <input type="checkbox" checked={auth && hasToken} disabled={!hasToken || !interactive} onChange={(e) => setAuth(e.target.checked)} className="h-3 w-3 accent-[#a3e635]" />
+            <input type="checkbox" checked={auth && hasToken} disabled={!hasToken || !interactive} onChange={(e) => setAuth(e.target.checked)} className="h-3 w-3 accent-[#c5ee8a]" />
             send token
           </label>
         </div>
@@ -319,7 +319,7 @@ function Editor({
                   );
                   setShownId(h.id);
                 }}
-                className={`inline-flex max-w-full items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] hover:bg-white/10 ${h.id === shownId ? "border-[#a3e635]/50 bg-white/[0.06]" : "border-white/10 bg-white/[0.03]"}`}
+                className={`inline-flex max-w-full items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] hover:bg-white/10 ${h.id === shownId ? "border-[#c5ee8a]/50 bg-white/[0.06]" : "border-white/10 bg-white/[0.03]"}`}
               >
                 <MethodTag method={h.req.method} className="!text-[9px]" />
                 <span className="max-w-[9rem] truncate font-mono text-white/70">{h.req.path}</span>
@@ -482,7 +482,7 @@ function TestsTab({ session, snap, interactive }: { session: ApiSession; snap: S
           {t.rows.map((r) => (
             <li key={r.name} className="rounded-md bg-white/[0.04] px-2 py-1.5">
               <div className="flex items-center gap-2">
-                {r.passed ? <Check className="h-3 w-3 shrink-0 text-[#a3e635]" aria-label="passed" /> : <X className="h-3 w-3 shrink-0 text-[#f87171]" aria-label="failed" />}
+                {r.passed ? <Check className="h-3 w-3 shrink-0 text-[#c5ee8a]" aria-label="passed" /> : <X className="h-3 w-3 shrink-0 text-[#f87171]" aria-label="failed" />}
                 <span className="hud-value min-w-0 truncate text-[11px]">{r.name}</span>
               </div>
               {r.error && <p className="mt-1 break-words pl-5 font-mono text-[10px] leading-snug text-[#fca5a5]">{r.error}</p>}

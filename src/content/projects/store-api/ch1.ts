@@ -56,9 +56,9 @@ The first digit is the class: 2xx success, 4xx the client got something wrong, 5
 
 HTTP is **stateless**: every request must contain everything the server needs. The server does not remember "this is the same person as a minute ago", so a client sends its credentials with every call. That is what lets you run ten identical servers behind a load balancer.
 
-### The model we use in the browser
+### The model we use here
 
-A real server listens on a network port, which a web page cannot do. So the demo plays the HTTP client for you and calls your function directly. A request is a dict and a response is a dict:
+A real server listens on a network port. In these lessons the demo plays the HTTP client for you and calls your function directly. A request is a dict and a response is a dict:
 
 ~~~python
 request  = {"method": "GET", "path": "/health?verbose=1", "headers": {}, "body": None}

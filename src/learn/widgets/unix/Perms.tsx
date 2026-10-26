@@ -73,11 +73,11 @@ export function Perms({ props, onChange, revealed, status, goal }: WidgetProps<P
       <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#0a0a0a] px-3 py-2.5 font-mono text-[13px] text-[#e5e5e5] sm:text-sm">
         <span className="whitespace-pre">
           <span className="text-white/50">{kind === "dir" ? "d" : "-"}</span>
-          <span className="rounded-sm bg-[#a3e635]/20 text-[#d9f99d]">{str.slice(0, 3)}</span>
+          <span className="rounded-sm bg-[#c5ee8a]/20 text-[#e0f6c1]">{str.slice(0, 3)}</span>
           <span className="rounded-sm bg-[#7dd3fc]/15 text-[#bae6fd]">{str.slice(3, 6)}</span>
           <span className="rounded-sm bg-white/10 text-white/85">{str.slice(6)}</span>
           <span className="text-white/60">{` 1 ${owner} ${group} ${kind === "dir" ? 4096 : 120} Oct 25 09:14 `}</span>
-          <span className={kind === "dir" ? "font-semibold text-[#7dd3fc]" : shown & 0o100 ? "font-semibold text-[#a3e635]" : ""}>{name}</span>
+          <span className={kind === "dir" ? "font-semibold text-[#7dd3fc]" : shown & 0o100 ? "font-semibold text-[#c5ee8a]" : ""}>{name}</span>
         </span>
       </div>
 
@@ -93,7 +93,7 @@ export function Perms({ props, onChange, revealed, status, goal }: WidgetProps<P
         </div>
         {CLASSES.map((c, ci) => {
           const digit = (shown >> c.shift) & 7;
-          const tint = ci === 0 ? "bg-[#a3e635]/10" : ci === 1 ? "bg-[#7dd3fc]/10" : "bg-surface-2";
+          const tint = ci === 0 ? "bg-[#c5ee8a]/10" : ci === 1 ? "bg-[#7dd3fc]/10" : "bg-surface-2";
           return (
             <div key={c.id} className={`grid grid-cols-[minmax(0,1fr)_repeat(3,2.5rem)_2.25rem] items-center gap-1.5 rounded-xl px-1 py-1.5 sm:grid-cols-[minmax(7rem,1fr)_repeat(3,3.25rem)_6.5rem] sm:gap-2 ${tint}`}>
               <span className="flex min-w-0 items-center gap-1.5 pl-1.5 text-sm">
