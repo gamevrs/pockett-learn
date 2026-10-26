@@ -14,8 +14,9 @@ import { pastSweepLookback, sweepDecision } from "@/server/runner/cost";
  */
 export const maxDuration = 60;
 
-const MAX_PAGES = 10;
-const PAGE_SIZE = 100;
+const MAX_PAGES = 20;
+// The sandboxes API rejects pages larger than 50.
+const PAGE_SIZE = 50;
 const STOP_BATCH = 10;
 
 export async function GET(request: Request) {
