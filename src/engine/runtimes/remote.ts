@@ -92,8 +92,8 @@ export function remoteRuntime(language: LanguageId): Runtime {
     async run(source, options) {
       const started = performance.now();
       options?.onStatus?.("Compiling and running…");
-      const prepared = prepareSource(options?.prelude, source);
-      const r = shiftResult(await execute(language, prepared.source, options?.setup, options?.signal), prepared.offset);
+      const prepared = prepareSource(options?.prelude, source, language);
+      const r = shiftResult(await execute(language, prepared.source, options?.setup, options?.signal), prepared);
       const out = parseOutput(r.stdout);
       const error = toError(r);
       const durationMs = Math.round(performance.now() - started);
@@ -103,8 +103,8 @@ export function remoteRuntime(language: LanguageId): Runtime {
     async grade(source, tests, options) {
       const started = performance.now();
       options?.onStatus?.("Checking your work…");
-      const prepared = prepareSource(options?.prelude, source);
-      const r = shiftResult(await execute(language, prepared.source, options?.setup, options?.signal), prepared.offset);
+      const prepared = prepareSource(options?.prelude, source, language);
+      const r = shiftResult(await execute(language, prepared.source, options?.setup, options?.signal), prepared);
       const out = parseOutput(r.stdout);
       const error = toError(r);
       const results = error ? crashedResults(tests) : runChecks(out.text, out.scene, tests);

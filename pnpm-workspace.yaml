@@ -1,3 +1,6 @@
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+overrides:
+  # monaco-editor bundles DOMPurify; <=3.4.16 has published XSS bypasses (GHSA-6688-9rhm-gjv2 and others).
+  dompurify: ^3.4.17

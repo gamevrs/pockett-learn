@@ -103,6 +103,9 @@ export interface Project {
    * self-contained (its own includes/imports) and may not open `main`. Line numbers in compiler and crash messages are
    * shifted back by its length, so they stay the learner's own; an error that lies inside the prelude is reported as
    * "the provided code". Projects without one behave exactly as before.
+   * C# is the exception: its prelude is compiled AFTER the learner's file (top-level statements must come before any
+   * type), so it may only hold types, and can't add `using` directives (implicit usings and global:: names still work).
+   * Go: the prelude carries `package main` and the imports, so the learner's file then has neither.
    */
   prelude?: string;
   /**

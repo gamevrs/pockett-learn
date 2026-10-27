@@ -329,8 +329,8 @@ for (const c of cases) {
   } else if (RUNNER) {
     let r;
     try {
-      const prepared = prepareSource(c.prelude, c.source);
-      r = shiftResult(await runnerExecute({ ...c, source: prepared.source }), prepared.offset);
+      const prepared = prepareSource(c.prelude, c.source, c.language);
+      r = shiftResult(await runnerExecute({ ...c, source: prepared.source }), prepared);
     } catch (err) {
       problems.push(`${c.label}: the runner at ${RUNNER} did not answer (${err.message})`);
       results.push({ label: c.label, skipped: true, results: [] });

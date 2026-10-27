@@ -1,0 +1,246 @@
+[
+ {
+  "id": "go-ok",
+  "language": "go",
+  "prelude": "package main\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\nfunc shout(s string) string { return strings.ToUpper(s) + \"!\" }\n\nvar _ = fmt.Sprint\n",
+  "source": "func main() {\n\tfmt.Println(shout(\"hi\"))\n}\n",
+  "expect": {
+   "stdout": "HI!"
+  },
+  "raw": {
+   "stdout": "HI!\n",
+   "stderr": "",
+   "exitCode": 0,
+   "compileError": null,
+   "timedOut": false
+  }
+ },
+ {
+  "id": "go-compile",
+  "language": "go",
+  "prelude": "package main\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\nfunc shout(s string) string { return strings.ToUpper(s) + \"!\" }\n\nvar _ = fmt.Sprint\n",
+  "source": "func main() {\n\tfmt.Println(shout(\"hi\"))\n\tx := undefinedThing\n}\n",
+  "expect": {
+   "line": 3
+  },
+  "raw": {
+   "stdout": "",
+   "stderr": "",
+   "exitCode": null,
+   "compileError": "./main.go:13:2: declared and not used: x\n./main.go:13:7: undefined: undefinedThing",
+   "timedOut": false
+  }
+ },
+ {
+  "id": "go-panic",
+  "language": "go",
+  "prelude": "package main\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\nfunc shout(s string) string { return strings.ToUpper(s) + \"!\" }\n\nvar _ = fmt.Sprint\n",
+  "source": "func main() {\n\tvar xs []int\n\tfmt.Println(shout(\"go\"))\n\tfmt.Println(xs[5])\n}\n",
+  "expect": {
+   "line": 4
+  },
+  "raw": {
+   "stdout": "GO!\n",
+   "stderr": "panic: runtime error: index out of range [5] with length 0\n\ngoroutine 1 [running]:\nmain.main()\n\tmain.go:14 +0x7a\n",
+   "exitCode": 2,
+   "compileError": null,
+   "timedOut": false
+  }
+ },
+ {
+  "id": "go-redeclare",
+  "language": "go",
+  "prelude": "package main\n\nimport (\n\t\"fmt\"\n\t\"strings\"\n)\n\nfunc shout(s string) string { return strings.ToUpper(s) + \"!\" }\n\nvar _ = fmt.Sprint\n",
+  "source": "func shout(s string) string { return s }\n\nfunc main() {}\n",
+  "expect": {
+   "line": 1,
+   "mentionsPrelude": true
+  },
+  "raw": {
+   "stdout": "",
+   "stderr": "",
+   "exitCode": null,
+   "compileError": "./main.go:11:6: shout redeclared in this block\n\t./main.go:8:6: other declaration of shout",
+   "timedOut": false
+  }
+ },
+ {
+  "id": "rs-ok",
+  "language": "rust",
+  "prelude": "use std::collections::HashMap;\n\nfn tally(words: &[&str]) -> HashMap<String, usize> {\n    let mut m = HashMap::new();\n    for w in words { *m.entry(w.to_string()).or_insert(0) += 1; }\n    m\n}\n",
+  "source": "fn main() {\n    let t = tally(&[\"a\", \"b\", \"a\"]);\n    println!(\"{}\", t[\"a\"]);\n}\n",
+  "expect": {
+   "stdout": "2"
+  },
+  "raw": {
+   "stdout": "2\n",
+   "stderr": "",
+   "exitCode": 0,
+   "compileError": null,
+   "timedOut": false
+  }
+ },
+ {
+  "id": "rs-compile",
+  "language": "rust",
+  "prelude": "use std::collections::HashMap;\n\nfn tally(words: &[&str]) -> HashMap<String, usize> {\n    let mut m = HashMap::new();\n    for w in words { *m.entry(w.to_string()).or_insert(0) += 1; }\n    m\n}\n",
+  "source": "fn main() {\n    let n: i32 = 5;\n    let s: String = n;\n    println!(\"{}\", s);\n}\n",
+  "expect": {
+   "line": 3
+  },
+  "raw": {
+   "stdout": "",
+   "stderr": "",
+   "exitCode": null,
+   "compileError": "error[E0308]: mismatched types\n  --> main.rs:10:21\n   |\n10 |     let s: String = n;\n   |            ------   ^ expected `String`, found `i32`\n   |            |\n   |            expected due to this\n   |\nhelp: try using a conversion method\n   |\n10 |     let s: String = n.to_string();\n   |                      ++++++++++++\n\nerror: aborting due to 1 previous error\n\nFor more information about this error, try `rustc --explain E0308`.",
+   "timedOut": false
+  }
+ },
+ {
+  "id": "rs-panic",
+  "language": "rust",
+  "prelude": "use std::collections::HashMap;\n\nfn tally(words: &[&str]) -> HashMap<String, usize> {\n    let mut m = HashMap::new();\n    for w in words { *m.entry(w.to_string()).or_insert(0) += 1; }\n    m\n}\n",
+  "source": "fn main() {\n    let v = vec![1, 2, 3];\n    let i = v.len() + 2;\n    println!(\"{}\", v[i]);\n}\n",
+  "expect": {
+   "line": 4
+  },
+  "raw": {
+   "stdout": "",
+   "stderr": "\nthread 'main' (526) panicked at main.rs:11:21:\nindex out of bounds: the len is 3 but the index is 5\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
+   "exitCode": 101,
+   "compileError": null,
+   "timedOut": false
+  }
+ },
+ {
+  "id": "rs-wrong-arg",
+  "language": "rust",
+  "prelude": "use std::collections::HashMap;\n\nfn tally(words: &[&str]) -> HashMap<String, usize> {\n    let mut m = HashMap::new();\n    for w in words { *m.entry(w.to_string()).or_insert(0) += 1; }\n    m\n}\n",
+  "source": "fn main() {\n    let t = tally(42);\n    println!(\"{:?}\", t);\n}\n",
+  "expect": {
+   "line": 2,
+   "mentionsPrelude": true
+  },
+  "raw": {
+   "stdout": "",
+   "stderr": "",
+   "exitCode": null,
+   "compileError": "error[E0308]: mismatched types\n --> main.rs:9:19\n  |\n9 |     let t = tally(42);\n  |             ----- ^^ expected `&[&str]`, found integer\n  |             |\n  |             arguments to this function are incorrect\n  |\nnote: function defined here\n --> main.rs:3:4\n  |\n3 | fn tally(words: &[&str]) -> HashMap<String, usize> {\n  |    ^^^^^ --------------\n\nerror: aborting due to 1 previous error\n\nFor more information about this error, try `rustc --explain E0308`.",
+   "timedOut": false
+  }
+ },
+ {
+  "id": "cs-ok-class",
+  "language": "csharp",
+  "prelude": "static class Kit\n{\n    public static int Half(int n)\n    {\n        if (n < 0) throw new ArgumentException(\"n must not be negative\");\n        return n / 2;\n    }\n}\n",
+  "source": "class Program\n{\n    static void Main()\n    {\n        Console.WriteLine(Kit.Half(10));\n    }\n}\n",
+  "expect": {
+   "stdout": "5"
+  },
+  "raw": {
+   "stdout": "5\n",
+   "stderr": "",
+   "exitCode": 0,
+   "compileError": null,
+   "timedOut": false
+  }
+ },
+ {
+  "id": "cs-toplevel",
+  "language": "csharp",
+  "prelude": "static class Kit\n{\n    public static int Half(int n)\n    {\n        if (n < 0) throw new ArgumentException(\"n must not be negative\");\n        return n / 2;\n    }\n}\n",
+  "source": "Console.WriteLine(Kit.Half(10));\n",
+  "expect": {
+   "stdout": "5"
+  },
+  "raw": {
+   "stdout": "5\n",
+   "stderr": "",
+   "exitCode": 0,
+   "compileError": null,
+   "timedOut": false
+  }
+ },
+ {
+  "id": "cs-compile",
+  "language": "csharp",
+  "prelude": "static class Kit\n{\n    public static int Half(int n)\n    {\n        if (n < 0) throw new ArgumentException(\"n must not be negative\");\n        return n / 2;\n    }\n}\n",
+  "source": "class Program\n{\n    static void Main()\n    {\n        int x = \"text\";\n    }\n}\n",
+  "expect": {
+   "line": 5
+  },
+  "raw": {
+   "stdout": "",
+   "stderr": "",
+   "exitCode": null,
+   "compileError": "Program.cs(5,17): error CS0029: Cannot implicitly convert type 'string' to 'int'",
+   "timedOut": false
+  }
+ },
+ {
+  "id": "cs-throw-in-prelude",
+  "language": "csharp",
+  "prelude": "static class Kit\n{\n    public static int Half(int n)\n    {\n        if (n < 0) throw new ArgumentException(\"n must not be negative\");\n        return n / 2;\n    }\n}\n",
+  "source": "class Program\n{\n    static void Main()\n    {\n        Console.WriteLine(Kit.Half(-4));\n    }\n}\n",
+  "expect": {
+   "line": 5,
+   "mentionsPrelude": true
+  },
+  "raw": {
+   "stdout": "",
+   "stderr": "Unhandled exception. System.ArgumentException: n must not be negative\n   at Kit.Half(Int32 n) in Program.cs:line 13\n   at Program.Main() in Program.cs:line 5\n",
+   "exitCode": 134,
+   "compileError": null,
+   "timedOut": false
+  }
+ },
+ {
+  "id": "cs-toplevel-throw",
+  "language": "csharp",
+  "prelude": "static class Kit\n{\n    public static int Half(int n)\n    {\n        if (n < 0) throw new ArgumentException(\"n must not be negative\");\n        return n / 2;\n    }\n}\n",
+  "source": "Console.WriteLine(\"start\");\nvar half = Kit.Half(-4);\nConsole.WriteLine(half);\n",
+  "expect": {
+   "line": 2,
+   "mentionsPrelude": true
+  },
+  "raw": {
+   "stdout": "start\n",
+   "stderr": "Unhandled exception. System.ArgumentException: n must not be negative\n   at Kit.Half(Int32 n) in Program.cs:line 9\n   at Program.<Main>$(String[] args) in Program.cs:line 2\n",
+   "exitCode": 134,
+   "compileError": null,
+   "timedOut": false
+  }
+ },
+ {
+  "id": "cs-toplevel-compile",
+  "language": "csharp",
+  "prelude": "static class Kit\n{\n    public static int Half(int n)\n    {\n        if (n < 0) throw new ArgumentException(\"n must not be negative\");\n        return n / 2;\n    }\n}\n",
+  "source": "Console.WriteLine(Kit.Half(10));\nstring s = Kit.Half(3);\n",
+  "expect": {
+   "line": 2
+  },
+  "raw": {
+   "stdout": "",
+   "stderr": "",
+   "exitCode": null,
+   "compileError": "Program.cs(2,12): error CS0029: Cannot implicitly convert type 'int' to 'string'",
+   "timedOut": false
+  }
+ },
+ {
+  "id": "cs-dup-type",
+  "language": "csharp",
+  "prelude": "static class Kit\n{\n    public static int Half(int n)\n    {\n        if (n < 0) throw new ArgumentException(\"n must not be negative\");\n        return n / 2;\n    }\n}\n",
+  "source": "Console.WriteLine(1);\nstatic class Kit { }\n",
+  "expect": {
+   "mentionsPrelude": true
+  },
+  "raw": {
+   "stdout": "",
+   "stderr": "",
+   "exitCode": null,
+   "compileError": "Program.cs(4,14): error CS0101: The namespace '<global namespace>' already contains a definition for 'Kit'",
+   "timedOut": false
+  }
+ }
+]
