@@ -60,7 +60,7 @@ export function FoundationsHub() {
             {parts.map((p) => (
               <div key={p.id} className="mt-5">
                 <p className="text-xs font-medium text-ink-3">{p.title}</p>
-                <ul className="mt-2 grid gap-2">
+                <ul className="mt-1 grid gap-0 sm:mt-2 sm:gap-2">
                   {p.modules.map((m) => {
                     const n = m.lessons.filter((l) => progress.completed[l.id]).length;
                     return (
@@ -68,7 +68,7 @@ export function FoundationsHub() {
                         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-tint text-brand">
                           <ModuleIcon icon={m.icon} className="h-3.5 w-3.5" />
                         </span>
-                        <a href={`#${m.id}`} className="min-w-0 flex-1 truncate hover:underline">
+                        <a href={`#${m.id}`} className="min-w-0 flex-1 truncate py-2.5 hover:underline sm:py-0">
                           {m.title}
                         </a>
                         <span className="shrink-0 tabular-nums text-ink-3">
@@ -143,7 +143,7 @@ function ModuleCard({
             return (
               <li key={l.id} className="relative">
                 {!last && <span className={`absolute left-[25px] top-[50px] h-[calc(100%-46px)] w-0.5 rounded-full ${complete ? "bg-primary" : "bg-[var(--line)]"}`} />}
-                <Link href={`/learn/${l.id}`} className={`group flex items-center gap-4 rounded-2xl p-1 ${last ? "" : "pb-5"}`}>
+                <Link href={`/learn/${l.id}`} prefetch={false} className={`group flex items-center gap-4 rounded-2xl p-1 ${last ? "" : "pb-5"}`}>
                   <span
                     className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border font-mono text-sm transition-colors ${
                       complete

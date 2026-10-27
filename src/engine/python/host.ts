@@ -1,7 +1,10 @@
 import { ENGINE_PRELUDE } from "./prelude";
 import { createPythonProgram, type PyModule } from "../program";
 import type { RunError, TestCase, TestResult } from "../types";
+import { ServiceError } from "../runtimes/service-error";
+import { reportRuntime } from "../runtimes/status";
 import { crashedResults, type GradeOutcome, type RunOutcome, type StatusListener } from "../runtimes/types";
+import { friendlyFailure } from "../runtimes/friendly";
 
 export type { GradeOutcome, RunOutcome, StatusListener };
 
@@ -29,30 +32,64 @@ declare global {
   }
 }
 
+/** The script and the WebAssembly download from a CDN; past these budgets the learner gets a Retry instead of an endless wait. */
+const SCRIPT_TIMEOUT_MS = 30_000;
+const BOOT_TIMEOUT_MS = 60_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new ServiceError("engine", { message: "Python took too long to load." })), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      },
+    );
+  });
+}
+
 export function loadPyodideOnce(onStatus?: StatusListener): Promise<PyodideInstance> {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("Python only runs in the browser"));
   }
   if (window.__pockettPyodide) return window.__pockettPyodide;
 
+  const say = (message: string) => {
+    reportRuntime("python", "loading", message);
+    onStatus?.(message);
+  };
   window.__pockettPyodide = (async () => {
-    onStatus?.("Getting ready…");
+    say("Getting ready…");
     if (!window.loadPyodide) {
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = `${PYODIDE_BASE}pyodide.js`;
-        script.async = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Could not load Python. Check your connection and try again."));
-        document.head.appendChild(script);
+      const script = document.createElement("script");
+      await withTimeout(
+        new Promise<void>((resolve, reject) => {
+          script.src = `${PYODIDE_BASE}pyodide.js`;
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new ServiceError("engine", { message: "Could not load Python. Check your connection and try again." }));
+          document.head.appendChild(script);
+        }),
+        SCRIPT_TIMEOUT_MS,
+      ).catch((err) => {
+        script.remove(); // abandons a download that never finishes; a retry adds a fresh tag
+        throw err;
       });
     }
-    onStatus?.("Starting Python…");
-    return window.loadPyodide!({ indexURL: PYODIDE_BASE });
+    say("Starting Python…");
+    const py = await withTimeout(window.loadPyodide!({ indexURL: PYODIDE_BASE }), BOOT_TIMEOUT_MS);
+    reportRuntime("python", "ready");
+    return py;
   })().catch((err) => {
     // Allow a retry after a failed load.
     window.__pockettPyodide = undefined;
-    throw err;
+    const failure = err instanceof ServiceError ? err : new ServiceError("engine", { message: "Could not load Python. Check your connection and try again." });
+    reportRuntime("python", "failed", failure.message);
+    throw failure;
   });
 
   return window.__pockettPyodide;
@@ -127,10 +164,11 @@ async function ensurePackages(py: PyodideInstance, packages: string[] | undefine
 }
 
 /** Fire-and-forget warm-up so the first Run feels instant. */
-export function preloadPython() {
+export function preloadPython(eager = false) {
   if (typeof window === "undefined") return;
   const start = () => void loadPyodideOnce().catch(() => {});
-  if ("requestIdleCallback" in window) window.requestIdleCallback(start, { timeout: 3000 });
+  if (eager) start();
+  else if ("requestIdleCallback" in window) window.requestIdleCallback(start, { timeout: 3000 });
   else setTimeout(start, 1200);
 }
 
@@ -213,7 +251,7 @@ export async function gradeProgram(
     }
     const results: TestResult[] = tests.map((t) => {
       const r = JSON.parse(mod.run_test(t.assertionCode, res.stdout)) as { ok: boolean; error?: string };
-      return { testId: t.id, description: t.description, passed: r.ok, error: r.error };
+      return { testId: t.id, description: t.description, passed: r.ok, error: r.error ? friendlyFailure(r.error) : r.error };
     });
     return {
       stdout: res.stdout,

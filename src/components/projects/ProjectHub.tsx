@@ -78,7 +78,7 @@ export function ProjectHub({ project, prerequisites = [] }: { project: Project; 
       <section className="border-b border-line">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_1.2fr] lg:py-16">
           <div className="flex min-w-0 flex-col justify-center">
-            <Link href="/projects" className="mb-6 inline-flex w-fit items-center gap-1.5 text-sm text-ink-3 hover:text-ink">
+            <Link href="/projects" prefetch={false} className="-mt-1 mb-5 inline-flex min-h-10 w-fit items-center gap-1.5 text-sm text-ink-3 hover:text-ink">
               <ArrowLeft className="h-3.5 w-3.5" /> All projects
             </Link>
             <span className="grid h-11 w-11 place-items-center rounded-full bg-tint text-brand">
@@ -124,7 +124,7 @@ export function ProjectHub({ project, prerequisites = [] }: { project: Project; 
             <p className="mt-5 max-w-lg text-base leading-relaxed text-ink-2 sm:text-lg">{project.pitch}</p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href={`/projects/${project.slug}/${cta.id}`} className="btn btn-primary !h-11 !px-5">
+              <Link href={`/projects/${project.slug}/${cta.id}`} prefetch={false} className="btn btn-primary !h-11 !px-5">
                 {ctaLabel} <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -153,6 +153,7 @@ export function ProjectHub({ project, prerequisites = [] }: { project: Project; 
               unlocked={unlocked}
               status={status}
               statusText="Booting your build…"
+              surface="hub"
               emptyHint={
                 bootFailed
                   ? languageOf(project) === "python"
@@ -206,6 +207,7 @@ export function ProjectHub({ project, prerequisites = [] }: { project: Project; 
                             )}
                             <Link
                               href={`/projects/${project.slug}/${lesson.id}`}
+                              prefetch={false}
                               className={`group flex items-center gap-4 rounded-2xl p-1 ${last ? "" : "pb-5"}`}
                             >
                               <span

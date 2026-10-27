@@ -57,7 +57,7 @@ const lessons: ConceptLesson[] = [
         title: "Be the algorithm",
         body: "New cards. Find the largest, and only say so when you're **sure**. Each card you turn over counts as one look.",
         widget: { type: "dsa-cards", props: { values: [12, 7, 25, 4, 19, 30, 2, 16], mode: "max" } },
-        question: { type: "widget", goal: { correct: true }, prompt: "Find the largest card." },
+        question: { type: "widget", hint: "Turn cards over one at a time and remember the biggest you have seen.", goal: { correct: true }, prompt: "Find the largest card." },
         explanation: "The only way to be **sure** is to look at every card: any card still face down could be the biggest one. So 8 cards take 8 looks. Remembering the *best so far* as you go is exactly how a computer does it.",
       },
       {
@@ -109,7 +109,7 @@ def largest(cards):
         kind: "question",
         title: "A bigger pile",
         body: "How many cards does `largest` look at to find the largest of **1,000** cards?",
-        question: { type: "number", answer: 1000, tolerance: 1, unit: "looks" },
+        question: { type: "number", hint: "The algorithm looks at each card once. How many looks is that for 1,000 cards?", answer: 1000, tolerance: 1, unit: "looks" },
         explanation: "One look per card: **1,000**. The loop body runs once for each card, so double the cards and you double the work, on any computer.",
       },
       {
@@ -186,7 +186,7 @@ def largest(cards):
         title: "A loop inside a loop",
         body: "Now one loop sits inside another. With **n = 5**, how many times does `compare(a, b)` run?",
         widget: { type: "dsa-opcount", props: { shape: "nested", initial: 5, hideCount: true } },
-        question: { type: "number", answer: 25, unit: "times" },
+        question: { type: "number", hint: "For each of the 5 passes of the outer loop, how many times does the inner loop run?", answer: 25, unit: "times" },
         explanation: "For each of the 5 values of `a`, the inner loop runs all 5 values of `b`: 5 × 5 = **25**. Try n = 10: 100 runs. Double n and the work **quadruples**.",
       },
       {
@@ -211,7 +211,7 @@ def largest(cards):
             yMax: 40000,
           },
         },
-        question: { type: "widget", goal: { cheaper: "a", than: "b" }, prompt: "Find an n where A takes fewer steps than B." },
+        question: { type: "widget", hint: "Keep increasing n until the bars swap: n² grows much faster than 100n.", goal: { cheaper: "a", than: "b" }, prompt: "Find an n where A takes fewer steps than B." },
         explanation: "They tie at n = 100 (100 × 100 = 100²). After that B's n² pulls away: at n = 1,000, A takes 100,000 steps and B a million. That's why Big-O ignores constant factors: for big inputs, the **growth rate** decides.",
       },
       {
@@ -226,7 +226,7 @@ def largest(cards):
         title: "Each pair once",
         body: "This version compares each **pair** only once: the inner loop starts just after `i`. With **n = 6**, how many comparisons?",
         widget: { type: "dsa-opcount", props: { shape: "triangle", initial: 6, hideCount: true } },
-        question: { type: "number", answer: 15, unit: "comparisons" },
+        question: { type: "number", hint: "The first item is compared with the 5 after it, the next with fewer, and so on. Add them up.", answer: 15, unit: "comparisons" },
         explanation: "5 + 4 + 3 + 2 + 1 + 0 = **15**, which is n(n − 1)/2. That's about half of n², but a half is just a constant factor, so it's still **O(n²)**: double n and the work still roughly quadruples.",
       },
       {
@@ -290,7 +290,7 @@ def has_duplicate(items):
         kind: "question",
         title: "Do the sum",
         body: "An array of 4-byte numbers starts at address **100**. At what address is the item at **index 5**?",
-        question: { type: "number", answer: 120 },
+        question: { type: "number", hint: "The address is the start plus the index times the size of each item.", answer: 120 },
         explanation: "100 + 5 × 4 = **120**. No searching at all, whatever the array's length: that's why `items[5]` is **O(1)**.",
       },
       {
@@ -298,7 +298,7 @@ def has_duplicate(items):
         title: "Make room at the front",
         body: "Now **insert** at the front of this 5-item array: every item has to shift one cell right to make room. Try it, then think bigger: inserting at the front of a **1,000-item** array, how many items move?",
         widget: { type: "dsa-arraylist", props: { show: "array", ops: ["insert"], items: [3, 8, 5, 1, 6], initialAt: "front" }, live: true },
-        question: { type: "number", answer: 1000, unit: "items" },
+        question: { type: "number", hint: "Every item has to shift one cell. How many items is that in a 1,000-item array?", answer: 1000, unit: "items" },
         explanation: "All **1,000** shift right, just as all 5 did here. Inserting at the front of an n-item array moves n items: **O(n)**. Try the end instead: nothing moves, so adding at the end is O(1).",
       },
       {
@@ -312,7 +312,7 @@ def has_duplicate(items):
         title: "Follow the arrows",
         body: "Reading the middle of this 7-node list means starting at head and following links. Try it. Now a list of 1,000 nodes: to read the item at **index 500**, how many links do you follow?",
         widget: { type: "dsa-arraylist", props: { show: "list", ops: ["read"], items: [3, 8, 5, 1, 6, 4, 9], initialAt: "middle" }, live: true },
-        question: { type: "number", answer: 500, unit: "links" },
+        question: { type: "number", hint: "To reach index 500 you start at the head and follow one link per step.", answer: 500, unit: "links" },
         explanation: "The node addresses are scattered, so there's no sum to jump with. From the head you follow one link per step: index 0 → 1 → 2 → … → 500, so **500** links. Reading index i costs i hops: **O(n)** for a linked list, O(1) for an array.",
       },
       {
@@ -320,7 +320,7 @@ def has_duplicate(items):
         title: "Where the list wins",
         body: "Here are both, holding the same items. Find an operation where the **linked list** does less work than the array.",
         widget: { type: "dsa-arraylist", props: { show: "both", items: [3, 8, 5, 1, 6] } },
-        question: { type: "widget", goal: { cheaper: "list" }, prompt: "Run an operation where the list needs fewer steps." },
+        question: { type: "widget", hint: "Try inserting at the front: the list changes one link while the array shifts every item.", goal: { cheaper: "list" }, prompt: "Run an operation where the list needs fewer steps." },
         explanation: "At the **front** the list wins big: it re-points one or two arrows while the array shifts every item, and the longer the list, the bigger the gap. In the middle it's close: the list walks halfway along, and the array shifts half the items.",
       },
       {
@@ -328,7 +328,7 @@ def has_duplicate(items):
         title: "Where the array wins",
         body: "Now find one where the **array** does less work.",
         widget: { type: "dsa-arraylist", props: { show: "both", items: [3, 8, 5, 1, 6], initialOp: "read" } },
-        question: { type: "widget", goal: { cheaper: "array" }, prompt: "Run an operation where the array needs fewer steps." },
+        question: { type: "widget", hint: "Try reading by position: the array jumps straight there while the list follows links.", goal: { cheaper: "array" }, prompt: "Run an operation where the array needs fewer steps." },
         explanation: "Reading by index (one jump against following links), and adding at the end (nothing to shift, while the list walks to its last node; some linked lists also keep a pointer to the tail to fix that).",
       },
       {
@@ -409,7 +409,7 @@ to_list(a)   # [3, 8, 5]
           type: "dsa-stackqueue",
           props: { kind: "stack", incoming: ["type Hello", "type world", "make bold", "add link"], addLabel: "Do", removeLabel: "Undo", outLabel: "Undone", varName: "history" },
         },
-        question: { type: "widget", goal: { removed: ["add link", "make bold"], items: ["type Hello", "type world"] }, prompt: "Do all four, then undo twice." },
+        question: { type: "widget", hint: "Do all four actions, then undo twice: the most recent action comes off first.", goal: { removed: ["add link", "make bold"], items: ["type Hello", "type world"] }, prompt: "Do all four, then undo twice." },
         explanation: "Undo always reverses the **most recent** action first: *add link*, then *make bold*. A stack hands you exactly that order without any searching.",
       },
       {
@@ -437,7 +437,7 @@ to_list(a)   # [3, 8, 5]
         title: "The print queue",
         body: "Three people send work to one printer: **essay.pdf**, then **photo.jpg**, then **ticket.pdf**. Send all three, then print until **photo.jpg** has come out.",
         widget: { type: "dsa-stackqueue", props: { kind: "queue", incoming: ["essay.pdf", "photo.jpg", "ticket.pdf"], addLabel: "Send", removeLabel: "Print next", outLabel: "Printed", varName: "jobs" } },
-        question: { type: "widget", goal: { removed: ["essay.pdf", "photo.jpg"] }, prompt: "Print until photo.jpg is done." },
+        question: { type: "widget", hint: "Send all three, then print until photo.jpg has come out. First in, first out.", goal: { removed: ["essay.pdf", "photo.jpg"] }, prompt: "Print until photo.jpg is done." },
         explanation: "A queue serves jobs in arrival order, so the essay prints first and the photo second. That's fair: with a stack the newest job would always jump ahead, and the first sender might wait forever.",
       },
       {
@@ -462,7 +462,7 @@ to_list(a)   # [3, 8, 5]
             answer: { back: "stack", undo: "stack", brackets: "stack", support: "queue", playlist: "queue", server: "queue" },
           },
         },
-        question: { type: "widget", goal: { placed: { back: "stack", undo: "stack", brackets: "stack", support: "queue", playlist: "queue", server: "queue" } } },
+        question: { type: "widget", hint: "A stack gives back the newest item first; a queue gives back the oldest.", goal: { placed: { back: "stack", undo: "stack", brackets: "stack", support: "queue", playlist: "queue", server: "queue" } } },
         explanation: "**Stacks** fit anything that returns to the most recent thing: going back, undoing, closing the most recently opened bracket. **Queues** fit anything that should be served in arrival order: callers, songs, requests.",
       },
       {
@@ -533,7 +533,7 @@ to_list(a)   # [3, 8, 5]
         kind: "question",
         title: "Where does pig go?",
         body: "The letters `p`, `i`, `g` have codes 112, 105 and 103. With **8** buckets, which bucket does **pig** land in?",
-        question: { type: "number", answer: 0 },
+        question: { type: "number", hint: "Add the three codes, then take the remainder after dividing by 8 (the number of buckets).", answer: 0 },
         explanation: "112 + 105 + 103 = 320, and 320 % 8 = **0** (320 is exactly 40 × 8). The same key always hashes to the same bucket, which is what lets the map find it again later.",
       },
       {
@@ -541,7 +541,7 @@ to_list(a)   # [3, 8, 5]
         title: "A collision",
         body: "When two keys land in the same bucket, that's a **collision**. Add keys until you cause one.",
         widget: { type: "dsa-hashmap", props: { keys: ["cat", "dog", "cow", "pig", "hen", "ant", "owl"] } },
-        question: { type: "widget", goal: { collision: true }, prompt: "Get two keys into one bucket." },
+        question: { type: "widget", hint: "Keep adding keys until two of them land in the same bucket.", goal: { collision: true }, prompt: "Get two keys into one bucket." },
         explanation: "With more possible keys than buckets, collisions can't be avoided. The bucket simply holds a short list, a **chain**, of every key that landed there. Real hash functions spread keys far more evenly than ours, but they collide sometimes too.",
       },
       {
@@ -555,7 +555,7 @@ to_list(a)   # [3, 8, 5]
         title: "A miss is quick too",
         body: "**yak** isn't in the map. How many keys does the map compare before it knows?",
         widget: { type: "dsa-hashmap", props: { initial: ANIMALS8, actions: ["lookup"], lookupKeys: ["emu", "yak", "elk"] }, live: true },
-        question: { type: "number", answer: 1, unit: "keys" },
+        question: { type: "number", hint: "Find the bucket yak belongs to and compare only the keys sitting in that bucket.", answer: 1, unit: "keys" },
         explanation: "yak hashes to 325 % 8 = 5. Bucket 5 holds only fox, so **one** comparison and the map knows yak is missing. A plain list would have had to check all 8 keys to be sure.",
       },
       {
@@ -563,7 +563,7 @@ to_list(a)   # [3, 8, 5]
         title: "Growing the map",
         body: "As keys pile in, chains get longer and lookups slow down. So when a map gets too full, it **grows**: it makes more buckets and re-hashes every key. Grow this one and see what happens to the longest chain.",
         widget: { type: "dsa-hashmap", props: { initial: ANIMALS8, allowResize: true } },
-        question: { type: "widget", goal: { bucketsMin: 16, longestMax: 1 }, prompt: "Grow the map until no bucket holds more than one key." },
+        question: { type: "widget", hint: "Use the grow button until no bucket holds more than one key.", goal: { bucketsMin: 16, longestMax: 1 }, prompt: "Grow the map until no bucket holds more than one key." },
         explanation: "With 16 buckets, `% 16` spreads these keys out and every one sits alone. Python's `dict` grows by itself whenever it gets about two-thirds full, so chains stay short and lookups stay about **O(1)** on average. (Inside, Python handles collisions by probing for a nearby free slot rather than chaining, but the idea is the same.)",
       },
       {
@@ -644,7 +644,7 @@ to_list(a)   # [3, 8, 5]
         title: "Linear search",
         body: "The simplest search checks items one after another until it finds the target: **linear search**. It works on any list. Find **61**.",
         widget: { type: "dsa-cards", props: { values: [17, 42, 8, 33, 75, 5, 29, 61, 12, 50], mode: "find", target: 61 } },
-        question: { type: "widget", goal: { found: true }, prompt: "Turn cards over until you find 61." },
+        question: { type: "widget", hint: "Turn the cards over one by one from the left until you find 61.", goal: { found: true }, prompt: "Turn cards over until you find 61." },
         explanation: "With the cards in no particular order, each look tells you nothing about the others. So you check them one by one: about half of them on average, and **all** of them if the target is last or missing.",
       },
       {
@@ -665,7 +665,7 @@ to_list(a)   # [3, 8, 5]
         title: "Four looks",
         body: "Find **61** in **at most 4 looks**. Each time, turn over the middle of the cards still in play.",
         widget: { type: "dsa-cards", props: { values: SORTED15, mode: "find", target: 61 } },
-        question: { type: "widget", goal: { found: true, maxLooks: 4 }, prompt: "Find 61 in 4 looks or fewer." },
+        question: { type: "widget", hint: "Always turn over the middle card of those still in play, then ask whether 61 is bigger or smaller.", goal: { found: true, maxLooks: 4 }, prompt: "Find 61 in 4 looks or fewer." },
         explanation: "Middle first (42: too small), then the middle of the right half (68: too big), then 56, then **61**. Each look halves what's left, 15 → 7 → 3 → 1, so 4 looks are always enough for 15 sorted cards. Linear search might need 15.",
       },
       {
@@ -673,14 +673,14 @@ to_list(a)   # [3, 8, 5]
         title: "Guess the number",
         body: "I'm thinking of a number from 1 to 100. Find it in **7 guesses or fewer**. No luck involved: the number dodges lucky guesses, so only a good strategy works.",
         widget: { type: "dsa-guess", props: { max: 100, maxGuesses: 7 } },
-        question: { type: "widget", goal: { found: true, maxGuesses: 7 }, prompt: "Find the number in 7 guesses or fewer." },
+        question: { type: "widget", hint: "Always guess the middle of the range that is left; each answer cuts it in half.", goal: { found: true, maxGuesses: 7 }, prompt: "Find the number in 7 guesses or fewer." },
         explanation: "Guess the middle of what's left every time: 100 possibilities → 50 → 25 → 12 → 6 → 3 → 1. Seven halvings are always enough because 2⁷ = 128 ≥ 100. Guessing 1, 2, 3… could take 100.",
       },
       {
         kind: "question",
         title: "A million",
         body: "Each guess halves the range. At most how many guesses does binary search need for a number from 1 to **1,000,000**?",
-        question: { type: "number", answer: 20, unit: "guesses" },
+        question: { type: "number", hint: "Each guess halves the range. How many halvings take a million down to 1?", answer: 20, unit: "guesses" },
         explanation: "2²⁰ = 1,048,576, which is at least a million, so **20** halvings always get down to one number. That's **O(log n)**: going from a thousand to a million numbers only adds 10 guesses.",
       },
       {
@@ -769,7 +769,7 @@ assert _Counting.reads <= 40, f"Your search read {_Counting.reads} items. Binary
         title: "Sort it yourself",
         body: "Sorting puts items in order, which is what makes binary search possible. Sort these bars from shortest to tallest: tap a bar, then another, to swap them.",
         widget: { type: "dsa-sort", props: { manual: true, values: [4, 7, 1, 6, 3, 5, 2] } },
-        question: { type: "widget", goal: { sorted: true }, prompt: "Sort the bars, smallest on the left." },
+        question: { type: "widget", hint: "Tap a bar and then another to swap them, until the bars rise from left to right.", goal: { sorted: true }, prompt: "Sort the bars, smallest on the left." },
         explanation: "However you did it, you probably found the smallest bar and moved it to the front, then the next smallest, and so on. That's a real algorithm: **selection sort**. Next, a computer does it while counting its steps.",
       },
       {
@@ -783,7 +783,7 @@ assert _Counting.reads <= 40, f"Your search read {_Counting.reads} items. Binary
         title: "Count the comparisons",
         body: "With 8 items, the first pass compares 7 pairs to find the smallest, the next pass 6, and so on. How many comparisons in total? (Step to the end to check.)",
         widget: { type: "dsa-sort", props: { algorithm: "selection", values: [5, 2, 8, 1, 9, 3, 7, 4] }, live: true },
-        question: { type: "number", answer: 28, unit: "comparisons" },
+        question: { type: "number", hint: "Add the comparisons of every pass: 7, then 6, then 5 and so on down to 1.", answer: 28, unit: "comparisons" },
         explanation: "7 + 6 + 5 + 4 + 3 + 2 + 1 = **28**, which is n(n − 1)/2: **O(n²)**. Selection sort makes 28 comparisons for any 8 items, even ones that are already sorted.",
       },
       {
@@ -814,7 +814,7 @@ assert _Counting.reads <= 40, f"Your search read {_Counting.reads} items. Binary
         kind: "question",
         title: "One merge",
         body: "How many comparisons does it take to merge [1, 4, 7] and [2, 3, 9]?",
-        question: { type: "number", answer: 5, unit: "comparisons" },
+        question: { type: "number", hint: "Each comparison takes the smaller front item of the two lists. Count them until one list runs out.", answer: 5, unit: "comparisons" },
         explanation: "1 vs 2 → take 1. 4 vs 2 → 2. 4 vs 3 → 3. 4 vs 9 → 4. 7 vs 9 → 7. Now the left list is empty, so 9 is copied with no comparison: **5**. A merge needs at most one comparison per item, so it's O(n).",
       },
       {
@@ -920,7 +920,7 @@ Documents
         title: "Searching",
         body: "Searching follows the same left-or-right path. How many nodes does a search for **40** visit, counting 40 itself?",
         widget: { type: "dsa-bst", props: { initial: BST7, modes: ["search"], searchValues: [80, 45, 65] }, live: true },
-        question: { type: "number", answer: 3, unit: "nodes" },
+        question: { type: "number", hint: "Start at the root and go left or right at each node. Count every node you visit, including 40.", answer: 3, unit: "nodes" },
         explanation: "50 → 30 → **40**: 3 nodes. Each comparison rules out a whole side of the tree, just like binary search rules out half a list. Search for 45 or 65 in the widget: a missing value ends at an empty spot.",
       },
       {
@@ -928,7 +928,7 @@ Documents
         title: "Sorted input",
         body: "Every comparison moves one level down, so the number of **levels** is the most a search can take. Start from an empty tree and insert **10, 20, 30, 40, 50** in that order. What shape appears?",
         widget: { type: "dsa-bst", props: { values: [10, 20, 30, 40, 50] } },
-        question: { type: "widget", goal: { count: 5, levels: 5 }, prompt: "Insert all five, smallest first." },
+        question: { type: "widget", hint: "Insert the values in the order given; each one is bigger than everything before it.", goal: { count: 5, levels: 5 }, prompt: "Insert all five, smallest first." },
         explanation: "Each value is bigger than everything before it, so it always goes right: the tree becomes a **chain**, really just a linked list. Searching it takes up to n steps, O(n), and the tree's advantage is gone.",
       },
       {
@@ -936,7 +936,7 @@ Documents
         title: "Make it bushy",
         body: "Same five values, but now you choose the order. Build a tree with only **3 levels**.",
         widget: { type: "dsa-bst", props: { values: [10, 20, 30, 40, 50] } },
-        question: { type: "widget", goal: { count: 5, levels: 3 }, prompt: "Insert all five so the tree has 3 levels." },
+        question: { type: "widget", hint: "Insert the middle value first, so the tree grows on both sides.", goal: { count: 5, levels: 3 }, prompt: "Insert all five so the tree has 3 levels." },
         explanation: "Start in the middle: 30 as the root, then 20 and 40, then 10 and 50 (or 10 then 20, and so on). Real libraries use **self-balancing** trees, such as red-black and AVL trees, which rearrange themselves on every insert so the levels stay near log₂ n.",
       },
       {
@@ -1040,7 +1040,7 @@ assert contains(None, 5) is False, "An empty tree contains nothing"`,
         title: "Fewest edges",
         body: "Find a route from **A** to **H** that uses as few edges as you can.",
         widget: { type: "dsa-graph", props: { ...GRAPH, target: "H" } },
-        question: { type: "widget", goal: { to: "H", maxEdges: 3 }, prompt: "Reach H in as few edges as possible." },
+        question: { type: "widget", hint: "Look for a route that skips as many in-between nodes as it can.", goal: { to: "H", maxEdges: 3 }, prompt: "Reach H in as few edges as possible." },
         explanation: "A → B → F → H uses **3** edges, and no route is shorter. But how could a program be *sure* it's the shortest, without trying every possible route? Hold that thought.",
       },
       {
@@ -1075,7 +1075,7 @@ graph = {
         title: "How far is G?",
         body: "How many edges is the shortest route from A to **G**?",
         widget: { type: "dsa-graph", props: { ...GRAPH, modes: ["bfs"] }, live: true },
-        question: { type: "number", answer: 3, unit: "edges" },
+        question: { type: "number", hint: "Count edges along the shortest route, not nodes.", answer: 3, unit: "edges" },
         explanation: "G first appears in layer **3** (for example A → B → D → G, or A → C → E → G). BFS found every node within 2 edges in earlier layers, and G wasn't among them, so no route shorter than 3 exists.",
       },
       {
@@ -1089,7 +1089,7 @@ graph = {
         title: "Through the maze",
         body: "Run BFS on this maze. How many moves is the shortest path from S to G?",
         widget: { type: "dsa-grid", props: { map: MAZE }, live: true },
-        question: { type: "number", answer: 15, unit: "moves" },
+        question: { type: "number", hint: "Run the search to the end and read the distance shown at G.", answer: 15, unit: "moves" },
         explanation: "G is first reached in layer **15**, and the path lights up. BFS never guesses: by the time it reaches G it has explored every cell closer than 15 moves, so nothing shorter exists.",
       },
       {
@@ -1097,7 +1097,7 @@ graph = {
         title: "Build a detour",
         body: "This room is open: S to G takes 11 moves. Tap cells to add walls so the shortest path is **at least 15 moves**, but G can still be reached.",
         widget: { type: "dsa-grid", props: { map: ["S......", ".......", ".......", ".......", ".......", "......G"], editable: true } },
-        question: { type: "widget", goal: { distanceMin: 15 }, prompt: "Make the shortest path 15 moves or longer." },
+        question: { type: "widget", hint: "Add walls that block the short way but leave a longer way round open.", goal: { distanceMin: 15 }, prompt: "Make the shortest path 15 moves or longer." },
         explanation: "A wall that blocks the direct way forces a detour, and BFS finds the shortest detour around it. Wall G off completely and the frontier empties before reaching it: BFS can also prove there's **no** route.",
       },
       {
@@ -1210,7 +1210,7 @@ graph + BFS   fewest steps between nodes  (a model, not a box)
             answer: { phone: "dict", taken: "dict", chapters: "list", top: "list", orders: "queue", jobs: "queue", undo: "stack", back: "stack" },
           },
         },
-        question: { type: "widget", goal: { placed: { phone: "dict", taken: "dict", chapters: "list", top: "list", orders: "queue", jobs: "queue", undo: "stack", back: "stack" } } },
+        question: { type: "widget", hint: "Ask: does the job need lookup by key, an ordered list, first-in-first-out or last-in-first-out?", goal: { placed: { phone: "dict", taken: "dict", chapters: "list", top: "list", orders: "queue", jobs: "queue", undo: "stack", back: "stack" } } },
         explanation: "Looking things up by name or checking membership: **dict or set**. Keeping things in a fixed order to read by position: **list**. Serving in arrival order: **queue**. Going back to the most recent thing: **stack**.",
       },
       {

@@ -9,9 +9,10 @@ import { ProjectCard, UpcomingCard } from "@/components/projects/ProjectCard";
 import { FeatureIcon } from "@/components/ui/icons";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { FOUNDATIONS } from "@/content/foundations";
+import { trackLessons } from "@/learn/types";
 import { ModuleIcon } from "@/learn/module-icons";
 
-const LESSON_COUNT = PROJECTS.reduce((n, p) => n + flattenLessons(p).length, 0);
+const LESSON_COUNT = PROJECTS.reduce((n, p) => n + flattenLessons(p).length, 0) + trackLessons(FOUNDATIONS).length;
 const GARAGE = PROJECTS.find((p) => p.slug === "garage") ?? PROJECTS[0];
 
 /** A few planned projects for the landing teaser: the next rung up in as many languages as possible. */
@@ -26,9 +27,9 @@ const NEXT_UP = (() => {
 })();
 
 const STATS = [
+  { value: String(new Set(PROJECTS.map((p) => p.language ?? "python")).size), label: "Languages, plus an AI track" },
   { value: String(PROJECTS.length), label: "Guided projects" },
-  { value: String(LESSON_COUNT), label: "Hands-on lessons" },
-  { value: String(new Set(PROJECTS.map((p) => p.language ?? "python")).size), label: "Languages" },
+  { value: String(LESSON_COUNT), label: "Interactive lessons" },
   { value: "Free", label: "No paywall, ever" },
 ];
 
@@ -135,7 +136,7 @@ export default function HomePage() {
           </span>
           <h1 className="font-display mt-6 text-balance text-[clamp(2.6rem,5.6vw,4.25rem)]">Learn to code by building things that work</h1>
           <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-ink-2 sm:text-lg">
-            Write real Python, JavaScript or SQL, one short lesson at a time. Every lesson you pass switches on part of a live 3D project, so you can see exactly what your code does.
+            Short interactive lessons in Python, JavaScript, SQL, C#, C++, Go and Rust, plus an AI track and a Foundations course on how computers and production systems work. Every lesson you pass adds a working part to a live project.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href="/learn" className="btn btn-primary !h-12 !px-6 !text-base">
@@ -183,7 +184,7 @@ export default function HomePage() {
           <SectionHeader
             eyebrow="New to code?"
             title="Start with how code really works"
-            body="Foundations takes you from a single bit to CPUs, assembly, the shell, networks, data structures, OOP and design patterns. Short steps, and every one asks you to try something."
+            body="Foundations takes you from a single bit to CPUs, networks, data structures, OOP and design patterns, then on to how production systems stay up: caching, databases, security, observability and AI. Short steps, and every one asks you to try something."
           />
           <Link href="/learn" className="btn btn-primary">
             Start Foundations <ArrowRight className="h-4 w-4" />
@@ -200,7 +201,7 @@ export default function HomePage() {
                   .filter((m) => m.part === part.id)
                   .map((m) => (
                     <li key={m.id}>
-                      <Link href={`/learn#${m.id}`} className="flex items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-sm transition-colors hover:border-[var(--line-strong)]">
+                      <Link href={`/learn#${m.id}`} prefetch={false} className="flex min-h-11 items-center gap-3 rounded-xl border border-line px-3 py-2.5 text-sm transition-colors hover:border-[var(--line-strong)]">
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-tint text-brand">
                           <ModuleIcon icon={m.icon} className="h-4 w-4" />
                         </span>
@@ -258,7 +259,7 @@ export default function HomePage() {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <SectionHeader eyebrow="Projects" title="Choose what you want to build" />
           <Link href="/projects" className="btn btn-sm">
-            View all <ArrowRight className="h-3.5 w-3.5" />
+            View all {PROJECTS.length} projects <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
         <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -267,11 +268,11 @@ export default function HomePage() {
           ))}
         </div>
         <p className="mt-10 max-w-2xl text-sm text-ink-2">
-          Each language grows into a path from Beginner to Professional. Here is a taste of what is planned next.{" "}
-          <Link href="/projects" className="font-medium text-ink underline underline-offset-4">
-            See every path
-          </Link>
+          Each language grows into a path from Beginner to Professional. Here is a taste of what is planned next.
         </p>
+        <Link href="/projects" className="mt-1 inline-flex min-h-10 items-center text-sm font-medium text-ink underline underline-offset-4">
+          See every path
+        </Link>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {NEXT_UP.map((u) => (
             <UpcomingCard key={u.slug} project={u} showLanguage />
@@ -280,7 +281,7 @@ export default function HomePage() {
 
         <div className="mt-20 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: Zap, t: "Instant feedback", d: "Run your code and see the result instantly. Nothing to install." },
+            { icon: Zap, t: "Instant feedback", d: "Run your code and see the result straight away. Nothing to install." },
             { icon: TestTube2, t: "Real tests", d: "Every lesson is graded by assertions, the same way production code is." },
             { icon: Globe, t: "Free for everyone", d: "No paywall and no trial. Supported by a small number of ads." },
             { icon: Layers, t: "Your build persists", d: "Your project grows with you. Come back any time and keep going." },
@@ -302,7 +303,7 @@ export default function HomePage() {
 
       {/* ───────── cta ───────── */}
       <section className="px-4 pb-24 sm:px-6">
-        <div className="tint-panel mx-auto max-w-6xl px-6 py-14 text-center sm:py-20">
+        <div className="tint-panel mx-auto max-w-[69rem] px-6 py-14 text-center sm:py-20">
           <h2 className="font-display text-balance text-[2rem] sm:text-[2.75rem]">Your first lesson takes about five minutes</h2>
           <p className="mx-auto mt-3 max-w-md text-ink-2">Start the Turbo Garage and get the engine running.</p>
           <Link href="/projects/garage/garage-1-ignition" className="btn btn-primary mt-8 !h-12 !px-6 !text-base">

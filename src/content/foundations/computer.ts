@@ -35,7 +35,7 @@ export const computerModule: Module = {
           title: "Who does the work?",
           body: "A program is a long list of tiny instructions: add these two numbers, compare those, copy this byte. Tap the part that actually **carries out** those instructions.",
           widget: { type: "computer-machine", props: { mode: "pick" } },
-          question: { type: "widget", goal: { picked: "cpu" } },
+          question: { type: "widget", hint: "Which part follows the instructions one after another: the brain of the machine?", goal: { picked: "cpu" } },
           explanation: "The **CPU** (central processing unit, or processor) follows instructions one after another. Memory and storage only *hold* instructions and data; they can't act on them.",
         },
         {
@@ -54,7 +54,7 @@ export const computerModule: Module = {
           title: "Where does a game live?",
           body: "You install a game, then shut the computer down for the night. Tap the part that holds the game while the power is off.",
           widget: { type: "computer-machine", props: { mode: "pick" } },
-          question: { type: "widget", goal: { picked: "storage" } },
+          question: { type: "widget", hint: "Which part keeps its contents when the power is off?", goal: { picked: "storage" } },
           explanation: "Installed apps and saved files stay in **storage**. When you start the game tomorrow, it gets copied from storage into memory, because the CPU can reach memory much faster.",
         },
         {
@@ -83,7 +83,7 @@ export const computerModule: Module = {
             },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "Touch screens and headsets both take things in and give things out.",
             goal: { placed: { keyboard: "in", speakers: "out", webcam: "in", printer: "out", touch: "both", mic: "in", monitor: "out", headset: "both" } },
           },
           explanation: "Keyboards, webcams and microphones bring information **in**; speakers, printers and monitors send it **out**. A touchscreen is both: a display that also senses your finger. A headset has speakers for your ears and a microphone for your voice.",
@@ -186,7 +186,7 @@ export const computerModule: Module = {
           title: "Read a box",
           body: "These boxes hide their contents until you read them. Find out which number is stored at address **6**.",
           widget: { type: "computer-memory", props: { mode: "read", initial: [31, 8, 0, 14, 96, 2, 57, 250, 11, 4, 0, 73, 6, 19, 128, 3] } },
-          question: { type: "number", answer: 57 },
+          question: { type: "number", hint: "Pick address 6 in the widget and read what it holds.", answer: 57 },
           explanation: "Address 6 is the seventh box, because addresses start at 0. It holds **57**. To read memory, the CPU names an address and gets back the byte stored there.",
         },
         {
@@ -220,14 +220,14 @@ export const computerModule: Module = {
             type: "computer-memory",
             props: { mode: "rw", initial: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 64, 0, 0], names: { "12": "score", "13": "best" } },
           },
-          question: { type: "widget", goal: { cells: { "13": 87 } } },
+          question: { type: "widget", hint: "Read address 12 to see your score, then write that same number into address 13.", goal: { cells: { "13": 87 } } },
           explanation: "Copying is a **read** (address 12 holds 87) followed by a **write** (87 into address 13). The score at 12 is untouched: reading never changes a box. Notice the names: when a program says `best = score`, this is what really happens. A variable is a friendly name for an address.",
         },
         {
           kind: "question",
           title: "How many addresses?",
           body: "A tiny computer writes its addresses as 8-bit numbers. How many different boxes can it name?",
-          question: { type: "number", answer: 256, unit: "boxes" },
+          question: { type: "number", hint: "An 8-bit number has 2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 different patterns.", answer: 256, unit: "boxes" },
           explanation: "8 bits make 2⁸ = **256** patterns, so addresses 0 to 255. The size of an address limits how much memory a computer can use: with 32-bit addresses that's about 4.3 billion bytes (4 GB), which is why older 32-bit PCs couldn't use more than 4 GB of RAM. Today's 64-bit addresses go far beyond any memory that exists.",
         },
         {
@@ -241,7 +241,7 @@ export const computerModule: Module = {
           title: "Survive a power cut",
           body: "Type at least **5 letters**, and make sure they survive a power cut: after you turn the power back on, get them back into memory.",
           widget: { type: "computer-power" },
-          question: { type: "widget", goal: { survived: 5 } },
+          question: { type: "widget", hint: "Memory is wiped when the power goes off. Save the letters to storage first, then open them again after power on.", goal: { survived: 5 } },
           explanation: "Type → **Save** (a copy goes to storage) → Power off (memory is wiped) → Power on → **Open** (storage copies the file back into memory). That round trip is what really happens every time you save a file and open it again later.",
         },
         {
@@ -292,7 +292,7 @@ export const computerModule: Module = {
           kind: "question",
           title: "The program counter",
           body: "The CPU has a few tiny storage slots of its own, called **registers**. One of them, the **program counter (PC)**, holds the address of the next instruction. Fetch copies the byte at that address into the **instruction register (IR)** and adds 1 to PC.\n\nPC is **0**. The CPU does one fetch. What is PC now?",
-          question: { type: "number", answer: 1 },
+          question: { type: "number", hint: "Fetch copies the instruction at PC and then adds 1 to PC.", answer: 1 },
           explanation: "PC moves on to **1**, so the next fetch takes the next instruction. Instructions run in order, one address after another, unless one of them changes PC on purpose (you'll see that soon).",
         },
         {
@@ -300,7 +300,7 @@ export const computerModule: Module = {
           title: "Run the program",
           body: "Step through the whole program until the CPU stops. Watch PC count up on every fetch, and watch **A** (a register the CPU computes with, called the *accumulator*).",
           widget: { type: "computer-cpu", props: { program: ADD_PROGRAM, names: ADD_NAMES } },
-          question: { type: "widget", goal: { halted: true } },
+          question: { type: "widget", hint: "Press the step button until the CPU halts, and watch PC and A change on the way.", goal: { halted: true } },
           explanation: "LOAD 14 put 5 in A, ADD 15 made it 12, STORE 13 wrote 12 into memory, OUT showed it, and HALT stopped the CPU. Five instructions, fifteen steps. A real CPU does exactly this, just billions of times a second.",
         },
         {
@@ -319,7 +319,7 @@ export const computerModule: Module = {
           title: "Predict the output",
           body: "Here's a new program. Read it instruction by instruction: what number will **OUT** show?",
           widget: { type: "computer-cpu", props: { program: DOUBLE_PROGRAM, names: ADD_NAMES, predict: true, granularity: "instruction" } },
-          question: { type: "number", answer: 15 },
+          question: { type: "number", hint: "Follow the instructions one at a time and keep track of what A holds after each.", answer: 15 },
           explanation: "LOAD 14 sets A = 6. ADD 14 adds the 6 again: 12. ADD 15 adds 3: **15**. STORE 13 saves it, OUT shows it. Now press **Step instruction** and check each line against your prediction.",
         },
         {
@@ -339,7 +339,7 @@ export const computerModule: Module = {
           title: "Make it stop",
           body: "**JZ** (jump if zero) only jumps when A is 0. This countdown shows the start number, subtracts 1, and stops once it reaches 0.\n\nRight now it starts at 5. Change the number at address **14** so the program shows exactly **3, 2, 1** and halts. Then run it to check.",
           widget: { type: "computer-cpu", props: { program: COUNTDOWN(5), names: COUNTDOWN_NAMES, editable: [14], granularity: "instruction" } },
-          question: { type: "widget", goal: { out: [3, 2, 1], halted: true } },
+          question: { type: "widget", hint: "The program shows the start number and subtracts 1 each time. Which start number gives 3, 2, 1?", goal: { out: [3, 2, 1], halted: true } },
           explanation: "Start at **3**: OUT 3, SUB gives 2, JZ doesn't jump (A isn't 0), JUMP 1 loops back… until SUB makes A = 0 and JZ jumps to HALT. A loop plus a decision: with just these, a CPU can compute anything a computer can compute.",
         },
         {
@@ -411,7 +411,7 @@ export const computerModule: Module = {
           title: "Beat the deadline",
           body: "Finish the 24-billion-instruction job in **1 second or less**, without pushing the clock above **4 GHz** (any faster and this chip overheats).",
           widget: { type: "computer-clock", props: { job: 24, initial: { ghz: 2, cores: 1, ipc: 1 } } },
-          question: { type: "widget", goal: { maxSeconds: 1, maxGhz: 4 } },
+          question: { type: "widget", hint: "Time is the work divided by the speed. With the clock capped at 4 GHz, what else makes the chip do more per second?", goal: { maxSeconds: 1, maxGhz: 4 } },
           explanation: "You need 24 billion instructions per second. At 4 GHz that's 6 instructions per tick in total, so you need more cores or more work per tick: 4 GHz × 2 cores × 4, or 3 GHz × 4 cores × 2, for example. Chip designers make this exact trade every day.",
         },
         {
@@ -473,7 +473,7 @@ export const computerModule: Module = {
           kind: "question",
           title: "How many addresses?",
           body: "This bus has **4 address lines**, each carrying one bit. How many different addresses can the CPU put on them?",
-          question: { type: "number", answer: 16, unit: "addresses" },
+          question: { type: "number", hint: "Each address line carries one bit, so count the patterns four bits can make.", answer: 16, unit: "addresses" },
           explanation: "4 bits make 2⁴ = **16** patterns, 0000 to 1111, so addresses 0 to 15. It's the same rule as in the memory lesson: the width of the address limits how many boxes can be named.",
         },
         {
@@ -481,7 +481,7 @@ export const computerModule: Module = {
           title: "Send a write",
           body: "Use the bus to store **9** at address **5**.",
           widget: { type: "computer-bus", props: { devices: false, ram: [5, 18, 0, 42, 7, 99, 0, 0, 13, 0, 64, 0, 2, 0], initial: { op: "read", addr: 0 } } },
-          question: { type: "widget", goal: { last: { op: "write", addr: 5, data: 9 } } },
+          question: { type: "widget", hint: "Choose a write, enter address 5 and data 9, then send it.", goal: { last: { op: "write", addr: 5, data: 9 } } },
           explanation: "The CPU put 0101 (5) on the address lines, set the control line to WRITE, and put 00001001 (9) on the data lines. Memory saw its address, read the data lines, and stored 9.",
         },
         {
@@ -518,7 +518,7 @@ export const computerModule: Module = {
           title: "Write to the screen",
           body: "Make the screen show the letter **A**. (From the first module: the code for A is 65.)",
           widget: { type: "computer-bus", props: { ram: [5, 18, 0, 42, 7, 99, 0, 0, 13, 0, 64, 0, 2, 0], initial: { op: "write", addr: 0 } } },
-          question: { type: "widget", goal: { screen: "A" } },
+          question: { type: "widget", hint: "The code for A is 65. Write 65 to the screen's address.", goal: { screen: "A" } },
           explanation: "Write **65** to address **14**. The screen controller recognises its address, takes the byte off the data lines and draws the matching character. Real graphics work the same way at a much bigger scale: programs write pixel colours into memory the graphics hardware reads from.",
         },
         {
@@ -526,7 +526,7 @@ export const computerModule: Module = {
           title: "Read the keyboard",
           body: "Press **B** on the little keyboard, then use a read to bring that key into the CPU.",
           widget: { type: "computer-bus", props: { ram: [5, 18, 0, 42, 7, 99, 0, 0, 13, 0, 64, 0, 2, 0], initial: { op: "read", addr: 0 } } },
-          question: { type: "widget", goal: { last: { op: "read", addr: 15, data: 66 } } },
+          question: { type: "widget", hint: "Press B first, then read from the keyboard's address. The code for B is 66.", goal: { last: { op: "read", addr: 15, data: 66 } } },
           explanation: "Read address **15**: the keyboard owns it and answers with the code of the last key pressed, **66** for B. To the CPU, asking the keyboard is no different from reading memory.",
         },
         {
@@ -584,7 +584,7 @@ export const computerModule: Module = {
           kind: "question",
           title: "Memory vs SSD",
           body: "A typical RAM read takes about **100 ns**. A typical SSD read takes about **100,000 ns** (100 microseconds). How many times slower is the SSD?",
-          question: { type: "number", answer: 1000, unit: "times" },
+          question: { type: "number", hint: "Divide the SSD's time by the RAM's time.", answer: 1000, unit: "times" },
           explanation: "100,000 ÷ 100 = **1,000**. In human time, a RAM read is a couple of minutes but an SSD read is about a day. That's why programs load files into memory once, instead of reading storage again and again.",
         },
         {
@@ -598,7 +598,7 @@ export const computerModule: Module = {
           title: "Make it fast",
           body: "Do **6 reads** that take **300 ns or less** in total.",
           widget: { type: "computer-cache" },
-          question: { type: "widget", goal: { minReads: 6, maxTime: 300 } },
+          question: { type: "widget", hint: "Reading an address you read recently is fast, because the cache still holds it. Re-read the same addresses.", goal: { minReads: 6, maxTime: 300 } },
           explanation: "Every new address costs a 100 ns miss, so read the **same** addresses again: one or two misses, then 1 ns hits. Six different addresses would cost 600 ns. Programs that keep reusing the same data run much faster for exactly this reason.",
         },
         {
@@ -606,7 +606,7 @@ export const computerModule: Module = {
           title: "Predict the hits",
           body: "This cache has only **2 slots** and starts empty. When it's full, it pushes out whichever address was used longest ago. How many of these five reads will be **hits**?",
           widget: { type: "computer-cache", props: { slots: 2, size: 12, sequence: [3, 7, 3, 9, 7], predict: true } },
-          question: { type: "number", answer: 1, unit: "hits" },
+          question: { type: "number", hint: "Track the two slots after each read. A hit is an address already in a slot; when full, the one used longest ago leaves.", answer: 1, unit: "hits" },
           explanation: "3 miss, 7 miss (cache: 3, 7), 3 **hit**. Then 9 misses and pushes out 7, the one used longest ago. So the final 7 misses too. Just **1** hit. With a third slot, the last read would have hit as well. Now press **Next read** to watch it happen.",
         },
         {
@@ -697,7 +697,7 @@ export const computerModule: Module = {
           title: "Use interrupts",
           body: "Using interrupts, get **3 keys** to your program. Compare the useful-work figure with polling.",
           widget: { type: "computer-interrupts", props: { mode: "choose" } },
-          question: { type: "widget", goal: { mode: "interrupt", minHandled: 3 } },
+          question: { type: "widget", hint: "Switch the mode to interrupts, then press three keys and watch the useful-work figure.", goal: { mode: "interrupt", minHandled: 3 } },
           explanation: "No wasted checks, and each key is handled on the very next tick. The CPU spends time on the keyboard only when there's actually a key. That's why practically every device, from keyboards to network cards to disks, signals the CPU with interrupts.",
         },
         {
@@ -845,7 +845,7 @@ export const computerModule: Module = {
           title: "Into which part?",
           body: "When the bootloader loads the kernel, it copies it from storage *into* somewhere. Tap that part.",
           widget: { type: "computer-machine", props: { mode: "pick" } },
-          question: { type: "widget", goal: { picked: "ram" } },
+          question: { type: "widget", hint: "The CPU can only run what is in the fast, working memory.", goal: { picked: "ram" } },
           explanation: "Into **memory**. The CPU can only fetch instructions from memory, so every program, including the operating system itself, must be copied there from storage before it can run.",
         },
         {

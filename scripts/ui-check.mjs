@@ -17,6 +17,14 @@
 //            their {holes} in different colours than the string around them.
 //   layout   no horizontal overflow, navbar items vertically centred, text contrast >= 4.5:1 (3:1 for large text),
 //            no console errors, images have alt, buttons and links have accessible names.
+//   workspace  lesson workspace and code-running feedback (scripts/ui-check-workspace.mjs): runner failures (503, 429, offline, hang),
+//            Submit-while-Run queueing, console hints, blocked CDNs, result bar, stage hints, shortcut labels, Learn-tab code blocks.
+//   learn    Foundations player (scripts/ui-check-learn.mjs): Enter submits / Space toggles, wrong-answer help, resume where you
+//            stopped, confirm before losing typed code, no raw TypeError in project checks.
+//   audio    volume and mute (scripts/ui-check-audio.mjs): audio is off by default, no AudioContext until opt-in, one shared
+//            master gain, navbar/stage controls share one state, sliders by mouse/keys/touch, persistence, second tab, legacy state.
+//   site     site-wide UX and accessibility (scripts/ui-check-site.mjs): robots/sitemap, skip link, mobile menu, tab roles, tap targets
+//            of 40px on phones, overflow on every main route, container alignment, /dashboard payload, splitter keyboard.
 //
 // Exit code 1 when anything FAILs. Needs the dev server (or a production build) to be running.
 
@@ -36,7 +44,7 @@ const opt = (name, env, fallback) => {
 const flag = (name) => argv.includes(`--${name}`);
 const QUICK = flag("quick");
 const BASE = opt("base", "BASE_URL", "http://localhost:3100").replace(/\/$/, "");
-const ONLY = new Set(opt("only", null, "editor,prose,layout").split(","));
+const ONLY = new Set(opt("only", null, "editor,prose,layout,audio,workspace,site,learn").split(","));
 const THEMES = opt("themes", null, QUICK ? "dark" : "light,dark").split(",");
 const WIDTHS = opt("widths", null, QUICK ? "1440" : "1440,390").split(",").map(Number);
 const OUT = opt("out", "UI_CHECK_OUT", join(tmpdir(), "pockett-ui-check"));
@@ -118,8 +126,10 @@ await new Promise((r) => (ws.onopen = r));
 let nextId = 0;
 const pending = new Map();
 let consoleErrors = [];
+const eventListeners = new Set(); // other check files subscribe to CDP events (e.g. Fetch.requestPaused) through onEvent
 ws.onmessage = (m) => {
   const msg = JSON.parse(m.data);
+  for (const listener of eventListeners) listener(msg);
   if (msg.id && pending.has(msg.id)) {
     pending.get(msg.id)(msg);
     pending.delete(msg.id);
@@ -509,6 +519,7 @@ async function checkEditor() {
     if (window.__pkOldModel) editor.setModel(window.__pkOldModel);
   });
   await checkSmartEditing();
+  await checkKeyboardUX();
 }
 
 // ───────────────────────────── typing, hover and shortcuts ─────────────────────────────
@@ -528,6 +539,116 @@ async function backspace(n) {
   }
 }
 
+// ── real key and mouse events (what a learner's hardware produces), never model API calls ──
+
+const KEYS = {
+  Enter: [13, "Enter", String.fromCharCode(13)],
+  Tab: [9, "Tab", String.fromCharCode(9)],
+  Escape: [27, "Escape"],
+  Backspace: [8, "Backspace"],
+  Delete: [46, "Delete"],
+  ArrowDown: [40, "ArrowDown"],
+  ArrowUp: [38, "ArrowUp"],
+  ArrowLeft: [37, "ArrowLeft"],
+  ArrowRight: [39, "ArrowRight"],
+  Home: [36, "Home"],
+  End: [35, "End"],
+};
+const MOD = { alt: 1, ctrl: 2, shift: 8 };
+
+async function press(name, modifiers = 0) {
+  const [vk, code, text] = KEYS[name];
+  await send("Input.dispatchKeyEvent", { type: text && !(modifiers & 2) ? "keyDown" : "rawKeyDown", key: name, code, text: text && !(modifiers & 2) ? text : undefined, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk, modifiers });
+  await send("Input.dispatchKeyEvent", { type: "keyUp", key: name, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk, modifiers });
+  await sleep(60);
+}
+/** Ctrl+<letter> or Ctrl+<symbol>. */
+async function chord(letter, modifiers = MOD.ctrl) {
+  const up = letter.toUpperCase();
+  const isLetter = /[a-z]/i.test(letter);
+  const vk = isLetter ? up.charCodeAt(0) : letter === "/" ? 191 : 0;
+  const code = isLetter ? `Key${up}` : "Slash";
+  await send("Input.dispatchKeyEvent", { type: "rawKeyDown", key: letter, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk, modifiers });
+  await send("Input.dispatchKeyEvent", { type: "keyUp", key: letter, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk, modifiers });
+  await sleep(80);
+}
+async function mouse(type, x, y, modifiers = 0) {
+  await send("Input.dispatchMouseEvent", { type, x, y, button: type === "mouseMoved" ? "none" : "left", clickCount: type === "mouseMoved" ? 0 : 1, modifiers });
+}
+async function clickAt(x, y, modifiers = 0) {
+  await mouse("mouseMoved", x, y, modifiers);
+  await mouse("mousePressed", x, y, modifiers);
+  await mouse("mouseReleased", x, y, modifiers);
+  await sleep(120);
+}
+/** Page-space centre of a character cell in the focused editor. */
+const cellAt = (line, col) => inPage(({ line, col }) => {
+  const editor = window.monaco.editor.getEditors()[0];
+  const p = editor.getScrolledVisiblePosition({ lineNumber: line, column: col });
+  const r = editor.getDomNode().getBoundingClientRect();
+  return { x: r.left + p.left, y: r.top + p.top + p.height / 2 };
+}, { line, col });
+
+const editorState = () => inPage(() => {
+  const editor = window.monaco.editor.getEditors()[0];
+  const model = editor.getModel();
+  const p = editor.getPosition();
+  const w = document.querySelector(".suggest-widget.visible");
+  const rows = [...document.querySelectorAll(".suggest-widget.visible .monaco-list-row")].map((r) => r.getAttribute("aria-label") || "");
+  const focused = document.querySelector(".suggest-widget.visible .monaco-list-row.focused")?.getAttribute("aria-label") ?? null;
+  return { text: model.getValue(), line: model.getLineContent(p.lineNumber), lineNo: p.lineNumber, col: p.column, selections: editor.getSelections().length, widget: !!w, rows, focused, active: document.activeElement?.className ?? "" };
+});
+
+/** Waits for the suggest list to offer `expect`, accepts it the way `c.accept` says, and checks the text and the cursor. */
+async function acceptSuggestion(c, attempts = 1) {
+  const poll = (ms) =>
+    waitFor(
+      ({ expect }) => {
+        const w = document.querySelector(".suggest-widget.visible");
+        // Monaco shows the list on the next animation frame: wait until it is actually painted (a hidden element cannot be clicked)
+        if (!w || getComputedStyle(w).visibility === "hidden") return false;
+        const rows = [...w.querySelectorAll(".monaco-list-row")].map((r) => r.getAttribute("aria-label") || r.textContent || "");
+        return rows.some((r) => r.startsWith(expect)) ? rows.slice(0, 5) : false;
+      },
+      c,
+      ms,
+      150,
+    );
+  let rows = await poll(6000);
+  for (let i = 1; !rows && i <= attempts; i++) {
+    // the TypeScript worker (JavaScript) can still be starting: clear and type again
+    await press("Escape");
+    await backspace(c.type.length);
+    await sleep(2500);
+    await typeChars(c.type);
+    rows = await poll(8000);
+  }
+  if (!rows) return { ok: false, detail: `no suggestion starting with ${c.expect}: ${JSON.stringify(await editorState())}` };
+  const before = await editorState();
+  if (!before.focused?.startsWith(c.expect)) return { ok: false, detail: `the selected suggestion is ${JSON.stringify(before.focused)}, not ${c.expect}` };
+  if (c.accept === "tab") await press("Tab");
+  else if (c.accept === "click") {
+    const at = await inPage(({ expect }) => {
+      const row = [...document.querySelectorAll(".suggest-widget.visible .monaco-list-row")].find((r) => (r.getAttribute("aria-label") || "").startsWith(expect));
+      const r = row?.getBoundingClientRect();
+      if (!r) return null;
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      return { x, y, covered: !row.contains(hit), by: hit ? `${hit.tagName.toLowerCase()}.${String(hit.className).slice(0, 60)} in ${String(hit.parentElement?.className).slice(0, 40)}` : "nothing" };
+    }, c);
+    if (!at) return { ok: false, detail: "suggest row not found for the click" };
+    if (at.covered) return { ok: false, detail: `the suggestion row is covered by ${at.by}, so a click would never reach it` };
+    await clickAt(at.x, at.y);
+  } else await press("Enter");
+  await sleep(500);
+  const after = await editorState();
+  const beforeCursor = after.line.slice(0, after.col - 1);
+  const inserted = beforeCursor.endsWith(c.expect);
+  const sameLines = after.text.split("\n").length === before.text.split("\n").length;
+  return { ok: inserted && !after.widget && sameLines, detail: `after ${c.accept}: line ${JSON.stringify(after.line)}, cursor col ${after.col}, list open ${after.widget}, lines ${before.text.split("\n").length} -> ${after.text.split("\n").length}` };
+}
+
 /** Replaces the editor's model with `code` in `lang`, focuses it and puts the cursor at the end. */
 function prepareModel({ code, lang }) {
   const editor = window.monaco.editor.getEditors()[0];
@@ -543,20 +664,34 @@ function prepareModel({ code, lang }) {
 }
 
 const SUGGEST_CASES = [
-  { lang: "python", code: 'car_name = "Bolt"\nhorsepower = 220\nweight_kg = 1100\n', type: "hor", expect: "horsepower" },
-  { lang: "csharp", code: 'string carName = "Bolt";\nint horsepower = 220;\n', type: "hor", expect: "horsepower" },
-  { lang: "go", code: "package main\nfunc main() {\n    horsepower := 220\n    ", type: "hor", expect: "horsepower" },
-  { lang: "rust", code: "fn main() {\n    let horsepower = 220;\n    ", type: "hor", expect: "horsepower" },
-  { lang: "cpp", code: "int main() {\n    int horsepower = 220;\n    ", type: "hor", expect: "horsepower" },
-  { lang: "sql", code: "CREATE TABLE cars (id INTEGER, horsepower INTEGER);\nSELECT ", type: "hor", expect: "horsepower" },
-  { lang: "javascript", code: "const horsepower = 220;\n", type: "hor", expect: "horsepower" },
-  // members and modules
-  { lang: "python", code: 'name = "Ada"\n', type: "name.up", expect: "upper" },
-  { lang: "python", code: "import math\n", type: "math.sq", expect: "sqrt" },
-  { lang: "csharp", code: "", type: "Console.WriteL", expect: "WriteLine" },
-  { lang: "go", code: "package main\nfunc main() {\n    ", type: "fmt.Printl", expect: "Println" },
-  { lang: "rust", code: "fn main() {\n    let v = vec![1];\n    ", type: "v.pus", expect: "push" },
-  { lang: "cpp", code: "int main() {\n    ", type: "std::cou", expect: "cout" },
+  // plain code, accepted three ways
+  { lang: "python", code: 'car_name = "Bolt"\nhorsepower = 220\nweight_kg = 1100\n', type: "hor", expect: "horsepower", accept: "enter" },
+  { lang: "python", code: 'car_name = "Bolt"\nhorsepower = 220\nweight_kg = 1100\n', type: "hor", expect: "horsepower", accept: "tab" },
+  { lang: "python", code: 'car_name = "Bolt"\nhorsepower = 220\nweight_kg = 1100\n', type: "hor", expect: "horsepower", accept: "click" },
+  // holes inside strings, arguments, after a dot, at the end of the file
+  { lang: "python", code: "horsepower = 220\nzero_to_100 = 5.0\n", type: 'print(f"0-100 km/h in {zer', expect: "zero_to_100", accept: "enter" },
+  { lang: "python", code: "horsepower = 220\n", type: 'print(f"{hor', expect: "horsepower", accept: "tab" },
+  { lang: "python", code: "horsepower = 220\n", type: "print(hor", expect: "horsepower", accept: "enter" },
+  { lang: "python", code: "horsepower = 220\n", type: "total = 1 + hor", expect: "horsepower", accept: "enter" },
+  { lang: "python", code: 'name = "Ada"\n', type: "name.up", expect: "upper", accept: "enter" },
+  { lang: "python", code: "import math\n", type: "math.sq", expect: "sqrt", accept: "tab" },
+  { lang: "csharp", code: 'string carName = "Bolt";\nint horsepower = 220;\n', type: "hor", expect: "horsepower", accept: "enter" },
+  { lang: "csharp", code: "int horsepower = 220;\n", type: 'Console.WriteLine($"in {hor', expect: "horsepower", accept: "enter" },
+  { lang: "csharp", code: "int horsepower = 220;\n", type: "Console.WriteLine(hor", expect: "horsepower", accept: "tab" },
+  { lang: "csharp", code: "", type: "Console.WriteL", expect: "WriteLine", accept: "enter" },
+  { lang: "go", code: "package main\nfunc main() {\n    horsepower := 220\n    ", type: "hor", expect: "horsepower", accept: "click" },
+  { lang: "go", code: "package main\nfunc main() {\n    horsepower := 220\n    ", type: "fmt.Println(hor", expect: "horsepower", accept: "enter" },
+  { lang: "go", code: "package main\nfunc main() {\n    ", type: "fmt.Printl", expect: "Println", accept: "enter" },
+  { lang: "rust", code: "fn main() {\n    let horsepower = 220;\n    ", type: "hor", expect: "horsepower", accept: "enter" },
+  { lang: "rust", code: "fn main() {\n    let horsepower = 220;\n    ", type: 'println!("in {hor', expect: "horsepower", accept: "enter" },
+  { lang: "rust", code: "fn main() {\n    let v = vec![1];\n    ", type: "v.pus", expect: "push", accept: "tab" },
+  { lang: "cpp", code: "int main() {\n    int horsepower = 220;\n    ", type: "hor", expect: "horsepower", accept: "enter" },
+  { lang: "cpp", code: "int main() {\n    int horsepower = 220;\n    ", type: "std::cout << hor", expect: "horsepower", accept: "enter" },
+  { lang: "cpp", code: "int main() {\n    ", type: "std::cou", expect: "cout", accept: "enter" },
+  { lang: "sql", code: "CREATE TABLE cars (id INTEGER, horsepower INTEGER);\nSELECT ", type: "hor", expect: "horsepower", accept: "enter" },
+  { lang: "sql", code: "CREATE TABLE cars (id INTEGER, horsepower INTEGER);\nSELECT * FROM cars WHERE ", type: "hor", expect: "horsepower", accept: "tab" },
+  { lang: "javascript", code: "const horsepower = 220;\n", type: "hor", expect: "horsepower", accept: "enter" },
+  { lang: "javascript", code: "const horsepower = 220;\n", type: "console.log(`in ${hor", expect: "horsepower", accept: "enter" },
 ];
 
 const HOVER_CASES = [
@@ -579,30 +714,9 @@ async function checkSmartEditing() {
     await inPage(prepareModel, c);
     await sleep(c.lang === "javascript" ? 1500 : 500);
     await typeChars(c.type);
-    const poll = (ms) =>
-      waitFor(
-        ({ expect }) => {
-          const rows = [...document.querySelectorAll(".suggest-widget.visible .monaco-list-row")].map((r) => r.getAttribute("aria-label") || r.textContent || "");
-          return rows.some((r) => r.startsWith(expect)) ? rows.slice(0, 5) : false;
-        },
-        c,
-        ms,
-        150,
-      );
-    let rows = await poll(6000);
-    if (!rows) {
-      // the TypeScript worker (JavaScript) can still be starting: clear and type again once
-      await key("rawKeyDown", "Escape", "Escape", 27);
-      await key("keyUp", "Escape", "Escape", 27);
-      await backspace(c.type.length);
-      await sleep(2500);
-      await typeChars(c.type);
-      rows = await poll(8000);
-    }
-    const seen = rows || (await inPage(() => [...document.querySelectorAll(".suggest-widget .monaco-list-row")].map((r) => r.getAttribute("aria-label") || r.textContent).slice(0, 6)));
-    record("editor", `${c.lang}: typing "${c.type}" suggests ${c.expect}`, !!rows, `suggest widget showed: ${JSON.stringify(seen)}`, rows ? null : await screenshot(`suggest-${c.lang}`));
-    await key("rawKeyDown", "Escape", "Escape", 27);
-    await key("keyUp", "Escape", "Escape", 27);
+    const outcome = await acceptSuggestion(c, c.lang === "javascript" ? 2 : 1);
+    record("editor", `${c.lang}: "${c.type}" then ${c.accept === "enter" ? "Enter" : c.accept === "tab" ? "Tab" : "a click"} inserts ${c.expect}`, outcome.ok, outcome.detail, outcome.ok ? null : await screenshot(`suggest-${c.lang}`));
+    await press("Escape");
   }
 
   for (const c of HOVER_CASES) {
@@ -755,6 +869,261 @@ async function checkRunShortcut() {
   await key("keyUp", "Enter", "Enter", 13, 2);
   const ran = await waitFor(() => document.body.innerText.includes("RUN-OK"), null, 10000, 200);
   record("editor", "Ctrl+Enter runs the code while the suggest list is open", !!ran && !!suggestOpen, `suggest widget open: ${!!suggestOpen}, output shown: ${!!ran}`, ran ? null : await screenshot("run-shortcut"));
+}
+
+// ───────────────────────────── keyboard and mouse UX with real events ─────────────────────────────
+
+/** Keyboard pass in the playground editor (fresh models per check). */
+async function checkKeyboardUX() {
+  const t = async (name, ok, detail) => record("editor", `keyboard: ${name}`, !!ok, detail, ok ? null : await screenshot(`kbd-${name.replace(/\W+/g, "-").slice(0, 30)}`));
+  const fresh = (lang, code = "") => inPage(prepareModel, { lang, code });
+
+  // auto-closing pairs: the closer appears, typing the closer overtypes it, Backspace removes an empty pair
+  for (const [open, close, label] of [["(", ")", "parenthesis"], ["[", "]", "bracket"], ["{", "}", "brace"], ['"', '"', "double quote"], ["'", "'", "single quote"]]) {
+    await fresh("python");
+    await typeChars(open);
+    let s = await editorState();
+    await t(`typing ${label} adds its closer`, s.text === open + close && s.col === 2, JSON.stringify(s.text));
+    await typeChars(close);
+    s = await editorState();
+    await t(`typing the closing ${label} overtypes it`, s.text === open + close && s.col === 3, `${JSON.stringify(s.text)} col ${s.col}`);
+    await fresh("python");
+    await typeChars(open);
+    await press("Backspace");
+    s = await editorState();
+    await t(`Backspace in an empty ${label} pair removes both`, s.text === "", JSON.stringify(s.text));
+  }
+
+  // indent / outdent a selection
+  await fresh("python", "a\nb");
+  await chord("a");
+  await press("Tab");
+  let s = await editorState();
+  await t("Tab indents every selected line", s.text === "    a\n    b", JSON.stringify(s.text));
+  await press("Tab", MOD.shift);
+  s = await editorState();
+  await t("Shift+Tab outdents them again", s.text === "a\nb", JSON.stringify(s.text));
+
+  // undo / redo
+  await fresh("python");
+  await typeChars("hello");
+  await chord("z");
+  s = await editorState();
+  await t("Ctrl+Z undoes typing", s.text === "", JSON.stringify(s.text));
+  await chord("y");
+  s = await editorState();
+  await t("Ctrl+Y redoes it", s.text === "hello", JSON.stringify(s.text));
+
+  // Home / End
+  await fresh("python", "    hello");
+  await press("Home");
+  s = await editorState();
+  const firstHome = s.col;
+  await press("Home");
+  s = await editorState();
+  await t("Home goes to the first character, then to the line start", firstHome === 5 && s.col === 1, `cols ${firstHome} then ${s.col}`);
+  await press("End");
+  s = await editorState();
+  await t("End goes to the end of the line", s.col === 10, `col ${s.col}`);
+
+  // multi-cursor with Alt+Click, and Ctrl+D
+  await fresh("python", "a\nb\nc");
+  if (ctx.width >= 700) {
+    const a = await cellAt(1, 2);
+    const b = await cellAt(2, 2);
+    await clickAt(a.x + 3, a.y);
+    if ((await editorState()).lineNo !== 1) await clickAt(a.x + 3, a.y - 3); // retry if a moving widget swallowed the first click
+    await clickAt(b.x + 3, b.y, MOD.alt);
+    await typeChars("x");
+    s = await editorState();
+    await t("Alt+Click adds a cursor and typing uses both", s.text === "ax\nbx\nc" && s.selections === 2, `${JSON.stringify(s.text)} cursors ${s.selections}`);
+  }
+  await fresh("python", "foo foo foo");
+  await inPage(() => window.monaco.editor.getEditors()[0].setPosition({ lineNumber: 1, column: 2 }));
+  await chord("d");
+  await chord("d");
+  s = await editorState();
+  await t("Ctrl+D selects the next occurrence", s.selections >= 2, `cursors ${s.selections}`);
+
+  // find
+  await fresh("python", "needle");
+  await chord("f");
+  const find = await waitFor(() => !!document.querySelector(".monaco-editor .find-widget.visible"), null, 4000, 100);
+  await t("Ctrl+F opens find", find, "no find widget");
+  await press("Escape");
+
+  // arrow keys move through the list and Enter takes the one you moved to
+  await fresh("python", "horsepower = 1\nhas_turbo = True\nheight = 3\n");
+  await typeChars("h");
+  await waitFor(() => document.querySelectorAll(".suggest-widget.visible .monaco-list-row").length > 1, null, 5000, 100);
+  const first = (await editorState()).focused;
+  await press("ArrowDown");
+  const moved = await editorState();
+  await press("Enter");
+  s = await editorState();
+  const pickedName = (moved.focused ?? "").split(",")[0];
+  await t("ArrowDown moves the selection and Enter inserts that item", !!first && moved.focused !== first && s.line === pickedName, `first ${first}, moved ${moved.focused}, line ${JSON.stringify(s.line)}`);
+
+  // parameter hints follow the commas
+  await fresh("python");
+  await typeChars("print(1,");
+  const hint = await waitFor(() => document.querySelector(".parameter-hints-widget.visible .parameter.active")?.textContent ?? false, null, 5000, 150);
+  await t("parameter hints highlight the next parameter after a comma", typeof hint === "string" && hint.includes("sep"), JSON.stringify(hint));
+  await press("Escape");
+  s = await editorState();
+
+  // hover must not take focus away from the editor
+  await fresh("python", 'print("hi")\n');
+  await inPage(() => {
+    const editor = window.monaco.editor.getEditors()[0];
+    editor.setPosition({ lineNumber: 2, column: 1 });
+    editor.focus();
+  });
+  const pos = await cellAt(1, 3);
+  await mouse("mouseMoved", pos.x + 150, pos.y + 90);
+  await sleep(150);
+  await mouse("mouseMoved", pos.x + 3, pos.y);
+  await waitFor(() => [...document.querySelectorAll(".monaco-hover")].some((h) => h.getBoundingClientRect().width > 0), null, 5000, 150);
+  await typeChars("z");
+  s = await editorState();
+  await t("typing still works while a hover is open", s.text.split("\n")[1] === "z", `${JSON.stringify(s.text)} focus ${s.active}`);
+
+  // the suggestion list must fit on screen (matters at 390 px)
+  await fresh("python", "horsepower = 1\n");
+  await typeChars("hor");
+  await waitFor(() => !!document.querySelector(".suggest-widget.visible"), null, 5000, 100);
+  const box = await inPage(() => {
+    const r = document.querySelector(".suggest-widget.visible")?.getBoundingClientRect();
+    return r ? { left: r.left, right: r.right, top: r.top, bottom: r.bottom, w: window.innerWidth, h: window.innerHeight } : null;
+  });
+  await t("the suggestion list stays inside the screen", !!box && box.left >= -1 && box.right <= box.w + 1 && box.top >= -1 && box.bottom <= box.h + 1, JSON.stringify(box));
+  await press("Escape");
+
+  await inPage(() => {
+    const editor = window.monaco.editor.getEditors()[0];
+    if (window.__pkOldModel) editor.setModel(window.__pkOldModel);
+  });
+}
+
+/** The same keystrokes in a real lesson editor, where a React workspace and a 3D scene share the page. */
+async function checkLessonKeyboard() {
+  const path = "/projects/garage/garage-3-engine";
+  await open(path, 800);
+  const ready = await waitFor(() => typeof window.monaco !== "undefined" && window.monaco.editor.getEditors().length > 0 && !!document.querySelector(".monaco-editor .view-line"), null, 45000);
+  const t = async (name, ok, detail) => record("editor", `lesson editor: ${name}`, !!ok, detail, ok ? null : await screenshot(`lesson-${name.replace(/\W+/g, "-").slice(0, 30)}`));
+  if (!ready) return t("Monaco mounts", false, "no editor");
+  // on a phone the editor sits behind the "Code" tab
+  await inPage(() => {
+    if (window.innerWidth < 800) [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Code" && b.getBoundingClientRect().width > 0)?.click();
+  });
+  await sleep(3500); // let the workspace restore and settle
+  const starter = (await editorState()).text;
+  const newLine = async () => {
+    await inPage(() => {
+      const editor = window.monaco.editor.getEditors()[0];
+      const model = editor.getModel();
+      const last = model.getLineCount();
+      editor.focus();
+      editor.executeEdits("ui-check", [{ range: { startLineNumber: last, endLineNumber: last, startColumn: model.getLineMaxColumn(last), endColumn: model.getLineMaxColumn(last) }, text: String.fromCharCode(10) }]);
+      editor.setPosition({ lineNumber: last + 1, column: 1 });
+      // put the caret line at the very bottom of the editor: the list then hangs over the panel below it
+      editor.setScrollTop(editor.getTopForLineNumber(last + 1) - editor.getLayoutInfo().height + 40);
+    });
+    await sleep(300);
+  };
+  // clean-up between checks goes through the model (it is not what is being tested)
+  const clearLine = async () => {
+    await press("Escape");
+    await inPage((text) => {
+      const editor = window.monaco.editor.getEditors()[0];
+      const model = editor.getModel();
+      model.setValue(text + String.fromCharCode(10));
+      editor.focus();
+      editor.setPosition({ lineNumber: model.getLineCount(), column: 1 });
+    }, starter);
+    await sleep(200);
+  };
+
+  // the reported bug: Enter on a selected suggestion inside an f-string hole
+  await newLine();
+  await typeChars('print(f"0-100 km/h in {zer');
+  let r = await acceptSuggestion({ type: 'print(f"0-100 km/h in {zer', expect: "zero_to_100", accept: "enter" });
+  await t("Enter accepts a suggestion inside an f-string hole", r.ok, r.detail);
+  await clearLine();
+
+  for (const accept of ["tab", "click", "enter"]) {
+    await typeChars("hor");
+    r = await acceptSuggestion({ type: "hor", expect: "horsepower", accept });
+    await t(`${accept === "click" ? "a click" : accept === "tab" ? "Tab" : "Enter"} accepts a suggestion in plain code`, r.ok, r.detail);
+    await clearLine();
+  }
+
+  await typeChars("hor");
+  await waitFor(() => !!document.querySelector(".suggest-widget.visible"), null, 5000, 100);
+  await press("Escape");
+  let s = await editorState();
+  await t("Escape closes the list and keeps the typed text", !s.widget && s.line === "hor", JSON.stringify({ widget: s.widget, line: s.line }));
+  await clearLine();
+
+  await typeChars("hor");
+  await waitFor(() => !!document.querySelector(".suggest-widget.visible"), null, 5000, 100);
+  await send("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, modifiers: MOD.ctrl });
+  await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, modifiers: MOD.ctrl });
+  await sleep(600);
+  s = await editorState();
+  await t("Ctrl+Enter closes the list and does not insert a newline or a suggestion", !s.widget && s.line === "hor", JSON.stringify({ widget: s.widget, line: s.line }));
+  await inPage(() => {
+    // running moves a phone to the results tab: come back to the editor
+    if (window.innerWidth < 800) [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Code" && b.getBoundingClientRect().width > 0)?.click();
+  });
+  await sleep(500);
+  await clearLine();
+
+  // Enter with no list open: newline plus the right indent
+  await typeChars("for i in range(3):");
+  await press("Enter");
+  s = await editorState();
+  await t("Enter after ':' starts an indented line", s.line === "    " && !s.widget, JSON.stringify(s.line));
+  const eol = await inPage(() => ({ eol: JSON.stringify(window.monaco.editor.getEditors()[0].getModel().getEOL()), cr: window.monaco.editor.getEditors()[0].getModel().getValue().includes(String.fromCharCode(13)) }));
+  await t("typed newlines are LF, not CRLF", eol.eol === JSON.stringify(String.fromCharCode(10)) && !eol.cr, JSON.stringify(eol));
+
+  // fast typing must not lose characters (a slow render once overwrote newer keystrokes)
+  await clearLine();
+  const sentence = 'print("The quick brown fox jumps over 13 lazy dogs")';
+  await send("Emulation.setCPUThrottlingRate", { rate: 4 }); // a slow phone: renders lag behind keystrokes
+  for (const ch of sentence) {
+    await send("Input.dispatchKeyEvent", { type: "char", text: ch });
+    await sleep(20);
+  }
+  await sleep(1500);
+  await send("Emulation.setCPUThrottlingRate", { rate: 1 });
+  s = await editorState();
+  await t("fast typing keeps every character (4x slower CPU, 20 ms per key)", s.line === sentence, `${JSON.stringify(s.line)}`);
+  await clearLine();
+
+  // Reset lesson asks first, then restores the starter, and Ctrl+Z brings the work back
+  await typeChars("zzz");
+  await sleep(300);
+  const clickReset = () => inPage(() => {
+    const b = [...document.querySelectorAll("button")].find((x) => /Reset lesson|Click again to discard/.test(x.textContent) && x.getBoundingClientRect().width > 0);
+    b?.click();
+    return b ? b.textContent.trim() : null;
+  });
+  const first = await clickReset();
+  if (first) {
+    await sleep(500);
+    s = await editorState();
+    const armed = await inPage(() => !![...document.querySelectorAll("button")].find((x) => /Click again to discard/.test(x.textContent)));
+    await t("the first Reset click only asks for confirmation", armed && s.text.includes("zzz"), `button now says armed=${armed}, text still has zzz=${s.text.includes("zzz")}`);
+    await clickReset();
+    await sleep(800);
+    s = await editorState();
+    await t("the second click restores the starter code", s.text === starter, `${s.text.length} vs ${starter.length} characters`);
+    await inPage(() => window.monaco.editor.getEditors()[0].focus());
+    await chord("z");
+    s = await editorState();
+    await t("Ctrl+Z after Reset brings the work back", s.text.includes("zzz"), `contains zzz: ${s.text.includes("zzz")}`);
+  } else record("editor", "lesson editor: Reset lesson", "skip", "no visible Reset lesson button");
 }
 
 /** The lesson workspace mounts the same CodeEditor: its language must also get the interpolation-aware tokenizer. */
@@ -1084,9 +1453,26 @@ try {
         await checkEditor();
         await checkRunShortcut();
         await checkWorkspaceEditors();
+        await checkLessonKeyboard();
       }
       if (ONLY.has("prose")) await checkProse();
       if (ONLY.has("layout")) await checkLayout(ROUTES);
+      if (ONLY.has("workspace") && theme === "dark") {
+        const { checkWorkspace } = await import("./ui-check-workspace.mjs");
+        await checkWorkspace({ send, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, getCtx: () => ctx, onEvent: (fn) => (eventListeners.add(fn), () => eventListeners.delete(fn)), BASE, PORT, OUT });
+      }
+      if (ONLY.has("site")) {
+        const { checkSite } = await import("./ui-check-site.mjs");
+        await checkSite({ send, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, getCtx: () => ctx, BASE, PORT, OUT });
+      }
+      if (ONLY.has("learn") && ctx.width >= 700 && theme === "dark") {
+        const { checkLearn } = await import("./ui-check-learn.mjs");
+        await checkLearn({ send, evaluate, inPage, waitFor, sleep, clickAt, record, open, screenshot, getCtx: () => ctx, BASE });
+      }
+      if (ONLY.has("audio")) {
+        const { checkAudio } = await import("./ui-check-audio.mjs");
+        await checkAudio({ send, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, getCtx: () => ctx, BASE, PORT, OUT });
+      }
     }
   }
 } catch (e) {

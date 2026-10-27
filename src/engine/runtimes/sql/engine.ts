@@ -1,5 +1,5 @@
 import type { Database, SqlJsStatic, SqlValue } from "sql.js";
-import { describeFailure, testHelpers } from "../assert.ts";
+import { AssertionError, describeFailure, testHelpers } from "../assert.ts";
 import type { RunError, TestCase, TestResult } from "../../types.ts";
 
 /**
@@ -327,6 +327,9 @@ export function asObjects(rs: ResultSet | undefined): Record<string, SqlValue>[]
   return rs.rows.map((r) => Object.fromEntries(rs.columns.map((c, i) => [c, r[i]])));
 }
 
+/** What a check reading `result` says when the learner has not run a statement that returns rows yet. */
+const NO_RESULT_YET = "Run a SELECT that returns rows first: this check reads your query's result, and there isn't one yet.";
+
 /**
  * Checks are JavaScript with these names in scope:
  *   result  — the last result set { columns, rows } (rows as arrays), or null
@@ -348,7 +351,7 @@ export function runSqlTests(run: SqlRun, tests: TestCase[]): TestResult[] {
       fn(last ?? null, asObjects(last), run.results, query, run.stdout, testHelpers.assert, testHelpers.assertEqual, testHelpers.assertClose, run.log);
       return { testId: t.id, description: t.description, passed: true };
     } catch (err) {
-      return { testId: t.id, description: t.description, passed: false, error: describeFailure(err) };
+      return { testId: t.id, description: t.description, passed: false, error: last || err instanceof AssertionError ? describeFailure(err) : NO_RESULT_YET };
     }
   });
 }

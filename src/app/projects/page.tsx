@@ -6,7 +6,7 @@ import { ProjectBrowser } from "@/components/projects/ProjectBrowser";
 
 export const metadata: Metadata = {
   title: "Projects",
-  description: "Follow a path from zero to hero in Python, JavaScript, SQL and more. Every lesson you pass adds a working part to a live build.",
+  description: "Pick a language or the AI track and follow a path from your first program to professional-grade projects: Python, JavaScript, SQL, C#, C++, Go and Rust. Every lesson you pass adds a working part to a live build.",
 };
 
 export default function ProjectsPage() {
@@ -17,7 +17,7 @@ export default function ProjectsPage() {
       <p className="mt-5 max-w-2xl text-lg leading-relaxed text-ink-2">
         Every language is a path from your first program to professional-grade projects: Beginner, Intermediate, Advanced, then
         Professional. Each project starts as a blueprint, and every concept you learn adds a working part until the whole thing runs in front
-        of you. New to code? Start with Python. Curious about AI? The AI &amp; Machine Learning path builds on it.
+        of you. New to code? Start with Python, or with Foundations to see how computers work. Curious about AI? The AI &amp; Machine Learning path builds on Python.
       </p>
 
       <div className="mt-10">

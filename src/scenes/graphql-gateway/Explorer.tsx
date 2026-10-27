@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { useShortcuts } from "@/lib/ui/platform";
 import { Lock, Play, ShieldAlert, Terminal, TriangleAlert, UserRound } from "lucide-react";
 import { IDENTITIES, prettyJson, type GqlError, type GqlSession, type IdentityId, type LogEntry, type Snapshot } from "./session";
 import { FEATURE_INFO, PRESETS, operationNames } from "./operations";
@@ -97,6 +98,7 @@ export function ResultView({ entry, inspect, empty }: { entry: LogEntry | null; 
 // ───────────────────────── editor ─────────────────────────
 
 function Editor({ session, snap, unlocked, focus, interactive, fresh }: Props & { fresh: boolean }) {
+  const keys = useShortcuts();
   const d = snap.draft;
   // the draft is only read when this editor mounts (it remounts on every new draft nonce)
   const [initial] = useState(() => {
@@ -262,7 +264,7 @@ function Editor({ session, snap, unlocked, focus, interactive, fresh }: Props & 
         <button onClick={run} className={BTN_ON} disabled={!interactive || !session.hasExecute}>
           <Play className="h-3 w-3" aria-hidden /> Run
         </button>
-        <span className="hidden text-[10.5px] text-white/35 @sm:inline">Ctrl/⌘ + Enter</span>
+        <span className="hidden text-[10.5px] text-white/35 @sm:inline">{keys.runText}</span>
         {entry && entry.result.ok && (
           <span className="hud-value ml-auto text-[10.5px] text-white/50">
             {entry.result.ms} ms · {entry.result.size.toLocaleString()} B

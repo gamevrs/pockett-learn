@@ -9,6 +9,8 @@ export interface RunOptions {
   setup?: string;
   /** Python only: Pyodide packages to load first (e.g. "sqlite3"). Loaded once, then cached. */
   packages?: string[];
+  /** Remote (compiled-language) runs only: aborting it rejects with RunCancelled. */
+  signal?: AbortSignal;
 }
 
 export interface RunOutcome {
@@ -34,8 +36,8 @@ export interface GradeOutcome {
  */
 export interface Runtime {
   readonly language: LanguageId;
-  /** Warm up (download engines) without blocking. Safe to call repeatedly. */
-  preload(): void;
+  /** Warm up (download engines) without blocking. Safe to call repeatedly. `eager` skips the wait for an idle moment. */
+  preload(eager?: boolean): void;
   run(source: string, options?: RunOptions): Promise<RunOutcome>;
   /** Runs in an isolated environment so tests can't disturb the live scene. */
   grade(source: string, tests: TestCase[], options?: RunOptions): Promise<GradeOutcome>;

@@ -109,6 +109,11 @@ export function runChecks(stdout: string, scene: Record<string, unknown>, tests:
       );
       return { testId: t.id, description: t.description, passed: true };
     } catch (err) {
+      // a check that reads lines[3] or scene.total of an output that is not there yet: say so instead of showing a JavaScript error
+      if (err instanceof TypeError) {
+        const printed = lines.length === 0 ? "Your program has not printed anything yet." : `Your program printed ${lines.length} line${lines.length === 1 ? "" : "s"}, which is not what this check reads yet.`;
+        return { testId: t.id, description: t.description, passed: false, error: `${printed} Run it and compare its output with the task.` };
+      }
       return { testId: t.id, description: t.description, passed: false, error: describeFailure(err) };
     }
   });

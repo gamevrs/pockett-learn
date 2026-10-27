@@ -22,7 +22,7 @@ const VARIANTS = [
 
 const ASSETS = [
   { id: "mark", title: "Mark", file: "pockett-mark", png: (v: string) => `/brand/png/mark/pockett-mark-${v}-512.png`, w: 96, h: 96, blurb: "The envelope and command line on their own. Icons, avatars and anywhere a square fits." },
-  { id: "horizontal", title: "Horizontal lockup", file: "pockett-lockup-horizontal", png: (v: string) => `/brand/png/lockup-horizontal/pockett-lockup-horizontal-${v}-512.png`, w: 200, h: 51, blurb: "The default logo. Mark and wordmark on one line." },
+  { id: "horizontal", title: "Horizontal lockup", file: "pockett-lockup-horizontal", png: (v: string) => `/brand/png/lockup-horizontal/pockett-lockup-horizontal-${v}-512.png`, w: 200, h: 50, blurb: "The default logo. Mark and wordmark on one line." },
   { id: "stacked", title: "Stacked lockup", file: "pockett-lockup-stacked", png: (v: string) => `/brand/png/lockup-stacked/pockett-lockup-stacked-${v}-512.png`, w: 150, h: 115, blurb: "Centred layouts, covers and posters." },
 ] as const;
 
@@ -116,10 +116,10 @@ export default function BrandPage() {
 
       <div className="mt-10 grid gap-3 sm:grid-cols-2">
         <div className="grid h-56 place-items-center rounded-2xl border border-line" style={{ background: "#f6f5f1" }}>
-          <Image src="/brand/svg/pockett-lockup-horizontal-light.svg" alt="pockett logo on a light background" width={280} height={71} unoptimized priority />
+          <Image src="/brand/svg/pockett-lockup-horizontal-light.svg" alt="pockett logo on a light background" width={280} height={70} unoptimized />
         </div>
         <div className="grid h-56 place-items-center rounded-2xl border border-line" style={{ background: "#0a0a0a" }}>
-          <Image src="/brand/svg/pockett-lockup-horizontal-dark.svg" alt="pockett logo on a dark background" width={280} height={71} unoptimized priority />
+          <Image src="/brand/svg/pockett-lockup-horizontal-dark.svg" alt="pockett logo on a dark background" width={280} height={70} unoptimized />
         </div>
       </div>
 
@@ -144,8 +144,8 @@ export default function BrandPage() {
                         <p className="truncate text-xs text-ink-3">{v.note}</p>
                       </div>
                       <div className="flex shrink-0 gap-1.5 font-mono text-xs">
-                        <a className="rounded-md border border-line px-2 py-1 text-ink-2 hover:border-line-strong hover:text-ink" href={`/brand/svg/${a.file}-${v.id}.svg`} download aria-label={`Download ${a.title}, ${v.label}, SVG`}>SVG</a>
-                        <a className="rounded-md border border-line px-2 py-1 text-ink-2 hover:border-line-strong hover:text-ink" href={a.png(v.id)} download aria-label={`Download ${a.title}, ${v.label}, PNG`}>PNG</a>
+                        <a className="inline-flex items-center justify-center rounded-md border border-line px-2 py-1 text-ink-2 hover:border-line-strong hover:text-ink max-sm:min-h-10 max-sm:min-w-10" href={`/brand/svg/${a.file}-${v.id}.svg`} download aria-label={`Download ${a.title}, ${v.label}, SVG`}>SVG</a>
+                        <a className="inline-flex items-center justify-center rounded-md border border-line px-2 py-1 text-ink-2 hover:border-line-strong hover:text-ink max-sm:min-h-10 max-sm:min-w-10" href={a.png(v.id)} download aria-label={`Download ${a.title}, ${v.label}, PNG`}>PNG</a>
                       </div>
                     </div>
                   </div>
@@ -165,14 +165,14 @@ export default function BrandPage() {
             <Image src="/brand/social/pockett-og-1200x630.png" alt="pockett link preview image" width={1200} height={630} unoptimized className="block h-auto w-full" />
             <div className="flex items-center justify-between px-3 py-2.5 text-sm">
               <span className="font-medium">Link preview <span className="font-normal text-ink-3">1200 x 630</span></span>
-              <a className="rounded-md border border-line px-2 py-1 font-mono text-xs text-ink-2 hover:border-line-strong hover:text-ink" href="/brand/social/pockett-og-1200x630.png" download>PNG</a>
+              <a className="inline-flex items-center justify-center rounded-md border border-line px-2 py-1 font-mono text-xs text-ink-2 hover:border-line-strong hover:text-ink max-sm:min-h-10 max-sm:min-w-10" href="/brand/social/pockett-og-1200x630.png" download>PNG</a>
             </div>
           </div>
           <div className="overflow-hidden rounded-xl border border-line bg-surface">
             <Image src="/brand/social/pockett-avatar-1080.png" alt="pockett profile picture" width={1080} height={1080} unoptimized className="block h-auto w-full" />
             <div className="flex items-center justify-between px-3 py-2.5 text-sm">
               <span className="font-medium">Avatar <span className="font-normal text-ink-3">1080 x 1080</span></span>
-              <a className="rounded-md border border-line px-2 py-1 font-mono text-xs text-ink-2 hover:border-line-strong hover:text-ink" href="/brand/social/pockett-avatar-1080.png" download>PNG</a>
+              <a className="inline-flex items-center justify-center rounded-md border border-line px-2 py-1 font-mono text-xs text-ink-2 hover:border-line-strong hover:text-ink max-sm:min-h-10 max-sm:min-w-10" href="/brand/social/pockett-avatar-1080.png" download>PNG</a>
             </div>
           </div>
         </div>
@@ -209,7 +209,7 @@ export default function BrandPage() {
       <Section id="space" eyebrow="Space and size" title="Clear space and minimum sizes">
         <div className="grid gap-8 md:grid-cols-2">
           <div>
-            <div className="grid h-56 place-items-center rounded-2xl border border-line bg-surface">
+            <div className="grid h-56 place-items-center overflow-hidden rounded-2xl border border-line bg-surface">
               <div className="relative p-[28px]" style={{ outline: "1px dashed var(--line-strong)", outlineOffset: 0 }}>
                 <div className="flex items-center gap-[10px]">
                   <div style={{ outline: "1px dashed var(--ink-3)", outlineOffset: 0 }}>
@@ -225,7 +225,7 @@ export default function BrandPage() {
             </p>
           </div>
           <div>
-            <div className="flex h-56 items-end gap-8 rounded-2xl border border-line bg-surface px-8 pb-8">
+            <div className="flex h-56 items-end justify-center gap-4 overflow-hidden rounded-2xl border border-line bg-surface px-4 pb-8 sm:justify-start sm:gap-8 sm:px-8">
               {[16, 24, 32, 48, 64].map((s) => (
                 <div key={s} className="flex flex-col items-center gap-2">
                   <LogoMark size={s} />

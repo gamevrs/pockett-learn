@@ -90,7 +90,7 @@ export const patternsModule: Module = {
               answer: { factory: "creational", singleton: "creational", adapter: "structural", decorator: "structural", observer: "behavioural", command: "behavioural" },
             },
           },
-          question: { type: "widget", goal: { placed: { factory: "creational", singleton: "creational", adapter: "structural", decorator: "structural", observer: "behavioural", command: "behavioural" } } },
+          question: { type: "widget", hint: "Creational patterns build objects, structural ones connect them, behavioural ones coordinate what they do.", goal: { placed: { factory: "creational", singleton: "creational", adapter: "structural", decorator: "structural", observer: "behavioural", command: "behavioural" } } },
           explanation: "Factory and Singleton are about **making** objects. Adapter and Decorator are about **wrapping and fitting** objects together. Observer and Command are about **how objects communicate**.",
         },
         {
@@ -209,7 +209,7 @@ def shipping_cost(kg, method):
           title: "Cheapest to the door",
           body: "This parcel weighs 3 kg and the customer can't collect it. Plug in the **cheapest strategy that still delivers**.",
           widget: { type: "strategy", props: { weight: 3 } },
-          question: { type: "widget", goal: { strategy: "flat" } },
+          question: { type: "widget", hint: "Only strategies that deliver to the door count. Pick the cheapest of those for a 3 kg parcel.", goal: { strategy: "flat" } },
           explanation: "Flat rate is $7.00, Standard is 5 + 3 = $8.00, Express is 12 + 6 = $18.00, and Pickup doesn't deliver. Notice you compared four algorithms without touching `Checkout` once.",
         },
         {
@@ -223,7 +223,7 @@ def shipping_cost(kg, method):
           title: "Where does drone go?",
           body: "Marketing still wants drone delivery: $20 flat. **Tap the role** where the new code goes.",
           widget: { type: "pattern-roles", props: { pattern: "strategy" } },
-          question: { type: "widget", goal: { selected: "concrete" } },
+          question: { type: "widget", hint: "A new delivery option is a new concrete strategy; the other roles stay as they are.", goal: { selected: "concrete" } },
           explanation: "A new `Drone` class with a `cost(kg)` method joins the concrete strategies. The context and the shared interface stay exactly as they are: you **add** code instead of **editing** working code.",
         },
         {
@@ -366,7 +366,7 @@ class Lighthouse:
           title: "Only these two",
           body: "Make the **next fog level** reach only the **harbour office** and the **logbook**. Change the subscriptions, then publish.",
           widget: { type: "observer", props: { initial: ["ship", "ferry"] } },
-          question: { type: "widget", goal: { lastDelivered: ["harbour", "logbook"] } },
+          question: { type: "widget", hint: "Change who is subscribed so only those two remain, then publish.", goal: { lastDelivered: ["harbour", "logbook"] } },
           explanation: "You rewired who hears the news **while the program ran**, and the lighthouse's code didn't change once. It just walks whatever list it has.",
         },
         {
@@ -386,7 +386,7 @@ lighthouse.publish(21)
 lighthouse.unsubscribe(ship)
 lighthouse.publish(25)
 `) + "\n\nHow many `update` calls happen in total?",
-          question: { type: "number", answer: 3 },
+          question: { type: "number", hint: "Each publish calls update on whoever is subscribed at that moment.", answer: 3 },
           explanation: "The first publish reaches ship and logbook (2 calls). After ship unsubscribes, the second reaches only logbook (1 call). **2 + 1 = 3**.",
         },
         {
@@ -553,7 +553,7 @@ elif kind == "square":
           title: "Count the edits",
           body: "Press **Add a hexagon shape** in both designs. How many files have to be edited **without** a factory?",
           widget: { type: "factory", props: { view: "change", mode: "without" } },
-          question: { type: "number", answer: 3, unit: "files" },
+          question: { type: "number", hint: "Count the files that mention a shape by name in the design without a factory.", answer: 3, unit: "files" },
           explanation: "Every place that creates shapes knows every shape class, so every one of them changes. With a factory, only **one** file changes: the factory's list of shapes. Miss one call site and the hexagon works in the editor but crashes in the importer.",
         },
         {
@@ -567,7 +567,7 @@ elif kind == "square":
           title: "Place an order",
           body: "Use the factory to build exactly **two circles and one triangle**. (Clear and start again if you need to.)",
           widget: { type: "factory", props: { view: "build", kinds: ["circle", "square", "triangle"] } },
-          question: { type: "widget", goal: { created: { circle: 2, triangle: 1 } } },
+          question: { type: "widget", hint: "Ask the factory for each shape by name: two circles and one triangle.", goal: { created: { circle: 2, triangle: 1 } } },
           explanation: "You never typed `Circle(...)` or `Triangle(...)`. The caller names *what* it wants; the factory decides *how* to build it.",
         },
         {
@@ -730,6 +730,7 @@ print(settings.theme)
         {
           kind: "question",
           title: "What does the footer print?",
+          body: "The header just set its own `Settings` object to `\"dark\"`. What does `print(settings.theme)` show in the footer?",
           question: { type: "choice", options: ['"dark"', '"light" (the default)', "An error", "None"], answer: 1 },
           explanation: "Each `Settings()` call builds a **brand-new object**. The header changed its own object; the footer got a fresh one with the default theme. Sometimes you really want everyone to share **one** object.",
         },
@@ -744,7 +745,7 @@ print(settings.theme)
           title: "Who turns dark?",
           body: "In the **normal class** column, make `a`, `b` and `c`, then set `a.theme = \"dark\"`. How many objects in memory are now dark?",
           widget: { type: "singleton", props: { only: "normal" } },
-          question: { type: "number", answer: 1 },
+          question: { type: "number", hint: "In a normal class a, b and c are three separate objects, so changing a changes only a.", answer: 1 },
           explanation: "Three calls, three separate objects, and only `a`'s changed. With the singleton, `a`, `b` and `c` are three names for **one** object, so all of them read \"dark\".",
         },
         {
@@ -884,7 +885,7 @@ class WrappedTrackedInsuredParcel(Parcel): ...
           kind: "question",
           title: "How bad does it get?",
           body: "The courier offers **5 label options**, and each can be on or off. Counting the plain parcel, how many classes would cover every combination?",
-          question: { type: "number", answer: 32, unit: "classes" },
+          question: { type: "number", hint: "Each of the 5 options is either on or off. Multiply the choices together.", answer: 32, unit: "classes" },
           explanation: "Each add-on doubles the count, just like bits: 2⁵ = **32**. And that's without repeats (two layers of wrap) or ordering. Inheritance fixes combinations at the time you write the code.",
         },
         {
@@ -898,7 +899,7 @@ class WrappedTrackedInsuredParcel(Parcel): ...
           title: "Build a $3.10 order",
           body: "Start from a plain parcel ($2.00 postage) and wrap it until the label costs exactly **$3.10**.",
           widget: { type: "decorator", props: { addons: ["wrap", "track", "insure", "sign"] } },
-          question: { type: "widget", goal: { cost: 3.1 } },
+          question: { type: "widget", hint: "Each wrapper adds to the cost. Try combinations until the label costs $3.10.", goal: { cost: 3.1 } },
           explanation: "Bubble wrap ($0.50) and a signature ($0.60) add up to $1.10 on top of $2.00. Two small classes covered a combination that would have needed its own subclass.",
         },
         {
@@ -912,7 +913,7 @@ class WrappedTrackedInsuredParcel(Parcel): ...
           title: "Order matters",
           body: "This label is `Insurance(HalfPrice(Parcel()))`: the half-price deal only halves the postage, so it costs $1.90. **Reorder the two layers** so the half-price deal covers the whole label.",
           widget: { type: "decorator", props: { addons: ["insure", "half"], initial: ["half", "insure"] } },
-          question: { type: "widget", goal: { layers: ["insure", "half"] } },
+          question: { type: "widget", hint: "A wrapper only affects what is inside it, so the layer on the outside sees the inner result.", goal: { layers: ["insure", "half"] } },
           explanation: "`HalfPrice(Insurance(Parcel()))` halves everything inside it: (2.00 + 0.90) ÷ 2 = **$1.45**. Each layer only sees what's *inside* it, so the outer layers get the last word.",
         },
         {
@@ -1097,7 +1098,7 @@ bank.send_payment(1250, "USD")   # cents and a currency; returns 0 for OK
           title: "Wire the adapter",
           body: "Use an adapter and pick the body of `pay` that charges the customer **exactly $12.50**.",
           widget: { type: "adapter" },
-          question: { type: "widget", goal: { ok: true } },
+          question: { type: "widget", hint: "Pick the body of pay that turns our amount into what the provider expects.", goal: { ok: true } },
           explanation: "`round(amount * 100)` turns dollars into whole cents, and the currency must be \"USD\". `int(amount)` drops the cents *and* forgets to convert; passing the raw amount sends a fraction the bank rejects. All of the translation lives in one small class.",
         },
         {
@@ -1255,6 +1256,7 @@ def on_upper_click():
         {
           kind: "question",
           title: "What's missing for undo?",
+          body: "The editor's buttons run the action and forget it. What does an **Undo** button need that the code above doesn't have?",
           question: {
             type: "choice",
             options: [
@@ -1278,7 +1280,7 @@ def on_upper_click():
           title: "Back to the start of the sentence",
           body: "Someone typed and then shouted. Make the document read exactly **Hello world** again.",
           widget: { type: "command", props: { initial: ["Hello", " world", "!", "UPPER"] } },
-          question: { type: "widget", goal: { text: "Hello world" } },
+          question: { type: "widget", hint: "Undo until the document reads Hello world again.", goal: { text: "Hello world" } },
           explanation: "Two undos: the `Uppercase` command restores the text it saved, then the `TypeText(\"!\")` command removes its \"!\". Each command knew how to reverse **itself**; the history just called `undo()` in reverse order.",
         },
         {
@@ -1475,7 +1477,7 @@ def press_stop(self):
           kind: "question",
           title: "Add a stage",
           body: "Streaming arrives and the player needs a fourth mode, **buffering**. How many of the three button methods need a new branch?",
-          question: { type: "number", answer: 3 },
+          question: { type: "number", hint: "Count the button methods: each one needs a branch for the new mode.", answer: 3 },
           explanation: "All **3**: every button has to decide what to do while buffering. With *n* buttons, each new stage means *n* edits in *n* places, and it's easy to miss one.",
         },
         {
@@ -1489,7 +1491,7 @@ def press_stop(self):
           title: "Buy a drink",
           body: "A vending machine works the same way. Get **one drink** out and leave the machine back in **Idle**, ready for the next customer.",
           widget: { type: "state-machine", props: { machine: "vending" } },
-          question: { type: "widget", goal: { state: "idle", drinks: 1 } },
+          question: { type: "widget", hint: "Insert money, choose a drink, and let the machine return to Idle.", goal: { state: "idle", drinks: 1 } },
           explanation: "Insert coin → press → take. Pressing the button in `Idle` just says *insert a coin first*: that refusal is `Idle`'s own behaviour, with no `if mode ==` anywhere.",
         },
         {
@@ -1666,13 +1668,13 @@ assert isinstance(t.state, Locked), "And it stays Locked"`,
               answer: { rank: "strategy", match: "observer", map: "adapter", draw: "command" },
             },
           },
-          question: { type: "widget", goal: { placed: { rank: "strategy", match: "observer", map: "adapter", draw: "command" } } },
+          question: { type: "widget", hint: "Ask what changes: the algorithm, who needs to know, the interface or the action.", goal: { placed: { rank: "strategy", match: "observer", map: "adapter", draw: "command" } } },
           explanation: "Ranking rules are interchangeable algorithms (Strategy). Many systems reacting to one event is Observer. A vendor object with the wrong methods needs an Adapter. Undo and replay need actions as objects (Command).",
         },
         {
           kind: "question",
           title: "Match the problem (2 of 2)",
-          body: "One of these needs no pattern at all.",
+          body: "Tap a problem, then the pattern that fits it. One of these needs no pattern at all.",
           widget: {
             type: "pattern-sorter",
             props: {
@@ -1691,7 +1693,7 @@ assert isinstance(t.state, Locked), "And it stays Locked"`,
               answer: { reader: "factory", notify: "decorator", order: "state", sum: "none" },
             },
           },
-          question: { type: "widget", goal: { placed: { reader: "factory", notify: "decorator", order: "state", sum: "none" } } },
+          question: { type: "widget", hint: "One problem is simple enough that a pattern would only add ceremony.", goal: { placed: { reader: "factory", notify: "decorator", order: "state", sum: "none" } } },
           explanation: "Choosing a class from data is Factory. Combinable wrappers around the same interface are Decorator. Stage-dependent behaviour is State. And a two-number script has nothing that varies: adding a pattern would only add code.",
         },
         {

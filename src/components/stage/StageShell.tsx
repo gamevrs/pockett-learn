@@ -6,6 +6,8 @@ import type { Project } from "@/engine/types";
 import type { ProgramHandle } from "@/engine/program";
 import type { Celebration } from "@/engine/scene";
 import { SCENES } from "@/engine/scenes";
+import { StageSurfaceProvider, type StageSurface } from "@/engine/stage-surface";
+import { useTouchPrimary } from "@/lib/ui/input-mode";
 import { FeatureIcon } from "@/components/ui/icons";
 import { SoundControl } from "@/components/audio/SoundControl";
 import { AUDIO_SCENE_IDS } from "@/lib/sound/audio";
@@ -21,6 +23,8 @@ interface StageShellProps {
   interactive?: boolean;
   status?: StageStatus;
   statusText?: string;
+  /** Where the stage is shown, so hints only mention buttons that exist there (default: the lesson workspace). */
+  surface?: StageSurface;
   /** Shown in the stage title bar while there is no program yet. */
   emptyHint?: string;
   className?: string;
@@ -43,6 +47,7 @@ export function StageShell({
   status = "idle",
   statusText,
   emptyHint,
+  surface = "workspace",
   className = "",
   hideControls = false,
   autoplayScene = false,
@@ -54,6 +59,7 @@ export function StageShell({
   const [dismissedError, setDismissedError] = useState<string | null>(null);
   const [expandedError, setExpandedError] = useState<string | null>(null);
   const Scene = SCENES[project.sceneId];
+  const touch = useTouchPrimary();
   const showSound = interactive && (hasAudio ?? AUDIO_SCENE_IDS.has(project.sceneId));
 
   const subscribeToErrors = useCallback(
@@ -115,8 +121,9 @@ export function StageShell({
               <span className="truncate">{statusText || (project.language && project.language !== "python" ? "Building your code…" : "Booting Python…")}</span>
             </span>
           ) : showEmpty ? (
-            <span className="hud-tag max-w-full shrink-0 gap-1.5">
-              <Play className="h-3 w-3 shrink-0 text-[#e0f6c1]" fill="currentColor" />
+            // a hint, not a button: only the workspace points at a real Run button, elsewhere it is a plain status with a lock
+            <span className="hud-tag max-w-full shrink-0 cursor-default select-none gap-1.5" data-testid="stage-hint" data-surface={surface}>
+              {surface === "workspace" ? <Play className="h-3 w-3 shrink-0 text-[#e0f6c1]" fill="currentColor" /> : <Lock className="h-3 w-3 shrink-0 text-[#e0f6c1]" />}
               <span className="truncate">{emptyHint}</span>
             </span>
           ) : null}
@@ -126,7 +133,7 @@ export function StageShell({
           <button
             onClick={toggleFullscreen}
             aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
-            className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white/80 backdrop-blur hover:bg-white/20"
+            className="relative grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white/80 backdrop-blur before:absolute before:-inset-2 before:content-[''] hover:bg-white/20"
           >
             {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           </button>
@@ -165,14 +172,16 @@ export function StageShell({
       {/* scene */}
       <div className="relative min-h-0 flex-1">
         {Scene ? (
-          <Scene
-            program={program}
-            unlocked={unlocked}
-            focus={focus}
-            celebration={celebration}
-            interactive={interactive}
-            autoplay={autoplayScene}
-          />
+          <StageSurfaceProvider value={surface}>
+            <Scene
+              program={program}
+              unlocked={unlocked}
+              focus={focus}
+              celebration={celebration}
+              interactive={interactive}
+              autoplay={autoplayScene}
+            />
+          </StageSurfaceProvider>
         ) : (
           <div className="grid h-full place-items-center text-sm text-white/50">Scene “{project.sceneId}” is not registered.</div>
         )}
@@ -223,7 +232,7 @@ export function StageShell({
             </span>
           );
         })}
-        {interactive && project.controls.length > 0 && (
+        {interactive && !touch && project.controls.length > 0 && (
           <span className="ml-auto hidden shrink-0 pl-3 font-mono text-[10px] text-white/45 xl:block">
             {project.controls.join("  ·  ")}
           </span>

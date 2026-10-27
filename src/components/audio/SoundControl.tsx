@@ -68,7 +68,7 @@ export function SoundControl({ variant = "navbar", className = "" }: { variant?:
     stage: "inline-flex h-7 items-center gap-1.5 rounded-full bg-white/10 px-2 text-xs font-medium text-white/85 backdrop-blur hover:bg-white/20",
   }[variant];
   const chevron = {
-    navbar: "grid h-10 w-7 place-items-center rounded-md text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink sm:h-8 sm:w-5",
+    navbar: "grid h-10 w-10 place-items-center rounded-md text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink sm:h-8 sm:w-5",
     header: "grid h-8 w-5 place-items-center rounded-full text-ink-3 hover:bg-surface-2 hover:text-ink",
     stage: "grid h-7 w-5 place-items-center rounded-full text-white/70 hover:bg-white/10 hover:text-white",
   }[variant];

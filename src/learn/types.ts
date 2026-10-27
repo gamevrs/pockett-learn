@@ -22,16 +22,31 @@ export interface WidgetSpec {
   after?: boolean;
 }
 
-export type Question =
-  /** One correct option (answer = index) or several (answer = indexes, all must be picked). */
-  | { type: "choice"; options: string[]; answer: number | number[] }
-  | { type: "number"; answer: number; tolerance?: number; unit?: string }
-  /** Accepted answers, compared trimmed and case-insensitively. */
-  | { type: "text"; answer: string[]; placeholder?: string }
-  /** Put the items in the right order (items are listed here in the correct order; shown shuffled). */
-  | { type: "order"; items: string[] }
-  /** Get the step's widget into a target state; the widget's `check(state, goal)` decides. */
-  | { type: "widget"; goal: Record<string, unknown>; prompt?: string };
+/**
+ * Every question can carry a `hint`: one or two sentences shown after a wrong answer, so "Not quite."
+ * is never the whole message. Point at the idea or the first move, never at the answer itself. Without
+ * one the player falls back to something generic (see wrongAnswerHelp in QuestionInput.tsx).
+ */
+interface QuestionBase {
+  hint?: string;
+}
+
+export type Question = QuestionBase &
+  (
+    /**
+     * One correct option (answer = index) or several (answer = indexes, all must be picked).
+     * `feedback` maps an option index to the explanation shown when that WRONG option is picked
+     * ("That's the number of bytes, not bits."); options without an entry fall back to `hint`.
+     */
+    | { type: "choice"; options: string[]; answer: number | number[]; feedback?: Record<number, string> }
+    | { type: "number"; answer: number; tolerance?: number; unit?: string }
+    /** Accepted answers, compared trimmed and case-insensitively. */
+    | { type: "text"; answer: string[]; placeholder?: string }
+    /** Put the items in the right order (items are listed here in the correct order; shown shuffled). */
+    | { type: "order"; items: string[] }
+    /** Get the step's widget into a target state; the widget's `check(state, goal)` decides. */
+    | { type: "widget"; goal: Record<string, unknown>; prompt?: string }
+  );
 
 export type Step =
   /** Read and play: an explanation, optionally with a widget to explore freely. */

@@ -4,7 +4,7 @@ import type { Runtime } from "./types";
 /** Python via Pyodide, on the main thread so scene hooks can be called synchronously. */
 export const pythonRuntime: Runtime = {
   language: "python",
-  preload: preloadPython,
+  preload: (eager) => preloadPython(eager),
   run: (source, options) => runProgram(source, options?.onStatus, options?.packages),
   grade: (source, tests, options) => gradeProgram(source, tests, options?.onStatus, options?.packages),
 };

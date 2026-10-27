@@ -256,7 +256,8 @@ assertEqual(rows.length, query("SELECT COUNT(*) AS n FROM drivers")[0].n, "Numbe
             {
               id: "t3",
               description: "The rows are real drivers",
-              assertionCode: `const codes = query("SELECT code FROM drivers").map((r) => r.code);
+              assertionCode: `assert(result && rows.length > 0, "Run a SELECT that returns the roster first");
+const codes = query("SELECT code FROM drivers").map((r) => r.code);
 assert(rows.every((r) => codes.includes(r.code)), "Every row should be a driver from the drivers table");`,
             },
           ],
@@ -396,12 +397,14 @@ LIMIT 10;`,
               id: "t1",
               description: "Exactly ten laps",
               assertionCode: `assert(result && result.columns.includes("lap_ms"), "Select the lap_ms column");
+assert(/\\blimit\\b/i.test(result.sql), "Add a new SELECT with LIMIT 10 to keep just the top ten laps");
 assertEqual(rows.length, 10, "Number of rows (use LIMIT 10)");`,
             },
             {
               id: "t2",
               description: "Fastest lap first",
-              assertionCode: `const best = query("SELECT MIN(lap_ms) AS ms FROM laps")[0].ms;
+              assertionCode: `assert(result && rows.length > 0 && /order\\s+by/i.test(result.sql), "Sort the laps with ORDER BY lap_ms");
+const best = query("SELECT MIN(lap_ms) AS ms FROM laps")[0].ms;
 assertEqual(rows[0].lap_ms, best, "The first row should be the fastest lap of the race");`,
             },
             {
@@ -595,13 +598,15 @@ assertEqual(rows.length, expected, "Number of drivers on the chart");`,
             {
               id: "t3",
               description: "Averages skip pit laps",
-              assertionCode: `const truth = new Map(query("SELECT driver_id, AVG(lap_ms) AS avg FROM laps WHERE pit_lap = 0 GROUP BY driver_id").map((r) => [r.driver_id, r.avg]));
+              assertionCode: `assert(result && result.columns.includes("avg_ms") && result.columns.includes("driver_id") && rows.length > 0, "Add a new SELECT with driver_id and avg_ms, one row per driver");
+const truth = new Map(query("SELECT driver_id, AVG(lap_ms) AS avg FROM laps WHERE pit_lap = 0 GROUP BY driver_id").map((r) => [r.driver_id, r.avg]));
 for (const r of rows) assertClose(r.avg_ms, Math.round(truth.get(r.driver_id)), 0.5, "avg_ms for driver " + r.driver_id + " (did you keep only pit_lap = 0?)");`,
             },
             {
               id: "t4",
               description: "Quickest average first",
-              assertionCode: `for (let i = 1; i < rows.length; i++) assert(rows[i - 1].avg_ms <= rows[i].avg_ms, "Sort with ORDER BY avg_ms");`,
+              assertionCode: `assert(result && result.columns.includes("avg_ms") && rows.length > 1, "Add a new SELECT that returns an avg_ms for each driver");
+for (let i = 1; i < rows.length; i++) assert(rows[i - 1].avg_ms <= rows[i].avg_ms, "Sort with ORDER BY avg_ms");`,
             },
           ],
           unlocks: ["pace"],
@@ -794,7 +799,8 @@ for (const r of rows) assertClose(r.fuel_laps, Math.round((fuel.get(r.code) / 1.
             {
               id: "t4",
               description: "In race order",
-              assertionCode: `const order = query("SELECT d.code AS code FROM car_status c JOIN drivers d ON d.driver_id = c.driver_id ORDER BY c.position").map((r) => r.code);
+              assertionCode: `assert(result && result.columns.includes("call"), "Add a new SELECT with the strategy call for each car");
+const order = query("SELECT d.code AS code FROM car_status c JOIN drivers d ON d.driver_id = c.driver_id ORDER BY c.position").map((r) => r.code);
 assertEqual(rows.map((r) => r.code), order, "Codes in race order (ORDER BY c.position)");`,
             },
           ],

@@ -82,7 +82,7 @@ delivery-api@sha256:9c1e07ab...          <- a fingerprint, cannot lie
           title: "See the drift",
           body: "Switch to **Rebuild per environment** and press Next until it finishes. Watch the digests.",
           widget: { type: "ship-promote", props: { mode: "promote" } },
-          question: { type: "widget", goal: { mode: "rebuild", finished: true, sameBytes: false } },
+          question: { type: "widget", hint: "Rebuild per environment builds a fresh artifact each time, so the digests differ.", goal: { mode: "rebuild", finished: true, sameBytes: false } },
           explanation: "Staging and production built from the same commit but resolved a dependency an hour apart, so they ran different code. The tests proved something about staging's build and nothing about production's. Building once removes the whole category of \"it was fine in staging\".",
         },
         {
@@ -153,7 +153,7 @@ delivery-api@sha256:9c1e07ab...          <- a fingerprint, cannot lie
           title: "The slow, late news",
           body: "The end-to-end tests are the stage that breaks. Find the layout that reports it **soonest**.",
           widget: { type: "ship-pipeline", props: { broken: "e2e", lockBroken: true, layout: "written" } },
-          question: { type: "widget", goal: { broken: "e2e", maxFeedback: 300 } },
+          question: { type: "widget", hint: "Layouts that run the slow stage alongside the others report soonest.", goal: { broken: "e2e", maxFeedback: 300 } },
           explanation: "Running independent stages **in parallel** means the end-to-end tests start as soon as the build finishes instead of waiting behind everything else: 60 s + 240 s = 5 minutes. As a rule, put cheap checks first, and run what doesn't depend on each other side by side.",
         },
         {
@@ -166,7 +166,7 @@ delivery-api@sha256:9c1e07ab...          <- a fingerprint, cannot lie
           kind: "question",
           title: "Do the sum",
           body: "A suite has **40 tests**, and each one flakes 2% of the time, independently. About what percentage of runs on unchanged code are fully green?",
-          question: { type: "number", answer: 45, tolerance: 4, unit: "%" },
+          question: { type: "number", hint: "All 40 tests must pass in the same run: 98% multiplied by itself 40 times.", answer: 45, tolerance: 4, unit: "%" },
           explanation: "Each test passes 98% of the time, and all 40 must pass: 0.98 to the power 40 is about **0.45**. A 2% flake rate looks tiny per test and still makes more than half the runs red. People learn to ignore red builds, which is how real failures slip through.",
         },
         {
@@ -311,7 +311,7 @@ find_flaky(runs)   # ["test_login"]
           title: "Make code edits cheap",
           body: "Right now a one-line code edit costs a 42-second rebuild. Reorder the Dockerfile, edit the app code, rebuild, and get that build under **five seconds**.",
           widget: { type: "ship-layers", props: { order: "copy-first" } },
-          question: { type: "widget", goal: { edit: "code", maxSecs: 5 } },
+          question: { type: "widget", hint: "Put the layers that rarely change, like dependencies, before the code that changes often.", goal: { edit: "code", maxSecs: 5 } },
           explanation: "Dependencies change rarely, code changes constantly. Copy only the dependency list, install, and *then* copy the source: an edit now invalidates only the last cheap layer, and the 40-second install is served from cache.",
         },
         {
@@ -341,7 +341,7 @@ find_flaky(runs)   # ["test_login"]
           title: "Under 100 MB",
           body: "Shrink the image to **under 100 MB**.",
           widget: { type: "ship-size", props: {} },
-          question: { type: "widget", goal: { maxMb: 100 } },
+          question: { type: "widget", hint: "Use a smaller base image and keep build tools out of the final image.", goal: { maxMb: 100 } },
           explanation: "Only the minimal runtime *and* a multi-stage build get there: 28 MB of base plus 45 MB of app. A slim base alone still ships 520 MB of compilers if the build tools are left in the final image.",
         },
         {
@@ -479,7 +479,7 @@ docker run \\
           title: "Retire without casualties",
           body: "The slowest request has 16 seconds left. Choose how the program reacts and set the grace period so that **nothing is cut off and the process exits before SIGKILL**.",
           widget: { type: "ship-shutdown", props: { mode: "exit", grace: 10 } },
-          question: { type: "widget", goal: { clean: true } },
+          question: { type: "widget", hint: "The grace period has to outlast the slowest request, and SIGKILL must come after the program has exited.", goal: { clean: true } },
           explanation: "Draining plus a grace period of at least 17 seconds (16 s for the slowest request, 1 s to close connections) is the combination that works. Too short a grace period and SIGKILL still cuts off the stragglers; too eager an exit loses everyone.",
         },
         {
@@ -606,7 +606,7 @@ docker run \\
           title: "Break it, let it heal",
           body: "Crash a pod, or take a machine down. Then let the loop run until the cluster is back to what you asked for.",
           widget: { type: "ship-cluster", props: { desired: 3 } },
-          question: { type: "widget", goal: { converged: true, hadFailure: true, minTicks: 1 } },
+          question: { type: "widget", hint: "Crash a pod, then keep running the loop until the cluster matches what you asked for.", goal: { converged: true, hadFailure: true, minTicks: 1 } },
           explanation: "Notice what *you* did after the failure: nothing. The controller saw fewer pods than desired, created replacements, the scheduler placed them on healthy machines, and the Service only included them once they were ready. Healing is the normal path, not an emergency procedure.",
         },
         {
@@ -733,7 +733,7 @@ docker run \\
           kind: "question",
           title: "When does the axe fall?",
           body: "Liveness: first check at **10 s**, every **10 s**, restart after **3** failures in a row. The app needs 45 s to start. At what second of its life is the container restarted?",
-          question: { type: "number", answer: 30, unit: "s" },
+          question: { type: "number", hint: "The first check is at 10 s, then every 10 s. Count failures until the third.", answer: 30, unit: "s" },
           explanation: "Checks run at 10 s, 20 s and 30 s. The app is still loading at all three, so the third consecutive failure lands at **30 s**, fifteen seconds before it would have been ready. The restart wipes the progress, the cycle repeats, and it never gets there: a **crash loop**.",
         },
         {
@@ -741,7 +741,7 @@ docker run \\
           title: "Start cleanly",
           body: "Configure the probes so the app starts **without any restarts** and **without any failed requests**.",
           widget: { type: "ship-probes", props: {} },
-          question: { type: "widget", goal: { maxRestarts: 0, maxFailed: 0 } },
+          question: { type: "widget", hint: "Do not let the probes judge the app while it is still starting: give it a startup delay or probe.", goal: { maxRestarts: 0, maxFailed: 0 } },
           explanation: "Two fixes working together. Liveness must not judge the app before it can possibly be up (a long enough delay, or better, a **startup probe** that holds liveness off until boot is done). And **readiness** keeps the pod out of the load balancer until it answers, so users only hit the older, healthy pod meanwhile.",
         },
         {
@@ -844,7 +844,7 @@ docker run \\
           title: "Least damage from a bad release",
           body: "Version 2 has a bug that fails 8% of the requests it serves, and the **automatic gate** halts the rollout when version 2's own error rate passes 2%. Pick the strategy that lets **fewer than 10 requests** fail. Run each to the end.",
           widget: { type: "ship-rollout", props: { bug: true, gate: true, lockBug: true, strategy: "rolling" } },
-          question: { type: "widget", goal: { finished: true, aborted: true, maxBad: 9 } },
+          question: { type: "widget", hint: "A gradual rollout exposes only a few requests before the gate halts it.", goal: { finished: true, aborted: true, maxBad: 9 } },
           explanation: "A **canary** exposes only 5% of traffic before the gate trips: about 4 failed requests. A rolling deploy had already moved 20% (16 failures) by the first check, and blue-green sent everyone to the bad version at once (80). The strategy sets the *blast radius*; the gate decides how long it lasts.",
         },
         {
@@ -879,7 +879,7 @@ docker run \\
           title: "A rename nobody notices",
           body: "Pick the plan where every running version works at every step, and follow it to the end.",
           widget: { type: "ship-schema", props: { plan: "migrate-first" } },
-          question: { type: "widget", goal: { plan: "expand", finished: true, broke: false } },
+          question: { type: "widget", hint: "Add the new column first, copy the data, switch over, and only then remove the old one.", goal: { plan: "expand", finished: true, broke: false } },
           explanation: "Each step of expand and contract is compatible with the step before and after it, so a deploy can be paused or rolled back anywhere. The one-shot rename \"works\" only if nobody serves a request during the rollout.",
         },
         {
@@ -956,7 +956,7 @@ return renew_v1(member, book)
           title: "Exactly twenty",
           body: "Roll the new flow out to **exactly 20** of the 100 members.",
           widget: { type: "ship-flags", props: { percent: 0, basic: true } },
-          question: { type: "widget", goal: { enabled: 20, killed: false } },
+          question: { type: "widget", hint: "Set the rollout to 20 members out of the 100.", goal: { enabled: 20, killed: false } },
           explanation: "A 20% rollout enables 20 of every 100 members. You choose the exposure, and it can be 1% for a first look or 50% to compare two behaviours at scale.",
         },
         {
@@ -964,7 +964,7 @@ return renew_v1(member, book)
           title: "The fines are doubling",
           body: "The new flow starts charging some members twice. Roll it back for **everyone, right now**, without deploying.",
           widget: { type: "ship-flags", props: { percent: 60, basic: true } },
-          question: { type: "widget", goal: { killed: true, enabled: 0 } },
+          question: { type: "widget", hint: "Use the kill switch: it needs no deploy.", goal: { killed: true, enabled: 0 } },
           explanation: "That is the kill switch: a flag flipped off takes effect in seconds, because the code that checks it is already running. No build, no pipeline, no rollout to wait for. This is the single biggest safety win of flags.",
         },
         {
@@ -982,7 +982,7 @@ enabled = bucket < percent
           title: "Re-rolling the dice",
           body: "A flag set to 50% decides with a fresh coin flip on every page load. Roughly how many of 100 members will have a **different** answer after everyone reloads once?",
           widget: { type: "ship-flags", props: { percent: 50, sticky: false }, after: true },
-          question: { type: "number", answer: 50, tolerance: 12 },
+          question: { type: "number", hint: "Every load is a fresh coin flip, so about half of the members get a different answer.", answer: 50, tolerance: 12 },
           explanation: "For each member, the chance the new flip differs from the old one is 2 x 0.5 x 0.5 = 50%, so about half of everyone flips. (Try it in the widget that just unlocked: it is set to re-roll, and switching on \"Same answer on every visit\" makes the red outlines vanish.)",
         },
         {
@@ -1113,7 +1113,7 @@ def is_enabled(flag, user_id):
           title: "No request over 400 ms",
           body: "With the typical Node app, some requests wait over half a second. Adjust the settings so the **slowest request is 400 ms or less**.",
           widget: { type: "ship-coldstart", props: { runtime: "node", packageMb: 60, minWarm: 0 } },
-          question: { type: "widget", goal: { maxWorst: 400 } },
+          question: { type: "widget", hint: "Cold starts cause the slow requests. Keep instances warm or make the package smaller.", goal: { maxWorst: 400 } },
           explanation: "You can attack the cold start itself (a smaller package or a lighter runtime shortens every start) or avoid it by paying for instances kept warm. Notice that warm instances only cover requests up to that count: the burst of six needs six.",
         },
         {
@@ -1271,7 +1271,7 @@ count_cold_starts([0, 5, 100, 104], 30)   # 2: first, and after the long gap
           kind: "question",
           title: "Is the canary big enough?",
           body: "Total traffic is **8,000 requests per minute**. A canary takes **5%** of it and is watched for **10 minutes**. How many requests does the canary see in total?",
-          question: { type: "number", answer: 4000 },
+          question: { type: "number", hint: "Requests seen = traffic per minute × the canary's share × minutes.", answer: 4000 },
           explanation: "8,000 x 0.05 = 400 per minute, times 10 minutes = **4,000**. Enough to tell a 2% error rate (about 80 failures) from a 0.1% baseline (about 4). On a service with 200 requests a minute, the same canary would see only 100 requests and could not tell noise from a bug: size the slice and the wait to your traffic.",
         },
         {

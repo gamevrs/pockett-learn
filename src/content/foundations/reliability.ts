@@ -53,7 +53,7 @@ export const reliabilityModule: Module = {
           title: "Done, but you don't know it",
           body: "Set things up so that your app **times out**, even though the parcel **was marked delivered**.",
           widget: { type: "rel-slowdead" },
-          question: { type: "widget", goal: { ambiguous: true } },
+          question: { type: "widget", hint: "Make the reply slower than your timeout while the work still succeeds on the other side.", goal: { ambiguous: true } },
           explanation: "Two of the worlds do it: the *slow* answer (when your timeout is shorter than 1.4 s) and the *lost* answer (at any timeout). The work is done, yet your app sees exactly what it would see if nothing had happened. That is the heart of this whole module: **a timeout tells you that you stopped waiting, not that the work failed.**",
         },
         {
@@ -81,7 +81,7 @@ export const reliabilityModule: Module = {
           kind: "question",
           title: "Nines multiply",
           body: "One user action touches **5 services in a row**, and each one works **99.9%** of the time (three nines, a very good service). About how many out of **10,000** such actions fail?",
-          question: { type: "number", answer: 50, tolerance: 3 },
+          question: { type: "number", hint: "The chance that all 5 work is 0.999 multiplied by itself 5 times.", answer: 50, tolerance: 3 },
           explanation: "0.999⁵ ≈ 0.995, so about **0.5%** of actions fail, roughly 50 in 10,000. Each extra dependency in a chain makes the whole thing a little less reliable than its weakest part. With dozens of dependencies, “something is failing right now” is the normal state, which is why we design for it.",
         },
         {
@@ -120,14 +120,14 @@ export const reliabilityModule: Module = {
           title: "Keep the pool alive",
           body: "Choose a timeout so the **pool never fills up**, and the site stays up even while the partner is hanging.",
           widget: { type: "rel-hang", props: { initial: "10" } },
-          question: { type: "widget", goal: { neverFull: true } },
+          question: { type: "widget", hint: "Pick a timeout short enough that hung calls are released before the pool fills up.", goal: { neverFull: true } },
           explanation: "At 4 checkouts a second, a timeout of 1 s pins about 4 workers and 3 s pins about 12. Past 4 s the stuck calls need more workers than exist. The rule of thumb: **arrival rate × timeout must stay well below your pool size.** A timeout that is *too long* protects nothing.",
         },
         {
           kind: "question",
           title: "How many workers?",
           body: "Calls arrive at **4 per second**, and each one hangs for **6 seconds** before its timeout fires. About how many workers are stuck at any moment?",
-          question: { type: "number", answer: 24 },
+          question: { type: "number", hint: "Stuck workers = calls per second × seconds each call hangs.", answer: 24 },
           explanation: "4 per second × 6 seconds = **24** calls in flight. That is more than a 20-worker pool, so it is already full. This relationship (in-flight = arrival rate × time in system) is called **Little's law**, and you'll meet it again when we talk about traffic.",
         },
         {
@@ -205,7 +205,7 @@ export const reliabilityModule: Module = {
           title: "Wasted work",
           body: "With **per-call timeouts**, make the services burn **at least 4 seconds of work in total** after the shopper has left.",
           widget: { type: "rel-deadline", props: { mode: "percall", lockMode: true, latency: 1 } },
-          question: { type: "widget", goal: { mode: "percall", minWasted: 4 } },
+          question: { type: "widget", hint: "A per-call timeout does not know the shopper has gone. Make a slow call while the others keep working.", goal: { mode: "percall", minWasted: 4 } },
           explanation: "Once the warehouse takes longer than the shopper will wait, every service above it keeps its worker busy until its own timeout fires, and the warehouse keeps going until it is done. Four services each wasting a second or two adds up quickly, and that is *per request* during an incident.",
         },
         {
@@ -218,14 +218,14 @@ export const reliabilityModule: Module = {
           title: "One deadline for all",
           body: "Switch to **One deadline** and make the warehouse slow (**5 s or more**). How much work can you make run after the shopper has left?",
           widget: { type: "rel-deadline", props: { mode: "percall", latency: 3 } },
-          question: { type: "widget", goal: { mode: "deadline", minLatency: 5, maxWasted: 0 } },
+          question: { type: "widget", hint: "With one deadline every service stops when time is up. Make the warehouse slow.", goal: { mode: "deadline", minLatency: 5, maxWasted: 0 } },
           explanation: "With the deadline passed down, all four services stop together at 4 s. The shopper still gets an error (the warehouse really is too slow), but nobody keeps working for a ghost. Workers are freed at once, so the *next* request finds capacity.",
         },
         {
           kind: "question",
           title: "How much is left?",
           body: "The gateway's budget is **4 s**. The gateway spent **0.3 s** and Orders spent **0.5 s** before calling Inventory. What is the most time (in seconds) Inventory's call to the warehouse should be given?",
-          question: { type: "number", answer: 3.2, tolerance: 0.05, unit: "s" },
+          question: { type: "number", hint: "Subtract what the gateway and Orders already spent from the 4 s budget.", answer: 3.2, tolerance: 0.05, unit: "s" },
           explanation: "4 − 0.3 − 0.5 = **3.2 s** at most, and a bit less in practice, to leave time for the reply to travel back up the chain. Each hop shrinks the budget; the budget never grows on the way down.",
         },
         {
@@ -303,7 +303,7 @@ export const reliabilityModule: Module = {
               ],
             },
           },
-          question: { type: "widget", goal: { done: true } },
+          question: { type: "widget", hint: "Retry temporary failures (timeouts, 503, 429); never retry errors that will fail the same way.", goal: { done: true } },
           explanation: "The pattern: **client errors (4xx)** mean *you* sent something wrong, so don't retry (except 408 and 429, where the server is asking you to slow down or try again). **Server and network errors** (502, 503, 504, resets, timeouts) are often temporary, so retry with a wait. If the server tells you how long to wait (`Retry-After`), obey it.",
         },
         {
@@ -398,7 +398,7 @@ export const reliabilityModule: Module = {
           kind: "question",
           title: "Do the doubling",
           body: "Base delay **200 ms**, doubling after each failure, no cap. How long (in ms) is the wait after the **5th** failure?",
-          question: { type: "number", answer: 3200, unit: "ms" },
+          question: { type: "number", hint: "The first wait is 200 ms and each wait is double the one before it.", answer: 3200, unit: "ms" },
           explanation: "200 → 400 → 800 → 1,600 → **3,200 ms**. That's `200 × 2⁴`. Without a cap, wait number 10 would be over 100 seconds, which is why you always set one.",
         },
         {
@@ -406,7 +406,7 @@ export const reliabilityModule: Module = {
           title: "Tame the tail",
           body: "Use **exponential** with at least **6 attempts**, and set the cap so that **no single wait is longer than 5 seconds**.",
           widget: { type: "rel-backoff", props: { strategies: ["fixed", "exp"], strategy: "exp", base: 500, cap: 20000, attempts: 3 } },
-          question: { type: "widget", goal: { strategy: "exp", maxWait: 5000, minAttempts: 6 } },
+          question: { type: "widget", hint: "Use exponential delays, and let the cap stop any single wait from passing 5 seconds.", goal: { strategy: "exp", maxWait: 5000, minAttempts: 6 } },
           explanation: "A cap of 5 s (or lower) with 6 attempts: 0.5, 1, 2, 4, 5, 5 seconds. The cap keeps a user-facing call responsive and bounds the total time spent retrying.",
         },
         {
@@ -503,7 +503,7 @@ export const reliabilityModule: Module = {
           title: "Calm the herd",
           body: "Choose the policy that leaves **nobody** giving up and keeps the retries to **at most 100 attempts a second** (capacity is 80).",
           widget: { type: "rel-storm", props: { policy: "fixed", clients: 200 } },
-          question: { type: "widget", goal: { maxLost: 0, maxRetryPeak: 100 } },
+          question: { type: "widget", hint: "Spread the retries out with jitter and limit them so they stay under capacity.", goal: { maxLost: 0, maxRetryPeak: 100 } },
           explanation: "Only **exponential backoff with jitter** keeps the retries inside the service's capacity. “Fixed 2 s” and plain “Exponential” bunch everyone up: all the fans who failed together wait the same time and come back together. Retrying at once is the worst: it uses up all the attempts within the first second, while the service is still buried.",
         },
         {
@@ -515,7 +515,7 @@ export const reliabilityModule: Module = {
           kind: "question",
           title: "Count the pile-up",
           body: "Four layers, each allowed **4 attempts** (the first try plus 3 retries). In the worst case, how many requests reach the deepest layer for one user action?",
-          question: { type: "number", answer: 256 },
+          question: { type: "number", hint: "Each layer multiplies the attempts of the layer above it.", answer: 256 },
           explanation: "4 × 4 × 4 × 4 = **256**. Retries *multiply* going down. This is why large systems pick **one** place to retry (usually closest to the failing call, or at the edge) and let the other layers fail fast.",
         },
         {
@@ -543,7 +543,7 @@ export const reliabilityModule: Module = {
           kind: "question",
           title: "Do the sum",
           body: "Normal traffic is **1,000 requests a minute**, with a **10%** retry budget. A dependency fails completely, and every request would love to retry 3 times. At most how many requests a minute reach that dependency now?",
-          question: { type: "number", answer: 1100 },
+          question: { type: "number", hint: "A 10% retry budget lets retries add at most 10% on top of normal traffic.", answer: 1100 },
           explanation: "1,000 first attempts plus at most **100** budgeted retries = **1,100**. Without the budget, retrying 3 times would send up to 4,000. The budget doesn't make the failure disappear; it keeps your retries from becoming the second outage.",
         },
         {
@@ -626,7 +626,7 @@ export const reliabilityModule: Module = {
           title: "Charged twice",
           body: "Reproduce the double charge: buy **one** ticket with the reply lost, retry, and end up with **2 charges**.",
           widget: { type: "rel-idem", props: { mode: "none", lockMode: true } },
-          question: { type: "widget", goal: { mode: "none", charges: 2, retried: true } },
+          question: { type: "widget", hint: "Lose the reply, retry, and watch the server do the work a second time.", goal: { mode: "none", charges: 2, retried: true } },
           explanation: "To the server, the retry looked exactly like a second purchase: same shape, no way to tell. Nothing was “broken”; the protocol just had no way to say *this is the same attempt as before*.",
         },
         {
@@ -639,7 +639,7 @@ export const reliabilityModule: Module = {
           title: "Safe retry",
           body: "Switch to **With a key** and run the same story: one ticket, reply lost, retry. Finish with exactly **1 charge**, after the server has seen the repeat.",
           widget: { type: "rel-idem", props: { mode: "none" } },
-          question: { type: "widget", goal: { mode: "key", charges: 1, retried: true, duplicateArrived: true } },
+          question: { type: "widget", hint: "Use a key so the server can recognise the repeat as the same request.", goal: { mode: "key", charges: 1, retried: true, duplicateArrived: true } },
           explanation: "The retry reached the server, which found the key in its table and replied with the stored receipt: **no second charge**. The fan sees a normal success. Notice what the *client* did differently: nothing but send the same key again.",
         },
         {
@@ -735,7 +735,7 @@ export const reliabilityModule: Module = {
           title: "Trip it",
           body: "Make the breaker **open**.",
           widget: { type: "rel-breaker", props: { threshold: 3, cooldown: 4, fixed: true } },
-          question: { type: "widget", goal: { everOpened: true } },
+          question: { type: "widget", hint: "Make the dependency fail several times in a row.", goal: { everOpened: true } },
           explanation: "Three failures in a row tripped it. From that point the log shows requests being **refused at once**, with no call made to the dependency: fast failures for users, and quiet for the struggling service.",
         },
         {
@@ -743,7 +743,7 @@ export const reliabilityModule: Module = {
           title: "The full cycle",
           body: "Now the whole story: trip the breaker, **heal the dependency**, let the cool-down pass, and send a request so the breaker **closes again**.",
           widget: { type: "rel-breaker", props: { threshold: 3, cooldown: 4, fixed: true } },
-          question: { type: "widget", goal: { everOpened: true, recovered: true } },
+          question: { type: "widget", hint: "After tripping it: heal the dependency, wait out the cool-down, then send a request.", goal: { everOpened: true, recovered: true } },
           explanation: "The breaker moved closed → open → half-open → closed. While open it protected the dependency and the callers' time; the test call is how it noticed the recovery without any human involved.",
         },
         {
@@ -861,7 +861,7 @@ export const reliabilityModule: Module = {
           title: "Wall it off",
           body: "Make recommendations slow, use **separate pools**, and run for at least **15 seconds**. Payments should still be served at least **95%** of the time.",
           widget: { type: "rel-bulkhead", props: { split: false, slow: false } },
-          question: { type: "widget", goal: { split: true, slow: true, minT: 15, minPayRate: 0.95 } },
+          question: { type: "widget", hint: "Separate pools mean slow recommendations cannot use up the workers payments needs.", goal: { split: true, slow: true, minT: 15, minPayRate: 0.95 } },
           explanation: "Recommendations can now only fill their own 4 threads. They'll turn away most of their own traffic, which is the right place for the pain, while payments keep all 8 of theirs. **The failure is contained.**",
         },
         {
@@ -896,7 +896,7 @@ export const reliabilityModule: Module = {
           title: "Three down, still selling",
           body: "Knock out **at least three** services, including **Reviews** and **Recommendations**, and set up the fallbacks so the page still loads and the shopper **can still buy**.",
           widget: { type: "rel-degrade" },
-          question: { type: "widget", goal: { pageOk: true, buyWorks: true, minDown: 3, mustBeDown: ["reviews", "recs"] } },
+          question: { type: "widget", hint: "Knock out reviews, recommendations and one more, and set a fallback for each so the page still loads.", goal: { pageOk: true, buyWorks: true, minDown: 3, mustBeDown: ["reviews", "recs"] } },
           explanation: "Reviews and recommendations are decoration; the page works without them. The *price* is the careful one: the page can show a saved copy of it, as long as checkout confirms the real price again. Degrading is a design decision made **per feature**, ahead of time.",
         },
         {
@@ -978,7 +978,7 @@ export const reliabilityModule: Module = {
           title: "Random failures",
           body: "Under **Flaky** (3 in 10 calls fail at random), make shoppers see **at least 97%** successes with **no more than 1.5 calls** per shopper.",
           widget: { type: "rel-client", props: { scenario: "flaky" } },
-          question: { type: "widget", goal: { scenario: "flaky", minServed: 0.97, maxAmplification: 1.5 } },
+          question: { type: "widget", hint: "A retry or two recovers most random failures, but every retry is an extra call.", goal: { scenario: "flaky", minServed: 0.97, maxAmplification: 1.5 } },
           explanation: "For random, short failures, **retries** are the tool: a call that fails 30% of the time still succeeds on one of 3 tries 97% of the time, at an average cost of about 1.35 calls per shopper. Timeouts and breakers don't help here; nothing is slow or down.",
         },
         {
@@ -986,7 +986,7 @@ export const reliabilityModule: Module = {
           title: "A real outage",
           body: "Under **Outage** (the dependency refuses every call for 15 seconds), reach **99%** of shoppers served, with the **circuit breaker** and **fallback** switched on, making **at most 1 call per shopper** on average.",
           widget: { type: "rel-client", props: { scenario: "outage" } },
-          question: { type: "widget", goal: { scenario: "outage", minServed: 0.99, maxAmplification: 1, breaker: true, fallback: true } },
+          question: { type: "widget", hint: "Retries do not help in an outage; the breaker and the fallback keep it to one call per shopper.", goal: { scenario: "outage", minServed: 0.99, maxAmplification: 1, breaker: true, fallback: true } },
           explanation: "Retries can't fix a dead dependency (they just add calls). The **breaker** stops the pointless calls (fewer than one per shopper, since open-breaker requests make none), and the **fallback** gives every shopper something. Notice that nothing here makes the dependency come back; it only keeps *you* standing until it does.",
         },
         {

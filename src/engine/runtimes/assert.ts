@@ -3,6 +3,8 @@
  * Plain TS with no runtime-only syntax, so Node can import it for content validation.
  */
 
+import { friendlyFailure } from "./friendly.ts";
+
 export class AssertionError extends Error {
   constructor(message: string) {
     super(message);
@@ -53,7 +55,8 @@ export const testHelpers = {
     }
   },
   assertClose(actual: unknown, expected: number, tolerance = 1e-6, message?: string): void {
-    if (typeof actual !== "number" || Math.abs(actual - expected) > tolerance) {
+    // written as !(<=) so NaN (a missing value) fails instead of slipping through
+    if (typeof actual !== "number" || !(Math.abs(actual - expected) <= tolerance)) {
       throw new AssertionError(`${message ? `${message}: ` : ""}expected about ${expected}, got ${inspect(actual, 1)}`);
     }
   },
@@ -100,13 +103,13 @@ function matchesError(thrown: unknown, expected: string | RegExp | undefined, me
   const name = thrown instanceof Error ? thrown.name : "";
   const ok = typeof expected === "string" ? text.includes(expected) || name === expected : expected.test(text);
   if (!ok) {
-    throw new AssertionError(`${message ? `${message}: ` : ""}expected an error matching ${String(expected)}, got ${name ? `${name}: ` : ""}${text}`);
+    throw new AssertionError(`${message ? `${message}: ` : ""}expected an error matching ${String(expected)}, got ${name ? friendlyFailure(`${name}: ${text}`) : text}`);
   }
 }
 
 /** How a failing check is reported to the learner. */
 export function describeFailure(err: unknown): string {
   if (err instanceof AssertionError) return err.message;
-  if (err instanceof Error) return `${err.name}: ${err.message}`;
+  if (err instanceof Error) return friendlyFailure(`${err.name}: ${err.message}`);
   return String(err);
 }

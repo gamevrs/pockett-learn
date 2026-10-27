@@ -20,7 +20,7 @@ export function CopyButton({ text, label, className = "" }: { text: string; labe
           () => {},
         );
       }}
-      className={`inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs text-ink-2 transition-colors hover:border-line-strong hover:text-ink ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-1 font-mono text-xs max-sm:min-h-10 text-ink-2 transition-colors hover:border-line-strong hover:text-ink ${className}`}
     >
       {done ? <Check className="h-3.5 w-3.5 text-brand" /> : <Copy className="h-3.5 w-3.5" />}
       <span aria-live="polite">{done ? "Copied" : text}</span>

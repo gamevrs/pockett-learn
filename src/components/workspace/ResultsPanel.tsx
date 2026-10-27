@@ -2,7 +2,12 @@
 
 import React from "react";
 import { CheckCircle2, ChevronDown, ChevronUp, CircleDashed, Terminal, XCircle } from "lucide-react";
-import type { RunError, TestCase, TestResult } from "@/engine/types";
+import type { LanguageId, RunError, TestCase, TestResult } from "@/engine/types";
+import type { ServiceIssue } from "@/engine/runtimes/service-error";
+import { languageInfo } from "@/engine/languages";
+import { useShortcuts } from "@/lib/ui/platform";
+import { ServiceNotice } from "./ServiceNotice";
+import { consoleEmptyText } from "./console-hint";
 
 export type ResultTab = "checks" | "console";
 
@@ -44,13 +49,24 @@ interface ResultsPanelProps {
   error: RunError | null;
   running: boolean;
   statusText: string;
+  /** Language and scene decide what the empty Console tells the learner to write. */
+  language: LanguageId;
+  sceneId: string;
+  /** True once a run has finished in this session, so an empty Console can say "ran and printed nothing". */
+  ranOnce?: boolean;
+  /** The runner or engine is having trouble (not the learner's code): shown as a calm notice with Retry. */
+  service?: ServiceIssue | null;
+  onRetry?: () => void;
+  /** Present while a remote run is in flight. */
+  onCancel?: () => void;
   /** Desktop: only the tab bar is shown. */
   collapsed?: boolean;
   /** Desktop only: collapse/expand control. */
   onToggleCollapsed?: () => void;
 }
 
-export function ResultsPanel({ tab, onTab, tests, results, stdout, error, running, statusText, collapsed = false, onToggleCollapsed }: ResultsPanelProps) {
+export function ResultsPanel({ tab, onTab, tests, results, stdout, error, running, statusText, language, sceneId, ranOnce = false, service = null, onRetry, onCancel, collapsed = false, onToggleCollapsed }: ResultsPanelProps) {
+  const keys = useShortcuts();
   const passed = results.filter((r) => r.passed).length;
   const hasRun = results.length > 0 || error !== null;
   const allPassed = results.length > 0 && passed === results.length;
@@ -83,6 +99,11 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
             <span className="flex min-w-0 items-center gap-2 text-xs text-ink-3">
               <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-line border-t-brand" />
               <span className="truncate">{statusText}</span>
+              {onCancel && (
+                <button type="button" onClick={onCancel} data-testid="cancel-run" className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[11px] font-medium text-ink-2 hover:bg-surface-2 hover:text-ink">
+                  Cancel
+                </button>
+              )}
             </span>
           )}
           {onToggleCollapsed && (
@@ -99,6 +120,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
       </div>
 
       <div className={`min-h-0 flex-1 overflow-y-auto p-3 ${collapsed ? "hidden" : ""}`}>
+        {service && onRetry && <ServiceNotice key={service.at} issue={service} onRetry={onRetry} engineName={languageInfo(language).label} className="mb-2.5" />}
         {tab === "checks" && (
           <ul className="space-y-1.5">
             {tests.map((t) => {
@@ -119,7 +141,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
                 </li>
               );
             })}
-            {!hasRun && <li className="px-1 pt-1 text-xs text-ink-3"><strong className="text-ink-2">Run</strong> (Ctrl/⌘ + Enter) to try your code. <strong className="text-ink-2">Submit</strong> (Ctrl/⌘ + Shift + Enter) to check it and finish the lesson.</li>}
+            {!hasRun && <li className="px-1 pt-1 text-xs text-ink-3"><strong className="text-ink-2">Run</strong> ({keys.runText}) to try your code. <strong className="text-ink-2">Submit</strong> ({keys.submitText}) to check it and finish the lesson.</li>}
           </ul>
         )}
 
@@ -134,7 +156,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
                 {friendly(error) && <p className="mt-1 font-sans text-xs text-ink-2">{friendly(error)}</p>}
               </div>
             )}
-            {stdout ? <pre className="whitespace-pre-wrap text-ink">{stdout}</pre> : !error && <p className="text-ink-3">Nothing printed yet. print() output shows up here (and on the car&apos;s dashboard).</p>}
+            {stdout ? <pre className="whitespace-pre-wrap text-ink">{stdout}</pre> : !error && !service && <p className="text-ink-3" data-testid="console-empty">{consoleEmptyText(language, sceneId, ranOnce)}</p>}
           </div>
         )}
       </div>

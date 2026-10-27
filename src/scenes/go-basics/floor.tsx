@@ -85,7 +85,8 @@ const WIDE: Layout = {
   plate: { x: 684, y: 306, w: 104, h: 116 },
   board: { x: 24, y: 142, w: 118, h: 200 },
   reject: { x1: 718, x2: 718, y2: 128 },
-  font: 10,
+  // The stage shows this floor at about 60% of the size it is drawn at (hub card, lesson stage), so labels are drawn big
+  font: 14,
 };
 
 const TALL: Layout = {
@@ -109,7 +110,7 @@ const TALL: Layout = {
   board: { x: 12, y: 368, w: 128, h: 96 },
   plate: { x: 12, y: 476, w: 408, h: 64 },
   reject: { x1: 414, x2: 414, y2: 410 },
-  font: 9,
+  font: 12,
 };
 
 // ───────────────────────── crates ─────────────────────────
@@ -252,7 +253,7 @@ function Belt({ c }: { c: Ctx }) {
       <line x1={L.beltX0 + 6} x2={L.beltX1 - 6} y1={L.beltY - 7} y2={L.beltY - 7} stroke="rgba(255,255,255,0.1)" strokeWidth={2} strokeDasharray="10 22" className="gp-belt-dash" />
       <line x1={L.beltX0 + 6} x2={L.beltX1 - 6} y1={L.beltY + 7} y2={L.beltY + 7} stroke="rgba(255,255,255,0.1)" strokeWidth={2} strokeDasharray="10 22" className="gp-belt-dash" />
       <rect x={L.beltX0 - 2} y={y0 - 2} width={14} height={L.beltH + 4} rx={3} fill={C.steelLo} stroke={C.teal} />
-      <T x={L.beltX0 + 5} y={L.beltY + 3} size={7} fill={C.mute}>
+      <T x={L.beltX0 + 5} y={L.beltY + 3} size={Math.round(L.font * 0.8)} fill={C.mute}>
         IN
       </T>
     </g>

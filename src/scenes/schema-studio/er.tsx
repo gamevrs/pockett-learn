@@ -196,14 +196,14 @@ function MiniCard({ e }: { e: Entity }) {
   const t = e.table;
   if (!t) {
     return (
-      <div data-er-card={e.name} className="relative z-10 flex min-w-0 items-center rounded-md border border-dashed border-[#c5ee8a]/45 bg-[#0d0d0d] px-1.5 py-1">
-        <span className="hud-value min-w-0 flex-1 truncate text-[10.5px] font-semibold text-[#d3f3a4]/80">{e.name}</span>
+      <div data-er-card={e.name} className="relative z-10 flex min-w-0 items-center rounded-md border border-dashed border-[#c5ee8a]/45 bg-[#0d0d0d] px-2 py-1.5">
+        <span className="hud-value min-w-0 flex-1 truncate text-[12px] font-semibold text-[#d3f3a4]/80">{e.name}</span>
       </div>
     );
   }
   return (
-    <div data-er-card={t.name} className="relative z-10 flex min-w-0 items-center gap-1 rounded-md border border-white/14 bg-[#0d0d0d] px-1.5 py-1">
-      <span className="hud-value min-w-0 flex-1 truncate text-[10.5px] font-semibold text-white" title={`${t.name} · ${plural(t.rowCount, "row")}`}>
+    <div data-er-card={t.name} className="relative z-10 flex min-w-0 items-center gap-1 rounded-md border border-white/14 bg-[#0d0d0d] px-2 py-1.5">
+      <span className="hud-value min-w-0 flex-1 truncate text-[12px] font-semibold text-white" title={`${t.name} · ${plural(t.rowCount, "row")}`}>
         {t.name}
       </span>
     </div>
@@ -348,6 +348,7 @@ export function ErDiagram({
   mode = "full",
   fixedWidth,
   focus,
+  fill,
 }: {
   tables: TableInfo[];
   sketch: SketchLink[];
@@ -355,6 +356,8 @@ export function ErDiagram({
   mode?: "full" | "mini";
   fixedWidth?: number;
   focus?: string | null;
+  /** mini only: spread the cards over the height of the panel instead of leaving them in a clump */
+  fill?: boolean;
 }) {
   const graph = buildGraph(tables, sketch, flags);
   const [geom, ref] = useGeom();
@@ -379,7 +382,7 @@ export function ErDiagram({
     );
   }
 
-  const G = mini ? 26 : 38;
+  const G = mini ? 24 : 38;
   const minCard = mini ? 80 : 150;
   let C = Math.max(L, 1);
   if (w > 0) C = Math.max(L, Math.min(8, Math.floor((w + G) / (minCard + G))));
@@ -411,16 +414,16 @@ export function ErDiagram({
     columns.push(...cols);
   });
   const used = Math.max(columns.length, 1);
-  const template = { gridTemplateColumns: `repeat(${used}, minmax(0, ${mini ? 130 : 230}px))`, columnGap: G, justifyContent: "center" } as const;
+  const template = { gridTemplateColumns: `repeat(${used}, minmax(0, ${mini ? 142 : 230}px))`, columnGap: G, justifyContent: "center" } as const;
   const edges = drawnEdges(graph, flags);
   const card = (e: Entity) => (mini ? <MiniCard key={e.name} e={e} /> : <FullCard key={e.name} e={e} flags={flags} spot={focus === e.name} />);
 
   return (
-    <div ref={ref} className="relative isolate" style={fixedWidth ? { width: fixedWidth } : undefined}>
+    <div ref={ref} className={`relative isolate ${mini && fill ? "flex min-h-0 flex-1 flex-col justify-around" : ""}`} style={fixedWidth ? { width: fixedWidth } : undefined}>
       <Arrows geom={geom} edges={edges} mini={mini} />
-      <div className="grid items-start" style={template}>
+      <div className={`grid ${mini && fill ? "min-h-0 flex-1 items-stretch" : "items-start"}`} style={template}>
         {columns.map((col, ci) => (
-          <div key={ci} className={`flex min-w-0 flex-col ${mini ? "gap-1.5" : "gap-2.5"}`} style={{ gridColumn: ci + 1 }}>
+          <div key={ci} className={`flex min-w-0 flex-col ${mini ? (fill ? "justify-around gap-2" : "gap-2") : "gap-2.5"}`} style={{ gridColumn: ci + 1 }}>
             {col.map(card)}
           </div>
         ))}

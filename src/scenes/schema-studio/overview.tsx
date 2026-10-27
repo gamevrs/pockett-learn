@@ -142,7 +142,7 @@ export function CompactBoard({ b }: { b: Bundle }) {
             <span className="hud-title">{alive(b, "ss-tables") ? "ER diagram" : "Design sketch"}</span>
           </div>
           <div className="flex min-h-0 flex-1 flex-col justify-center overflow-hidden">
-            {b.program && hasEr ? <ErDiagram tables={b.tables} sketch={b.sketch} flags={b.flags} mode="mini" fixedWidth={408} /> : <ErGhost message={b.program ? "Your model is drawn here" : "Run your schema to draw it"} tall />}
+            {b.program && hasEr ? <ErDiagram tables={b.tables} sketch={b.sketch} flags={b.flags} mode="mini" fixedWidth={408} fill /> : <ErGhost message={b.program ? "Your model is drawn here" : "Run your schema to draw it"} tall />}
           </div>
         </div>
         <div className="grid min-h-0 min-w-0 flex-1 grid-rows-4 gap-2">

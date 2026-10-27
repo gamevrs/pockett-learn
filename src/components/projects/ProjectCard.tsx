@@ -20,6 +20,7 @@ export function ProjectCard({ project, lessonIds }: { project: Summary; lessonId
   return (
     <Link
       href={`/projects/${project.slug}`}
+      prefetch={false}
       className="pop-card group flex flex-col overflow-hidden"
     >
       <div className="relative m-2 mb-0 aspect-[400/220] overflow-hidden rounded-xl">

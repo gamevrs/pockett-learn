@@ -1,5 +1,7 @@
 import { createStaticProgram } from "../../program";
 import type { RunError } from "../../types";
+import { ServiceError } from "../service-error";
+import { reportRuntime } from "../status";
 import { crashedResults, type Runtime, type StatusListener } from "../types";
 import type { GradePayload, RunPayload, WorkerRequest, WorkerResponse } from "./protocol";
 
@@ -19,24 +21,35 @@ let nextId = 0;
 /** Jobs share one worker, so they take turns (a timeout must not discard somebody else's queued job). */
 let queueTail: Promise<unknown> = Promise.resolve();
 
+/** sql.js downloads from a CDN inside the worker; past this the learner gets a Retry instead of an endless wait. */
+const BOOT_TIMEOUT_MS = 30_000;
+
 function spawnWorker(onStatus?: StatusListener): Promise<Worker> {
   onStatus?.("Getting ready…");
+  reportRuntime("sql", "loading", "Getting SQLite ready…");
   const worker = new Worker(new URL("./worker.ts", import.meta.url));
+  const failed = new ServiceError("engine", { message: "Could not load SQL. Check your connection and try again." });
   return new Promise<Worker>((resolve, reject) => {
+    const fail = (message?: string) => {
+      clearTimeout(timer);
+      worker.terminate();
+      const err = message ? new ServiceError("engine", { message }) : failed;
+      reportRuntime("sql", "failed", err.message);
+      reject(err);
+    };
+    const timer = setTimeout(() => fail("SQL took too long to load."), BOOT_TIMEOUT_MS);
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
       if (event.data.kind === "ready") {
+        clearTimeout(timer);
         worker.onmessage = null;
         worker.onerror = null;
+        reportRuntime("sql", "ready");
         resolve(worker);
       } else if (event.data.kind === "init-error") {
-        worker.terminate();
-        reject(new Error("Could not load SQL. Check your connection and try again."));
+        fail();
       }
     };
-    worker.onerror = () => {
-      worker.terminate();
-      reject(new Error("Could not start SQL. Try reloading the page."));
-    };
+    worker.onerror = () => fail("Could not start SQL. Try reloading the page.");
   });
 }
 
@@ -105,9 +118,9 @@ function timeoutError(line: number | null): RunError {
 
 export const sqlRuntime: Runtime = {
   language: "sql",
-  preload() {
+  preload(eager) {
     if (typeof window === "undefined") return;
-    setTimeout(() => void getWorker().catch(() => {}), 800);
+    setTimeout(() => void getWorker().catch(() => {}), eager ? 0 : 800);
   },
   async run(source, options) {
     const started = performance.now();

@@ -73,6 +73,45 @@ export function answerText(q: Question): string {
   }
 }
 
+/**
+ * What to say after a wrong answer, beyond "Not quite.": the question's own `hint` (plus per-option
+ * feedback for a picked wrong choice), or a generic nudge that says what kind of mistake it was.
+ * Never reveals the answer.
+ */
+export function wrongAnswerHelp(q: Question, a: Answer, goalText?: string): string {
+  const parts: string[] = [];
+  if (q.type === "choice" && Array.isArray(a)) {
+    const correct = Array.isArray(q.answer) ? q.answer : [q.answer];
+    for (const i of a as number[]) if (!correct.includes(i) && q.feedback?.[i]) parts.push(q.feedback[i]);
+  }
+  if (q.hint) parts.push(q.hint);
+  if (parts.length) return parts.join(" ");
+
+  switch (q.type) {
+    case "choice": {
+      const correct = Array.isArray(q.answer) ? q.answer : [q.answer];
+      if (!Array.isArray(q.answer)) return "Not that one. Re-read the question, rule out the options that can't be right, then pick again.";
+      const got = (a as number[]) ?? [];
+      if (got.some((i) => !correct.includes(i))) return "At least one of your picks doesn't belong. Untick the one you're least sure about.";
+      return "You're on the right track, but there's at least one more option that applies.";
+    }
+    case "number": {
+      const n = Number(String(a ?? "").replace(/[,_\s]/g, ""));
+      if (!Number.isFinite(n)) return "That isn't a number. Type digits only (a minus sign is fine).";
+      return `${n} isn't it. Work it out step by step${q.unit ? ` and answer in ${q.unit}` : ""}; the lesson text above has the numbers you need.`;
+    }
+    case "text":
+      return "Not that one. Answers aren't case-sensitive, but spelling and spacing count; re-read the question for the exact term it wants.";
+    case "order": {
+      const got = (a as string[]) ?? [];
+      const right = got.filter((v, i) => v === q.items[i]).length;
+      return `${right} of ${q.items.length} are in the right place. Ask which step has to come first, then move the others around it.`;
+    }
+    case "widget":
+      return goalText ? `That isn't the goal yet. The goal: ${goalText}` : "That isn't the goal yet. Re-read the instructions above and compare what the widget shows with what is asked.";
+  }
+}
+
 export function QuestionInput({
   question,
   answer,
@@ -91,7 +130,7 @@ export function QuestionInput({
     const picked = (answer as number[]) ?? [];
     const correct = Array.isArray(question.answer) ? question.answer : [question.answer];
     return (
-      <div className="grid gap-2">
+      <div className="grid gap-2" role="group" aria-label={multi ? "Answer options, select all that apply" : "Answer options"}>
         {multi && <p className="text-xs text-ink-3">Select all that apply.</p>}
         {question.options.map((opt, i) => {
           const on = picked.includes(i);
@@ -102,6 +141,8 @@ export function QuestionInput({
               key={i}
               type="button"
               disabled={locked}
+              aria-pressed={on}
+              data-answer
               onClick={() => onAnswer(multi ? (on ? picked.filter((x) => x !== i) : [...picked, i]) : [i])}
               className={`flex min-h-12 items-center gap-3 rounded-xl border px-4 py-3 text-left text-[0.95rem] transition-colors ${
                 showRight
@@ -182,10 +223,10 @@ export function QuestionInput({
             </span>
             {!locked && (
               <span className="flex shrink-0 gap-1">
-                <button type="button" onClick={() => move(i, i - 1)} disabled={i === 0} aria-label={`Move "${item}" up`} className="grid h-9 w-9 place-items-center rounded-full text-ink-2 hover:bg-surface-2 disabled:opacity-30">
+                <button type="button" onClick={() => move(i, i - 1)} disabled={i === 0} aria-label={`Move "${item}" up`} className="grid h-10 w-10 place-items-center rounded-full text-ink-2 hover:bg-surface-2 disabled:opacity-30">
                   <ArrowUp className="h-4 w-4" />
                 </button>
-                <button type="button" onClick={() => move(i, i + 1)} disabled={i === items.length - 1} aria-label={`Move "${item}" down`} className="grid h-9 w-9 place-items-center rounded-full text-ink-2 hover:bg-surface-2 disabled:opacity-30">
+                <button type="button" onClick={() => move(i, i + 1)} disabled={i === items.length - 1} aria-label={`Move "${item}" down`} className="grid h-10 w-10 place-items-center rounded-full text-ink-2 hover:bg-surface-2 disabled:opacity-30">
                   <ArrowDown className="h-4 w-4" />
                 </button>
               </span>

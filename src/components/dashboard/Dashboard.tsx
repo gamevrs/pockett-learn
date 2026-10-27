@@ -4,10 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Award, Flame, Flag, KeyRound, RotateCcw, Target, Zap, type LucideIcon } from "lucide-react";
 import { ProjectIcon } from "@/components/ui/icons";
-import { FOUNDATIONS } from "@/content/foundations";
-import { trackLessons } from "@/learn/types";
 import { GraduationCap } from "lucide-react";
-import { flattenLessons, type Project } from "@/engine/types";
+import type { DashboardLesson, DashboardProject, DashboardSummary } from "@/components/dashboard/summary";
 import { currentStreak, levelFor, resetAllProgress, useProgress } from "@/data/progress/store";
 import { resetEverywhere } from "@/data/progress/sync";
 import type { ProgressState } from "@/data/progress/types";
@@ -19,7 +17,7 @@ interface Badge {
   icon: LucideIcon;
   title: string;
   how: string;
-  earned: (p: ProgressState, projects: Project[]) => boolean;
+  earned: (p: ProgressState, projects: DashboardProject[]) => boolean;
 }
 
 const BADGES: Badge[] = [
@@ -32,11 +30,12 @@ const BADGES: Badge[] = [
     icon: Flag,
     title: "Finisher",
     how: "Complete a whole project",
-    earned: (p, projects) => projects.some((pr) => flattenLessons(pr).every((l) => p.completed[l.id])),
+    earned: (p, projects) => projects.some((pr) => pr.lessons.every((l) => p.completed[l.id])),
   },
 ];
 
-export function Dashboard({ projects }: { projects: Project[] }) {
+export function Dashboard({ summary }: { summary: DashboardSummary }) {
+  const projects = summary.projects;
   const progress = useProgress();
   const [confirming, setConfirming] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -89,12 +88,12 @@ export function Dashboard({ projects }: { projects: Project[] }) {
         </div>
       </div>
 
-      <FoundationsCard />
+      <FoundationsCard lessons={summary.foundations} />
 
       <h2 className="font-display mt-14 text-[1.75rem]">Your builds</h2>
       <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((p) => {
-          const lessons = flattenLessons(p);
+          const lessons = p.lessons;
           const done = lessons.filter((l) => progress.completed[l.id]).length;
           const pct = Math.round((done / lessons.length) * 100);
           const next = lessons.find((l) => !progress.completed[l.id]);
@@ -102,6 +101,7 @@ export function Dashboard({ projects }: { projects: Project[] }) {
             <Link
               key={p.slug}
               href={next ? `/projects/${p.slug}/${next.id}` : `/projects/${p.slug}`}
+              prefetch={false}
               className="pop-card block p-5"
             >
               <div className="flex items-center gap-3">
@@ -162,7 +162,7 @@ export function Dashboard({ projects }: { projects: Project[] }) {
             {resetError && <span className="w-full text-sm font-semibold text-bad">{resetError}</span>}
           </div>
         ) : (
-          <button className="flex items-center gap-2 text-xs font-semibold text-ink-3 hover:text-ink" onClick={() => setConfirming(true)}>
+          <button className="-my-2 flex min-h-10 items-center gap-2 py-2 text-xs font-semibold text-ink-3 hover:text-ink" onClick={() => setConfirming(true)}>
             <RotateCcw className="h-3.5 w-3.5" /> Reset my progress
           </button>
         )}
@@ -171,14 +171,13 @@ export function Dashboard({ projects }: { projects: Project[] }) {
   );
 }
 
-function FoundationsCard() {
+function FoundationsCard({ lessons }: { lessons: DashboardLesson[] }) {
   const progress = useProgress();
-  const lessons = trackLessons(FOUNDATIONS);
   const done = lessons.filter((l) => progress.completed[l.id]).length;
   const next = lessons.find((l) => !progress.completed[l.id]);
   const pct = lessons.length ? Math.round((done / lessons.length) * 100) : 0;
   return (
-    <Link href={next ? `/learn/${next.id}` : "/learn"} className="pop-card mt-10 flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
+    <Link href={next ? `/learn/${next.id}` : "/learn"} prefetch={false} className="pop-card mt-10 flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-tint text-brand">
         <GraduationCap className="h-[18px] w-[18px]" />
       </span>

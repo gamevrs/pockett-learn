@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Bot, Video } from "lucide-react";
 import type { SceneProps } from "@/engine/scene";
 import { TouchButtons, useInput } from "@/engine/scene-kit";
+import { useStageSurface } from "@/engine/stage-surface";
+import { useTouchPrimary } from "@/lib/ui/input-mode";
 import { useThreeStage } from "@/engine/three-kit";
 import { ACCENT, NEUTRAL } from "@/engine/stage-style";
 import { GarageController, TRACK } from "./controller";
@@ -40,10 +42,19 @@ interface Hud {
 
 const EMPTY_HUD: Hud = { kmh: 0, topSpeed: 120, pedal: 0, power: 0, lap: 0, lapTime: 0, bestLap: null, split: "", splitVisible: false, autopilot: false, width: 600, height: 400 };
 
+/** What the dim "no power" panel says. Only the lesson workspace has a Run button to point at. */
+function blueprintHint(surface: "workspace" | "hub" | "landing", hasProgram: boolean): string {
+  if (surface === "workspace") return hasProgram ? "print() something to boot the car" : "Press Run to boot the car";
+  if (surface === "hub") return hasProgram ? "Open a lesson and print() to boot the car" : "Pass lesson 1 to power it up";
+  return "Pass lessons to power it up";
+}
+
 export default function GarageScene({ program, unlocked, celebration, interactive, autoplay = false }: SceneProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const labelRef = useRef<HTMLDivElement | null>(null);
   const input = useInput(canvasRef, KEYS);
+  const surface = useStageSurface();
+  const touch = useTouchPrimary();
   // UI -> game loop requests (the controller itself lives inside the 3D app)
   const requests = useRef({ toggleAutopilot: false });
   const [hud, setHud] = useState<Hud>(EMPTY_HUD);
@@ -193,7 +204,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
       <canvas
         ref={canvasRef}
         tabIndex={interactive ? 0 : -1}
-        aria-label="Turbo Garage live scene. Click, then drive with W A S D."
+        aria-label={touch ? "Turbo Garage live scene. Drive with the on-screen buttons." : "Turbo Garage live scene. Click, then drive with W A S D."}
         className="absolute inset-0 h-full w-full outline-none"
       />
 
@@ -219,7 +230,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
             ) : (
               <>
                 <p className="hud-label">{program ? "No power" : "Blueprint"}</p>
-                {!tiny && <p className="hud-muted">{program ? "print() something to boot the car" : "Press Run to boot the car"}</p>}
+                {!tiny && <p className="hud-muted">{blueprintHint(surface, !!program)}</p>}
               </>
             )}
           </div>
@@ -260,9 +271,7 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
               <span className="hud-value hud-accent">{hud.split}</span>
             </span>
           ) : interactive && canDrive && !focused && !hud.autopilot && !compact ? (
-            <span className="hud-tag h-7 px-3 [@media(pointer:coarse)]:hidden">
-              Click the stage, then drive with W A S D · C switches camera
-            </span>
+            <span className="hud-tag h-7 px-3">{touch ? "Drive with the buttons below" : "Click the stage, then drive with W A S D · C switches camera"}</span>
           ) : null}
         </div>
 
@@ -286,19 +295,20 @@ export default function GarageScene({ program, unlocked, celebration, interactiv
                 <button
                   onClick={toggleAutopilot}
                   aria-pressed={hud.autopilot}
-                  title="Toggle autopilot (P)"
+                  title={touch ? "Toggle autopilot" : "Toggle autopilot (P)"}
+                  aria-label={`Autopilot ${hud.autopilot ? "on" : "off"}. Toggle autopilot`}
                   className={`hud-btn ${hud.autopilot ? "hud-btn-on" : ""}`}
                 >
                   <Bot className="h-3.5 w-3.5" />
-                  {compact ? (hud.autopilot ? "On" : "Off") : `Autopilot ${hud.autopilot ? "on" : "off"}`}
+                  {compact ? `Auto ${hud.autopilot ? "on" : "off"}` : `Autopilot ${hud.autopilot ? "on" : "off"}`}
                 </button>
               )}
             </div>
           </div>
 
           {/* touch screens get their own row of pads, below the gauges */}
-          {interactive && canDrive && (!autoplay || tookControl) && (
-            <div className="pointer-events-auto hidden items-center justify-between [@media(pointer:coarse)]:flex">
+          {interactive && canDrive && touch && (!autoplay || tookControl) && (
+            <div className="pointer-events-auto flex items-center justify-between">
               <TouchButtons
                 input={input}
                 onTouch={() => setTookControl(true)}

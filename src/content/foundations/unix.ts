@@ -123,7 +123,7 @@ export const unixModule: Module = {
           title: "Which requests cross the line?",
           body: "Send the **Save notes.txt** request and the **Add 2 + 3** request. Watch which one goes through the kernel.",
           widget: { type: "unix-kernel", props: { requests: ["save", "memory", "key", "add"] }, live: true },
-          question: { type: "widget", goal: { tried: ["save", "add"] } },
+          question: { type: "widget", hint: "Press both request buttons, one after the other; each one is its own try.", goal: { tried: ["save", "add"] } },
           explanation: "Saving goes **program → system call → kernel → disk**, because the disk is shared and the kernel has to check the request and organise the bytes. Adding two numbers in the program's own memory needs nobody's permission, so it never leaves user mode.",
         },
         {
@@ -212,7 +212,7 @@ export const unixModule: Module = {
           title: "Start some",
           body: "Start **two** editors and **one** music player. Quit any extras with ×.",
           widget: { type: "unix-procs", props: { counter: false } },
-          question: { type: "widget", goal: { byProgram: { editor: 2, music: 1 } } },
+          question: { type: "widget", hint: "Use the start buttons for two editors and one music player, and the × to close any extra.", goal: { byProgram: { editor: 2, music: 1 } } },
           explanation: "Three processes from two program files. The kernel gave each a **process ID** (PID): a number naming that one running copy. You'll use PIDs to manage processes from the shell later.",
         },
         {
@@ -236,7 +236,7 @@ export const unixModule: Module = {
           title: "Private memory",
           body: "Every process gets memory of its own. Start two editors, then press **+1** on only one of them.",
           widget: { type: "unix-procs", props: { programs: ["editor"] } },
-          question: { type: "widget", goal: { separate: true } },
+          question: { type: "widget", hint: "Start two editors, then press +1 on only one of them and compare the two.", goal: { separate: true } },
           explanation: "Same program, separate memory: one editor's `clicks` changed and the other's didn't. The kernel and the CPU's memory hardware make sure each process sees only its own memory. That's why one app crashing doesn't drag the others down with it.",
         },
         {
@@ -250,7 +250,7 @@ export const unixModule: Module = {
           title: "When does the editor finish?",
           body: "The editor needs **3** ticks of CPU time, and each process gets **2** ticks per turn. On which tick does the editor finish? Predict, then step through to check.",
           widget: { type: "unix-scheduler", props: { procs: SCHED_BASIC, quantum: 2 }, live: true },
-          question: { type: "number", answer: 7 },
+          question: { type: "number", hint: "Each process runs 2 ticks per turn, in order. Write down who runs on each tick until the editor has had 3.", answer: 7 },
           explanation: "The editor runs on ticks 1 and 2, waits while music (3–4) and the download (5–6) have their turns, then finishes on tick **7**. It needed only 3 ticks of CPU but took 7 ticks of real time. Sharing makes each job a little slower, and in return nobody is frozen out.",
         },
         {
@@ -322,7 +322,7 @@ export const unixModule: Module = {
           title: "The full path",
           body: "A **path** lists the directories you walk through to reach something, separated by `/`. A path that starts with `/` begins at the root. That's an **absolute path**: it means the same thing wherever you are.\n\nType the absolute path to `cat.jpg`.",
           widget: { type: "unix-paths", props: { files: PATHS_TREE, placeholder: "start with /" } },
-          question: { type: "widget", goal: { path: "/home/ada/photos/cat.jpg", absolute: true } },
+          question: { type: "widget", hint: "Begin with / and name every directory on the way down to the file.", goal: { path: "/home/ada/photos/cat.jpg", absolute: true } },
           explanation: "`/` → `home` → `ada` → `photos` → `cat.jpg`, written `/home/ada/photos/cat.jpg`. Linux and macOS use `/` between names; Windows uses `\\` and drive letters like `C:\\`, but the idea is the same.",
         },
         {
@@ -330,7 +330,7 @@ export const unixModule: Module = {
           title: "Starting where you are",
           body: "Every process has a **current directory** (or *working directory*): the place it's standing. Yours is marked *you are here*.\n\nA path that **doesn't** start with `/` is a **relative path**: it starts from the current directory. Reach `cat.jpg` with a relative path.",
           widget: { type: "unix-paths", props: { files: PATHS_TREE } },
-          question: { type: "widget", goal: { path: "~/photos/cat.jpg", absolute: false, avoid: "~" } },
+          question: { type: "widget", hint: "Don't start with /. Build the path from the directory you are standing in.", goal: { path: "~/photos/cat.jpg", absolute: false, avoid: "~" } },
           explanation: "From `/home/ada`, the relative path `photos/cat.jpg` leads to the same file. Relative paths are shorter, but they depend on where you stand: the same text means something else from another directory.",
         },
         {
@@ -351,7 +351,7 @@ export const unixModule: Module = {
           title: "Climb, then descend",
           body: "Now you're in `site`. Reach `cat.jpg` with a relative path, without using `~`.",
           widget: { type: "unix-paths", props: { files: PATHS_TREE, cwd: "~/projects/site" } },
-          question: { type: "widget", goal: { path: "~/photos/cat.jpg", absolute: false, uses: "..", avoid: "~" } },
+          question: { type: "widget", hint: "Two dots (..) mean 'the directory above this one'. Go up first, then down.", goal: { path: "~/photos/cat.jpg", absolute: false, uses: "..", avoid: "~" } },
           explanation: "`../../photos/cat.jpg`: up from `site` to `projects`, up again to `ada`, then down into `photos`. Each `..` climbs one level.",
         },
         {
@@ -365,7 +365,7 @@ export const unixModule: Module = {
           kind: "question",
           title: "Home, written ~",
           body: "Each user has a **home directory** for their own files: `/home/ada` for ada, `/home/bob` for bob (on a Mac it's `/Users/ada`). Because it's used so often, the shell lets you write your home as `~`. For ada, `~/photos` is short for `/home/ada/photos`.\n\nWhen **bob** types `~/music`, what absolute path does he mean?",
-          question: { type: "text", answer: ["/home/bob/music", "/home/bob/music/"], placeholder: "/…" },
+          question: { type: "text", hint: "~ stands for the user's own home. For bob that is /home/bob.", answer: ["/home/bob/music", "/home/bob/music/"], placeholder: "/…" },
           explanation: "`~` is bob's own home, `/home/bob`, so `~/music` is `/home/bob/music`. The same `~` means a different place for each user.",
         },
         {
@@ -422,7 +422,7 @@ export const unixModule: Module = {
           title: "Look around with ls",
           body: "`ls` **lists** what's in a directory. On its own it lists where you are; give it a path to look somewhere else without moving.\n\nList your home directory, then list what's inside `projects` while staying where you are.",
           widget: { type: "unix-terminal", props: { files: HOME4, task: "Run `ls`, then `ls projects`.", solution: ["ls", "ls projects"] } },
-          question: { type: "widget", goal: { historyMatches: ["^ls\\s*$", "^ls\\s+(\\./)?projects/?\\s*$"], cwd: "~" } },
+          question: { type: "widget", hint: "Type ls on its own, then ls with a directory name after it.", goal: { historyMatches: ["^ls\\s*$", "^ls\\s+(\\./)?projects/?\\s*$"], cwd: "~" } },
           explanation: "`ls` showed the contents of `~`; `ls projects` peeked inside `projects` while you stayed home. Directories show up in blue.",
         },
         {
@@ -436,7 +436,7 @@ export const unixModule: Module = {
           title: "Count the hidden ones",
           body: "Use `ls -a`. How many hidden entries are in your home directory, **not** counting `.` and `..`?",
           widget: { type: "unix-terminal", props: { files: HOME4, suggest: ["ls -a"] }, live: true },
-          question: { type: "number", answer: 3 },
+          question: { type: "number", hint: "Hidden entries start with a dot. List them with ls -a and leave out . and .. when you count.", answer: 3 },
           explanation: "`.bashrc`, `.hidden_idea.txt` and `.profile`: three. The entries `.` (this directory) and `..` (its parent) appear in every directory's `ls -a` listing.",
         },
         {
@@ -444,7 +444,7 @@ export const unixModule: Module = {
           title: "Move with cd",
           body: "`cd` (*change directory*) moves you. It takes a relative or an absolute path.",
           widget: { type: "unix-terminal", props: { files: HOME4, task: "Get to `~/projects/site` with `cd`.", solution: ["cd projects/site"] } },
-          question: { type: "widget", goal: { cwd: "~/projects/site" } },
+          question: { type: "widget", hint: "cd takes a relative path (from where you are) or an absolute one (from /).", goal: { cwd: "~/projects/site" } },
           explanation: "Either `cd projects` then `cd site`, or both in one go: `cd projects/site`. The prompt changed to show where you are, and `pwd` would now print `/home/ada/projects/site`.",
         },
         {
@@ -452,7 +452,7 @@ export const unixModule: Module = {
           title: "Home in one step",
           body: "You're deep inside `site`. Get back to your home directory with **one** command.",
           widget: { type: "unix-terminal", props: { files: HOME4, cwd: "~/projects/site", task: "Go home in a single command. (Used more? Press Reset.)", solution: ["cd"] } },
-          question: { type: "widget", goal: { cwd: "~", maxCommands: 1 } },
+          question: { type: "widget", hint: "cd with nothing after it takes you straight home.", goal: { cwd: "~", maxCommands: 1 } },
           explanation: "Any of these works: `cd ../..` (up twice), `cd ~`, `cd /home/ada`, or plain `cd` with nothing after it, which always takes you home. `cd -` jumps back to wherever you were before.",
         },
         {
@@ -460,7 +460,7 @@ export const unixModule: Module = {
           title: "Make things",
           body: "`mkdir` makes a directory, and `touch` makes an empty file (on a file that exists, it just updates the time it was last changed). Watch the file tree under the terminal.",
           widget: { type: "unix-terminal", props: { files: HOME4, tree: true, task: "Make a directory `drafts` inside `projects`, and an empty file `idea.txt` inside `drafts`.", solution: ["mkdir projects/drafts", "touch projects/drafts/idea.txt"] } },
-          question: { type: "widget", goal: { dirs: ["~/projects/drafts"], files: ["~/projects/drafts/idea.txt"] } },
+          question: { type: "widget", hint: "Make the directory first with mkdir, then create the file inside it with touch.", goal: { dirs: ["~/projects/drafts"], files: ["~/projects/drafts/idea.txt"] } },
           explanation: "For example `mkdir projects/drafts`, then `touch projects/drafts/idea.txt`. Paths work in every command, not only `cd`, so you never had to move.",
         },
         {
@@ -468,7 +468,7 @@ export const unixModule: Module = {
           title: "Several levels at once",
           body: "Try `mkdir archive/2026/october`. It fails, because `mkdir` won't create missing parent directories. Look for the option that does (try `mkdir --help`).",
           widget: { type: "unix-terminal", props: { files: HOME4, tree: true, task: "Create `~/archive/2026/october`.", solution: ["mkdir -p archive/2026/october"] } },
-          question: { type: "widget", goal: { dirs: ["~/archive/2026/october"] } },
+          question: { type: "widget", hint: "Run mkdir --help and look for the option that creates parent directories.", goal: { dirs: ["~/archive/2026/october"] } },
           explanation: "`mkdir -p archive/2026/october` creates every missing directory along the path (*p* for *parents*) and doesn't complain about ones that already exist. Almost every command explains itself with `--help`.",
         },
         {
@@ -548,7 +548,7 @@ export const unixModule: Module = {
           title: "Clean up",
           body: "Plain `rm` refuses to delete a directory. Try it, then do it properly.",
           widget: { type: "unix-terminal", props: { files: HOME5, tree: true, task: "Delete the `junk` directory and everything in it, but keep `keep.txt`.", solution: ["rm -r junk"] } },
-          question: { type: "widget", goal: { missing: ["~/junk"], files: ["~/keep.txt"] } },
+          question: { type: "widget", hint: "rm -r removes a directory together with everything in it. Leave keep.txt alone.", goal: { missing: ["~/junk"], files: ["~/keep.txt"] } },
           explanation: "`rm -r junk`. Plain `rm junk` stops with *Is a directory*, a small safety net. And notice `rm` printed nothing when it worked: Unix tools stay quiet unless something goes wrong.",
         },
         {
@@ -593,7 +593,7 @@ export const unixModule: Module = {
           title: "Just the top: head",
           body: "`head` prints the first lines of its input: 10, unless you give it `-n` and a number.",
           widget: { type: "unix-terminal", props: { files: HOME6, task: "Show only the **first 3 lines** of `server.log`.", solution: ["head -n 3 server.log"] } },
-          question: { type: "widget", goal: { output: LOG.slice(0, 3).join("\n") } },
+          question: { type: "widget", hint: "Give head the option -n and the number of lines you want.", goal: { output: LOG.slice(0, 3).join("\n") } },
           explanation: "`head -n 3 server.log`. Its partner `tail` prints the *last* lines, which is how people check the newest entries in a log: `tail -n 5 server.log`.",
         },
         {
@@ -601,7 +601,7 @@ export const unixModule: Module = {
           title: "Find lines: grep",
           body: "`grep PATTERN FILE` prints only the lines that contain the pattern.",
           widget: { type: "unix-terminal", props: { files: HOME6, task: "Show only the lines of `server.log` that contain `ERROR`.", solution: ["grep ERROR server.log"] } },
-          question: { type: "widget", goal: { output: LOG.filter((l) => l.includes("ERROR")).join("\n") } },
+          question: { type: "widget", hint: "Put the word the wanted lines have in common first, then the file name.", goal: { output: LOG.filter((l) => l.includes("ERROR")).join("\n") } },
           explanation: "`grep ERROR server.log` kept 3 of the 12 lines. The odd name comes from an old editor command, *g/re/p*: **g**lobally search for a **r**egular **e**xpression and **p**rint. Patterns can be much fancier than one word.",
         },
         {
@@ -609,7 +609,7 @@ export const unixModule: Module = {
           title: "Any case: grep -i",
           body: "`grep` is case-sensitive: `disk` doesn't match `Disk`.",
           widget: { type: "unix-terminal", props: { files: HOME6, task: "Find **every** line that mentions disk, in upper or lower case.", solution: ["grep -i disk server.log"] } },
-          question: { type: "widget", goal: { output: LOG.filter((l) => /disk/i.test(l)).join("\n") } },
+          question: { type: "widget", hint: "The option -i makes grep ignore upper and lower case.", goal: { output: LOG.filter((l) => /disk/i.test(l)).join("\n") } },
           explanation: "`grep -i disk server.log` (*i* for *ignore case*). Without `-i` you'd miss the `Disk 90% full` warning.",
         },
         {
@@ -617,7 +617,7 @@ export const unixModule: Module = {
           title: "Count: your first pipe",
           body: "`wc -l` counts lines (*wc* is short for *word count*; without `-l` it shows lines, words and bytes).",
           widget: { type: "unix-terminal", props: { files: HOME6, task: "Use `grep` and `wc -l` joined by a pipe to count the ERROR lines.", solution: ["grep ERROR server.log | wc -l"] } },
-          question: { type: "widget", goal: { output: "3", lastCommand: "\\|" } },
+          question: { type: "widget", hint: "The | symbol sends one command's output into the next. Feed grep's output into wc -l.", goal: { output: "3", lastCommand: "\\|" } },
           explanation: "`grep ERROR server.log | wc -l` prints `3`. grep's output never reached the screen: it flowed straight into `wc`. You just built a small program out of two others.",
         },
         {
@@ -641,7 +641,7 @@ export const unixModule: Module = {
           title: "Each one once",
           body: "Try `uniq fruits.txt` first to see the problem.",
           widget: { type: "unix-terminal", props: { files: HOME6, task: "Print each fruit **once**, in alphabetical order.", solution: ["sort fruits.txt | uniq"] } },
-          question: { type: "widget", goal: { output: "apple\nbanana\ncherry\nkiwi" } },
+          question: { type: "widget", hint: "uniq only removes repeats that sit next to each other, so sort the lines first and pipe them into uniq.", goal: { output: "apple\nbanana\ncherry\nkiwi" } },
           explanation: "`sort fruits.txt | uniq`. (`sort -u` does both jobs at once, but pipelines let you combine any tools you like.)",
         },
         {
@@ -649,7 +649,7 @@ export const unixModule: Module = {
           title: "Most common first",
           body: "`uniq -c` writes how many times each line repeated in front of it, and `sort -rn` sorts as numbers (`-n`), biggest first (`-r`).",
           widget: { type: "unix-terminal", props: { files: HOME6, task: "Show how many of each fruit there are, **most common first**.", solution: ["sort fruits.txt | uniq -c | sort -rn"] } },
-          question: { type: "widget", goal: { output: "      5 banana\n      3 cherry\n      2 apple\n      1 kiwi" } },
+          question: { type: "widget", hint: "Sort, count with uniq -c, then sort again by that count with sort -rn.", goal: { output: "      5 banana\n      3 cherry\n      2 apple\n      1 kiwi" } },
           explanation: "`sort fruits.txt | uniq -c | sort -rn`: sort to group, count each group, then rank the counts. The same shape answers questions like *which pages get the most visits?* on logs with millions of lines.",
         },
         {
@@ -696,7 +696,7 @@ export const unixModule: Module = {
           title: "Set them",
           body: "Set the permissions so the **owner** can read and write, the **group** can only read, and **others** can do nothing.",
           widget: { type: "unix-perms", props: { mode: "644", name: "report.txt", octal: false } },
-          question: { type: "widget", goal: { string: "rw-r-----" } },
+          question: { type: "widget", hint: "Owner: read and write. Group: read only. Others: nothing at all.", goal: { string: "rw-r-----" } },
           explanation: "`rw-r-----`: owner read and write, group read, others nothing. A common choice for a file you share with your team but not with everyone on the machine.",
         },
         {
@@ -726,7 +726,7 @@ export const unixModule: Module = {
           title: "Your turn",
           body: "What number is `rwxr-xr-x`?",
           widget: { type: "unix-perms", props: { mode: "700", name: "tool.sh" }, live: true },
-          question: { type: "number", answer: 755 },
+          question: { type: "number", hint: "r is worth 4, w is 2 and x is 1. Add them up within each group of three letters.", answer: 755 },
           explanation: "`rwx` = 7, `r-x` = 5, `r-x` = 5, so **755**: the usual setting for programs and scripts. Only the owner can change it, and everyone can read and run it. The other number you'll see everywhere is **644** (`rw-r--r--`), for ordinary files.",
         },
         {
@@ -734,7 +734,7 @@ export const unixModule: Module = {
           title: "Run a script",
           body: "`chmod` (*change mode*) changes permissions. With letters: `u` is the owning **u**ser, `g` the group, `o` others and `a` all; `+` adds, `-` removes, `=` sets exactly. So `chmod u+x file` lets the owner run it.\n\n`hello.sh` is a **script**: a text file of shell commands. Run it with `./hello.sh` (the `./` means *the one in this directory*). It fails. Fix it and run it again.",
           widget: { type: "unix-terminal", props: { files: HOME7, groups: ["ada", "team"], task: "Make `./hello.sh` run.", suggest: ["./hello.sh", "ls -l hello.sh"], solution: ["chmod u+x hello.sh", "./hello.sh"] } },
-          question: { type: "widget", goal: { lastCommand: "^\\./hello\\.sh\\s*$", output: "Hello from a script!" } },
+          question: { type: "widget", hint: "The script is missing the execute permission. Add it with chmod, then run it again.", goal: { lastCommand: "^\\./hello\\.sh\\s*$", output: "Hello from a script!" } },
           explanation: "Without `x` the kernel refuses to run the file: *Permission denied*. After `chmod u+x hello.sh` (or `chmod +x`, or `chmod 755`) the script runs. Its first line, `#!/bin/bash`, tells the kernel which program should read the rest.",
         },
         {
@@ -742,7 +742,7 @@ export const unixModule: Module = {
           title: "Lock it with a number",
           body: "`secret.txt` is `rw-r--r--`, so anyone on this machine can read it.",
           widget: { type: "unix-terminal", props: { files: HOME7, groups: ["ada", "team"], task: "Use `chmod` with a **number** so only you can read and write `secret.txt`.", suggest: ["ls -l secret.txt"], solution: ["chmod 600 secret.txt", "ls -l secret.txt"] } },
-          question: { type: "widget", goal: { mode: { "~/secret.txt": "600" } } },
+          question: { type: "widget", hint: "Read plus write is 6 for the owner; group and others get 0.", goal: { mode: { "~/secret.txt": "600" } } },
           explanation: "`chmod 600 secret.txt` gives `rw-------`: 6 (4 + 2, read and write) for you, 0 for the group, 0 for others. Some tools insist on this: SSH refuses to use a private key file that other people can read.",
         },
         {
@@ -803,7 +803,7 @@ export const unixModule: Module = {
           title: "Foreground and background",
           body: "Normally the shell waits for a command to finish before it prompts you again: the command runs in the **foreground**. `sleep 5` does nothing for 5 seconds, and you get no prompt until it ends (press **Ctrl+C** to stop it early).\n\nPut `&` at the end and it runs in the **background** instead: the prompt comes straight back.",
           widget: { type: "unix-terminal", props: { task: "Start `sleep 60 &`, then run `ps` and find it.", suggest: ["sleep 5", "sleep 60 &", "jobs", "ps"], solution: ["sleep 60 &", "ps"] } },
-          question: { type: "widget", goal: { running: ["sleep"], lastCommand: "^ps" } },
+          question: { type: "widget", hint: "End the command with & so the prompt comes back, then look at the process list with ps.", goal: { running: ["sleep"], lastCommand: "^ps" } },
           explanation: "The shell printed something like `[1] 4378`: job number 1, PID 4378. `jobs` lists the jobs started from this shell, and when a background job ends, the shell reports *Done* at your next prompt.",
         },
         {
@@ -811,7 +811,7 @@ export const unixModule: Module = {
           title: "Stop a runaway",
           body: "A program called `hog` is using almost all the CPU (see the `%CPU` column of `ps aux`). `kill PID` asks a process to stop.",
           widget: { type: "unix-terminal", props: { procs: [{ pid: 5120, cmd: "hog", args: "./hog --forever", cpu: 99.1, mem: 0.4, time: "00:12:31" }], task: "Find the PID of `hog` and stop it with `kill`.", suggest: ["ps", "ps aux"], solution: ["ps", "kill 5120", "ps"] } },
-          question: { type: "widget", goal: { killed: [5120] } },
+          question: { type: "widget", hint: "ps aux lists every process with its PID. Find the one using the CPU and kill that PID.", goal: { killed: [5120] } },
           explanation: "`kill 5120`. Despite its name, `kill` doesn't destroy anything itself: it sends the process a **signal**, and by default that signal is `TERM`, a polite request to stop.",
         },
         {
@@ -825,7 +825,7 @@ export const unixModule: Module = {
           title: "It won't listen",
           body: "This `stuck` program ignores polite requests.",
           widget: { type: "unix-terminal", props: { procs: [{ pid: 6001, cmd: "stuck", args: "./stuck", stubborn: true, cpu: 2.0, time: "00:03:10" }], task: "Make `stuck` (PID 6001) go away.", suggest: ["kill 6001", "ps"], solution: ["kill -9 6001", "ps"] } },
-          question: { type: "widget", goal: { killed: [6001] } },
+          question: { type: "widget", hint: "A plain kill can be ignored. The option -9 cannot be.", goal: { killed: [6001] } },
           explanation: "`kill 6001` sends `TERM`, which `stuck` ignores. `kill -9 6001` sends `KILL`, which no process can ignore. Keep it as a last resort: the program gets no chance to clean up, so unsaved work is lost and temporary files stay behind.",
         },
         {
@@ -839,7 +839,7 @@ export const unixModule: Module = {
           title: "Where does ls live?",
           body: "When you type `ls`, how does the shell find the program? It looks through the directories listed in the variable `PATH`, in order, and runs the first file called `ls` it finds. `echo $PATH` shows the list, and `which ls` shows which file `ls` really is.",
           widget: { type: "unix-terminal", props: { task: "Find the full path of the `ls` program.", suggest: ["echo $PATH", "which ls"], solution: ["which ls"] } },
-          question: { type: "widget", goal: { outputIncludes: "/usr/bin/ls" } },
+          question: { type: "widget", hint: "echo $PATH lists the directories; which ls names the file it finds.", goal: { outputIncludes: "/usr/bin/ls" } },
           explanation: "`ls` is the file `/usr/bin/ls`: a command is just a program file in one of the `PATH` directories. Builtins like `cd` aren't files at all (`type cd` says *cd is a shell builtin*). They can't be: changing directory has to happen inside the shell's own process.",
         },
         {
@@ -855,7 +855,7 @@ export const unixModule: Module = {
               solution: ["chmod +x ~/bin/greet", 'export PATH="$HOME/bin:$PATH"', "greet"],
             },
           },
-          question: { type: "widget", goal: { lastCommand: "^greet\\s*$", output: "Hi, ada!" } },
+          question: { type: "widget", hint: "Two things are missing: execute permission on the script (chmod +x) and ~/bin on PATH (use the export line above).", goal: { lastCommand: "^greet\\s*$", output: "Hi, ada!" } },
           explanation: "`chmod +x ~/bin/greet` makes it runnable, and the `export` puts `~/bin` first in the search list. That's all a command is: an executable file somewhere on the `PATH`. To keep the setting in every new terminal, people add that `export` line to `~/.bashrc`.",
         },
         {

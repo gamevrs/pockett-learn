@@ -349,6 +349,7 @@ assert got and got["snr"] == "-6.0" and got["freq"] == "1419.850", f"negative sn
           id: "t3",
           description: "parse_fields returns None when the line does not fit",
           assertionCode: py`
+assert parse_fields('kx-204 @ 1420.405mhz az=047.5 el=+32.0 snr=18.2dB "Kepler relay online" #45'), "parse_fields should read a good line first (and give None only for lines that do not fit)"
 assert parse_fields("### CARRIER LOST ###") is None, "a line with no fields should give None"
 assert parse_fields("") is None, "an empty string should give None, not crash"
 assert parse_fields("kx-204 @ 1420.405mhz az=047.5") is None, "a truncated line (no el or snr) should give None"
@@ -784,6 +785,7 @@ assert got and got["message"] == "Handoff accepted [ack] [relay]", f"the message
           id: "t4",
           description: "parse_line returns None for lines that do not fit",
           assertionCode: py`
+assert parse_line('2087-03-14T02:20:00Z ~~ or-512 @ 1422.592mhz az=291.8 el=+38.7 snr=13.9dB "Handoff accepted" #91 ~~'), "parse_line should read a good line first (and give None only for lines that do not fit)"
 for line in ['2087-03-14T02:19:02Z  ~^~ ### CARRIER LOST ### ~^~ ', '2087-03-14T02:19:02Z', '', '2087-03-14T02:19:02Z ~~ vr-077 @ 1421.2 ~~', '2087-03-14T02:19:02Z kx-204 @ 1420.405mhz az=047.5 el=+32.0 snr=18.2dB "no checksum"']:
     assert parse_line(line) is None, f"parse_line should return None for {line!r}"
 `,

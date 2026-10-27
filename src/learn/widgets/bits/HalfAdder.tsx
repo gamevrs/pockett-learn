@@ -96,7 +96,7 @@ export function HalfAdder({ props, onChange, revealed }: WidgetProps<HalfAdderPr
             aria-disabled={locked}
             onClick={() => toggle(inp.key)}
             onKeyDown={(e) => {
-              if (!locked && (e.key === " " || e.key === "Enter")) {
+              if (!locked && e.key === " ") {
                 e.preventDefault();
                 e.stopPropagation();
                 toggle(inp.key);

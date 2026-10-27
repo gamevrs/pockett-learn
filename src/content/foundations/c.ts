@@ -47,7 +47,7 @@ export const cModule: Module = {
           kind: "question",
           title: "Count the bytes",
           body: "A struct holds one `char`, one `int` and one `double`, laid out end to end with no gaps. How many bytes is that in total?",
-          question: { type: "number", answer: 13, unit: "bytes" },
+          question: { type: "number", hint: "A char is 1 byte, an int is 4 and a double is 8. Add them up.", answer: 13, unit: "bytes" },
           explanation: "1 (char) + 4 (int) + 8 (double) = **13** bytes. Real compilers often add *padding* so each field starts at a convenient address, but the raw data is 13 bytes.",
         },
         {
@@ -93,7 +93,7 @@ export const cModule: Module = {
           title: "Read the map",
           body: "In the map, the `int` variable `y` sits right after `x`. Each `int` is 4 bytes and `x` starts at `0x1000`. Tap the bytes of **`y`** to confirm where `&y` points.",
           widget: { type: "cmem-memory", props: { start: 0x1000, length: 16, mode: "pick-var", vars: [{ name: "x", type: "int", addr: 0x1000, value: 5 }, { name: "y", type: "int", addr: 0x1004, value: 42 }, { name: "ch", type: "char", addr: 0x1008, value: "Q" }] } },
-          question: { type: "widget", goal: { var: "y" }, prompt: "Select y" },
+          question: { type: "widget", hint: "y comes right after x, and x starts at 0x1000 and is 4 bytes long.", goal: { var: "y" }, prompt: "Select y" },
           explanation: "`x` takes bytes `0x1000`–`0x1003`, so `y` starts at **`0x1004`**. `&y` is `0x1004`. Addresses count in bytes, and the next `int` begins 4 bytes along.",
         },
         {
@@ -114,7 +114,7 @@ export const cModule: Module = {
           title: "Spot the low byte",
           body: "`int z = 256` lives at `0x1008`. In little-endian order, 256 is `00 01 00 00`. Tap the single byte that holds the `01`.",
           widget: { type: "cmem-memory", props: { start: 0x1008, length: 8, cols: 4, mode: "pick-byte", vars: [{ name: "z", type: "int", addr: 0x1008, value: 256 }] } },
-          question: { type: "widget", goal: { addr: 0x1009 }, prompt: "Tap the 0x01 byte" },
+          question: { type: "widget", hint: "Little-endian puts the smallest byte first. Which of the four bytes holds the 01?", goal: { addr: 0x1009 }, prompt: "Tap the 0x01 byte" },
           explanation: "256 = 1 × 256, and 256 is the value of the *second* byte (each byte up is ×256). So the `01` sits at `0x1009`, one byte above the start. The lowest byte at `0x1008` is `00`.",
         },
         {
@@ -154,7 +154,7 @@ export const cModule: Module = {
           title: "Reach through the pointer",
           body: "`p` points at `x`. Using only the buttons, make the value of **`x` become 5** by writing *through* the pointer (don't set `x` directly).",
           widget: { type: "cmem-pointer", props: { ptr: { target: "x" }, actions: ["*p=5", "p=&y", "*p+=1", "p=&x"] }, live: true },
-          question: { type: "widget", goal: { values: { x: 5 }, target: "x" }, prompt: "Make x = 5 via *p" },
+          question: { type: "widget", hint: "Use the button that assigns through the pointer (*p = …), not the one that changes x directly.", goal: { values: { x: 5 }, target: "x" }, prompt: "Make x = 5 via *p" },
           explanation: "With `p` pointing at `x`, `*p = 5` stores 5 in the bytes `p` points to, which are `x`'s bytes. The pointer is a second route to the same variable.",
         },
         {
@@ -179,7 +179,7 @@ export const cModule: Module = {
           title: "Follow a NULL pointer",
           body: "Set `p` to `NULL`, then try `*p = 5`. What happens in the playground, and why?",
           widget: { type: "cmem-pointer", props: { ptr: { target: "x" }, actions: ["p=NULL", "*p=5", "p=&x"] }, live: true },
-          question: { type: "widget", goal: { crashed: true }, prompt: "Trigger the crash" },
+          question: { type: "widget", hint: "Set p to NULL first, then try to write through it.", goal: { crashed: true }, prompt: "Trigger the crash" },
           explanation: "`*p` when `p` is NULL reaches for address 0, which no program is allowed to touch, so it crashes with a **segmentation fault**. A pointer is only safe to dereference when it points at real, owned memory.",
         },
         {
@@ -226,7 +226,7 @@ export const cModule: Module = {
           title: "Work out the address",
           body: "`int a[5]` starts at `0x2000`. Step to index **3** and read off `&a[3]`.",
           widget: { type: "cmem-array", props: { name: "a", type: "int", base: 0x2000, values: [10, 20, 30, 40, 50] }, live: true },
-          question: { type: "widget", goal: { i: 3 }, prompt: "Go to index 3" },
+          question: { type: "widget", hint: "Each int is 4 bytes, so &a[3] is the start plus 3 × 4.", goal: { i: 3 }, prompt: "Go to index 3" },
           explanation: "`&a[3]` = `0x2000 + 3 × 4` = `0x2000 + 12` = **`0x200C`**. Each step is one int (4 bytes), so index 3 is 12 bytes in.",
         },
         {
@@ -247,7 +247,7 @@ export const cModule: Module = {
           title: "Off the end",
           body: "`int a[5]` is followed in memory by `int count = 99`. Step to index **5** (one past the end) to see what `a[5]` actually reaches.",
           widget: { type: "cmem-array", props: { name: "a", type: "int", base: 0x2000, values: [10, 20, 30, 40, 50], after: { name: "count", value: 99 }, minIndex: 0, maxIndex: 6 }, live: true },
-          question: { type: "widget", goal: { i: 5, outOfBounds: true }, prompt: "Go one past the end" },
+          question: { type: "widget", hint: "Indexes 0 to 4 are inside the array. Step one further.", goal: { i: 5, outOfBounds: true }, prompt: "Go one past the end" },
           explanation: "`a[5]` is the address right after the array, which is where `count` lives. Reading `a[5]` reads `count`; *writing* `a[5]` would overwrite it. C happily lets you, because `a[5]` is just `*(a + 5)`.",
         },
         {
@@ -292,7 +292,7 @@ export const cModule: Module = {
           kind: "question",
           title: "Count the bytes",
           body: "How many bytes does the string `\"cat\"` occupy in memory?",
-          question: { type: "number", answer: 4, unit: "bytes" },
+          question: { type: "number", hint: "A C string ends with an extra terminator byte. Count the letters and that one too.", answer: 4, unit: "bytes" },
           explanation: "Three letters plus the `'\\0'` terminator = **4** bytes. Every C string carries that hidden extra byte, which is why a buffer for an n-character string needs room for n + 1.",
         },
         {
@@ -306,7 +306,7 @@ export const cModule: Module = {
           title: "Run strlen",
           body: "Walk `strlen` across the string `\"code\"` until it stops. What length does it report?",
           widget: { type: "cmem-string", props: { text: "code", base: 0x3000 }, live: true },
-          question: { type: "widget", goal: { done: true, count: 4 }, prompt: "Finish the walk" },
+          question: { type: "widget", hint: "strlen counts characters until it meets the terminator, which it does not count.", goal: { done: true, count: 4 }, prompt: "Finish the walk" },
           explanation: "It counts `c`, `o`, `d`, `e` (4) and stops at the `'\\0'` in slot 4. `strlen` is **4**, even though the array uses 5 bytes. Length and storage size are different numbers.",
         },
         {
@@ -512,7 +512,7 @@ export const cModule: Module = {
           title: "Overflow into a neighbour",
           body: "`char name[8]` sits right before `int is_admin = 0`. Type enough characters that the copy overflows `name` and changes `is_admin` away from 0.",
           widget: { type: "cmem-overflow", props: { size: 8, name: "name", neighbour: "is_admin" }, live: true },
-          question: { type: "widget", goal: { overflowed: true, changed: true }, prompt: "Overwrite is_admin" },
+          question: { type: "widget", hint: "The array holds 8 bytes. Type more characters than that.", goal: { overflowed: true, changed: true }, prompt: "Overwrite is_admin" },
           explanation: "Once the input is longer than 7 characters (plus its `'\\0'`), the copy runs past `name` and writes into `is_admin`'s bytes. A flag meant to be 0 is now non-zero. This is exactly how overflow bugs become security holes: input chosen by an attacker rewrites data, or even the return address, to seize control. Bounds and length-limited copies are the defence.",
         },
         {
@@ -613,7 +613,7 @@ export const cModule: Module = {
           title: "'undefined reference'",
           body: "You call `square(7)` and declared `int square(int n);` but never wrote the function's body. The build fails with `undefined reference to 'square'`. Which stage reported it?",
           widget: { type: "cmem-pipeline", props: { variant: "link", mode: "pick" } },
-          question: { type: "widget", goal: { stage: "link" }, prompt: "Pick the stage" },
+          question: { type: "widget", hint: "Which stage joins the separately compiled pieces together and looks for each function's body?", goal: { stage: "link" }, prompt: "Pick the stage" },
           explanation: "The compiler was happy: the declaration promised `square` exists elsewhere. Only the **linker**, trying to join everything into one executable, discovers there's no actual code for `square`. 'undefined reference' almost always means a definition is missing or a library wasn't linked.",
         },
         {

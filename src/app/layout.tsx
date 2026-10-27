@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { CloudSync } from "@/components/auth/CloudSync";
+import { SITE_URL } from "@/lib/legal";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -13,13 +14,14 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const serif = Source_Serif_4({ variable: "--font-serif-face", subsets: ["latin"], weight: ["500", "600"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "pockett — learn to code by building real projects",
     template: "%s · pockett",
   },
   description:
-    "Free, interactive coding lessons in Python, JavaScript and SQL. Build a self-driving car, a rocket flight computer, a drum machine or a race-data dashboard, and see every lesson work in a live demo.",
-  keywords: ["learn python", "free coding course", "interactive programming", "python projects", "learn to code"],
+    "Free, interactive coding lessons in Python, JavaScript, SQL, C#, C++, Go and Rust, plus an AI track and a Foundations course on how computers work. Build a self-driving car, a rocket flight computer, a drum machine or a race-data dashboard, and see every lesson work in a live demo.",
+  keywords: ["learn to code", "free coding course", "interactive programming", "coding projects", "learn python", "learn javascript", "learn sql", "learn rust", "learn go"],
 };
 
 export const viewport: Viewport = {
@@ -44,9 +46,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full flex flex-col bg-bg text-ink font-sans">
         <ThemeProvider>
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-primary focus:px-4 focus:py-2.5 focus:text-sm focus:font-medium focus:text-primary-ink focus:shadow-lg"
+          >
+            Skip to content
+          </a>
           <CloudSync />
           <Navbar />
-          <main className="flex-1 flex flex-col">{children}</main>
+          <main id="main" tabIndex={-1} className="flex-1 flex flex-col outline-none">{children}</main>
           <Footer />
         </ThemeProvider>
       </body>

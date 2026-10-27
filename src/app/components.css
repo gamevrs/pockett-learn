@@ -97,6 +97,18 @@
   padding: 0 0.85rem;
   font-size: 0.8125rem;
 }
+/* Touch: buttons and `.tap` controls get at least a 40px hit area below the sm breakpoint; desktop keeps the compact size. */
+@media (max-width: 639.98px) {
+  .btn,
+  .btn-sm,
+  .hud-btn {
+    min-height: 2.5rem;
+  }
+  .tap {
+    min-height: 2.5rem;
+    min-width: 2.5rem;
+  }
+}
 .btn-ghost {
   border-color: transparent;
   background: transparent;
@@ -424,10 +436,34 @@
   margin: 0.75rem 0;
   padding: 0.85rem 1rem;
   border-radius: 10px;
-  background: #0a0a0a;
   color: #e5e5e5;
   overflow-x: auto;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  /* wide code scrolls sideways (wrapping would break the alignment of trailing comments): a bright thin
+     scrollbar plus edge glows that only show on the side that still has more code, so nothing looks cut off */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.45) rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(to right, #0a0a0a 30%, rgba(10, 10, 10, 0)) left center / 28px 100% no-repeat local,
+    linear-gradient(to left, #0a0a0a 30%, rgba(10, 10, 10, 0)) right center / 28px 100% no-repeat local,
+    linear-gradient(to right, rgba(197, 238, 138, 0.28), rgba(197, 238, 138, 0)) left center / 14px 100% no-repeat scroll,
+    linear-gradient(to left, rgba(197, 238, 138, 0.28), rgba(197, 238, 138, 0)) right center / 14px 100% no-repeat scroll,
+    #0a0a0a;
+}
+.prose-lesson pre:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.prose-lesson pre::-webkit-scrollbar {
+  height: 8px;
+}
+.prose-lesson pre::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+.prose-lesson pre::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 4px;
 }
 .prose-lesson pre code {
   background: none;

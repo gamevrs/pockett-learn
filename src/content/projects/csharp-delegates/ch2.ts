@@ -645,7 +645,8 @@ assert(lines.includes("alarm saw: 30, 60"), 'No line is exactly "alarm saw: 30, 
         {
           id: "t3",
           description: "a disposed observer is really silent",
-          assertionCode: js`assert(!lines.includes("ALARM: reading over 90"), "The alarm printed ALARM for 95, but it had already been disposed. Subscribe must return a token whose Dispose removes the observer from the list before OnNext(95).");`,
+          assertionCode: js`assert(lines.includes("alarm saw: 30, 60"), "Run the program first: this check only means something once the alarm has heard the readings before it was disposed.");
+assert(!lines.includes("ALARM: reading over 90"), "The alarm printed ALARM for 95, but it had already been disposed. Subscribe must return a token whose Dispose removes the observer from the list before OnNext(95).");`,
         },
         {
           id: "t4",

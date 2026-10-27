@@ -7,6 +7,10 @@
 // RUNNER_CACHE=1 reuses earlier runner answers for identical source (speeds up authoring loops).
 // Without RUNNER_BASE_URL those lessons are skipped with a warning.
 // Solutions must pass all tests. Starters must NOT pass all tests (so lessons aren't pre-solved).
+// Also checked: no check shows a raw engine error (TypeError, "Cannot read properties", "x is not a function"...) on the
+// untouched starter (src/engine/runtimes/friendly.ts turns the common ones into plain language; anything it misses is flagged
+// here); checks that already pass on a starter are listed as warnings to review; every Foundations question step needs an
+// explicit prompt (a number/text box must ask a question), and its optional `hint` / `feedback` must be well-formed.
 process.env.NODE_NO_WARNINGS = "1";
 import { readdirSync, writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -22,6 +26,7 @@ import { executeJs, runJsTests } from "../src/engine/runtimes/javascript/engine.
 import { readFileSync, existsSync } from "node:fs";
 import { parseOutput, runChecks, toError } from "../src/engine/runtimes/remote-output.ts";
 import { FOUNDATIONS } from "../src/content/foundations/index.ts";
+import { friendlyFailure } from "../src/engine/runtimes/friendly.ts";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const only = process.argv[2];
@@ -95,6 +100,10 @@ for (const file of files) {
   for (const f of featureIds) if (!unlocked.has(f)) problems.push(`${project.slug}: feature "${f}" is never unlocked by any lesson`);
 }
 
+// A number or text box needs to be told WHAT to type. Its text must ask a question ("?") or open a sentence with an
+// answer verb ("Find …", "Work out …", "Type …"); a statement followed by an empty box leaves the learner guessing.
+const ANSWER_VERB = new RegExp(String.raw`(?:^|[.!?:;,][*_\x60)"']*\s+|\n)\s*[*_\x60(~"'\[]*(?:find|type|enter|write|count|work out|calculate|predict|estimate|say|name|give|tell|read|add up|multiply|divide|convert|translate|compute|figure out|decide|guess)\b`, "i");
+
 // ── Foundations (concept lessons) ──
 if (!only || only === "foundations") {
   // widget types that exist: keys of the per-module registries
@@ -138,6 +147,27 @@ if (!only || only === "foundations") {
           if (q.type === "widget" && !widget) problems.push(`${stag}: widget question without a widget`);
           if (q.type === "order" && q.items.length < 3) warn.push(`${stag}: order question with fewer than 3 items`);
           if (q.type === "text" && q.answer.length === 0) problems.push(`${stag}: text question without accepted answers`);
+          // Wrong-answer help (optional): a hint, and per-option feedback for choices.
+          if (q.hint !== undefined && (typeof q.hint !== "string" || q.hint.trim().length < 8)) problems.push(`${stag}: hint must be a sentence, not empty`);
+          if (q.feedback !== undefined) {
+            if (q.type !== "choice") problems.push(`${stag}: feedback only applies to choice questions`);
+            else {
+              const right = Array.isArray(q.answer) ? q.answer : [q.answer];
+              for (const [k, v] of Object.entries(q.feedback)) {
+                if (!Number.isInteger(Number(k)) || Number(k) < 0 || Number(k) >= q.options.length) problems.push(`${stag}: feedback for option ${k}, which does not exist`);
+                else if (right.includes(Number(k))) problems.push(`${stag}: feedback on option ${k}, which is a correct answer (it only shows for wrong picks)`);
+                if (typeof v !== "string" || v.trim().length < 8) problems.push(`${stag}: feedback for option ${k} must be a sentence`);
+              }
+            }
+          }
+          // Every question must say what to do or answer. The learner sees the step's body, a widget goal's `prompt`
+          // and a widget's `task`; between them there has to be an explicit ask ("?" or an instruction), otherwise the
+          // learner is left guessing what the widget or number box wants (fnd-bits-1-switches "Two switches" once did).
+          const ask = [st.body, q.type === "widget" ? q.prompt : "", st.widget?.props?.task].filter((x) => typeof x === "string" && x.trim()).join(" ");
+          if (!ask.trim()) problems.push(`${stag}: question without a prompt (add a body, or a prompt for widget goals) that says what to do or answer`);
+          else if ((q.type === "number" || q.type === "text") && !/\?/.test(ask) && !ANSWER_VERB.test(ask)) {
+            problems.push(`${stag}: a ${q.type} box with no explicit ask in "${ask.slice(-90).replace(/\s+/g, " ")}" (end with a question, or say "Find …", "Work out …", "Type …")`);
+          }
         }
         if (st.kind === "code") {
           if (st.tests.length < 2) problems.push(`${stag}: code step needs at least 2 tests`);
@@ -183,7 +213,10 @@ if (pyCases.length) {
     console.error(py.stderr || py.stdout);
     process.exit(1);
   }
-  pyResults.push(...JSON.parse(py.stdout));
+  // the browser runtime shows Python check errors through the same plain-language layer
+  const seen = JSON.parse(py.stdout);
+  for (const r of seen) for (const t of r.results ?? []) if (t.error) t.error = friendlyFailure(String(t.error));
+  pyResults.push(...seen);
 }
 
 // ── compiled languages: the pockett runner ──
@@ -271,6 +304,10 @@ async function sqlExecute(c) {
   });
 }
 
+/** Raw engine errors that must never reach a learner as a check message. */
+// Authored messages may mention the words ("Payment() should raise TypeError"), so a bare "TypeError" is only
+// a hit when the message STARTS like an engine error; the engine phrases are hits anywhere (even inside "got ...").
+const RAW_ERROR = /^\s*(?:TypeError|ReferenceError|NameError|UnboundLocalError|AttributeError)|Cannot read propert|Cannot set propert|undefined is not|is not a function|is not defined|is not iterable|is not a constructor|Cannot convert undefined/;
 const toResult = (c, error, tests) => ({ label: c.label, error, results: tests.map((t) => ({ id: t.testId, ok: t.passed, error: t.error })) });
 const results = [];
 for (const c of cases) {
@@ -320,6 +357,17 @@ results.forEach((r, i) => {
     if (!allPassed) {
       ok++;
       if (r.error) warn.push(`${r.label}: starter crashes (${r.error.type}: ${r.error.message}, line ${r.error.line}); fine, but check it is intentional`);
+      // A check that blows up on the untouched starter shows the learner a raw JavaScript error
+      // instead of telling them what to do ("Cannot read properties of null (reading 'columns')").
+      for (const t of r.results) {
+        if (!t.ok && RAW_ERROR.test(String(t.error ?? ""))) problems.push(`${r.label}: check ${t.id} shows a raw error on the untouched starter -> ${String(t.error).split("\n")[0].slice(0, 140)} (guard it with a friendly assert message)`);
+      }
+      // Checks that already pass on the starter while the lesson as a whole fails: they prove nothing
+      // about the learner's work. Review them by hand (some are legitimate: "the table still exists").
+      const early = r.results.filter((t) => t.ok);
+      if (early.length > 0 && r.results.length > 0) {
+        warn.push(`${r.label}: ${early.length}/${r.results.length} checks already pass on the untouched starter (${early.map((t) => t.id).join(", ")}); make sure that is intended`);
+      }
     } else problems.push(`${r.label}: starter already passes all tests (lesson is pre-solved)`);
   }
 });

@@ -101,7 +101,7 @@ export const assemblyModule: Module = {
           title: "Be the assembler",
           body: "Pick an instruction and its operands, and watch the three numbers it becomes. Build the instruction whose machine code is **5 1 2**.",
           widget: { type: "asm-encode", props: { opcodes: [1, 2, 5, 6, 16, 0] } },
-          question: { type: "widget", goal: { code: [5, 1, 2] } },
+          question: { type: "widget", hint: "The first of the three numbers is the instruction's opcode; the other two are its operands.", goal: { code: [5, 1, 2] } },
           explanation: "Opcode 5 is `ADD` with two registers, and the operands are R1 and R2: **ADD R1, R2**, which sets R1 = R1 + R2. A register is stored as just its number: R1 is 1.",
         },
         {
@@ -132,14 +132,14 @@ export const assemblyModule: Module = {
           title: "Make it say 42",
           body: "Change this program so it outputs **42**, then press **Check**. Check assembles and runs it for you, but do try **Assemble** and **Run** yourself first.",
           widget: { type: "asm-cpu", props: { program: "MOV R0, #10\nOUT R0\nHLT", allow: ["MOV", "ADD", "SUB", "OUT", "HLT"], solution: "MOV R0, #42\nOUT R0\nHLT" } },
-          question: { type: "widget", goal: { out: [42] } },
+          question: { type: "widget", hint: "The program loads a number and then outputs it. Which number does it load?", goal: { out: [42] } },
           explanation: "`MOV R0, #42` puts 42 into R0 and `OUT R0` sends it out. You could also keep the 10 and add 32 to it. Any program that outputs exactly 42 and then halts is right.",
         },
         {
           kind: "question",
           title: "Count the instructions",
           body: "An assembly file has 6 instructions, 2 blank lines and 3 comment lines (comments start with `;` and are notes for people). How many instructions end up in the machine code?",
-          question: { type: "number", answer: 6 },
+          question: { type: "number", hint: "Blank lines and comments are for people; only instructions become machine code.", answer: 6 },
           explanation: "Blank lines and comments are for humans, and the assembler skips them. Each instruction becomes exactly one machine instruction, so **6**. Later you'll see one line of Python turn into *several* instructions. That's a big difference between assembly and a high-level language.",
         },
         {
@@ -195,7 +195,7 @@ export const assemblyModule: Module = {
           title: "Don't forget to stop",
           body: "This program should output 7, but something's missing. Press **Run** and read the message, then fix it.",
           widget: { type: "asm-cpu", props: { program: "MOV R2, #7\nOUT R2", assembled: true, allow: BASIC, solution: "MOV R2, #7\nOUT R2\nHLT" } },
-          question: { type: "widget", goal: { out: [7] } },
+          question: { type: "widget", hint: "The CPU keeps going until it meets an instruction that tells it to stop.", goal: { out: [7] } },
           explanation: "Without `HLT` the CPU just fetches whatever comes after your last instruction. A real CPU would treat leftover bytes as instructions and run them, which is one way programs crash. `HLT` tells it to stop.",
         },
         {
@@ -207,7 +207,7 @@ export const assemblyModule: Module = {
             props: { program: "; swap R0 and R1\n\nHLT", regs: { R0: 3, R1: 8 }, inputs: ["R0", "R1"], allow: BASIC, solution: "MOV R2, R0   ; keep a copy of R0\nMOV R0, R1\nMOV R1, R2\nHLT" },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "If you overwrite one register straight away you lose its value. Park one in a spare register first.",
             goal: {
               cases: [
                 { regs: { R0: 3, R1: 8 }, expectRegs: { R0: 8, R1: 3 } },
@@ -296,7 +296,7 @@ export const assemblyModule: Module = {
             },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "Combine the registers step by step: add b to a, take c away, then output the result.",
             goal: {
               cases: [
                 { regs: { R0: 7, R1: 5, R2: 3 }, out: [9] },
@@ -316,7 +316,7 @@ export const assemblyModule: Module = {
             props: { program: "; output R0 × 4\n\nHLT", regs: { R0: 3 }, inputs: ["R0"], allow: ["MOV", "ADD", "OUT", "HLT"], solution: "ADD R0, R0   ; × 2\nADD R0, R0   ; × 4\nOUT R0\nHLT" },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "R0 × 4 is R0 + R0 + R0 + R0. Keep adding R0 to a running total.",
             goal: {
               cases: [
                 { regs: { R0: 3 }, out: [12] },
@@ -381,7 +381,7 @@ export const assemblyModule: Module = {
           title: "Back and forth",
           body: "Address 0 starts at 4. After this program halts, what number is at address **1**?",
           widget: { type: "asm-cpu", props: { program: "LOAD R0, [0]\nADD R0, R0\nSTORE R0, [0]\nLOAD R1, [0]\nADD R1, #1\nSTORE R1, [1]\nHLT", locked: true, predict: true, mem: { "0": 4 }, allow: MEMORY } },
-          question: { type: "number", answer: 9 },
+          question: { type: "number", hint: "Trace it line by line and write down what each register holds.", answer: 9 },
           explanation: "R0 loads the 4 and doubles it, and 8 is stored back at address 0. Then R1 loads that 8, adds 1, and **9** is stored at address 1. Memory only changes when a `STORE` runs.",
         },
         {
@@ -408,7 +408,7 @@ export const assemblyModule: Module = {
             },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "Load x, load y, subtract, then store the result at address 2.",
             goal: {
               cases: [
                 { mem: { "0": 50, "1": 8 }, expectMem: { "2": 42 } },
@@ -427,7 +427,7 @@ export const assemblyModule: Module = {
             props: { program: "; swap x ([0]) and y ([1])\n\nHLT", mem: { "0": 12, "1": 30 }, names: { "0": "x", "1": "y" }, allow: MEMORY, solution: "LOAD R0, [0]\nLOAD R1, [1]\nSTORE R0, [1]\nSTORE R1, [0]\nHLT" },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "Load both values into registers first, then store them back the other way round.",
             goal: {
               cases: [
                 { mem: { "0": 12, "1": 30 }, expectMem: { "0": 30, "1": 12 } },
@@ -442,7 +442,7 @@ export const assemblyModule: Module = {
           title: "An address in a register",
           body: "The address can come from a register: `LOAD R1, [R0]` reads the cell whose address is the number **in R0**. Add 1 to R0 and the same instruction reads the next cell. This is how programs walk through a list. (In C, an address kept in a variable is called a **pointer**.)\n\nWhat ends up in R2?",
           widget: { type: "asm-cpu", props: { program: "MOV R0, #2\nLOAD R1, [R0]\nADD R0, #1\nLOAD R2, [R0]\nHLT", locked: true, predict: true, mem: { "2": 70, "3": 15 }, allow: MEMORY } },
-          question: { type: "number", answer: 15 },
+          question: { type: "number", hint: "R0 holds an address, so LOAD reads that cell. Add 1 to R0 and it reads the next cell.", answer: 15 },
           explanation: "R0 starts at 2, so `LOAD R1, [R0]` reads address 2 (70). Then R0 becomes 3, and `LOAD R2, [R0]` reads address 3: **15**. The same kind of instruction reaches a different cell because the address came from a register.",
         },
         {
@@ -498,7 +498,7 @@ export const assemblyModule: Module = {
             type: "asm-cpu",
             props: { program: "; output 10, 8, 6, 4, 2 with a loop\n\nHLT", allow: LOOPS, solution: "    MOV R0, #10\nloop:\n    OUT R0\n    SUB R0, #2\n    JNZ loop\n    HLT" },
           },
-          question: { type: "widget", goal: { out: [10, 8, 6, 4, 2], maxLines: 6 } },
+          question: { type: "widget", hint: "Start at 10, output, subtract 2, and jump back until you reach 0.", goal: { out: [10, 8, 6, 4, 2], maxLines: 6 } },
           explanation: "Start at 10 and subtract 2 each pass. After 2 is output, `SUB` makes 0, Z turns on, and `JNZ` stops jumping. Had you started at 9, R0 would go 9, 7, … 1, −1 and skip 0 entirely, so the loop would never end. Exit conditions deserve a careful look.",
         },
         {
@@ -516,7 +516,7 @@ export const assemblyModule: Module = {
             },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "Add R0 into the running total in R1, count R0 down by 1, and repeat until R0 is 0.",
             goal: {
               cases: [
                 { regs: { R0: 4 }, out: [10] },
@@ -553,7 +553,7 @@ export const assemblyModule: Module = {
             },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "Each time round: load the item at the address in R0, add it to the total, move R0 on by one and count R2 down.",
             goal: {
               cases: [
                 { out: [25] },
@@ -596,7 +596,7 @@ export const assemblyModule: Module = {
           title: "Make neither jump",
           body: "Find values where **neither** `JZ` nor `JLT` would jump.",
           widget: { type: "asm-flags", props: { a: 5, b: 8 } },
-          question: { type: "widget", goal: { z: false, n: false } },
+          question: { type: "widget", hint: "JZ jumps when the last result was zero and JLT when it was negative. Pick a value that is neither.", goal: { z: false, n: false } },
           explanation: "`JZ` needs equal numbers and `JLT` needs R0 < R1. For neither to fire, R0 must be **greater** than R1: the subtraction is positive, so both flags are 0. That's exactly when `JGT` jumps.",
         },
         {
@@ -647,7 +647,7 @@ export const assemblyModule: Module = {
             },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "Subtract one from the other. If the result is negative, the second is the bigger one.",
             goal: {
               cases: [
                 { regs: { R0: 3, R1: 9 }, out: [9] },
@@ -674,7 +674,7 @@ export const assemblyModule: Module = {
             },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "Output the counter, add 1, compare it with n, and stop when you have passed n.",
             goal: {
               cases: [
                 { regs: { R0: 4 }, out: [1, 2, 3, 4] },
@@ -729,7 +729,7 @@ export const assemblyModule: Module = {
             props: { program: "; swap R0 and R1 with PUSH and POP\n\nHLT", regs: { R0: 3, R1: 8 }, inputs: ["R0", "R1"], allow: ["PUSH", "POP", "OUT", "HLT"], solution: "PUSH R0\nPUSH R1\nPOP R0     ; gets R1's value\nPOP R1     ; gets R0's value\nHLT" },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "PUSH both values, then POP them back in the opposite order.",
             goal: {
               cases: [
                 { regs: { R0: 3, R1: 8 }, expectRegs: { R0: 8, R1: 3 } },
@@ -750,7 +750,7 @@ export const assemblyModule: Module = {
           title: "Where does it come back to?",
           body: "When the **second** `CALL double` runs, what return address does it push onto the stack? Use the addresses on the left.",
           widget: { type: "asm-cpu", props: { program: DOUBLE, locked: true, predict: true, allow: STACK } },
-          question: { type: "number", answer: 5 },
+          question: { type: "number", hint: "CALL pushes the address of the instruction right after the CALL.", answer: 5 },
           explanation: "The second `CALL double` is at address 4, so the next instruction (`OUT R0`) is at address **5**. That's what gets pushed, and it's where `RET` lands afterwards. The first call pushed 2. The function doesn't know who called it; the stack remembers for it.",
         },
         {
@@ -765,7 +765,7 @@ export const assemblyModule: Module = {
               solution: "    MOV R0, #2\n    CALL triple\n    OUT R0\n    MOV R0, #5\n    CALL triple\n    OUT R0\n    HLT\ntriple:\n    MOV R1, R0\n    ADD R0, R1\n    ADD R0, R1\n    RET",
             },
           },
-          question: { type: "widget", goal: { out: [6, 15] } },
+          question: { type: "widget", hint: "Triple is R0 + R0 + R0. Finish the body with a return.", goal: { out: [6, 15] } },
           explanation: "Copy R0 to a spare register and add the copy twice (or double R0 and add the copy once). Without `RET` at the end, the CPU would run on past the function instead of going back to the caller.",
         },
         {
@@ -885,7 +885,7 @@ export const assemblyModule: Module = {
             },
           },
           question: {
-            type: "widget",
+            type: "widget", hint: "A while loop: check n > 0, output n + n, subtract 1 from n, jump back to the check.",
             goal: {
               cases: [
                 { regs: { R0: 4 }, out: [8, 6, 4, 2] },

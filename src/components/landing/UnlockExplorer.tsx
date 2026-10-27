@@ -13,7 +13,7 @@ import { PythonCode } from "@/components/ui/Prose";
 import { FeatureIcon } from "@/components/ui/icons";
 
 const lessons = flattenLessons(garage);
-const PILL = "inline-flex h-8 items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[0.8rem] transition-colors hover:border-[var(--line-strong)]";
+const PILL = "inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-full border border-line bg-surface px-3 sm:h-8 text-[0.8rem] transition-colors hover:border-[var(--line-strong)]";
 const PILL_ON = "!border-transparent !bg-ink !text-bg";
 
 export function UnlockExplorer() {
@@ -84,7 +84,7 @@ export function UnlockExplorer() {
           <button className="btn btn-sm btn-ghost" onClick={() => go(Math.min(lessons.length, step + 1))} disabled={step >= lessons.length}>
             Next part <ArrowRight className="h-3.5 w-3.5" />
           </button>
-          <Link href="/projects/garage" className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-brand hover:underline">
+          <Link href="/projects/garage" prefetch={false} className="ml-auto inline-flex min-h-10 items-center gap-1 text-sm font-medium text-brand hover:underline">
             Build it yourself <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
@@ -97,6 +97,7 @@ export function UnlockExplorer() {
           unlocked={unlocked}
           celebration={celebration}
           focus={current ? null : "ignition"}
+          surface="landing"
           autoplayScene
           hideControls
         />

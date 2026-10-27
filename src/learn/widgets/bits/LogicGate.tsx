@@ -192,7 +192,7 @@ function GateDiagram({ gate, a, b, out, live, onToggle, disabled }: { gate: Gate
             aria-disabled={disabled}
             onClick={() => !disabled && onToggle(inp.key)}
             onKeyDown={(e) => {
-              if (!disabled && (e.key === " " || e.key === "Enter")) {
+              if (!disabled && e.key === " ") {
                 e.preventDefault();
                 e.stopPropagation();
                 onToggle(inp.key);

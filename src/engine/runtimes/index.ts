@@ -1,6 +1,8 @@
 import type { LanguageId } from "../types";
 import type { Runtime } from "./types";
 
+export { ServiceError, RunCancelled, isServiceError, isRunCancelled } from "./service-error";
+export { useRuntimeState } from "./status";
 export type { GradeOutcome, RunOptions, RunOutcome, Runtime, StatusListener } from "./types";
 
 /**
@@ -32,8 +34,8 @@ export function loadRuntime(language: LanguageId): Promise<Runtime> {
 }
 
 /** Warm a language up in the background (engine download, parser chunk). */
-export function preloadRuntime(language: LanguageId) {
+export function preloadRuntime(language: LanguageId, eager = false) {
   void loadRuntime(language)
-    .then((r) => r.preload())
+    .then((r) => r.preload(eager))
     .catch(() => {});
 }

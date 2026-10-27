@@ -6,7 +6,9 @@ import { ArrowRight, BookOpen, Check, ChevronLeft, ChevronRight, Code2, Flame, L
 import { featuresUnlockedBy, flattenLessons, languageOf, type RunError, type TestResult } from "@/engine/types";
 import type { Celebration } from "@/engine/scene";
 import type { ProgramHandle } from "@/engine/program";
-import { loadRuntime, preloadRuntime } from "@/engine/runtimes";
+import { isRunCancelled, isServiceError, loadRuntime, preloadRuntime, useRuntimeState } from "@/engine/runtimes";
+import { toIssue, type ServiceIssue } from "@/engine/runtimes/service-error";
+import { needsEngineDownload } from "@/engine/runtimes/status";
 import { languageInfo } from "@/engine/languages";
 import { solutionThrough, starterFor } from "@/engine/compose";
 import type { LessonContext } from "@/content";
@@ -27,7 +29,10 @@ import { sound } from "@/lib/sound/sound";
 import { SoundControl } from "@/components/audio/SoundControl";
 import { fireCelebrationConfetti } from "@/lib/ui/confetti";
 import { useHydrated } from "@/lib/hooks";
+import { useShortcuts } from "@/lib/ui/platform";
 import { CodeEditor } from "./CodeEditor";
+import { EditorFrame } from "./EditorFrame";
+import { ServiceNotice } from "./ServiceNotice";
 import { LessonPanel } from "./LessonPanel";
 import { ResultsPanel, type ResultTab } from "./ResultsPanel";
 import { WorkspaceLayout, useLayoutMode, type PanelId } from "./WorkspaceLayout";
@@ -87,7 +92,19 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
   /** Set after a Submit that did not pass, so the feedback bar can say how close it was. */
   const [miss, setMiss] = useState<{ passed: number; total: number } | null>(null);
   const [resultsCollapsed, setResultsCollapsed] = useState(false);
+  /** The runner or a language engine is having trouble (never the learner's code): shown as a calm notice with Retry. */
+  const [service, setService] = useState<ServiceIssue | null>(null);
+  /** What Retry re-runs: the mode of the run that hit the problem (Submit wins if one was queued). */
+  const [serviceMode, setServiceMode] = useState<"run" | "submit">("run");
+  /** True once a run has finished, so an empty Console can say "ran and printed nothing". */
+  const [ranOnce, setRanOnce] = useState(false);
+  /** Which kind of run is in flight (null while idle or while the saved build boots on arrival). */
+  const [inFlight, setInFlight] = useState<"run" | "submit" | null>(null);
+  const [queuedSubmit, setQueuedSubmit] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const layoutMode = useLayoutMode();
+  const keys = useShortcuts();
+  const engine = useRuntimeState(language);
 
   const programRef = useRef<ProgramHandle | null>(null);
   // Bumped whenever the panel is hidden/unmounted (Next keeps routes alive hidden), so async
@@ -98,6 +115,18 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
   /** Features previewed by the last successful Run (Submit makes them permanent). */
   const [preview, setPreview] = useState<string[]>([]);
   const busy = useRef(false);
+  const bootingRef = useRef(false);
+  const flight = useRef<"run" | "submit" | null>(null);
+  const queued = useRef(false);
+  const controller = useRef<AbortController | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Short message near the top of the screen: used whenever a press can't start right now, so nothing is ever dropped silently. */
+  function notify(message: string) {
+    setToast(message);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3200);
+  }
 
   const unlocked = useMemo(() => {
     const set = featuresUnlockedBy(project, Object.keys(progress.completed));
@@ -123,6 +152,12 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
       programRef.current = null;
       booted.current = false;
       busy.current = false;
+      controller.current?.abort();
+      bootingRef.current = false;
+      flight.current = null;
+      queued.current = false;
+      setInFlight(null);
+      setQueuedSubmit(false);
       setProgram(null);
       setStatus(showsBoot ? "loading" : "idle");
     };
@@ -135,6 +170,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     booted.current = true;
     if (index === 0 && !done) return;
     const my = epoch.current;
+    bootingRef.current = true;
     void loadRuntime(language)
       .then((rt) => rt.run(codeRef.current, { onStatus: setStatusText, setup: project.setup, packages: project.packages }))
       .then((out) => {
@@ -147,11 +183,21 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
           programRef.current = out.program;
           setProgram(out.program);
           setStdout(out.stdout);
+          setRanOnce(true);
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        // the saved build could not be started because the runner is struggling: say so (engine downloads have their own banner)
+        if (my === epoch.current && isServiceError(err) && err.kind !== "engine") {
+          setServiceMode("run");
+          setService(toIssue(err));
+        }
+      })
       .finally(() => {
-        if (my === epoch.current) setStatus("idle");
+        if (my === epoch.current) {
+          bootingRef.current = false;
+          setStatus("idle");
+        }
       });
   }, [index, done, language, project.setup, project.packages]);
 
@@ -164,8 +210,31 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
 
   /** Run = try the code (output + live stage). Submit = also grade it and complete the lesson. */
   async function execute(mode: "run" | "submit") {
-    if (busy.current) return;
+    if (busy.current) {
+      // never drop a press silently: a Submit during a Run waits its turn, anything else says why nothing happened
+      if (flight.current === "run" && mode === "submit") {
+        if (!queued.current) {
+          queued.current = true;
+          setQueuedSubmit(true);
+        }
+        notify("Submit queued. It starts as soon as this run finishes.");
+      } else if (flight.current === mode) {
+        notify(mode === "submit" ? "Still checking your work…" : "Still running your code…");
+      } else {
+        notify("Submit is already running your code. Hang on for the result.");
+      }
+      return;
+    }
+    if (bootingRef.current) {
+      notify("Still starting your saved build. Try again in a moment.");
+      return;
+    }
     busy.current = true;
+    flight.current = mode;
+    setInFlight(mode);
+    const ctl = new AbortController();
+    controller.current = ctl;
+    let retryQueued = true;
     const my = epoch.current;
     sound.playClick();
     if (mode === "submit") recordAttempt(lesson.id);
@@ -174,15 +243,18 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     setResultsCollapsed(false);
     setCompletion(null);
     setMiss(null);
+    setService(null);
 
     try {
       const rt = await loadRuntime(language);
-      const out = await rt.run(code, { onStatus: setStatusText, setup: project.setup, packages: project.packages });
+      const opts = { onStatus: setStatusText, setup: project.setup, packages: project.packages, signal: ctl.signal };
+      const out = await rt.run(code, opts);
       if (my !== epoch.current) {
         out.program?.dispose();
         return;
       }
       setStdout(out.stdout);
+      setRanOnce(true);
       setRunError(out.error);
       swapProgram(out.program);
 
@@ -210,7 +282,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
         sound.playError();
       } else {
         setStatusText("Checking your work…");
-        const graded = await rt.grade(code, lesson.tests, { onStatus: setStatusText, setup: project.setup, packages: project.packages });
+        const graded = await rt.grade(code, lesson.tests, opts);
         nextResults = graded.results;
       }
       if (my !== epoch.current) return;
@@ -234,15 +306,48 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
       }
     } catch (err) {
       if (my !== epoch.current) return;
-      setRunError({ type: "EngineError", message: (err as Error)?.message ?? String(err), line: null });
-      setResultTab("console");
-      sound.playError();
+      if (isRunCancelled(err)) {
+        retryQueued = false;
+        notify("Run cancelled. Nothing was changed.");
+      } else if (isServiceError(err)) {
+        // the runner or a language engine is struggling: say so calmly, never blame the code, offer Retry
+        retryQueued = false;
+        setServiceMode(queued.current ? "submit" : mode);
+        setService(toIssue(err));
+        setResultTab(mode === "submit" ? "checks" : "console");
+        if (err.kind !== "engine") setMobileTab("checks");
+        if (queued.current) notify("Submit wasn't sent because the run didn't finish. Use Retry when you're ready.");
+      } else {
+        setRunError({ type: "EngineError", message: (err as Error)?.message ?? String(err), line: null });
+        setResultTab("console");
+        sound.playError();
+      }
     } finally {
       if (my === epoch.current) {
         busy.current = false;
+        flight.current = null;
+        controller.current = null;
+        setInFlight(null);
         setStatus("idle");
+        const runQueued = queued.current && retryQueued;
+        queued.current = false;
+        setQueuedSubmit(false);
+        // a Submit pressed during a Run starts as soon as that Run is done
+        if (runQueued) setTimeout(() => void runRef.current("submit"), 0);
       }
     }
+  }
+
+  /** Stop a remote run that is in flight (the request is abandoned; nothing else changes). */
+  function cancelRun() {
+    queued.current = false;
+    setQueuedSubmit(false);
+    controller.current?.abort();
+  }
+
+  /** Retry after a service notice: run the same thing again. */
+  function retryService() {
+    void execute(serviceMode);
   }
 
   const runRef = useRef(execute);
@@ -286,6 +391,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     clearDraft(lesson.id);
     setResults([]);
     setRunError(null);
+    setService(null);
   };
 
   const rank = levelFor(progress.xp);
@@ -293,6 +399,13 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
   const lessonPath = (id: string) => `/projects/${project.slug}/${id}`;
   const errorLine = runError?.line ?? null;
   const running = status === "loading";
+  const booting = running && inFlight === null;
+  const remote = lang.runsIn === "server";
+  const cancellable = inFlight !== null && remote;
+  const engineFailed = needsEngineDownload(language) && engine.phase === "failed";
+  const notReady = engineFailed || booting;
+  const notReadyReason = engineFailed ? `${lang.label} couldn't load. Use Retry in the notice above.` : "Starting your saved build…";
+  const retryEngine = () => preloadRuntime(language, true);
   const doneCount = lessons.filter((l) => progress.completed[l.id]).length;
 
   const mobileTabs: { id: MobileTab; label: string; icon: React.ReactNode }[] = [
@@ -313,7 +426,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
             href={`/projects/${project.slug}`}
             aria-label={`Back to ${project.title}`}
             title={`Back to ${project.title}`}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink"
+            className="relative before:absolute before:-inset-1.5 before:content-[''] grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink"
           >
             <X className="h-4 w-4" />
           </Link>
@@ -355,28 +468,67 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
               <ChevronRight className="h-4 w-4" />
             </Link>
           )}
-          <button
-            onClick={() => void execute("run")}
-            disabled={running}
-            title="Run your code and watch the stage (Ctrl/⌘ + Enter)"
-            className="btn btn-sm"
-          >
-            <Play className="h-3.5 w-3.5" fill="currentColor" />
-            Run
-            <kbd className="ml-1 hidden rounded bg-ink/10 px-1.5 py-0.5 font-mono text-[10px] font-medium xl:inline">Ctrl ↵</kbd>
-          </button>
+          {cancellable ? (
+            <button onClick={cancelRun} title="Stop this run. Your code is untouched." data-testid="cancel-run-header" className="btn btn-sm">
+              <X className="h-3.5 w-3.5" />
+              Cancel
+            </button>
+          ) : (
+            <button
+              onClick={() => void execute("run")}
+              disabled={notReady}
+              aria-busy={inFlight !== null}
+              title={notReady ? notReadyReason : `Run your code and watch the stage (${keys.runText})`}
+              data-testid="run-button"
+              className="btn btn-sm"
+            >
+              {inFlight !== null ? <Spinner /> : <Play className="h-3.5 w-3.5" fill="currentColor" />}
+              {inFlight !== null ? "Running…" : "Run"}
+              <kbd className="ml-1 hidden rounded bg-ink/10 px-1.5 py-0.5 font-mono text-[10px] font-medium xl:inline">{keys.runKeys}</kbd>
+            </button>
+          )}
           <button
             onClick={() => void execute("submit")}
-            disabled={running}
-            title="Check your work and complete the lesson (Ctrl/⌘ + Shift + Enter)"
+            disabled={notReady}
+            aria-busy={inFlight === "submit"}
+            title={
+              notReady
+                ? notReadyReason
+                : queuedSubmit
+                  ? "Queued: Submit starts as soon as this run finishes"
+                  : inFlight === "run"
+                    ? "Queue Submit: it starts when this run finishes"
+                    : `Check your work and complete the lesson (${keys.submitText})`
+            }
+            data-testid="submit-button"
             className="btn btn-primary btn-sm"
           >
-            <Send className="h-3.5 w-3.5" />
-            Submit
-            <kbd className="ml-1 hidden rounded bg-black/10 px-1.5 py-0.5 font-mono text-[10px] font-medium xl:inline">Ctrl ⇧ ↵</kbd>
+            {inFlight === "submit" ? <Spinner /> : <Send className="h-3.5 w-3.5" />}
+            {inFlight === "submit" ? "Checking…" : queuedSubmit ? "Queued" : "Submit"}
+            <kbd className="ml-1 hidden rounded bg-black/10 px-1.5 py-0.5 font-mono text-[10px] font-medium xl:inline">{keys.submitKeys}</kbd>
           </button>
         </div>
       </header>
+
+      {/* the language engine (Python / SQL) could not be downloaded: one clear message on every tab, with Retry */}
+      {engineFailed && (
+        <div className="shrink-0 px-2 pt-2 sm:px-3">
+          <ServiceNotice
+            key={service?.at ?? 0}
+            issue={service?.kind === "engine" ? service : { kind: "engine", retryAfter: null, detail: null, at: 0 }}
+            onRetry={service?.kind === "engine" ? retryService : retryEngine}
+            engineName={lang.label}
+          />
+        </div>
+      )}
+
+      {/* on a phone only one panel shows at a time, so a run's progress gets its own line above whichever one that is */}
+      {inFlight !== null && layoutMode === "phone" && mobileTab !== "checks" && (
+        <div role="status" data-testid="run-status" className="flex shrink-0 items-center gap-2 border-b border-line bg-surface-2 px-3 py-1.5 text-xs text-ink-2">
+          <Spinner />
+          <span className="min-w-0 truncate">{statusText || "Running…"}</span>
+        </div>
+      )}
 
       {/* panels */}
       <div className="flex min-h-0 flex-1 flex-col p-2 sm:p-3">
@@ -420,12 +572,20 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
                   </button>
                 </div>
                 <div className="min-h-0 flex-1">
-                  <CodeEditor
+                  <EditorFrame
                     value={code}
                     onChange={(v) => {
                       setCode(v);
                       setPristine(false);
-                    }} onRun={() => void runRef.current("run")} onSubmit={() => void runRef.current("submit")} language={lang.monaco} context={project.setup} errorLine={errorLine} errorMessage={runError ? `${runError.type}: ${runError.message}` : undefined} revealKey={lesson.id} />
+                    }}
+                  >
+                    <CodeEditor
+                      value={code}
+                      onChange={(v) => {
+                        setCode(v);
+                        setPristine(false);
+                      }} onRun={() => void runRef.current("run")} onSubmit={() => void runRef.current("submit")} language={lang.monaco} context={project.setup} errorLine={errorLine} errorMessage={runError ? `${runError.type}: ${runError.message}` : undefined} revealKey={lesson.id} />
+                  </EditorFrame>
                 </div>
               </section>
             ),
@@ -443,6 +603,12 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
                   error={runError}
                   running={running}
                   statusText={statusText}
+                  language={language}
+                  sceneId={project.sceneId}
+                  ranOnce={ranOnce}
+                  service={service && service.kind !== "engine" ? service : null}
+                  onRetry={retryService}
+                  onCancel={cancellable ? cancelRun : undefined}
                   collapsed={layoutMode !== "phone" && resultsCollapsed}
                   onToggleCollapsed={layoutMode === "phone" ? undefined : () => setResultsCollapsed((c) => !c)}
                 />
@@ -466,19 +632,11 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
         />
       </div>
 
-      {/* mobile tab bar */}
-      <nav className="grid shrink-0 grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
-        {mobileTabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setMobileTab(t.id)}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${mobileTab === t.id ? "text-ink" : "text-ink-3"}`}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
-      </nav>
+      {toast && (
+        <div role="status" data-testid="workspace-toast" className="pop-in pointer-events-none fixed left-1/2 top-16 z-[80] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-full border border-[var(--line-strong)] bg-surface px-4 py-2 text-center text-sm shadow-lg">
+          {toast}
+        </div>
+      )}
 
       {/* feedback bar: one clear next step after Submit */}
       {completion && (
@@ -531,6 +689,19 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
           </button>
         </FeedbackBar>
       )}
+      {/* mobile tab bar */}
+      <nav className="grid shrink-0 grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] lg:hidden">
+        {mobileTabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setMobileTab(t.id)}
+            className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${mobileTab === t.id ? "text-ink" : "text-ink-3"}`}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
@@ -539,11 +710,10 @@ function FeedbackBar({ tone, onDismiss, children }: { tone: "good" | "bad"; onDi
   return (
     <div
       role="status"
-      className={`pop-in fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-[70] border-t lg:bottom-0 ${
-        tone === "good" ? "border-brand/40 bg-tint" : "border-bad/30 bg-surface"
-      }`}
+      data-testid="feedback-bar"
+      className={`pop-in z-[70] shrink-0 border-t ${tone === "good" ? "border-brand/40 bg-tint" : "border-bad/30 bg-surface"}`}
     >
-      <div className="mx-auto flex max-w-3xl items-center gap-3 px-4 py-3.5 sm:gap-4 sm:py-4">
+      <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
         {children}
         <button onClick={onDismiss} aria-label="Dismiss" className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-surface-2 hover:text-ink">
           <X className="h-4 w-4" />
@@ -551,4 +721,8 @@ function FeedbackBar({ tone, onDismiss, children }: { tone: "good" | "bad"; onDi
       </div>
     </div>
   );
+}
+
+function Spinner() {
+  return <span aria-hidden className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent opacity-70" />;
 }

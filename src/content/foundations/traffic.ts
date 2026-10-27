@@ -29,7 +29,7 @@ export const trafficModule: Module = {
           kind: "question",
           title: "Bikes on the road",
           body: "Riders start **4 trips a minute** and each trip lasts **15 minutes** on average. How many bikes are out on the road at any moment, on average?",
-          question: { type: "number", answer: 60 },
+          question: { type: "number", hint: "Bikes out = trips per minute × minutes per trip.", answer: 60 },
           explanation: "4 × 15 = **60**. That's more than a 40-bike fleet, so the station would sit empty and riders would be turned away. Nothing about the rule cares *why* trips are long or frequent: it holds for any stable system.",
         },
         {
@@ -37,7 +37,7 @@ export const trafficModule: Module = {
           title: "Just enough bikes",
           body: "Set **at least 8 trips a minute**, with the average trip short enough that the load is **between 35 and 40** bikes: busy, but still within the fleet.",
           widget: { type: "trf-littles", props: { scenario: "bikes", rate: 2, time: 10 } },
-          question: { type: "widget", goal: { overloaded: false, minRate: 8, minLoad: 35 } },
+          question: { type: "widget", hint: "Load = trips per minute × trip length. Adjust until it lands between 35 and 40.", goal: { overloaded: false, minRate: 8, minLoad: 35 } },
           explanation: "8 trips a minute × 5 minutes = 40: the fleet is fully used and just fits. Double the arrival rate and you must halve the trip time to stay inside the same fleet. Rate and time trade off one-for-one.",
         },
         {
@@ -50,7 +50,7 @@ export const trafficModule: Module = {
           kind: "question",
           title: "When latency creeps",
           body: "A service takes **200 requests a second**. Normally each takes 50 ms, but today a slow database makes each take **400 ms**. How many workers do you need to hold all the requests in flight now?",
-          question: { type: "number", answer: 80 },
+          question: { type: "number", hint: "Requests in flight = requests per second × seconds each one takes.", answer: 80 },
           explanation: "200 × 0.4 = **80** in flight, up from 200 × 0.05 = 10. Nothing else changed: the **same traffic** needs 8× the workers because each request stays longer. This is exactly how a slow dependency fills a pool (see the timeout lessons).",
         },
         {
@@ -64,7 +64,7 @@ export const trafficModule: Module = {
           title: "How hot can you run?",
           body: "You want requests to take **no more than 5× their own work time** on average, but you also want to use the machines properly. Set the utilisation as **high as you can, within that limit**.",
           widget: { type: "trf-util", props: { util: 40, workMs: 100, target: 5 } },
-          question: { type: "widget", goal: { maxFactor: 5, minUtil: 75 } },
+          question: { type: "widget", hint: "Waiting grows sharply as utilisation nears 100%. Find the highest utilisation within the 5× limit.", goal: { maxFactor: 5, minUtil: 75 } },
           explanation: "About **80%** is the edge: 1 ÷ (1 − 0.8) = 5. That's why capacity planners rarely run servers beyond 60 to 70% at peak: the headroom is not waste, it's what keeps waiting short and absorbs surprises.",
         },
         {
@@ -149,7 +149,7 @@ export const trafficModule: Module = {
           kind: "question",
           title: "Count them",
           body: "A fixed window allows **5 per 10 seconds**. A client sends **8 requests at t = 1 s**, all at once. How many are allowed?",
-          question: { type: "number", answer: 5 },
+          question: { type: "number", hint: "A fixed window lets in its limit, then refuses the rest until the window resets.", answer: 5 },
           explanation: "The first five find the counter below 5 and are allowed; the sixth to eighth find it at 5 and are refused. The counter resets only when the next block (starting at 10 s) begins.",
         },
         {
@@ -163,14 +163,14 @@ export const trafficModule: Module = {
           title: "Double the limit",
           body: "Make the fixed window let **10 requests through inside one 10-second span**, twice what it promises.",
           widget: { type: "trf-limiter", props: { algos: ["fixed"], algo: "fixed", pattern: "slow" } },
-          question: { type: "widget", goal: { algo: "fixed", minWorst: 10 } },
+          question: { type: "widget", hint: "Send a burst at the end of one window and another right at the start of the next.", goal: { algo: "fixed", minWorst: 10 } },
           explanation: "Both the *Edge of a window* and *Flood* patterns do it, because both put a burst on either side of the boundary at 10 s. A smart client (or a lucky one) can always get up to **2× the limit** across a boundary.",
         },
         {
           kind: "question",
           title: "How bad can it get?",
           body: "A fixed-window limit is **100 requests per minute**. At most how many requests can one client get through in some single 60-second span (not aligned to the clock)?",
-          question: { type: "number", answer: 200 },
+          question: { type: "number", hint: "A full burst at the end of one window plus a full burst at the start of the next.", answer: 200 },
           explanation: "**200**: 100 in the last moments of one minute and 100 at the start of the next. Whether that matters depends on how fragile your backend is, but it's good to know that the true worst case is double the headline number.",
         },
         {
@@ -219,7 +219,7 @@ export const trafficModule: Module = {
           title: "Close the loophole",
           body: "Use the **sliding log** on the *Edge of a window* pattern, and see that the busiest 10-second span never lets through more than **5**.",
           widget: { type: "trf-limiter", props: { algos: ["fixed", "slog"], algo: "fixed", pattern: "slow" } },
-          question: { type: "widget", goal: { algo: "slog", pattern: "edge", maxWorst: 5 } },
+          question: { type: "widget", hint: "Choose the sliding log and the edge-of-window pattern.", goal: { algo: "slog", pattern: "edge", maxWorst: 5 } },
           explanation: "Wherever the burst falls, the log sees the same last 10 seconds. The promise now really is “at most 5 in **any** 10 seconds”.",
         },
         {
@@ -247,7 +247,7 @@ export const trafficModule: Module = {
           kind: "question",
           title: "Estimate it",
           body: "Limit **10 per minute**. Last minute's window had **8** allowed requests, this minute's has **3** so far, and we are **15 seconds** into the current minute. What does the sliding counter estimate for the last 60 seconds?",
-          question: { type: "number", answer: 9, tolerance: 0.05 },
+          question: { type: "number", hint: "Count last minute's window only for the part that still overlaps the last 60 seconds.", answer: 9, tolerance: 0.05 },
           explanation: "15 s into the minute means 45 s of the previous window still lie within the last 60 s: 45 ÷ 60 = 0.75. So 8 × 0.75 + 3 = **9**. That's below 10, so the next request would be allowed.",
         },
         {
@@ -313,21 +313,21 @@ export const trafficModule: Module = {
           title: "Let the burst in",
           body: "The *One big burst* pattern sends 16 requests inside two seconds. Tune the **bucket size** and **refill** so that **no request is refused**.",
           widget: { type: "trf-bucket", props: { kinds: ["token"], kind: "token", pattern: "burst", capacity: 6, rate: 1 } },
-          question: { type: "widget", goal: { kind: "token", pattern: "burst", maxBlocked: 0 } },
+          question: { type: "widget", hint: "The bucket has to hold at least as many tokens as the burst has requests.", goal: { kind: "token", pattern: "burst", maxBlocked: 0 } },
           explanation: "A bigger bucket (about 15) swallows the burst. You could also raise the refill rate a lot, but that raises the *sustained* limit for everyone, which usually isn't the goal. **Bucket size sets what a burst may be; refill rate sets the long-run speed.**",
         },
         {
           kind: "question",
           title: "How many get through?",
           body: "A token bucket holds **10** tokens and refills at **2 per second**. It starts full. A client sends **30 requests at the same instant**. How many are allowed?",
-          question: { type: "number", answer: 10 },
+          question: { type: "number", hint: "A full bucket hands out all its tokens at once; the refill is too slow to matter at one instant.", answer: 10 },
           explanation: "Ten tokens, ten requests. The other 20 find an empty bucket and are refused: the burst is capped by the bucket's size.",
         },
         {
           kind: "question",
           title: "Hammering",
           body: "Same bucket (size 10, refill 2 per second, starts full), but the client now hammers it **continuously for 10 seconds**, always asking for more. About how many requests are allowed **in total** over those 10 seconds?",
-          question: { type: "number", answer: 30 },
+          question: { type: "number", hint: "The bucket starts with 10 tokens and gets 2 more every second for 10 seconds.", answer: 30 },
           explanation: "The bucket's 10 tokens, plus 2 per second × 10 s = 20 more, so **30**. Over a long time, the allowed rate converges to the refill rate: the bucket size only adds a one-off bonus.",
         },
         {
@@ -341,7 +341,7 @@ export const trafficModule: Module = {
           title: "Flatten the burst",
           body: "Switch to the **leaky bucket** so the backend never sees more than **1 request a second**, with **no more than 5 refused** in the burst.",
           widget: { type: "trf-bucket", props: { kind: "token", pattern: "burst", capacity: 6, rate: 1 } },
-          question: { type: "widget", goal: { kind: "leaky", pattern: "burst", maxPeak: 1, maxBlocked: 5 } },
+          question: { type: "widget", hint: "A leaky bucket drains at a steady rate. Set it to 1 request a second.", goal: { kind: "leaky", pattern: "burst", maxPeak: 1, maxBlocked: 5 } },
           explanation: "With a queue of 10 or more, the burst waits its turn and leaves at 1 per second: a flat backend and few refusals. The cost is **delay**: the last of those requests waits many seconds. A leaky bucket trades latency for smoothness.",
         },
         {
@@ -413,7 +413,7 @@ export const trafficModule: Module = {
           title: "Beat the limit",
           body: "With each server counting alone, get Maya **over 4 allowed requests** in one window.",
           widget: { type: "trf-shared", props: { mode: "local", limit: 4, lockMode: true } },
-          question: { type: "widget", goal: { mode: "local", over: true } },
+          question: { type: "widget", hint: "Spread the requests across the servers so none of them sees the limit.", goal: { mode: "local", over: true } },
           explanation: "Each of the three servers allows up to 4 *on its own*, so Maya can get **12** through a limit that says 4. The more servers you add, the weaker the limit becomes. The count has to be **shared**.",
         },
         {
@@ -427,7 +427,7 @@ export const trafficModule: Module = {
           title: "Race the counter",
           body: "In **Shared: read, then write** mode, push Maya **over the limit** by sending a *burst of three at once* when the counter is just under the limit.",
           widget: { type: "trf-shared", props: { mode: "racy", limit: 4, lockMode: true } },
-          question: { type: "widget", goal: { mode: "racy", over: true, burst: true } },
+          question: { type: "widget", hint: "Send a burst of three when the shared counter is just below the limit.", goal: { mode: "racy", over: true, burst: true } },
           explanation: "With the counter at 3, three simultaneous requests all read 3, all see “3 < 4”, all allow themselves, and all write 4. Three were let through but the counter moved by one. That is a **race condition**: the check and the update weren't one indivisible step.",
         },
         {
@@ -435,7 +435,7 @@ export const trafficModule: Module = {
           title: "Make it atomic",
           body: "Switch to **Shared: atomic increment**, send bursts of three, and keep going until **4 requests have been allowed** and Maya is **not over the limit**.",
           widget: { type: "trf-shared", props: { mode: "racy", limit: 4 } },
-          question: { type: "widget", goal: { mode: "atomic", burst: true, over: false, minAllowed: 4 } },
+          question: { type: "widget", hint: "An atomic increment makes the check and the count a single step, so a burst cannot slip through.", goal: { mode: "atomic", burst: true, over: false, minAllowed: 4 } },
           explanation: "An **atomic increment** (like Redis `INCR`) adds one and returns the *new* value in a single step the store guarantees can't interleave. Each request gets its own number: 1, 2, 3, 4, then 5 and up, which are refused. No two requests can see the same count.",
         },
         {
@@ -505,7 +505,7 @@ export const trafficModule: Module = {
           title: "Shorten the wait",
           body: "Only by changing the **consumer's speed**, bring the longest wait during the burst **below 8 seconds**.",
           widget: { type: "trf-queue", props: { traffic: "burst", policies: ["unbounded"], service: 10 } },
-          question: { type: "widget", goal: { traffic: "burst", maxWait: 8 } },
+          question: { type: "widget", hint: "A faster consumer clears the burst sooner.", goal: { traffic: "burst", maxWait: 8 } },
           explanation: "Roughly 17 or more per second does it: the faster the consumer, the faster the backlog drains. The wait for the last item in line is simply **backlog ÷ consumer rate**: another face of Little's law.",
         },
         {
@@ -513,14 +513,14 @@ export const trafficModule: Module = {
           title: "Never-ending overload",
           body: "Switch to **Constant overload 14/s**. Raise the consumer's speed until the queue **stops growing**.",
           widget: { type: "trf-queue", props: { traffic: "overload", policies: ["unbounded"], service: 10 } },
-          question: { type: "widget", goal: { traffic: "overload", minService: 14 } },
+          question: { type: "widget", hint: "The queue stops growing once the consumer handles at least as many per second as arrive.", goal: { traffic: "overload", minService: 14 } },
           explanation: "At 14 or more the consumer keeps up and the queue stays empty. Below 14 it falls a little further behind each second, **forever**. A queue only helps with bursts, where the average rate is fine. If work arrives faster than it can be done *on average*, the queue just grows.",
         },
         {
           kind: "question",
           title: "How long will I wait?",
           body: "There are **600 messages** in a queue and the consumer handles **20 a second**. About how many seconds until a message that is added **now** is processed?",
-          question: { type: "number", answer: 30, unit: "s" },
+          question: { type: "number", hint: "Wait = messages ahead of you ÷ messages handled per second.", answer: 30, unit: "s" },
           explanation: "600 ÷ 20 = **30 s**. A queue's *length* is a *delay* once you divide by the consumer's speed. A queue of a million messages sounds like “lots of buffer”; it can easily be a week of waiting.",
         },
         {
@@ -612,7 +612,7 @@ export const trafficModule: Module = {
           title: "Nothing lost, nothing flooding",
           body: "Choose the policy that keeps the queue **at 30 or less** *and* loses **nothing**, under constant overload.",
           widget: { type: "trf-queue", props: { traffic: "overload", policy: "unbounded", service: 10, bound: 30 } },
-          question: { type: "widget", goal: { traffic: "overload", maxPeak: 30, maxDropped: 0 } },
+          question: { type: "widget", hint: "Blocking the producer keeps the queue small without dropping anything.", goal: { traffic: "overload", maxPeak: 30, maxDropped: 0 } },
           explanation: "**Block the producer.** Nothing is dropped and the queue never exceeds its limit, because the extra work waits at the *source*. The producer is effectively slowed to the consumer's pace. This is the gentlest form of backpressure, and it only works when the producer *can* wait.",
         },
         {
@@ -650,7 +650,7 @@ export const trafficModule: Module = {
           kind: "question",
           title: "The producer's real speed",
           body: "A producer sends **14 items a second** into a bounded queue; the consumer handles **10 a second**. The queue uses **blocking**. In the long run, how many items a second does the producer manage to get accepted?",
-          question: { type: "number", answer: 10 },
+          question: { type: "number", hint: "A blocked producer can only go as fast as the consumer lets it.", answer: 10 },
           explanation: "**10**, matching the consumer. With blocking, the producer is held back until there's room, which only ever opens up as fast as the consumer works. Backpressure *is* the consumer's rate, projected upstream.",
         },
         {
@@ -731,7 +731,7 @@ export const trafficModule: Module = {
           title: "Protect what matters",
           body: "Pick the policy that keeps **at least 99% of checkouts** working.",
           widget: { type: "trf-shed", props: { policy: "fifo" } },
-          question: { type: "widget", goal: { minCheckout: 0.99 } },
+          question: { type: "widget", hint: "Choose the policy that sheds browsing and bots before it touches checkout.", goal: { minCheckout: 0.99 } },
           explanation: "**Priority** does it: checkouts are served first, browsing next, and the bots are what's left, which is nothing. Total work done is similar to other policies; what changes is *whose* work. Note that this only works because something decided, ahead of time, which request is which.",
         },
         {
@@ -768,7 +768,7 @@ export const trafficModule: Module = {
           kind: "question",
           title: "Do the sum",
           body: "Capacity is **10 requests a second**. Arrivals: **2 checkout, 8 browsing, 8 bots** a second. With strict priority (checkout, then browsing, then bots), how many requests a second are **refused**?",
-          question: { type: "number", answer: 8 },
+          question: { type: "number", hint: "Serve checkout first, then browsing, then bots, until the 10 a second are used up.", answer: 8 },
           explanation: "Checkout (2) + browsing (8) = 10, exactly capacity, so every bot request (8 a second) is refused. If the bots stop, nothing is shed at all. Priority makes shedding precise: the *least valuable* demand pays first.",
         },
         {
@@ -833,7 +833,7 @@ export const trafficModule: Module = {
           title: "Get stuck",
           body: "With *Retry forever*, run the worker until the queue is **stuck**.",
           widget: { type: "trf-dlq", props: { policy: "forever" } },
-          question: { type: "widget", goal: { policy: "forever", stuck: true } },
+          question: { type: "widget", hint: "Retry forever on a message that always fails.", goal: { policy: "forever", stuck: true } },
           explanation: "The worker keeps retrying #3 and nothing behind it can move: **head-of-line blocking**. One bad message turned into an outage for everything queued after it. “Retry forever” is not a plan; it's a hope.",
         },
         {
@@ -841,7 +841,7 @@ export const trafficModule: Module = {
           title: "Just give up?",
           body: "Switch to **Give up and discard** (3 failures allowed) and let the worker drain the queue. How many messages end up **lost for good**?",
           widget: { type: "trf-dlq", props: { policy: "drop", max: 3 }, live: true },
-          question: { type: "number", answer: 2 },
+          question: { type: "number", hint: "Messages that fail 3 times are thrown away. Count how many of them there are.", answer: 2 },
           explanation: "The queue drains, but **#3 and #6 are gone**, with no record. If those were orders or payments, you have silently lost customers' data, and nobody knows until someone complains. Discarding is the fastest way to *stop the bleeding* and the worst way to *notice the wound*.",
         },
         {
@@ -849,7 +849,7 @@ export const trafficModule: Module = {
           title: "Set them aside",
           body: "Use the **Dead-letter queue** policy and drain the main queue, so that **6 messages are done** and **2 are set aside** (not lost).",
           widget: { type: "trf-dlq", props: { policy: "forever" } },
-          question: { type: "widget", goal: { policy: "dead", empty: true, done: 6, dead: 2 } },
+          question: { type: "widget", hint: "Dead-letter the messages that keep failing so the others can finish.", goal: { policy: "dead", empty: true, done: 6, dead: 2 } },
           explanation: "A **dead-letter queue (DLQ)** is a separate queue where messages go after failing too many times. The main queue keeps flowing, and nothing is lost: the bad messages wait for a human or a repair job to look at them, with all their details intact.",
         },
         {
@@ -857,7 +857,7 @@ export const trafficModule: Module = {
           title: "Fix and replay",
           body: "Finish the story: use the **Dead-letter queue**, drain the queue, **deploy the fix**, **redrive** the dead letters, and run again until **all 8 messages are done**.",
           widget: { type: "trf-dlq", props: { policy: "forever" } },
-          question: { type: "widget", goal: { policy: "dead", redriven: true, done: 8, empty: true } },
+          question: { type: "widget", hint: "Drain the queue, deploy the fix, redrive the dead letters, then run again.", goal: { policy: "dead", redriven: true, done: 8, empty: true } },
           explanation: "That's the whole life cycle: fail, set aside, fix the bug, **redrive**. The messages come back to the main queue and now succeed. The data survived the bug.",
         },
         {
@@ -939,7 +939,7 @@ export const trafficModule: Module = {
           title: "Lose an email",
           body: "With **acknowledge first**, make a customer **lose their email**: crash the consumer at least once, then deliver until the queue is empty.",
           widget: { type: "trf-delivery", props: { ack: "first", dedupe: false, lockAck: true, lockDedupe: true } },
-          question: { type: "widget", goal: { ack: "first", finished: true, minLost: 1, minCrashes: 1 } },
+          question: { type: "widget", hint: "Acknowledging first means a crash after the acknowledgement loses the message.", goal: { ack: "first", finished: true, minLost: 1, minCrashes: 1 } },
           explanation: "The message was acknowledged, so the broker deleted it; the consumer died before sending anything. Nobody will ever retry it. At-most-once is fine for things you can afford to lose (metrics, logs) and wrong for anything that matters.",
         },
         {
@@ -947,7 +947,7 @@ export const trafficModule: Module = {
           title: "Send it twice",
           body: "Switch to **Works, then acknowledges**. Crash at least once and let everything finish, so that at least one customer gets the email **twice**.",
           widget: { type: "trf-delivery", props: { ack: "first", dedupe: false, lockDedupe: true } },
-          question: { type: "widget", goal: { ack: "after", finished: true, minDuplicated: 1 } },
+          question: { type: "widget", hint: "Work first and acknowledge second: a crash between the two means the message is retried.", goal: { ack: "after", finished: true, minDuplicated: 1 } },
           explanation: "The email went out, then the consumer crashed before acknowledging. The broker saw no acknowledgement and delivered the message again: second email. **At-least-once** never loses a message, but it *will* deliver some of them more than once. That is the trade-off nearly all brokers offer.",
         },
         {
@@ -960,7 +960,7 @@ export const trafficModule: Module = {
           title: "Exactly one email each",
           body: "Use **works, then acknowledges**, switch on **Remembers ids and skips repeats**, crash the consumer **at least once**, and finish with **exactly one email per customer**.",
           widget: { type: "trf-delivery", props: { ack: "after", dedupe: false } },
-          question: { type: "widget", goal: { ack: "after", dedupe: true, exact: true, minCrashes: 1, finished: true } },
+          question: { type: "widget", hint: "Remember ids so a repeated message is skipped.", goal: { ack: "after", dedupe: true, exact: true, minCrashes: 1, finished: true } },
           explanation: "The crashed delivery was repeated, but this time the consumer looked up the id, saw it had already sent that email, skipped the work, and acknowledged. The broker's repeat cost nothing. The system is now **resilient to the crash and to the duplicate**.",
         },
         {

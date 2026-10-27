@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { BookOpen, CheckCircle2, Clock, Lightbulb, Lock, Target, Zap } from "lucide-react";
 import { FeatureIcon } from "@/components/ui/icons";
 import type { Feature } from "@/engine/types";
 import type { LessonContext } from "@/content";
 import { CodeBlock, Prose } from "@/components/ui/Prose";
+import { Tabs, panelDomId, tabDomId } from "@/components/ui/Tabs";
 import { languageOf } from "@/engine/types";
 import { sound } from "@/lib/sound/sound";
 import { LessonChecks } from "./LessonChecks";
@@ -26,34 +27,42 @@ export function LessonPanel({ ctx, feature, alreadyDone, attempts, hintsSeen, on
   const { lesson, index, total, chapterTitle } = ctx;
   const [tab, setTab] = useState<Tab>("mission");
   const [showSolution, setShowSolution] = useState(false);
+  const tabsId = useId();
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "mission", label: "Mission", icon: <Target className="h-3.5 w-3.5" /> },
-    { id: "learn", label: "Learn", icon: <BookOpen className="h-3.5 w-3.5" /> },
-    { id: "hints", label: `Hints${hintsSeen ? ` ${hintsSeen}/${lesson.hints.length}` : ""}`, icon: <Lightbulb className="h-3.5 w-3.5" /> },
+    { id: "mission", label: "Mission", icon: <Target className="h-3.5 w-3.5" aria-hidden /> },
+    { id: "learn", label: "Learn", icon: <BookOpen className="h-3.5 w-3.5" aria-hidden /> },
+    { id: "hints", label: `Hints${hintsSeen ? ` ${hintsSeen}/${lesson.hints.length}` : ""}`, icon: <Lightbulb className="h-3.5 w-3.5" aria-hidden /> },
   ];
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex shrink-0 gap-1 border-b border-line p-2">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => {
-              sound.playClick();
-              setTab(t.id);
-            }}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-medium transition-colors ${
-              tab === t.id ? "bg-surface-2 text-ink" : "text-ink-2 hover:bg-surface-2"
-            }`}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        idBase={tabsId}
+        label="Lesson"
+        value={tab}
+        onChange={(id) => {
+          if (id !== tab) sound.playClick();
+          setTab(id);
+        }}
+        items={tabs.map((t) => ({
+          id: t.id,
+          label: (
+            <>
+              {t.icon}
+              {t.label}
+            </>
+          ),
+        }))}
+        className="flex shrink-0 gap-1 border-b border-line p-2"
+        tabClassName={(on) =>
+          `flex flex-1 items-center justify-center gap-1.5 rounded-full px-2 py-1.5 text-xs font-medium transition-colors max-sm:min-h-10 ${
+            on ? "bg-surface-2 text-ink" : "text-ink-2 hover:bg-surface-2"
+          }`
+        }
+      />
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+      <div role="tabpanel" id={panelDomId(tabsId, tab)} aria-labelledby={tabDomId(tabsId, tab)} className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
         {tab === "mission" && (
           <div className="rise">
             <p className="eyebrow">

@@ -24,16 +24,26 @@ export const bitsModule: Module = {
         {
           kind: "question",
           title: "Two switches",
-          body: "With one bit you can tell two things apart: 0 or 1. Add a second bit and try every combination.",
+          body: "With one bit you can tell two things apart: 0 or 1. Add a second bit and try every combination by flipping the switches. **How many different patterns can two bits make?**",
           widget: { type: "bits", props: { count: 2, showPlaces: false, showDecimal: false } },
-          question: { type: "number", answer: 4 },
+          question: { type: "number", hint: "Flip the two switches through every combination (00, 01, …) and count each different pattern once.", answer: 4 },
           explanation: "00, 01, 10 and 11: **4** patterns. Every extra bit doubles the count, because each old pattern now comes in a 0-version and a 1-version.",
         },
         {
           kind: "question",
           title: "Keep doubling",
           body: "1 bit gives 2 patterns, 2 bits give 4. How many different patterns can **8 bits** make?",
-          question: { type: "choice", options: ["16", "64", "256", "1,000"], answer: 2 },
+          question: {
+            type: "choice",
+            options: ["16", "64", "256", "1,000"],
+            answer: 2,
+            hint: "Start from 1 pattern and double it once for every bit.",
+            feedback: {
+              0: "16 is what 4 bits make. Keep doubling for all 8 bits.",
+              1: "64 is what 6 bits make: two more doublings to go.",
+              3: "Doubling from 1 only ever gives 1, 2, 4, 8, 16 … so 1,000 is never one of the stops.",
+            },
+          },
           explanation: "2 × 2 × 2 × 2 × 2 × 2 × 2 × 2 = 2⁸ = **256**. That's why a single byte (8 bits) can store a number from 0 to 255.",
         },
         {
@@ -47,14 +57,15 @@ export const bitsModule: Module = {
           title: "Make 6",
           body: "Turn on exactly the bits that add up to **6**.",
           widget: { type: "bits", props: { count: 4, showDecimal: false } },
-          question: { type: "widget", goal: { value: 6 } },
+          question: { type: "widget", hint: "The places are worth 8, 4, 2 and 1 from the left. Which of them add up to 6?", goal: { value: 6 } },
           explanation: "4 + 2 = 6, so the pattern is **0110**. Every whole number has exactly one binary pattern.",
         },
         {
           kind: "question",
           title: "Make 13",
+          body: "Turn on exactly the bits that add up to **13**. The four switches are worth 8, 4, 2 and 1.",
           widget: { type: "bits", props: { count: 4, showDecimal: false } },
-          question: { type: "widget", goal: { value: 13 } },
+          question: { type: "widget", hint: "Start with the biggest place value that fits (8), then see what is left over.", goal: { value: 13 } },
           explanation: "8 + 4 + 1 = 13, written **1101**. A quick way: start from the biggest place value that fits, subtract, and repeat.",
         },
         {
@@ -94,14 +105,14 @@ export const bitsModule: Module = {
           title: "Count to twelve",
           body: "The decimal readout is gone. Use **+1** and **−1** until the counter holds **twelve**.",
           widget: { type: "counter", props: { count: 4, showDecimal: false } },
-          question: { type: "widget", goal: { value: 12 } },
+          question: { type: "widget", hint: "Twelve is 8 + 4. Keep pressing until the bits show those two places on.", goal: { value: 12 } },
           explanation: "12 = 8 + 4, so the pattern is **1100**. On the way you passed 1001 (9), 1010 (10) and 1011 (11).",
         },
         {
           kind: "question",
           title: "Binary to decimal",
           body: "To read a binary number, add the place values of the bits that are 1. For five bits the place values are 16, 8, 4, 2, 1.\n\nWhat is **10110** in decimal?",
-          question: { type: "number", answer: 22 },
+          question: { type: "number", hint: "Write 16 8 4 2 1 under the bits, then add up only the places that sit under a 1.", answer: 22 },
           explanation: "The 1s sit in the 16, 4 and 2 places: 16 + 4 + 2 = **22**. The 8 and 1 places are 0, so they add nothing.",
         },
         {
@@ -115,7 +126,7 @@ export const bitsModule: Module = {
           title: "Your turn: 45",
           body: "Use the same method to make **45**.",
           widget: { type: "bits", props: { count: 8, showDecimal: false } },
-          question: { type: "widget", goal: { value: 45 } },
+          question: { type: "widget", hint: "Take the biggest place value that fits in 45, subtract it, and repeat with what is left.", goal: { value: 45 } },
           explanation: "32 fits (13 left), 16 doesn't, 8 fits (5 left), 4 fits (1 left), 2 doesn't, 1 fits: 32 + 8 + 4 + 1 = 45, written **00101101**.",
         },
         {
@@ -133,7 +144,7 @@ export const bitsModule: Module = {
           kind: "question",
           title: "Why programmers start at 0",
           body: "With 3 bits you can give 8 things a label each: 000, 001, 010 … 111. If the first thing gets 000, which is zero, what number does the **eighth** thing get?",
-          question: { type: "number", answer: 7 },
+          question: { type: "number", hint: "If the first thing gets 0, the second gets 1, the third 2… so which number does the eighth get?", answer: 7 },
           explanation: "The labels run from 0 to **7**. All zeros is a perfectly good pattern, and skipping it would waste one. That's why most programming languages number the first item of a list 0: the last of n items is n − 1.",
         },
         {
@@ -180,7 +191,7 @@ export const bitsModule: Module = {
           kind: "question",
           title: "Bits in a number",
           body: "Many languages store a whole number in **4 bytes**. How many bits is that?",
-          question: { type: "number", answer: 32, unit: "bits" },
+          question: { type: "number", hint: "A byte is 8 bits. How many bits are there in 4 bytes?", answer: 32, unit: "bits" },
           explanation: "4 × 8 = **32** bits. A \"32-bit number\" and a \"4-byte number\" are the same thing, and 32 bits allow about 4.3 billion different values.",
         },
         {
@@ -229,7 +240,7 @@ export const bitsModule: Module = {
           kind: "question",
           title: "Estimate it",
           body: "Your phone has **1 GB** free. About how many **4 MB** photos fit? Use 1,000s.",
-          question: { type: "number", answer: 250, unit: "photos" },
+          question: { type: "number", hint: "Using 1,000s, 1 GB is 1,000 MB. How many 4 MB photos fit into 1,000 MB?", answer: 250, unit: "photos" },
           explanation: "1 GB = 1,000 MB, and 1,000 ÷ 4 = **250**. The recipe for any storage question: convert both sizes to the same unit, then divide.",
         },
         {
@@ -270,7 +281,7 @@ export const bitsModule: Module = {
           title: "Make the digit C",
           body: "C stands for 12. Set this nibble so it spells **C**.",
           widget: { type: "nibbles", props: { bits: 4, showHex: false } },
-          question: { type: "widget", goal: { value: 12 } },
+          question: { type: "widget", hint: "C stands for 12. Which of the places 8, 4, 2, 1 add up to 12?", goal: { value: 12 } },
           explanation: "12 = 8 + 4, so C is **1100**. A few anchors make the rest easy: 8 is 1000, A is 1010 and F is 1111.",
         },
         {
@@ -278,7 +289,7 @@ export const bitsModule: Module = {
           title: "Build 0x3A",
           body: "The `0x` in front just means \"this is hex\". Because each hex digit is its own nibble, you can convert one digit at a time. Make the byte **0x3A**.",
           widget: { type: "nibbles", props: { bits: 8, showHex: false } },
-          question: { type: "widget", goal: { value: 58 } },
+          question: { type: "widget", hint: "Do one digit at a time: set the left nibble to 3, then the right nibble to A (which is 10).", goal: { value: 58 } },
           explanation: "3 is 0011 and A is 1010, so 0x3A is **0011 1010**. No big place values to add up: that's why hex is the favourite way to write bytes.",
         },
         {
@@ -286,7 +297,7 @@ export const bitsModule: Module = {
           title: "Read 0xFF",
           body: "In a two-digit hex number the left digit counts **sixteens**, just as the left digit of a decimal number counts tens. Below, 0x2A is 2 × 16 + 10 = 42.\n\nWhat is **0xFF** in decimal?",
           widget: { type: "nibbles", props: { bits: 8, initial: 42, showDecimal: true, locked: true } },
-          question: { type: "number", answer: 255 },
+          question: { type: "number", hint: "F is 15. The left digit counts sixteens, so work out 15 × 16 + 15.", answer: 255 },
           explanation: "F × 16 + F = 15 × 16 + 15 = **255**. All eight bits are on, the largest a byte can be. So any byte is exactly two hex digits, from 00 to FF.",
         },
         {
@@ -306,7 +317,7 @@ export const bitsModule: Module = {
           kind: "question",
           title: "Binary to hex",
           body: "Write **1111 0000** as two hex digits.",
-          question: { type: "text", answer: ["F0", "0xF0", "#F0"], placeholder: "e.g. 3A" },
+          question: { type: "text", hint: "Split the byte into two groups of four bits and turn each group into one hex digit.", answer: ["F0", "0xF0", "#F0"], placeholder: "e.g. 3A" },
           explanation: "1111 is F and 0000 is 0, so it's **F0** (240 in decimal).",
         },
         {
@@ -347,7 +358,7 @@ export const bitsModule: Module = {
           title: "One bit of difference",
           body: "32 is a single bit. This byte spells **H** (72). Flip one bit to make lowercase **h**.",
           widget: { type: "bits", props: { count: 8, initial: 72, showChar: true } },
-          question: { type: "widget", goal: { value: 104 } },
+          question: { type: "widget", hint: "Upper and lower case differ by exactly the bit worth 32. Flip that one.", goal: { value: 104 } },
           explanation: "Turning on the 32 bit gives 72 + 32 = **104**, which is `h`. ASCII was laid out so capitals and lowercase differ by one bit, which made changing case very cheap for early computers.",
         },
         {
@@ -367,7 +378,7 @@ export const bitsModule: Module = {
           title: "How big is café?",
           body: "This word has 4 characters. How many bytes does it take in UTF-8?",
           widget: { type: "text-bytes", props: { initial: "café", editable: false, hideBytes: true } },
-          question: { type: "number", answer: 5, unit: "bytes" },
+          question: { type: "number", hint: "The letters c, a and f take 1 byte each in UTF-8. The é needs more than one byte.", answer: 5, unit: "bytes" },
           explanation: "c, a and f are ASCII, one byte each. é is code point 233, past ASCII's 127, so it needs **2** bytes. 3 + 2 = **5** bytes for 4 characters.",
         },
         {
@@ -375,7 +386,7 @@ export const bitsModule: Module = {
           title: "Build to a budget",
           body: "Using the buttons, make a text of exactly **3 characters** that takes **7 bytes**.",
           widget: { type: "text-bytes", props: { initial: "", palette: ["A", "é", "ß", "€", "你", "😀"], maxChars: 6 } },
-          question: { type: "widget", goal: { chars: 3, bytes: 7 } },
+          question: { type: "widget", hint: "Plain letters take 1 byte, é takes 2 and an emoji takes 4. Which three characters add up to 7?", goal: { chars: 3, bytes: 7 } },
           explanation: "A few ways work: A + é + 😀 (1 + 2 + 4), é + ß + € (2 + 2 + 3) or A + € + 你 (1 + 3 + 3). The point: a text's length in characters doesn't tell you its size in bytes.",
         },
         {
@@ -432,7 +443,7 @@ export const bitsModule: Module = {
           title: "Match the colour",
           body: "Use the sliders to match the target colour.",
           widget: { type: "rgb", props: { initial: [40, 40, 40], target: [255, 140, 0] } },
-          question: { type: "widget", goal: { target: [255, 140, 0], tolerance: 24 } },
+          question: { type: "widget", hint: "Orange is a lot of red, some green and no blue.", goal: { target: [255, 140, 0], tolerance: 24 } },
           explanation: "This orange is red 255, green 140, blue 0: full red plus about half green. In code it's written `#FF8C00`. Every colour you see on screen is three numbers like these.",
         },
         {
@@ -440,7 +451,7 @@ export const bitsModule: Module = {
           title: "Make a grey",
           body: "Make any **grey**: not black, not white, and no colour showing through.",
           widget: { type: "rgb", props: { initial: [200, 60, 60] } },
-          question: { type: "widget", goal: { grey: true, tolerance: 10 } },
+          question: { type: "widget", hint: "A grey has the same amount of red, green and blue.", goal: { grey: true, tolerance: 10 } },
           explanation: "When red, green and blue are equal, no colour wins, so you see grey. All 0 is black, all 255 is white, and every level in between is a shade of grey.",
         },
         {
@@ -454,7 +465,7 @@ export const bitsModule: Module = {
           title: "Resize to 30 bytes",
           body: "Change the width and height so the image takes exactly **30 bytes**.",
           widget: { type: "pixels", props: { width: 4, height: 4, resizable: true, showStream: false } },
-          question: { type: "widget", goal: { bytes: 30 } },
+          question: { type: "widget", hint: "Every pixel takes 3 bytes, so 30 bytes is 10 pixels. Which width × height gives 10?", goal: { bytes: 30 } },
           explanation: "30 ÷ 3 = 10 pixels, so 2 × 5 or 5 × 2. The raw size depends only on how many pixels there are: **width × height × 3** bytes.",
         },
         {
@@ -500,9 +511,9 @@ export const bitsModule: Module = {
         {
           kind: "question",
           title: "Fill in OR",
-          body: "An **OR** gate outputs 1 when A **or** B is 1, or both are. Fill in its truth table.",
+          body: "An **OR** gate outputs 1 when A **or** B is 1, or both are. Fill in its truth table: tap each Output cell until it shows the right 0 or 1.",
           widget: { type: "gate", props: { gate: "OR", mode: "table" } },
-          question: { type: "widget", goal: { complete: true } },
+          question: { type: "widget", hint: "Tap each output cell to set it to 0 or 1. OR gives 1 whenever at least one input is 1.", goal: { complete: true } },
           explanation: "Only 0 OR 0 gives 0. Every other row has at least one 1, so it gives **1**, including 1 OR 1. In logic, \"or\" means \"at least one\".",
         },
         {
@@ -516,9 +527,9 @@ export const bitsModule: Module = {
         {
           kind: "question",
           title: "Fill in XOR",
-          body: "**XOR** (exclusive or) outputs 1 when exactly one input is 1: one or the other, **but not both**. Fill in its table.",
+          body: "**XOR** (exclusive or) outputs 1 when exactly one input is 1: one or the other, **but not both**. Fill in its table: tap each Output cell until it shows the right 0 or 1.",
           widget: { type: "gate", props: { gate: "XOR", mode: "table" } },
-          question: { type: "widget", goal: { complete: true } },
+          question: { type: "widget", hint: "Tap each output cell to set it to 0 or 1. XOR gives 1 only when exactly one input is 1.", goal: { complete: true } },
           explanation: "0 and 0 give 0, one of each gives 1, and 1 and 1 give **0**. That last row is the only difference from OR. Another way to read XOR: \"are the inputs different?\"",
         },
         {
@@ -547,7 +558,7 @@ export const bitsModule: Module = {
           title: "The half adder",
           body: "Here's the box opened up: A and B each feed both gates. Set the inputs so the adder outputs **sum 0, carry 1**.",
           widget: { type: "half-adder", props: { showTable: false } },
-          question: { type: "widget", goal: { sum: 0, carry: 1 } },
+          question: { type: "widget", hint: "Sum is 1 when exactly one input is 1; carry is 1 only when both are. Which inputs give sum 0 and carry 1?", goal: { sum: 0, carry: 1 } },
           explanation: "Only **1 + 1** gives carry 1 and sum 0, written 10. This circuit is a **half adder**. Chain adders together, passing each carry to the next column, and you can add numbers of any size. That is what the arithmetic part of a CPU does, billions of times a second.",
         },
         {

@@ -73,8 +73,11 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), M
 
 interface Layout {
   panels: Record<PanelId, Rect>;
-  splitters: { id: "lesson" | "stage" | "stageTop" | "results"; axis: "x" | "y"; rect: Rect }[];
+  splitters: { id: "lesson" | "stage" | "stageTop" | "results"; axis: "x" | "y"; rect: Rect; label: string; pct: number }[];
 }
+
+/** A splitter's position as a whole percent of the workspace (aria-valuenow). */
+const pctOf = (px: number, total: number) => Math.round(clamp((px / Math.max(1, total)) * 100, 0, 100));
 
 function computeLayout(mode: LayoutMode, W: number, H: number, s: Sizes, collapsed: boolean): Layout {
   const full = { left: 0, top: 0, width: W, height: H };
@@ -96,9 +99,9 @@ function computeLayout(mode: LayoutMode, W: number, H: number, s: Sizes, collaps
         stage: { left: cx + cw + GAP, top: 0, width: S, height: H },
       },
       splitters: [
-        { id: "lesson", axis: "x", rect: { left: L, top: 0, width: GAP, height: H } },
-        { id: "stage", axis: "x", rect: { left: cx + cw, top: 0, width: GAP, height: H } },
-        { id: "results", axis: "y", rect: { left: cx, top: H - R - GAP, width: cw, height: GAP } },
+        { id: "lesson", axis: "x", rect: { left: L, top: 0, width: GAP, height: H }, label: "Resize lesson panel", pct: pctOf(L, W) },
+        { id: "stage", axis: "x", rect: { left: cx + cw, top: 0, width: GAP, height: H }, label: "Resize stage", pct: pctOf(cx + cw, W) },
+        { id: "results", axis: "y", rect: { left: cx, top: H - R - GAP, width: cw, height: GAP }, label: "Resize console", pct: pctOf(H - R - GAP, H) },
       ],
     };
   }
@@ -116,9 +119,9 @@ function computeLayout(mode: LayoutMode, W: number, H: number, s: Sizes, collaps
       results: { left: rx, top: H - R, width: rw, height: R },
     },
     splitters: [
-      { id: "lesson", axis: "x", rect: { left: L, top: 0, width: GAP, height: H } },
-      { id: "stageTop", axis: "y", rect: { left: rx, top: T, width: rw, height: GAP } },
-      { id: "results", axis: "y", rect: { left: rx, top: H - R - GAP, width: rw, height: GAP } },
+      { id: "lesson", axis: "x", rect: { left: L, top: 0, width: GAP, height: H }, label: "Resize lesson panel", pct: pctOf(L, W) },
+      { id: "stageTop", axis: "y", rect: { left: rx, top: T, width: rw, height: GAP }, label: "Resize stage", pct: pctOf(T, H) },
+      { id: "results", axis: "y", rect: { left: rx, top: H - R - GAP, width: rw, height: GAP }, label: "Resize console", pct: pctOf(H - R - GAP, H) },
     ],
   };
 }
@@ -155,14 +158,20 @@ export function WorkspaceLayout({ mode, active, resultsCollapsed, onExpandResult
   const layout = computeLayout(mode, box.width, box.height, sizes, resultsCollapsed);
 
   const adjust = (id: Layout["splitters"][number]["id"], delta: number) => {
-    setSizes((s) => {
-      const W = Math.max(1, box.width);
-      const H = Math.max(1, box.height);
-      if (id === "lesson") return { ...s, lesson: s.lesson + delta };
-      if (id === "stage") return { ...s, stageFrac: clamp((s.stageFrac * W - delta) / W, 0.15, 0.7) };
-      if (id === "stageTop") return { ...s, stageTopFrac: clamp((s.stageTopFrac * H + delta) / H, 0.15, 0.8) };
-      return { ...s, results: s.results - delta };
-    });
+    // computed from the ref and written back at once, so settle() (called right after a key press) sees the new size
+    const s = sizesRef.current;
+    const W = Math.max(1, box.width);
+    const H = Math.max(1, box.height);
+    const next: Sizes =
+      id === "lesson"
+        ? { ...s, lesson: s.lesson + delta }
+        : id === "stage"
+          ? { ...s, stageFrac: clamp((s.stageFrac * W - delta) / W, 0.15, 0.7) }
+          : id === "stageTop"
+            ? { ...s, stageTopFrac: clamp((s.stageTopFrac * H + delta) / H, 0.15, 0.8) }
+            : { ...s, results: s.results - delta };
+    sizesRef.current = next;
+    setSizes(next);
     if (id === "results" && resultsCollapsed && delta < 0) onExpandResults();
   };
 
@@ -201,7 +210,7 @@ export function WorkspaceLayout({ mode, active, resultsCollapsed, onExpandResult
           );
         })}
       {layout.splitters.map((sp) => (
-        <Splitter key={sp.id} axis={sp.axis} rect={sp.rect} onDrag={(d) => adjust(sp.id, d)} onEnd={settle} onReset={resetSizes} />
+        <Splitter key={sp.id} axis={sp.axis} rect={sp.rect} label={sp.label} pct={sp.pct} onDrag={(d) => adjust(sp.id, d)} onEnd={settle} onReset={resetSizes} />
       ))}
     </div>
   );
@@ -210,12 +219,16 @@ export function WorkspaceLayout({ mode, active, resultsCollapsed, onExpandResult
 function Splitter({
   axis,
   rect,
+  label,
+  pct,
   onDrag,
   onEnd,
   onReset,
 }: {
   axis: "x" | "y";
   rect: Rect;
+  label: string;
+  pct: number;
   onDrag: (delta: number) => void;
   onEnd: () => void;
   onReset: () => void;
@@ -226,7 +239,10 @@ function Splitter({
     <div
       role="separator"
       aria-orientation={axis === "x" ? "vertical" : "horizontal"}
-      aria-label="Resize panels (double-click to reset)"
+      aria-label={`${label} (arrow keys to move, Enter to reset)`}
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
       tabIndex={0}
       className={`group absolute z-10 flex items-center justify-center outline-none ${axis === "x" ? "cursor-col-resize" : "cursor-row-resize"}`}
       style={{ left: rect.left, top: rect.top, width: rect.width, height: rect.height, touchAction: "none" }}
@@ -256,6 +272,11 @@ function Splitter({
       }}
       onDoubleClick={onReset}
       onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === "Home") {
+          e.preventDefault();
+          onReset();
+          return;
+        }
         const step = e.shiftKey ? 64 : 24;
         const keys = axis === "x" ? { ArrowLeft: -step, ArrowRight: step } : { ArrowUp: -step, ArrowDown: step };
         const d = keys[e.key as keyof typeof keys];

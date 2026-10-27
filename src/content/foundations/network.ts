@@ -42,7 +42,7 @@ export const networkModule: Module = {
           title: "The one door",
           body: "Every device in the home reaches the outside world through the same box. Tap it.",
           widget: { type: "net-map", props: { mode: "explore" } },
-          question: { type: "widget", goal: { selected: "router" } },
+          question: { type: "widget", hint: "Which box connects the whole home to the internet?", goal: { selected: "router" } },
           explanation: "The **router** joins the home's devices to each other and to your internet provider. Everything that leaves the house goes through it.",
         },
         {
@@ -83,7 +83,7 @@ export const networkModule: Module = {
           title: "Find a long trip",
           body: "Send a message **from the laptop** to something it can only reach by crossing the internet.",
           widget: { type: "net-map", props: { mode: "send" } },
-          question: { type: "widget", goal: { from: "laptop", viaInternet: true } },
+          question: { type: "widget", hint: "Choose the laptop as the sender and a destination that is outside the home.", goal: { from: "laptop", viaInternet: true } },
           explanation: "The news site and the video server live outside your home, so the message goes laptop → home router → your provider → the internet → server. A message to the printer or phone never leaves the LAN.",
         },
         {
@@ -126,7 +126,7 @@ export const networkModule: Module = {
           kind: "question",
           title: "How many pieces?",
           body: "A photo of **3,000,000 bytes** is sent in packets that carry **1,500 bytes** of the photo each. How many packets is that?",
-          question: { type: "number", answer: 2000 },
+          question: { type: "number", hint: "Divide the photo's size by what each packet carries.", answer: 2000 },
           explanation: "3,000,000 ÷ 1,500 = **2,000** packets. Each also carries a few dozen bytes of headers (addresses, numbers), which you'll meet in later lessons.",
         },
         {
@@ -140,7 +140,7 @@ export const networkModule: Module = {
           title: "Exactly four",
           body: "Pick the packet size that splits this message into exactly **4** packets.",
           widget: { type: "net-packets", props: { sizes: [10, 6, 4], message: "SEE YOU AT NOON" } },
-          question: { type: "widget", goal: { packets: 4 } },
+          question: { type: "widget", hint: "The message size divided by the packet size, rounded up, has to come to 4.", goal: { packets: 4 } },
           explanation: "The message is 15 characters. Size 4 gives 4 + 4 + 4 + 3, so **4 packets**. Smaller packets mean more of them, and more labels to carry.",
         },
         {
@@ -148,7 +148,7 @@ export const networkModule: Module = {
           title: "Put it back together",
           body: "Packets can take different paths, so they often arrive **out of order**. Press **Send packets**, then tap them in number order to rebuild the message.",
           widget: { type: "net-packets", props: { message: "MEET ME AT THE LIBRARY AT NOON", size: 6, seed: 4 } },
-          question: { type: "widget", goal: { complete: true } },
+          question: { type: "widget", hint: "Send the packets first, then tap them in number order, starting with 1.", goal: { complete: true } },
           explanation: "The numbers make this easy: whatever order packets arrive in, the receiver sorts them by number. That's exactly what your computer does, many thousands of times a second.",
         },
         {
@@ -177,7 +177,7 @@ export const networkModule: Module = {
           title: "A gap in the numbers",
           body: "This time one packet goes missing on the way. Send, rebuild as far as you can, and get the missing packet sent again.",
           widget: { type: "net-packets", props: { message: "MEET ME AT THE LIBRARY AT NOON", size: 6, lost: [3], seed: 7 } },
-          question: { type: "widget", goal: { complete: true, resent: 1 } },
+          question: { type: "widget", hint: "Find the number that never arrived, then resend that one.", goal: { complete: true, resent: 1 } },
           explanation: "Packet 3 never came, so the message stalled after packet 2. Asking for **just that one packet** fixed it, which is far cheaper than resending the whole message. In a later lesson you'll see TCP do this automatically.",
         },
         {
@@ -210,7 +210,7 @@ export const networkModule: Module = {
           kind: "question",
           title: "How big can each part be?",
           body: "Each of the four numbers is one byte. What is the **largest** value one of them can be?",
-          question: { type: "number", answer: 255 },
+          question: { type: "number", hint: "One byte is 8 bits. What is the largest number 8 bits can hold?", answer: 255 },
           explanation: "One byte is 8 bits, so it holds 0 to **255** (that's 11111111). An address like `192.168.1.300` is impossible: 300 doesn't fit in a byte.",
         },
         {
@@ -218,7 +218,7 @@ export const networkModule: Module = {
           title: "Set the bits",
           body: "Keep the first three bytes, and change the **last** byte so its bits read `00010000`.",
           widget: { type: "net-ip", props: { initial: [192, 168, 1, 20] } },
-          question: { type: "widget", goal: { a: "192.168.1.16" } },
+          question: { type: "widget", hint: "Read the last byte's bits as place values: 128, 64, 32, 16, 8, 4, 2, 1.", goal: { a: "192.168.1.16" } },
           explanation: "`00010000` has a single 1 in the place worth **16**, so the address is `192.168.1.16`. Underneath, an IP address is nothing more than 32 bits.",
         },
         {
@@ -242,7 +242,7 @@ export const networkModule: Module = {
           title: "Go private",
           body: "This address is public. Change it into a **private** address (any private one will do).",
           widget: { type: "net-ip", props: { initial: [203, 0, 113, 50] } },
-          question: { type: "widget", goal: { kind: "private" } },
+          question: { type: "widget", hint: "Private addresses start with 10., 172.16 to 172.31, or 192.168.", goal: { kind: "private" } },
           explanation: "Anything starting `10.`, `172.16.` to `172.31.`, or `192.168.` is private. Packets to those addresses are never routed across the internet, which is why every home can use `192.168.1.x` at the same time.",
         },
         {
@@ -256,7 +256,7 @@ export const networkModule: Module = {
           title: "Move it next door",
           body: "These two addresses are on different networks. Change **Address B** so they're on the same /24 network.",
           widget: { type: "net-ip", props: { initial: [192, 168, 1, 20], compare: [192, 168, 2, 30], editable: "b" } },
-          question: { type: "widget", goal: { same: true } },
+          question: { type: "widget", hint: "On a /24 network the first three numbers have to match.", goal: { same: true } },
           explanation: "With a /24, only the first three bytes matter for \"which network\". `192.168.1.anything` (other than the laptop's own .20) is a neighbour of `192.168.1.20`.",
         },
         {
@@ -321,7 +321,7 @@ export const networkModule: Module = {
           title: "Count the routers",
           body: "Send a packet all the way to the server. How many **routers** does it pass through?",
           widget: { type: "net-routes", props: { lockLinks: true }, live: true },
-          question: { type: "number", answer: 3 },
+          question: { type: "number", hint: "Send a packet to the server and count every router on the path it takes.", answer: 3 },
           explanation: "You → **R1 → R2 → R4** → server: three routers, four links. Each picked the neighbour with the fewest hops left to the server's network.",
         },
         {
@@ -351,7 +351,7 @@ Destination        Next hop   Hops
           title: "A cable gets cut",
           body: "A digger cuts the cable between **R1 and R2**. Break that link, then deliver a packet to the server.",
           widget: { type: "net-routes", props: {} },
-          question: { type: "widget", goal: { delivered: true, avoid: "R2", minBroken: 1 } },
+          question: { type: "widget", hint: "Break the link between R1 and R2 in the map, then send a packet.", goal: { delivered: true, avoid: "R2", minBroken: 1 } },
           explanation: "With R1–R2 gone, the tables recompute: R1's best way to the server is now **R3**, then R5. The packet still arrives, just by another road. That redundancy is why the internet survives broken cables every day.",
         },
         {
@@ -375,7 +375,7 @@ Destination        Next hop   Hops
           title: "Cut it off",
           body: "How hard is it to disconnect the server? Break links until a packet **can't** reach it.",
           widget: { type: "net-routes", props: {} },
-          question: { type: "widget", goal: { dropped: true } },
+          question: { type: "widget", hint: "Break links around the server until no path reaches it any more.", goal: { dropped: true } },
           explanation: "You had to break **every** route, for example both R4–Server and R5–Server, or both R1–R2 and R1–R3. With no route left, a router drops the packet and reports *destination unreachable*. More links mean more routes to cut.",
         },
         {
@@ -407,7 +407,7 @@ Destination        Next hop   Hops
           kind: "question",
           title: "How many flats?",
           body: "Ports are 16-bit numbers starting at 0. What is the **largest** port number?",
-          question: { type: "number", answer: 65535 },
+          question: { type: "number", hint: "A port is a 16-bit number, so count the patterns 16 bits can make and subtract one.", answer: 65535 },
           explanation: "16 bits give 2¹⁶ = 65,536 values, so ports run from 0 to **65,535**. Port 0 is reserved, so real programs use 1 to 65,535.",
         },
         {
@@ -415,7 +415,7 @@ Destination        Next hop   Hops
           title: "Sort the post",
           body: "This server runs four programs, each **listening** on its own port. Deliver each incoming packet to the program its destination port belongs to.",
           widget: { type: "net-ports", props: {} },
-          question: { type: "widget", goal: { done: true } },
+          question: { type: "widget", hint: "Match each packet's destination port to the program that listens on that port.", goal: { done: true } },
           explanation: "The operating system does exactly this for every packet: read the destination port and hand the data to the program listening there. Nothing listened on 8080, so that packet was **rejected**.",
         },
         {
@@ -447,7 +447,7 @@ Destination        Next hop   Hops
               ],
             },
           },
-          question: { type: "widget", goal: { done: true } },
+          question: { type: "widget", hint: "Think of which service normally listens on each well-known port: web, secure web, mail, remote login.", goal: { done: true } },
           explanation: "22 is SSH, 443 is HTTPS, 53 is DNS and 80 is plain HTTP. You'll meet 53, 80 and 443 again in the DNS and HTTP lessons.",
         },
         {
@@ -479,7 +479,7 @@ Destination        Next hop   Hops
           kind: "question",
           title: "Where to knock",
           body: "Your browser opens `https://shop.example.com`. Which port does it connect to on the server?",
-          question: { type: "text", answer: ["443"], placeholder: "port number" },
+          question: { type: "text", hint: "Every protocol has a default port. Which one does https use?", answer: ["443"], placeholder: "port number" },
           explanation: "`https` means port **443** unless the URL says otherwise. (`http` would mean 80.) You can write a port explicitly, like `http://localhost:3100`.",
         },
         {
@@ -512,7 +512,7 @@ Destination        Next hop   Hops
           title: "The three-way handshake",
           body: "Before sending any data, TCP opens the connection. Step through with **no** loss. How many packets go back and forth before the first byte of data?",
           widget: { type: "net-transport", props: { mode: "tcp", loss: 0, fixedLoss: true, segments: 2 }, live: true },
-          question: { type: "number", answer: 3 },
+          question: { type: "number", hint: "Count the packets that cross before the first byte of data is sent.", answer: 3 },
           explanation: "**SYN** (\"let's talk, my numbers start here\"), **SYN-ACK** (\"got it, and mine start here\"), **ACK** (\"got yours\"). Three packets, and a full round trip of waiting before the client can send its first byte of data.",
         },
         {
@@ -524,7 +524,7 @@ Destination        Next hop   Hops
           kind: "question",
           title: "Predict the ACK",
           body: "A segment arrives with `seq=301` carrying **100 bytes**. What `ack` number does the receiver send back?",
-          question: { type: "number", answer: 401 },
+          question: { type: "number", hint: "The ACK names the next byte the receiver expects: the sequence number plus the bytes received.", answer: 401 },
           explanation: "The segment holds bytes 301 to 400, so the next byte wanted is **401**. The ACK always points at the first byte the receiver *doesn't* have yet.",
         },
         {
@@ -532,7 +532,7 @@ Destination        Next hop   Hops
           title: "Make TCP work for it",
           body: "Set the link to lose packets and run TCP until it has to **resend** something. (If you're lucky and nothing is lost, press **New run**.)",
           widget: { type: "net-transport", props: { mode: "tcp", loss: 25 } },
-          question: { type: "widget", goal: { mode: "tcp", finished: true, minRetransmits: 1 } },
+          question: { type: "widget", hint: "Raise the loss, then run until TCP has to resend something.", goal: { mode: "tcp", finished: true, minRetransmits: 1 } },
           explanation: "A lost segment, or a lost ACK, means silence. The sender waits for its timeout, then resends. All the bytes arrive in the end, but each loss costs a wait, which is why a bad connection feels slow rather than broken.",
         },
         {
@@ -540,7 +540,7 @@ Destination        Next hop   Hops
           title: "Now UDP",
           body: "Same lossy link, but UDP. Run it until a datagram goes missing.",
           widget: { type: "net-transport", props: { mode: "udp", loss: 25 } },
-          question: { type: "widget", goal: { mode: "udp", finished: true, someLost: true } },
+          question: { type: "widget", hint: "Keep the lossy link, switch to UDP and run until a datagram goes missing.", goal: { mode: "udp", finished: true, someLost: true } },
           explanation: "UDP didn't notice. There was no handshake, no ACKs and no timeout, so the run was quick, but the lost datagram is simply gone. If the program cares, it has to deal with that itself.",
         },
         {
@@ -612,7 +612,7 @@ name    domain      top-level domain (TLD)
           title: "Follow a lookup",
           body: "Nobody has looked anything up yet, so every cache is empty. Look up `www.example.com` and step through every stage.",
           widget: { type: "net-dns", props: { noWait: true } },
-          question: { type: "widget", goal: { done: true, name: "www.example.com", asked: ["root", "tld", "auth"] } },
+          question: { type: "widget", hint: "Start the lookup, then press next until the answer comes back.", goal: { done: true, name: "www.example.com", asked: ["root", "tld", "auth"] } },
           explanation: "The browser asks a **resolver**, which does the legwork: a **root** server points it to the **.com** servers, which point it to example.com's **authoritative** server, which finally knows the answer. Each server only knows the next step, a bit like routers.",
         },
         {
@@ -635,7 +635,7 @@ name    domain      top-level domain (TLD)
           title: "The second time is instant",
           body: "Make a lookup of `www.example.com` come straight from the **browser's cache**.",
           widget: { type: "net-dns", props: {} },
-          question: { type: "widget", goal: { name: "www.example.com", cacheHit: "browser" } },
+          question: { type: "widget", hint: "Do the lookup once, then look up the same name again.", goal: { name: "www.example.com", cacheHit: "browser" } },
           explanation: "The first lookup took about 90 ms; the second took **0 ms**, because the browser kept the answer. If you pressed *Wait 5 minutes*, the 300 s TTL ran out and the walk had to start again.",
         },
         {
@@ -643,7 +643,7 @@ name    domain      top-level domain (TLD)
           title: "Skip the top",
           body: "Get the resolver to find `mail.example.com` **without asking the root or the TLD server**.",
           widget: { type: "net-dns", props: { noWait: true } },
-          question: { type: "widget", goal: { name: "mail.example.com", done: true, notAsked: ["root", "tld"] } },
+          question: { type: "widget", hint: "Look up www.example.com first; the resolver then remembers who runs example.com.", goal: { name: "mail.example.com", done: true, notAsked: ["root", "tld"] } },
           explanation: "Look up `www.example.com` first. The resolver then remembers that example.com's names live on `ns1.example.com`, so for `mail.example.com` it goes straight there. Caching works at every level of the walk.",
         },
         {
@@ -712,7 +712,7 @@ Content-Length: 17
           title: "Your first request",
           body: "Request the page at `/about` and send it.",
           widget: { type: "net-http", props: { methods: ["GET"], hostToggle: false } },
-          question: { type: "widget", goal: { status: 200, path: "/about" } },
+          question: { type: "widget", hint: "Choose the path /about, then press send.", goal: { status: 200, path: "/about" } },
           explanation: "`GET /about` asks for that page, and **200 OK** means here it is. The body is the HTML your browser would draw.",
         },
         {
@@ -731,7 +731,7 @@ Content-Length: 17
           title: "Collect the set",
           body: "Get the server to answer with a **200**, a **301**, a **404** and a **500**.",
           widget: { type: "net-http", props: { methods: ["GET"], hostToggle: false } },
-          question: { type: "widget", goal: { seen: [200, 301, 404, 500] } },
+          question: { type: "widget", hint: "Different paths give different statuses. Try several until you have seen all four.", goal: { seen: [200, 301, 404, 500] } },
           explanation: "`/old-about` has moved (301, with a `Location` header saying where), `/nope` doesn't exist (404, a client mistake), and `/api/report` crashed on the server (500). Note that a 404 means the network worked fine: the server answered, it just has nothing at that path.",
         },
         {
@@ -744,7 +744,7 @@ Content-Length: 17
           title: "Which site?",
           body: "Switch off the `Host` header and send a request. What does the server say?",
           widget: { type: "net-http", props: { methods: ["GET"] } },
-          question: { type: "widget", goal: { status: 400 } },
+          question: { type: "widget", hint: "Switch the Host header off, then send the request.", goal: { status: 400 } },
           explanation: "**400 Bad Request**: without `Host`, an HTTP/1.1 server can't tell which of its sites you mean, so the request is malformed.",
         },
         {
@@ -757,7 +757,7 @@ Content-Length: 17
           title: "Log in",
           body: "Get into `/account`. You'll need to log in first, with a `POST` to `/login`.",
           widget: { type: "net-http", props: { paths: ["/account", "/login"], hostToggle: false } },
-          question: { type: "widget", goal: { status: 200, path: "/account" } },
+          question: { type: "widget", hint: "Send the POST to /login first, then ask for /account.", goal: { status: 200, path: "/account" } },
           explanation: "Without a cookie, `/account` says **401 Unauthorized**. `POST /login` answered with `Set-Cookie`, and the next `GET /account` carried `Cookie: session=7f3a9c`. The server didn't remember you; the cookie reminded it.",
         },
         {
@@ -822,14 +822,14 @@ Content-Length: 17
           title: "Wrap it up",
           body: "Sending works top-down: each layer puts **its own header** in front of what it was handed. This is **encapsulation**. Wrap the HTTP request all the way down into an Ethernet frame.",
           widget: { type: "net-layers", props: { wrapOnly: true, fixedModel: true } },
-          question: { type: "widget", goal: { depth: 4 } },
+          question: { type: "widget", hint: "Each layer puts its header in front: HTTP data, then TCP, then IP, then Ethernet.", goal: { depth: 4 } },
           explanation: "HTTP data inside a **TCP segment** (ports), inside an **IP packet** (addresses), inside an **Ethernet frame** (the next device's hardware address, plus a checksum). Like envelopes inside envelopes.",
         },
         {
           kind: "question",
           title: "Count the bytes",
           body: "The HTTP data is **38** bytes. TCP adds a 20-byte header, IP a 20-byte header, and Ethernet a 14-byte header plus a 4-byte checksum. How many bytes is the whole frame?",
-          question: { type: "number", answer: 96, unit: "bytes" },
+          question: { type: "number", hint: "Add the HTTP data and everything each layer puts around it.", answer: 96, unit: "bytes" },
           explanation: "38 + 20 + 20 + 14 + 4 = **96** bytes. 58 of them are wrapping. For tiny messages the headers can outweigh the data; with full 1,500-byte packets they're only a few percent.",
         },
         {
@@ -837,7 +837,7 @@ Content-Length: 17
           title: "Unwrap it",
           body: "At the other end, the layers work **bottom-up**: each reads its own header, removes it, and hands what's inside to the layer above. Send the frame and unwrap it until the web server has the request.",
           widget: { type: "net-layers", props: { fixedModel: true } },
-          question: { type: "widget", goal: { delivered: true } },
+          question: { type: "widget", hint: "Send the frame, then remove one header at a time, from the outside in.", goal: { delivered: true } },
           explanation: "Link checks the hardware address and checksum, Internet checks the IP address, Transport reads the port (80, the web server), and the Application finally reads `GET /`. Each layer only ever reads its own header.",
         },
         {
@@ -879,7 +879,7 @@ Content-Length: 17
               answer: LAYER_ANSWER,
             },
           },
-          question: { type: "widget", goal: { placed: LAYER_ANSWER } },
+          question: { type: "widget", hint: "Ask what each thing does: reach a program, reach a machine, or cross one cable.", goal: { placed: LAYER_ANSWER } },
           explanation: "DNS lookups and HTTP status codes are **Application**. Ports and ACKs are **Transport**. IP addresses and forwarding tables are **Internet**. MAC addresses and Wi-Fi radio are **Link**.",
         },
         {
@@ -917,7 +917,7 @@ scheme    host              port  path
           title: "The whole trip",
           body: "You press Enter on `https://shop.example.com/cart`. Step through everything that happens, all the way to the finished page.",
           widget: { type: "net-journey", props: { url: "https://shop.example.com/cart" } },
-          question: { type: "widget", goal: { finished: true } },
+          question: { type: "widget", hint: "Press next until the page has finished loading.", goal: { finished: true } },
           explanation: "Every lesson of this module, in one go: read the URL, **DNS**, a **TCP** handshake, **TLS**, an **HTTP** request, **IP** routing hop by hop, the response, then more requests for the page's pictures and styles.",
         },
         {
@@ -942,7 +942,7 @@ scheme    host              port  path
           title: "HTTPS in one step",
           body: "The **S** in HTTPS is **TLS**: a handshake that checks the server's **certificate** (proof, signed by an authority your device trusts, that this really is shop.example.com) and agrees on a secret key. Turn on the **attacker** and try HTTPS to see why the certificate matters.",
           widget: { type: "net-tls", props: { mode: "https" } },
-          question: { type: "widget", goal: { mode: "https", attacker: true, blocked: true } },
+          question: { type: "widget", hint: "Turn on the attacker, choose HTTPS and try to connect.", goal: { mode: "https", attacker: true, blocked: true } },
           explanation: "The attacker could answer the hello, but couldn't produce a certificate for shop.example.com signed by a trusted authority. The check failed and the browser stopped before sending anything. With plain HTTP there's no check at all: try it.",
         },
         {

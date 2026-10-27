@@ -40,7 +40,7 @@ export const observabilityModule: Module = {
           title: "Look at everything",
           body: "Open all three tabs: **Logs**, **Metrics** and **Traces**.",
           widget: { type: "obs-signals", props: { tab: "logs" } },
-          question: { type: "widget", goal: { all: true } },
+          question: { type: "widget", hint: "Open each of the three tabs once.", goal: { all: true } },
           explanation: "**Logs** record events (a story you can read), **metrics** are numbers aggregated over time (a shape you can graph), and **traces** follow one request through many services (a path you can follow). Each hides what the others show.",
         },
         {
@@ -153,9 +153,9 @@ export const observabilityModule: Module = {
         {
           kind: "question",
           title: "Count them properly",
-          body: "In **Structured** mode, narrow the events down to the **failed checkouts in eu-west**. How many are there? Get the list to show exactly those events.",
+          body: "Switch to **Structured** mode and filter the events down to the **failed checkouts in eu-west**. Set the filters so the list shows exactly those events; the count appears above it.",
           widget: { type: "obs-logs", props: { mode: "plain" } },
-          question: { type: "widget", goal: { mode: "structured", shown: 4 } },
+          question: { type: "widget", hint: "Filter by status and region until the list shows only the matching events.", goal: { mode: "structured", shown: 4 } },
           explanation: "Level = error, route = /checkout, region = eu-west leaves **4** events, and you can trust the count because no filter depends on anybody's choice of words. (The unrelated error in us-east dropped out too.)",
         },
         {
@@ -314,14 +314,14 @@ http_requests_total{route="/checkout", status="500", region="eu-west"}  4172
           title: "See the real pace",
           body: "Choose the view that shows the shop's **true order rate** despite the restart.",
           widget: { type: "obs-counter", props: { view: "raw" } },
-          question: { type: "widget", goal: { view: "rate" } },
+          question: { type: "widget", hint: "A rate view looks at the change per second, so a counter reset does not fool it.", goal: { view: "rate" } },
           explanation: "The reset-aware rate shows a steady three orders a second with no trace of the restart. The naive difference invents a huge negative spike (the counter \"dropped\" by 153), which would wreck any average or alert built on it.",
         },
         {
           kind: "question",
           title: "Do the arithmetic",
           body: "A counter reads **4,210** at the 100-second mark and **4,570** at the 160-second mark, with no restart in between. How many orders per second is that?",
-          question: { type: "number", answer: 6, unit: "per second" },
+          question: { type: "number", hint: "Rate = increase ÷ seconds between the two readings.", answer: 6, unit: "per second" },
           explanation: "(4,570 − 4,210) ÷ (160 − 100) = 360 ÷ 60 = **6 orders per second**. A rate is always a *change divided by the time it took*.",
         },
         {
@@ -415,14 +415,14 @@ rate([(0, 100), (10, 190), (20, 40)])    # (90 + 40) / 20 = 6.5   (reset between
           title: "A healthy average, a sick tail",
           body: "Make the **mean under 300 ms** while the **p99 is over one second**.",
           widget: { type: "obs-percentiles", props: { slow: 0 } },
-          question: { type: "widget", goal: { maxMean: 300, minP99: 1000 } },
+          question: { type: "widget", hint: "A few very slow requests drag p99 up while the mean barely moves.", goal: { maxMean: 300, minP99: 1000 } },
           explanation: "With just three to five slow requests out of 200 (about 2% of traffic) the mean barely climbs, because the slow ones are outnumbered. p99 jumps to several seconds. A dashboard that shows only the average would call this a healthy service.",
         },
         {
           kind: "question",
           title: "Work one out",
           body: "Ten request times, already sorted, in milliseconds: **12, 15, 15, 18, 20, 22, 25, 31, 48, 950**. Using the *nearest-rank* method (the p-th percentile is the value at position ⌈p% × count⌉), what is **p90**?",
-          question: { type: "number", answer: 48, unit: "ms" },
+          question: { type: "number", hint: "Nearest rank: the p90 of 10 values sits at position ⌈0.9 × 10⌉.", answer: 48, unit: "ms" },
           explanation: "90% of 10 is 9, so p90 is the **9th** value: 48 ms. The single 950 ms outlier is the 10th value and only appears at p100 (the maximum). That is exactly how a percentile ignores one freak but still sees a *pattern* of slow requests.",
         },
         {
@@ -435,7 +435,7 @@ rate([(0, 100), (10, 190), (20, 40)])    # (90 + 40) / 20 = 6.5   (reset between
           kind: "question",
           title: "Fifty calls",
           body: "A page makes **50** backend calls. Each has an independent 1% chance of being slower than the p99. About what percentage of page views meet at least one such slow call?",
-          question: { type: "number", answer: 40, tolerance: 3, unit: "%" },
+          question: { type: "number", hint: "The chance that none are slow is 0.99 multiplied by itself 50 times.", answer: 40, tolerance: 3, unit: "%" },
           explanation: "The chance *all 50* are fast is 0.99^50, about 0.605, so at least one is slow about **40%** of the time. This is why teams chase p99 and p99.9 of backend calls: at scale the tail is the typical experience.",
         },
         {
@@ -526,7 +526,7 @@ def percentile(values, p):
           title: "Mark the bottleneck",
           body: "Push the load past **160 requests per second**, find the resource behind the damage, and mark it.",
           widget: { type: "obs-bottleneck", props: { load: 80 } },
-          question: { type: "widget", goal: { correct: true, minLoad: 160 } },
+          question: { type: "widget", hint: "Raise the load above 160 and see which resource saturates first.", goal: { correct: true, minLoad: 160 } },
           explanation: "The **database connection pool** hit 100% first, work started queueing behind it (saturation), and requests began failing with timeouts. The CPU, disk and network all had room to spare: adding web servers would have changed nothing.",
         },
         {
@@ -650,7 +650,7 @@ def red(requests, window_s):
           title: "Find the slow hop",
           body: "Tap the span where the request spent the **most time doing its own work**.",
           widget: { type: "obs-trace", props: { toggles: [] } },
-          question: { type: "widget", goal: { slowest: true } },
+          question: { type: "widget", hint: "Look for the span with the widest bar of its own time, not counting its children.", goal: { slowest: true } },
           explanation: "The call to the payment provider's API takes 340 ms with nothing beneath it: all of that is the provider (and the network to it). Every span above it, `charge`, `create_order`, `POST /orders`, is long only because it is *waiting* for this one.",
         },
         {
@@ -685,7 +685,7 @@ traceparent: 00-9a3c1e7d5b2f4086a1c4e3d2f7b05c68-5d1e8a4c20b7f396-01
           title: "Break the chain",
           body: "Switch **Pass the trace id along** off and look at what happens to the services after the order service.",
           widget: { type: "obs-trace", props: { toggles: ["propagate"] } },
-          question: { type: "widget", goal: { propagate: false } },
+          question: { type: "widget", hint: "Turn off passing the trace id and see what happens downstream.", goal: { propagate: false } },
           explanation: "Without the header, inventory, pricing and payments each start their own unrelated traces. The main trace now shows `create_order` mysteriously idle for most of its life, and the real cause is sitting in three other traces nobody can connect. A partially instrumented system can be worse than none, because it misleads.",
         },
         {
@@ -693,7 +693,7 @@ traceparent: 00-9a3c1e7d5b2f4086a1c4e3d2f7b05c68-5d1e8a4c20b7f396-01
           title: "Do the slow calls need to be slow?",
           body: "In the waterfall the stock check and the price quote run one after the other, though neither needs the other's result. Switch on **parallel** and get the whole request under **540 ms**.",
           widget: { type: "obs-trace", props: { toggles: ["parallel"] } },
-          question: { type: "widget", goal: { parallel: true, maxTotal: 540 } },
+          question: { type: "widget", hint: "Independent calls can run at the same time instead of one after another.", goal: { parallel: true, maxTotal: 540 } },
           explanation: "Making the two independent calls at the same time hides the shorter one behind the longer, saving about 90 ms. The shape of a waterfall (a staircase where there could be a block) is how you spot work that can be done in parallel.",
         },
         {
@@ -783,7 +783,7 @@ traceparent: 00-9a3c1e7d5b2f4086a1c4e3d2f7b05c68-5d1e8a4c20b7f396-01
           kind: "question",
           title: "What does 99.9% mean in minutes?",
           body: "The SLO is **99.9% availability over 30 days**. If the service were completely down, how many minutes of downtime would use up the whole allowance?",
-          question: { type: "number", answer: 43.2, tolerance: 0.5, unit: "minutes" },
+          question: { type: "number", hint: "The allowance is the remaining 0.1% of 30 days, in minutes.", answer: 43.2, tolerance: 0.5, unit: "minutes" },
           explanation: "30 days is 43,200 minutes. 0.1% of that is **43.2 minutes**. Every additional nine divides it by ten: 99.99% allows only 4.3 minutes a month, which is less than the time it takes a person to be paged and open a laptop.",
         },
         {
@@ -797,7 +797,7 @@ traceparent: 00-9a3c1e7d5b2f4086a1c4e3d2f7b05c68-5d1e8a4c20b7f396-01
           title: "The strictest target this month meets",
           body: "With **all four incidents on**, which is the **strictest SLO** the team would still have met this month?",
           widget: { type: "obs-budget", props: { slo: 99.9 } },
-          question: { type: "widget", goal: { slo: 99.5, allIncidents: true, exhausted: false } },
+          question: { type: "widget", hint: "With every incident on, check which targets still have budget left.", goal: { slo: 99.5, allIncidents: true, exhausted: false } },
           explanation: "At 99.9% the month's failures (about 35,800) overshoot the 30,000 allowed, so the budget runs out on day 25. At 99.5% the team has 150,000 to spend and still ends the month with about three quarters of it. The right SLO is the one you can reliably keep, not the most impressive number.",
         },
         {
@@ -912,7 +912,7 @@ def burn_rate(error_ratio, slo):
           title: "A pager you can trust",
           body: "Configure an alert that **pages for the real incident** and produces **no false alarms**, using the error rate.",
           widget: { type: "obs-alerts", props: { signal: "cpu" } },
-          question: { type: "widget", goal: { signal: "errors", caught: true, maxFalse: 0 } },
+          question: { type: "widget", hint: "Alert on the error rate with a threshold above the normal noise but below the real incident.", goal: { signal: "errors", caught: true, maxFalse: 0 } },
           explanation: "On the error rate, a threshold well above the everyday wobble, plus a requirement that it **stays** over the line for ten minutes, ignores the one-sample blips and still catches the real incident within minutes. CPU can never do both: the batch jobs reach 95%, and the real incident never touches it.",
         },
         {
@@ -946,7 +946,7 @@ def burn_rate(error_ratio, slo):
           title: "Build the 3 a.m. dashboard",
           body: "Choose **at most six panels** that, between them, answer all five of the on-call engineer's questions.",
           widget: { type: "obs-dashboard", props: { max: 6 } },
-          question: { type: "widget", goal: { all: true, maxPanels: 6 } },
+          question: { type: "widget", hint: "One panel can answer more than one question. Choose panels that overlap.", goal: { all: true, maxPanels: 6 } },
           explanation: "You needed health (error rate or latency), traffic, change markers, a breakdown to say *where*, and one saturation panel for headroom. The forty-host CPU grid, the log-volume graph, the five-year uptime figure and the pod-memory grid are all true, all impressive, and none of them answers a question you had.",
         },
         {
@@ -1008,7 +1008,7 @@ def burn_rate(error_ratio, slo):
           title: "Put each in its phase",
           body: "Sort all eight actions into **Detect**, **Mitigate**, **Communicate** and **Learn**.",
           widget: { type: "obs-incident", props: {} },
-          question: { type: "widget", goal: { all: true } },
+          question: { type: "widget", hint: "Detect finds the problem, mitigate stops the pain, communicate informs people, learn is the review afterwards.", goal: { all: true } },
           explanation: "Notice that *mitigate* has nothing to do with finding the cause: rolling back and failing over are about stopping harm. *Learn* happens after the fire is out, which is when there is time to think and no adrenaline to distort it.",
         },
         {
@@ -1146,7 +1146,7 @@ def mttr(incidents):
           title: "Survive 200 requests a second",
           body: "Offer **at least 200 requests per second** and keep **p95 under 500 ms with no failures**. How many instances do you need?",
           widget: { type: "obs-loadtest", props: { load: 60, instances: 1 } },
-          question: { type: "widget", goal: { withinSlo: true, minLoad: 200 } },
+          question: { type: "widget", hint: "Add instances until p95 stays under 500 ms with no failures at 200 requests a second.", goal: { withinSlo: true, minLoad: 200 } },
           explanation: "Four instances (280 requests/s of capacity) keep 200/s at about 71% busy and p95 near 420 ms. Three instances could technically serve 200/s (210 capacity) but would be 95% busy, deep in the steep part of the curve, with no room for a spike or a failed instance.",
         },
         {
@@ -1180,7 +1180,7 @@ requests in the system = arrival rate x average time in the system
           kind: "question",
           title: "How many at once?",
           body: "A service handles **300 requests per second**, and each takes **120 ms** on average from arrival to reply. How many requests are in flight at once, on average?",
-          question: { type: "number", answer: 36 },
+          question: { type: "number", hint: "Requests in flight = requests per second × seconds each one takes.", answer: 36 },
           explanation: "300 x 0.120 = **36**. A pool of 20 database connections would be hopelessly small here, even though each query is quick.",
         },
         {

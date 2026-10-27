@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Flame, Lightbulb, Play, RotateCcw, Sparkles, X, Zap } from "lucide-react";
 import type { ConceptContext } from "@/content/foundations";
@@ -15,21 +15,46 @@ import { Prose } from "@/components/ui/Prose";
 import { CodeEditor } from "@/components/workspace/CodeEditor";
 import { sound } from "@/lib/sound/sound";
 import { fireCelebrationConfetti } from "@/lib/ui/confetti";
-import { answerText, hasAnswer, initialAnswer, isCorrect, QuestionInput, type Answer } from "./QuestionInput";
+import { clearStep, saveStep, savedStep } from "@/learn/position";
+import { answerText, hasAnswer, initialAnswer, isCorrect, QuestionInput, wrongAnswerHelp, type Answer } from "./QuestionInput";
 
 type Status = "idle" | "correct" | "wrong" | "revealed";
 
-/** Brilliant-style concept lesson: one step at a time, every step interactive. */
+const noopSubscribe = () => () => {};
+
+/**
+ * Brilliant-style concept lesson: one step at a time, every step interactive.
+ * Where the learner stopped lives in localStorage (see src/learn/position.ts), which the server
+ * render cannot see, so the player mounts after hydration instead of flashing step 1 first.
+ */
 export function LessonPlayer({ ctx }: { ctx: ConceptContext }) {
+  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  if (!hydrated) return <div className="fixed inset-0 z-[60] grid place-items-center bg-bg text-sm text-ink-3">Loading lesson…</div>;
+  return <Player ctx={ctx} />;
+}
+
+function Player({ ctx }: { ctx: ConceptContext }) {
   const { lesson, module } = ctx;
   const progress = useProgress();
-  const [index, setIndex] = useState(0);
-  const [done, setDone] = useState<CompletionResult | null>(null);
-  const step = lesson.steps[index];
   const total = lesson.steps.length;
+  const [index, setIndex] = useState(() => savedStep(lesson.id, total));
+  // the step this visit resumed at (0 = a fresh start): drives the "picked up where you left off" note
+  const [resumedAt, setResumedAt] = useState(index);
+  const [done, setDone] = useState<CompletionResult | null>(null);
+  // true while the current step holds work that closing the lesson would throw away
+  const [dirty, setDirty] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const step = lesson.steps[index];
+
+  const goTo = (n: number) => {
+    setIndex(n);
+    setDirty(false);
+    saveStep(lesson.id, n);
+  };
 
   const finish = () => {
     const res = completeLesson(lesson.id, lesson.xp, "");
+    clearStep(lesson.id);
     sound.playSuccess();
     if (res.firstTime) fireCelebrationConfetti();
     setDone(res);
@@ -38,13 +63,37 @@ export function LessonPlayer({ ctx }: { ctx: ConceptContext }) {
   const advance = () => {
     sound.playClick();
     if (index + 1 >= total) finish();
-    else setIndex(index + 1);
+    else goTo(index + 1);
   };
+
+  const startOver = () => {
+    goTo(0);
+    setResumedAt(0);
+  };
+
+  // the browser's own "leave this page?" prompt (tab close, reload, address bar), only when work would be lost
+  useEffect(() => {
+    if (!dirty || done) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty, done]);
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col bg-bg">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 sm:px-4">
-        <Link href="/learn" aria-label="Back to Foundations" title="Back to Foundations" className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink">
+        <Link
+          href="/learn"
+          aria-label="Back to Foundations"
+          title="Back to Foundations"
+          onClick={(e) => {
+            if (dirty && !done) {
+              e.preventDefault();
+              setConfirmLeave(true);
+            }
+          }}
+          className="relative before:absolute before:-inset-1.5 before:content-[''] grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink"
+        >
           <X className="h-4 w-4" />
         </Link>
         <div className="flex flex-1 items-center gap-1" aria-label={`Step ${Math.min(index + 1, total)} of ${total}`}>
@@ -61,8 +110,49 @@ export function LessonPlayer({ ctx }: { ctx: ConceptContext }) {
       {done ? (
         <Completion ctx={ctx} result={done} />
       ) : (
-        <StepFrame key={`${lesson.id}-${index}`} step={step} seed={`${lesson.id}-${index}`} moduleIcon={module.icon} moduleTitle={module.title} lessonTitle={lesson.title} first={index === 0} last={index === total - 1} onContinue={advance} />
+        <StepFrame
+          key={`${lesson.id}-${index}`}
+          step={step}
+          seed={`${lesson.id}-${index}`}
+          moduleIcon={module.icon}
+          moduleTitle={module.title}
+          lessonTitle={lesson.title}
+          first={index === 0}
+          last={index === total - 1}
+          onContinue={advance}
+          onDirty={setDirty}
+          resume={resumedAt > 0 && index === resumedAt ? { step: index + 1, total, onStartOver: startOver } : null}
+        />
       )}
+
+      {confirmLeave && <LeaveDialog onStay={() => setConfirmLeave(false)} />}
+    </div>
+  );
+}
+
+/** Shown when closing the lesson would throw away code the learner has typed on this step. */
+function LeaveDialog({ onStay }: { onStay: () => void }) {
+  const stayRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    stayRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onStay();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onStay]);
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/50 p-4" role="presentation">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="leave-title" aria-describedby="leave-body" className="card pop-in w-full max-w-sm p-5">
+        <h2 id="leave-title" className="font-display text-xl">Leave this step?</h2>
+        <p id="leave-body" className="mt-2 text-sm text-ink-2">
+          The code you wrote on this step isn&apos;t saved. Next time you open the lesson you&apos;ll come back to this step, with the starter code.
+        </p>
+        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Link href="/learn" className="btn">Leave anyway</Link>
+          <button ref={stayRef} type="button" className="btn btn-primary" onClick={onStay}>Keep working</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -76,6 +166,8 @@ function StepFrame({
   first,
   last,
   onContinue,
+  onDirty,
+  resume,
 }: {
   step: Step;
   seed: string;
@@ -85,6 +177,10 @@ function StepFrame({
   first: boolean;
   last: boolean;
   onContinue: () => void;
+  /** Tells the player whether leaving now would lose typed code. */
+  onDirty: (dirty: boolean) => void;
+  /** Set when this visit picked the lesson up part-way: offers to begin again. */
+  resume: { step: number; total: number; onStartOver: () => void } | null;
 }) {
   const [answer, setAnswer] = useState<Answer>(() => (step.kind === "question" ? initialAnswer(step.question, seed) : null));
   const [widgetState, setWidgetState] = useState<unknown>(undefined);
@@ -99,6 +195,12 @@ function StepFrame({
   useEffect(() => {
     if (step.kind === "code") preloadRuntime(step.language);
   }, [step]);
+
+  // typed code that has not passed yet is the one thing closing the lesson would lose
+  const dirty = step.kind === "code" && status !== "correct" && code !== step.starter;
+  useEffect(() => {
+    onDirty(dirty);
+  }, [dirty, onDirty]);
 
   const answered = status === "correct" || status === "revealed";
   // editing after a miss clears the "Not quite" so the learner can just check again
@@ -163,11 +265,31 @@ function StepFrame({
     primaryRef.current = primary.disabled ? () => {} : primary.run;
   });
   useEffect(() => {
+    /*
+     * Enter submits: Check, then Continue. Space (or a click) still toggles/selects. Exceptions, which own their Enter:
+     *  - text fields (the answer box, a terminal, a widget's input), where Enter means "send this"
+     *  - the code editor (Enter = newline; Ctrl+Enter runs it)
+     *  - buttons that do something (close, hints, Step/Send/Move up, the action bar), which keep their native "Enter presses me"
+     *  - widgets on explain steps, which own all their keys
+     * Everything else on a question step (an answer option, a bit switch, a slider, the page itself) submits.
+     */
     const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || e.repeat || e.isComposing || e.defaultPrevented || e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
       const t = e.target as HTMLElement;
-      if (e.key !== "Enter" || e.shiftKey || t.closest(".monaco-editor") || t.tagName === "BUTTON") return;
-      // anything focused inside a widget (a terminal, an editor, a control) owns its Enter key
-      if (t.closest("[data-widget]")) return;
+      if (t.closest(".monaco-editor, [contenteditable='true'], [role='textbox'], [role='alertdialog']")) return;
+      const tag = t.tagName;
+      if (tag === "TEXTAREA" || tag === "SELECT") return;
+      const inWidget = Boolean(t.closest("[data-widget]"));
+      const inQuestionStep = Boolean(t.closest("[data-step-kind='question']"));
+      // a widget you are only playing with (an explain step) owns all of its keys
+      if (inWidget && !inQuestionStep) return;
+      // a text field inside a widget (terminal, "value to write") owns Enter; the answer box below the question submits
+      if (tag === "INPUT" && inWidget && !["checkbox", "radio", "range", "button", "submit"].includes((t as HTMLInputElement).type)) return;
+      const buttonLike = tag === "BUTTON" || tag === "A" || tag === "SUMMARY" || t.matches("[role='button']");
+      // controls that hold an answer (an option, a bit switch, a checkbox) submit; buttons that DO something (Step, Send, Move up,
+      // close, hints, the action bar) keep their native Enter
+      const holdsAnswer = t.matches("[data-answer], [aria-pressed], [aria-checked], [role='switch'], [role='checkbox'], [role='radio'], [role='option']");
+      if (buttonLike && !holdsAnswer) return;
       e.preventDefault();
       primaryRef.current();
     };
@@ -176,13 +298,25 @@ function StepFrame({
   }, []);
 
   const failing = codeResult?.results.find((r) => !r.passed);
+  // after a wrong answer: the question's hint / per-option feedback, or a generic nudge that restates the goal
+  const help = status === "wrong" && step.kind === "question" ? wrongAnswerHelp(step.question, answer, goalOf(step)) : "";
   const wide = isCode;
 
   return (
     <>
-      <main className="min-h-0 flex-1 overflow-y-auto">
+      <main className="min-h-0 flex-1 overflow-y-auto" data-step-kind={step.kind}>
         <div className={`rise mx-auto w-full px-4 pb-40 pt-8 sm:px-6 sm:pt-12 ${wide ? "max-w-4xl" : "max-w-2xl"}`}>
-          {first && (
+          {resume && (
+            <div role="status" className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm">
+              <span className="text-ink-2">
+                Picked up where you left off: step {resume.step} of {resume.total}.
+              </span>
+              <button type="button" className="font-medium underline underline-offset-2 hover:text-ink" onClick={resume.onStartOver}>
+                Start over
+              </button>
+            </div>
+          )}
+          {(first || resume) && (
             <p className="mb-6 flex items-center gap-2 text-xs font-medium text-ink-3">
               <ModuleIcon icon={moduleIcon} className="h-3.5 w-3.5" /> {moduleTitle} · {lessonTitle}
             </p>
@@ -229,7 +363,7 @@ function StepFrame({
               )}
 
               {step.kind === "question" && (
-                <div className="mt-6">
+                <div className="mt-6" data-question>
                   <QuestionInput question={step.question} answer={answer} onAnswer={onAnswer} locked={answered} status={status} />
                 </div>
               )}
@@ -335,6 +469,12 @@ function StepFrame({
                 )}
               </div>
             )}
+            {help && (
+              <p role="status" data-wrong-help className="mt-1.5 flex gap-2 text-sm text-ink-2">
+                <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+                <span>{help}</span>
+              </p>
+            )}
             {status === "revealed" && <p className="text-sm text-ink-2">Here&apos;s the answer. It&apos;ll stick next time.</p>}
             {/* after two misses the way out stays available, even after "Try again" */}
             {status === "idle" && isQuestion && attempts >= 2 && (
@@ -357,6 +497,21 @@ function StepFrame({
       </div>
     </>
   );
+}
+
+/** The sentence that says what to do on a question step, for restating the goal after a miss. */
+function goalOf(step: Step): string | undefined {
+  if (step.kind !== "question") return undefined;
+  const q = step.question;
+  const task = step.widget?.props?.task;
+  const raw = (q.type === "widget" && q.prompt) || (typeof task === "string" && task) || step.body || "";
+  const plain = raw.replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, " ").replace(/\s+/g, " ").trim();
+  if (!plain) return undefined;
+  const sentences = plain.split(/(?<=[.!?])\s+/).filter(Boolean);
+  // the sentence that carries the ask usually has a bold target in it ("make **13**"); otherwise the last one
+  const pick = [...sentences].reverse().find((x) => /\*\*/.test(x)) ?? sentences[sentences.length - 1];
+  const clean = pick.replace(/\*\*|__/g, "");
+  return clean.length > 220 ? `${clean.slice(0, 217)}…` : clean;
 }
 
 function Completion({ ctx, result }: { ctx: ConceptContext; result: CompletionResult }) {

@@ -538,7 +538,8 @@ assertEqual(num("SELECT COUNT(*) FROM journal_entries WHERE ref_type = 'order' A
         {
           id: "t3",
           description: "Lines hit the right accounts in the right amounts, inside the right tenant",
-          assertionCode: t`assertEqual(num("SELECT COUNT(*) FROM (SELECT entry_id FROM journal_lines GROUP BY entry_id HAVING SUM(debit_cents) <> SUM(credit_cents))"), 0, "Every entry must balance");
+          assertionCode: t`assert(num("SELECT COUNT(*) FROM journal_entries WHERE ref_type IN ('order', 'topup')") > 0, "Nothing has been posted yet: INSERT the entry headers and lines for the top-ups and orders");
+assertEqual(num("SELECT COUNT(*) FROM (SELECT entry_id FROM journal_lines GROUP BY entry_id HAVING SUM(debit_cents) <> SUM(credit_cents))"), 0, "Every entry must balance");
 assertEqual(num("SELECT COUNT(*) FROM journal_lines l JOIN journal_entries e ON e.entry_id = l.entry_id JOIN accounts a ON a.account_id = l.account_id WHERE a.tenant_id <> e.tenant_id"), 0, "A line points at another tenant's account: join accounts on tenant_id too");
 const badOrders = num("SELECT COUNT(*) FROM orders o JOIN journal_entries e ON e.ref_type = 'order' AND e.ref_id = o.order_id AND e.tenant_id = o.tenant_id WHERE (SELECT COUNT(*) FROM journal_lines WHERE entry_id = e.entry_id) <> 3 OR (SELECT SUM(l.debit_cents) FROM journal_lines l JOIN accounts a ON a.account_id = l.account_id WHERE l.entry_id = e.entry_id AND a.role = 'wallet' AND a.owner_member_id = o.buyer_id) <> o.gross_cents OR (SELECT SUM(l.credit_cents) FROM journal_lines l JOIN accounts a ON a.account_id = l.account_id WHERE l.entry_id = e.entry_id AND a.role = 'payable' AND a.owner_member_id = o.seller_id) <> o.gross_cents - o.fee_cents OR (SELECT SUM(l.credit_cents) FROM journal_lines l JOIN accounts a ON a.account_id = l.account_id WHERE l.entry_id = e.entry_id AND a.role = 'fees') <> o.fee_cents");
 assertEqual(badOrders, 0, "Order entries should be: Dr buyer wallet gross, Cr seller payable gross - fee, Cr fees fee. Entries that do not match");
@@ -555,7 +556,8 @@ match(got, want, "source", ["entries", "lines", "total_cents"], "the posting sum
         {
           id: "t5",
           description: "The trial balance, run again after posting, shows every active account and still balances",
-          assertionCode: t`const got = data(["code", "account", "debit_cents", "credit_cents", "balance_cents"], "Copy your trial balance query below the new postings", /v_trial_balance/);
+          assertionCode: t`assert(num("SELECT COUNT(*) FROM journal_entries WHERE ref_type IN ('order', 'topup')") > 0, "Nothing has been posted yet: INSERT the entry headers and lines for the top-ups and orders");
+const got = data(["code", "account", "debit_cents", "credit_cents", "balance_cents"], "Copy your trial balance query below the new postings", /v_trial_balance/);
 const want = query("SELECT a.name AS account, SUM(l.debit_cents) AS debit_cents, SUM(l.credit_cents) AS credit_cents, CASE a.normal_side WHEN 'D' THEN SUM(l.debit_cents - l.credit_cents) ELSE SUM(l.credit_cents - l.debit_cents) END AS balance_cents FROM accounts a JOIN journal_lines l ON l.account_id = a.account_id JOIN journal_entries e ON e.entry_id = l.entry_id AND e.status = 'posted' WHERE a.tenant_id = 1 GROUP BY a.account_id");
 match(got, want, "account", ["debit_cents", "credit_cents", "balance_cents"], "the trial balance after posting");
 const tot = data(["total_debits", "total_credits", "balanced"], "Run the totals query again", /v_trial_balance/)[0];

@@ -57,7 +57,7 @@ export function ProjectBrowser({
       key={id}
       onClick={() => setFilter(id)}
       aria-pressed={filter === id}
-      className={`inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors ${
+      className={`inline-flex h-10 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors sm:h-9 ${
         filter === id ? "border-transparent bg-ink text-bg" : "border-line bg-surface text-ink-2 hover:border-[var(--line-strong)] hover:text-ink"
       }`}
     >

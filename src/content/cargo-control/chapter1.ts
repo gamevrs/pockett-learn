@@ -433,14 +433,16 @@ assert safe_weight({"weight_kg": 0}) == 0.0, "0 is a number, so it should come b
         {
           id: "t2",
           description: "safe_weight returns None instead of crashing",
-          assertionCode: py`bad = [{}, {"weight_kg": "heavy"}, {"weight_kg": None}, {"weight_kg": [1, 2]}, ["not", "a", "manifest"], None]
+          assertionCode: py`assert safe_weight({"weight_kg": 940}) == 940.0, "Write the happy path first: a good weight must still come back as a float"
+bad = [{}, {"weight_kg": "heavy"}, {"weight_kg": None}, {"weight_kg": [1, 2]}, ["not", "a", "manifest"], None]
 for m in bad:
     assert safe_weight(m) is None, f"safe_weight({m!r}) should return None, not crash"`,
         },
         {
           id: "t3",
           description: "nan and inf are rejected",
-          assertionCode: py`for value in ("nan", "inf", "-inf", float("nan"), float("inf")):
+          assertionCode: py`assert safe_weight({"weight_kg": 940}) == 940.0, "Write the happy path first: a good weight must still come back as a float"
+for value in ("nan", "inf", "-inf", float("nan"), float("inf")):
     assert safe_weight({"weight_kg": value}) is None, f"{value!r} converts to a float, but it is not a real weight. Use math.isfinite() and return None"`,
         },
         {

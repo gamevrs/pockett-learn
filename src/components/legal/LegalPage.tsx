@@ -38,11 +38,11 @@ export function LegalPage({
 
       <nav aria-label={`${title} contents`} className="mt-10 rounded-2xl border border-line bg-surface p-5 sm:p-6">
         <p className="eyebrow">Contents</p>
-        <ol className="mt-3 grid gap-x-8 gap-y-1.5 text-[0.95rem] sm:grid-cols-2">
+        <ol className="mt-2 grid gap-x-8 text-[0.95rem] sm:mt-3 sm:grid-cols-2 sm:gap-y-1.5">
           {sections.map((s, i) => (
-            <li key={s.id} className="flex gap-2.5">
+            <li key={s.id} className="flex items-center gap-2.5 sm:items-baseline">
               <span className="w-5 shrink-0 text-right font-mono text-ink-3">{i + 1}</span>
-              <a className="text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-ink" href={`#${s.id}`}>
+              <a className="inline-flex min-h-10 min-w-10 items-center text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-ink sm:min-h-0 sm:min-w-0" href={`#${s.id}`}>
                 {s.title}
               </a>
             </li>
@@ -64,7 +64,7 @@ export function LegalPage({
 
       <footer className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6 text-sm text-ink-3">
         <p>{COPYRIGHT}. All rights reserved.</p>
-        <Link href={other.href} className="text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-ink">
+        <Link href={other.href} prefetch={false} className="inline-flex min-h-10 items-center text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-ink">
           {other.label}
         </Link>
       </footer>

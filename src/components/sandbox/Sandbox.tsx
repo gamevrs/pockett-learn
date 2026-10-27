@@ -4,9 +4,14 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Play, RotateCcw, Terminal } from "lucide-react";
 import type { LanguageId, RunError } from "@/engine/types";
 import { LANGUAGES } from "@/engine/languages";
-import { loadRuntime, preloadRuntime } from "@/engine/runtimes";
+import { isServiceError, loadRuntime, preloadRuntime, useRuntimeState } from "@/engine/runtimes";
+import { getRuntimeState, needsEngineDownload } from "@/engine/runtimes/status";
 import { CodeEditor } from "@/components/workspace/CodeEditor";
+import { EditorFrame } from "@/components/workspace/EditorFrame";
+import { ServiceNotice } from "@/components/workspace/ServiceNotice";
+import { consoleEmptyText } from "@/components/workspace/console-hint";
 import { useHydrated } from "@/lib/hooks";
+import { useShortcuts } from "@/lib/ui/platform";
 
 type SandboxLanguage = Extract<LanguageId, "python" | "javascript" | "sql">;
 const SANDBOX_LANGUAGES: SandboxLanguage[] = ["python", "javascript", "sql"];
@@ -71,11 +76,18 @@ function SandboxInner() {
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState("");
   const [ms, setMs] = useState<number | null>(null);
+  const [ranOnce, setRanOnce] = useState(false);
   const busy = useRef(false);
   const info = LANGUAGES[language];
+  const keys = useShortcuts();
+  const engine = useRuntimeState(language);
+  const engineFailed = needsEngineDownload(language) && engine.phase === "failed";
+  const engineLoading = needsEngineDownload(language) && engine.phase === "loading";
 
+  // Start downloading the engine the moment the sandbox opens (or the language changes), not on an idle moment,
+  // so the first Run is usually instant and otherwise shows real progress.
   useEffect(() => {
-    preloadRuntime(language);
+    preloadRuntime(language, true);
   }, [language]);
 
   useEffect(() => {
@@ -102,12 +114,15 @@ function SandboxInner() {
     setOut("");
     setError(null);
     setMs(null);
+    setRanOnce(false);
   };
 
   const run = useCallback(async () => {
     if (busy.current) return;
     busy.current = true;
     setRunning(true);
+    // show something the instant Run is pressed: real progress when the engine is still downloading
+    setStatus(getRuntimeState(language).phase === "ready" || !needsEngineDownload(language) ? "Running your code…" : `Starting ${LANGUAGES[language].label}…`);
     try {
       const rt = await loadRuntime(language);
       const res = await rt.run(code, { onStatus: setStatus, setup: language === "sql" ? SQL_SETUP : undefined });
@@ -115,8 +130,10 @@ function SandboxInner() {
       setOut(res.stdout);
       setError(res.error);
       setMs(res.durationMs);
+      setRanOnce(true);
     } catch (e) {
-      setError({ type: "EngineError", message: (e as Error).message, line: null });
+      // a download that failed is shown by the engine notice (with Retry), not as a code error
+      if (!isServiceError(e)) setError({ type: "EngineError", message: (e as Error).message, line: null });
     } finally {
       busy.current = false;
       setRunning(false);
@@ -135,7 +152,7 @@ function SandboxInner() {
             key={id}
             onClick={() => switchTo(id)}
             aria-pressed={language === id}
-            className={`inline-flex h-9 items-center rounded-full border px-3.5 text-sm transition-colors ${
+            className={`inline-flex h-10 items-center rounded-full border px-3.5 text-sm transition-colors sm:h-9 ${
               language === id ? "border-transparent bg-ink text-bg" : "border-line bg-surface text-ink-2 hover:text-ink"
             }`}
           >
@@ -152,23 +169,31 @@ function SandboxInner() {
               <button className="btn btn-sm btn-ghost" onClick={() => setCode(STARTERS[language])}>
                 <RotateCcw className="h-3.5 w-3.5" /> Reset
               </button>
-              <button className="btn btn-sm btn-primary" onClick={() => void run()} disabled={running}>
-                <Play className="h-3.5 w-3.5" fill="currentColor" /> Run
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => void run()}
+                disabled={running || engineFailed}
+                title={engineFailed ? `${info.label} couldn't load. Use Retry in the Output panel.` : `Run your code (${keys.runText})`}
+                data-testid="sandbox-run"
+              >
+                <Play className="h-3.5 w-3.5" fill="currentColor" /> {running ? "Running…" : "Run"}
               </button>
             </div>
           </div>
           <div className="min-h-0 flex-1">
-            <CodeEditor
-              value={code}
-              onChange={setCode}
-              onRun={() => void run()}
-              onSubmit={() => void run()}
-              language={info.monaco}
-              context={language === "sql" ? SQL_SETUP : undefined}
-              errorLine={error?.line ?? null}
-              errorMessage={error ? `${error.type}: ${error.message}` : undefined}
-              revealKey={`sandbox-${language}`}
-            />
+            <EditorFrame value={code} onChange={setCode}>
+              <CodeEditor
+                value={code}
+                onChange={setCode}
+                onRun={() => void run()}
+                onSubmit={() => void run()}
+                language={info.monaco}
+                context={language === "sql" ? SQL_SETUP : undefined}
+                errorLine={error?.line ?? null}
+                errorMessage={error ? `${error.type}: ${error.message}` : undefined}
+                revealKey={`sandbox-${language}`}
+              />
+            </EditorFrame>
           </div>
         </div>
 
@@ -177,16 +202,37 @@ function SandboxInner() {
             <span className="flex items-center gap-2 text-xs font-medium">
               <Terminal className="h-4 w-4" /> Output
             </span>
-            <span className="text-xs text-ink-3">{running ? status : ms !== null ? `${ms} ms · ${info.engine}` : info.engine}</span>
+            <span className="text-xs text-ink-3" role="status" data-testid="sandbox-status">
+              {running ? status : engineLoading ? engine.message || `Starting ${info.label}…` : ms !== null ? `${ms} ms · ${info.engine}` : info.engine}
+            </span>
           </div>
           <div className="min-h-0 flex-1 overflow-auto p-4 font-mono text-[13px] leading-relaxed">
+            {engineFailed && (
+              <ServiceNotice
+                issue={{ kind: "engine", retryAfter: null, detail: null, at: 0 }}
+                onRetry={() => preloadRuntime(language, true)}
+                engineName={info.label}
+                className="mb-3"
+              />
+            )}
+            {(running || engineLoading) && !out && !error && (
+              <p className="flex items-center gap-2 font-sans text-sm text-ink-2" data-testid="sandbox-progress">
+                <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-line border-t-brand" />
+                {running ? status : engine.message || `Starting ${info.label}…`}
+                {language === "python" && engine.phase !== "ready" && <span className="text-ink-3">(the first run downloads Python, about 5 to 10 seconds)</span>}
+              </p>
+            )}
             {error && (
               <p className="mb-3 rounded-lg border border-bad/30 bg-bad/[0.06] p-3 font-medium text-bad">
                 {error.line ? `Line ${error.line} · ` : ""}
                 {error.type}: {error.message}
               </p>
             )}
-            {out ? <pre className="whitespace-pre-wrap">{out}</pre> : !error && <p className="text-ink-3">Output appears here.</p>}
+            {out ? (
+              <pre className="whitespace-pre-wrap">{out}</pre>
+            ) : (
+              !error && !engineFailed && !running && !engineLoading && <p className="text-ink-3">{consoleEmptyText(language, "sandbox", ranOnce)}</p>
+            )}
           </div>
         </div>
       </div>

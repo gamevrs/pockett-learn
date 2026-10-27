@@ -1,6 +1,7 @@
 import { createStaticProgram } from "../program";
 import { crashedResults, type Runtime } from "./types";
 import { parseOutput, runChecks, toError, type RemoteResult } from "./remote-output";
+import { RunCancelled, ServiceError } from "./service-error";
 import type { LanguageId } from "../types";
 
 /**
@@ -18,15 +19,70 @@ import type { LanguageId } from "../types";
  * assert helpers.
  */
 
-async function execute(language: LanguageId, source: string, setup?: string): Promise<RemoteResult> {
-  const res = await fetch("/api/run", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ language, source, stdin: setup ?? "" }),
-  });
-  const data = (await res.json().catch(() => ({}))) as Partial<RemoteResult> & { error?: string };
-  if (!res.ok) throw new Error(data.error ?? `Could not run your code right now (${res.status}). Try again in a moment.`);
-  return { stdout: data.stdout ?? "", stderr: data.stderr ?? "", exitCode: data.exitCode ?? null, compileError: data.compileError ?? null, timedOut: data.timedOut };
+/**
+ * Client-side budget for one request: the runner allows 10 s to compile and 3 s to run, plus sandbox
+ * start-up and teardown. Past this the request is abandoned and the learner sees a calm "took too long"
+ * state instead of a spinner that never ends.
+ */
+export const REMOTE_TIMEOUT_MS = 25_000;
+
+function parseRetryAfter(header: string | null, body: { retryAfter?: unknown }): number | null {
+  const fromHeader = header === null ? NaN : Number(header);
+  const raw = Number.isFinite(fromHeader) ? fromHeader : Number(body.retryAfter);
+  return Number.isFinite(raw) && raw > 0 ? Math.min(Math.ceil(raw), 120) : null;
+}
+
+/** Runs one request. Rejects with ServiceError (runner trouble), RunCancelled (the learner pressed Cancel) or nothing else. */
+async function execute(language: LanguageId, source: string, setup?: string, signal?: AbortSignal): Promise<RemoteResult> {
+  if (signal?.aborted) throw new RunCancelled();
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REMOTE_TIMEOUT_MS);
+  const onAbort = () => controller.abort();
+  signal?.addEventListener("abort", onAbort, { once: true });
+
+  try {
+    let res: Response;
+    try {
+      res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language, source, stdin: setup ?? "" }),
+        signal: controller.signal,
+      });
+    } catch {
+      if (timedOut) throw new ServiceError("timeout");
+      if (controller.signal.aborted) throw new RunCancelled();
+      throw new ServiceError("offline");
+    }
+
+    let data: Partial<RemoteResult> & { error?: string; retryAfter?: unknown } = {};
+    try {
+      data = (await res.json()) as typeof data;
+    } catch {
+      // Headers arrived but the body did not (hang or cut connection), or it is not JSON (a gateway error page).
+      if (timedOut) throw new ServiceError("timeout");
+      if (controller.signal.aborted) throw new RunCancelled();
+    }
+
+    if (!res.ok) {
+      if (res.status === 429) throw new ServiceError("busy", { retryAfter: parseRetryAfter(res.headers.get("Retry-After"), data) });
+      if (res.status === 408 || res.status === 504) throw new ServiceError("timeout");
+      if (res.status === 400 || res.status === 413) throw new ServiceError("rejected", { detail: typeof data.error === "string" ? data.error : null });
+      throw new ServiceError("unavailable", { retryAfter: parseRetryAfter(res.headers.get("Retry-After"), data) });
+    }
+    if (typeof data.stdout !== "string" && data.exitCode === undefined && data.compileError === undefined) {
+      // 200 with something that is not a runner result (for example a captive-portal page)
+      throw new ServiceError("unavailable");
+    }
+    return { stdout: data.stdout ?? "", stderr: data.stderr ?? "", exitCode: data.exitCode ?? null, compileError: data.compileError ?? null, timedOut: data.timedOut };
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", onAbort);
+  }
 }
 
 export function remoteRuntime(language: LanguageId): Runtime {
@@ -36,7 +92,7 @@ export function remoteRuntime(language: LanguageId): Runtime {
     async run(source, options) {
       const started = performance.now();
       options?.onStatus?.("Compiling and running…");
-      const r = await execute(language, source, options?.setup);
+      const r = await execute(language, source, options?.setup, options?.signal);
       const out = parseOutput(r.stdout);
       const error = toError(r);
       const durationMs = Math.round(performance.now() - started);
@@ -46,7 +102,7 @@ export function remoteRuntime(language: LanguageId): Runtime {
     async grade(source, tests, options) {
       const started = performance.now();
       options?.onStatus?.("Checking your work…");
-      const r = await execute(language, source, options?.setup);
+      const r = await execute(language, source, options?.setup, options?.signal);
       const out = parseOutput(r.stdout);
       const error = toError(r);
       const results = error ? crashedResults(tests) : runChecks(out.text, out.scene, tests);

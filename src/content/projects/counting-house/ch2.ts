@@ -1006,7 +1006,8 @@ assertEqual(one("SELECT kind FROM jobs WHERE state = 'dead'").kind, "send_receip
         {
           id: "t5",
           description: "The queue board matches the database",
-          assertionCode: t`const board = data(["job_id", "kind", "state", "attempts", "max_attempts", "run_at", "locked_by", "lease_until", "last_error"], "Finish with the board: job_id, kind, state, priority, attempts, max_attempts, run_at, locked_by, lease_until, last_error", /from\s+jobs/, /update|where/);
+          assertionCode: t`assert(num("SELECT COUNT(*) FROM jobs WHERE state = 'dead'") === 1, "Finish the lesson's updates first (only the poison job should still be dead), then show the board");
+const board = data(["job_id", "kind", "state", "attempts", "max_attempts", "run_at", "locked_by", "lease_until", "last_error"], "Finish with the board: job_id, kind, state, priority, attempts, max_attempts, run_at, locked_by, lease_until, last_error", /from\s+jobs/, /update|where/);
 const want = query("SELECT job_id, state, attempts, run_at FROM jobs");
 match(board, want, "job_id", ["state", "attempts", "run_at"], "the queue board");`,
         },
