@@ -71,11 +71,22 @@ interface Runtime {
 
 | Language | Where it runs | Live scene hooks | Checks are written in |
 | --- | --- | --- | --- |
-| Python | browser, Pyodide (main thread) | yes, synchronous | Python `assert` |
-| JavaScript | browser, main thread + loop guard | yes, synchronous | JavaScript (`assert`, `assertEqual`, `assertClose`) |
+| Python | browser, Pyodide, in the code frame (below) | yes, synchronous | Python `assert` |
+| JavaScript | browser, loop guard, in the code frame (below) | yes, synchronous | JavaScript (`assert`, `assertEqual`, `assertClose`) |
 | SQL | browser, SQLite (sql.js) | reads result sets + schema | JavaScript over `result`, `rows`, `results`, `query()` |
 | C#, C++, Go, Rust | pockett runner via `/api/run` | reads stdout and `@scene {json}` lines | JavaScript over `stdout`, `lines`, `scene` |
 
+- **Learner Python and JavaScript never run in the signed-in page.** They run in `/frame`, a bare page on a *different origin*
+  (a second hostname of the same deployment, `pockett-zeta.vercel.app`; `localhost` and `127.0.0.1` host it for each other in
+  development; hosts with no second origin, such as previews, use the same host's `/frame` in a sandbox without
+  `allow-same-origin`, which makes its origin opaque). The session lives in the page's localStorage, so code a learner is tricked
+  into pasting (`import js`, `localStorage`, `window.parent`) can't reach it. The interactive stage renders inside that same
+  frame, so scenes still call the learner's program synchronously every frame. The page talks to the frame only through the typed
+  messages in `src/engine/frame/protocol.ts`; `client.ts` is the page side (`framedRuntime` is a normal `Runtime` whose
+  `ProgramHandle` is a stand-in, `FramedProgram`), `host.ts` the frame side (it alone calls `loadLocalRuntime`). Messages are
+  accepted only from the other side's window and an allow-listed origin, validated, and treated as text. The frame has its own CSP
+  (no Supabase; framed only by the site), and on the frame hostname every path except `/frame` redirects to the real site
+  (`next.config.ts`). SQL (sql.js) and the remote languages never touch the page's storage and are unchanged.
 - **Names are Python-style at the scene boundary.** Scenes ask for `car_name` or `autopilot.steer`;
   the JavaScript runtime also tries camelCase (`carName`), so one scene serves several languages.
   Turbo Garage in JavaScript reuses the Python course's 3D scene unchanged.
@@ -186,5 +197,6 @@ prerendered, Python runs in the browser, and auth/data go straight from the brow
 
 - Pyodide and Monaco load from CDNs (jsDelivr). Self-host them under `/public` for offline or locked-down environments.
 - Without an account, progress lives only in that browser.
-- Learners' hook functions run on the main thread (guarded by the watchdog); a pathological hook can still cost a frame.
+- Learners' hook functions run on the frame's main thread (guarded by the watchdog); a pathological hook can still cost a frame (of the stage, not of the page).
+- Learner code can still post forged messages to the page from inside the frame; the page treats everything from the frame as untrusted text, so the worst a forged message does is show wrong text or press Run.
 - The lesson page ships the whole project (including reference solutions and tests) to the client, so a determined learner can read answers. Fine for a free learning site; use `toPublicProject()` + server grading if that ever matters.

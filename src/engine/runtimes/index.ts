@@ -1,4 +1,6 @@
 import type { LanguageId } from "../types";
+import { framedRuntime } from "../frame/client";
+import { usesCodeFrame } from "../frame/protocol";
 import type { Runtime } from "./types";
 
 export { ServiceError, RunCancelled, isServiceError, isRunCancelled } from "./service-error";
@@ -21,7 +23,17 @@ const loaders: Record<LanguageId, () => Promise<Runtime>> = {
 
 const cache = new Map<LanguageId, Promise<Runtime>>();
 
-export function loadRuntime(language: LanguageId): Promise<Runtime> {
+/** Set by the code frame itself, the one place learner Python and JavaScript actually run. */
+let insideCodeFrame = false;
+export function markInsideCodeFrame() {
+  insideCodeFrame = true;
+}
+
+/**
+ * The runtime that really executes a language in THIS page. Only the code frame (and Node scripts) use it:
+ * learner Python and JavaScript must never execute in the signed-in site's own page.
+ */
+export function loadLocalRuntime(language: LanguageId): Promise<Runtime> {
   let p = cache.get(language);
   if (!p) {
     p = loaders[language]().catch((err) => {
@@ -31,6 +43,12 @@ export function loadRuntime(language: LanguageId): Promise<Runtime> {
     cache.set(language, p);
   }
   return p;
+}
+
+/** The runtime for a language. In the site, Python and JavaScript run in the code frame on another origin. */
+export function loadRuntime(language: LanguageId): Promise<Runtime> {
+  if (!insideCodeFrame && typeof window !== "undefined" && usesCodeFrame(language)) return Promise.resolve(framedRuntime(language));
+  return loadLocalRuntime(language);
 }
 
 /** Warm a language up in the background (engine download, parser chunk). */

@@ -14,8 +14,11 @@ import { AUDIO_SCENE_IDS } from "@/lib/sound/audio";
 
 export type StageStatus = "idle" | "loading" | "running";
 
+/** The part of a project the stage reads (the code frame only receives this much). */
+export type StageProject = Pick<Project, "title" | "sceneId" | "language" | "features" | "controls">;
+
 interface StageShellProps {
-  project: Project;
+  project: StageProject;
   program: ProgramHandle | null;
   unlocked: ReadonlySet<string>;
   focus?: string | null;

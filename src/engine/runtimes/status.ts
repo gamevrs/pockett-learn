@@ -40,6 +40,9 @@ function subscribe(listener: () => void) {
   };
 }
 
+/** Non-React subscription to every language's state (the code frame forwards changes to the page this way). */
+export const subscribeRuntimeState = subscribe;
+
 /** Live state of a language's engine. Languages with nothing to download are always "ready". */
 export function useRuntimeState(language: LanguageId): RuntimeState {
   return useSyncExternalStore(subscribe, () => getRuntimeState(language), () => IDLE);

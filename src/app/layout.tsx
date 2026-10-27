@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { CloudSync } from "@/components/auth/CloudSync";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 import { SITE_URL } from "@/lib/legal";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -46,16 +47,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-full flex flex-col bg-bg text-ink font-sans">
         <ThemeProvider>
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-primary focus:px-4 focus:py-2.5 focus:text-sm focus:font-medium focus:text-primary-ink focus:shadow-lg"
-          >
-            Skip to content
-          </a>
-          <CloudSync />
-          <Navbar />
+          <SiteChrome>
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-primary focus:px-4 focus:py-2.5 focus:text-sm focus:font-medium focus:text-primary-ink focus:shadow-lg"
+            >
+              Skip to content
+            </a>
+            <CloudSync />
+            <Navbar />
+          </SiteChrome>
           <main id="main" tabIndex={-1} className="flex-1 flex flex-col outline-none">{children}</main>
-          <Footer />
+          <SiteChrome>
+            <Footer />
+          </SiteChrome>
         </ThemeProvider>
       </body>
     </html>

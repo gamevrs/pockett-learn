@@ -10,7 +10,10 @@ import type { ProgramHandle } from "@/engine/program";
 import { latestBuild } from "@/engine/compose";
 import { loadRuntime, preloadRuntime } from "@/engine/runtimes";
 import { submittedCode, useProgress } from "@/data/progress/store";
-import { StageShell, type StageStatus } from "@/components/stage/StageShell";
+import type { StageStatus } from "@/components/stage/StageShell";
+import { ProjectStage } from "@/components/stage/ProjectStage";
+import { expectStage } from "@/engine/frame/client";
+import { usesCodeFrame } from "@/engine/frame/protocol";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { FeatureIcon, ProjectIcon } from "@/components/ui/icons";
 
@@ -33,6 +36,9 @@ export function ProjectHub({ project, prerequisites = [] }: { project: Project; 
   const [bootFailed, setBootFailed] = useState(false);
   const status: StageStatus = buildKey !== null && bootedKey !== buildKey ? "loading" : "idle";
   const live = useRef<ProgramHandle | null>(null);
+
+  // Python and JavaScript run in the stage's own frame, which mounts a moment after this: say it is coming
+  useEffect(() => (usesCodeFrame(languageOf(project)) ? expectStage() : undefined), [project]);
 
   useEffect(() => {
     preloadRuntime(languageOf(project));
@@ -147,7 +153,7 @@ export function ProjectHub({ project, prerequisites = [] }: { project: Project; 
           </div>
 
           <div className="tint-panel h-[400px] min-w-0 p-2 sm:h-[480px] sm:p-3">
-            <StageShell
+            <ProjectStage
               project={project}
               program={program}
               unlocked={unlocked}

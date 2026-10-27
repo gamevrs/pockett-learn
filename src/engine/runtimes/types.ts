@@ -11,6 +11,8 @@ export interface RunOptions {
   prelude?: string;
   /** Python only: Pyodide packages to load first (e.g. "sqlite3"). Loaded once, then cached. */
   packages?: string[];
+  /** Python and JavaScript (they run in the code frame): false when only the output is wanted, so no live program is kept. Default true. */
+  keep?: boolean;
   /** Remote (compiled-language) runs only: aborting it rejects with RunCancelled. */
   signal?: AbortSignal;
 }

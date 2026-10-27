@@ -125,7 +125,7 @@ function SandboxInner() {
     setStatus(getRuntimeState(language).phase === "ready" || !needsEngineDownload(language) ? "Running your code…" : `Starting ${LANGUAGES[language].label}…`);
     try {
       const rt = await loadRuntime(language);
-      const res = await rt.run(code, { onStatus: setStatus, setup: language === "sql" ? SQL_SETUP : undefined });
+      const res = await rt.run(code, { onStatus: setStatus, setup: language === "sql" ? SQL_SETUP : undefined, keep: false });
       res.program?.dispose();
       setOut(res.stdout);
       setError(res.error);

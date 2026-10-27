@@ -24,7 +24,10 @@ import {
   useProgress,
   type CompletionResult,
 } from "@/data/progress/store";
-import { StageShell, type StageStatus } from "@/components/stage/StageShell";
+import type { StageStatus } from "@/components/stage/StageShell";
+import { ProjectStage } from "@/components/stage/ProjectStage";
+import { expectStage } from "@/engine/frame/client";
+import { usesCodeFrame } from "@/engine/frame/protocol";
 import { sound } from "@/lib/sound/sound";
 import { SoundControl } from "@/components/audio/SoundControl";
 import { fireCelebrationConfetti } from "@/lib/ui/confetti";
@@ -162,6 +165,9 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
       setStatus(showsBoot ? "loading" : "idle");
     };
   }, [index, done]);
+
+  // Python and JavaScript run in the stage's own frame, which mounts a moment after this: say it is coming
+  useEffect(() => (usesCodeFrame(language) ? expectStage() : undefined), [language]);
 
   // Start downloading Python right away; if there is earlier work, boot it so the stage is alive on arrival.
   useEffect(() => {
@@ -616,7 +622,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
             ),
             stage: (
               <section className="flex h-full min-h-0 min-w-0 flex-col">
-                <StageShell
+                <ProjectStage
                   project={project}
                   program={program}
                   unlocked={unlocked}
