@@ -70,7 +70,7 @@ export function ServiceNotice({
                 <RotateCw className="h-3.5 w-3.5" />
                 {wait > 0 ? `Retry in ${wait}s` : "Retry"}
               </button>
-              {issue.kind === "busy" && wait > 0 && <span className="text-xs text-ink-3">Retrying when it's ready.</span>}
+              {issue.kind === "busy" && wait > 0 && <span className="text-xs text-ink-3">Retrying when ready.</span>}
             </div>
           )}
         </div>
