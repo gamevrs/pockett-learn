@@ -1,6 +1,6 @@
 import { createStaticProgram } from "../program";
 import { crashedResults, type Runtime } from "./types";
-import { parseOutput, runChecks, toError, type RemoteResult } from "./remote-output";
+import { parseOutput, prepareSource, runChecks, shiftResult, toError, type RemoteResult } from "./remote-output";
 import { RunCancelled, ServiceError } from "./service-error";
 import type { LanguageId } from "../types";
 
@@ -92,7 +92,8 @@ export function remoteRuntime(language: LanguageId): Runtime {
     async run(source, options) {
       const started = performance.now();
       options?.onStatus?.("Compiling and running…");
-      const r = await execute(language, source, options?.setup, options?.signal);
+      const prepared = prepareSource(options?.prelude, source);
+      const r = shiftResult(await execute(language, prepared.source, options?.setup, options?.signal), prepared.offset);
       const out = parseOutput(r.stdout);
       const error = toError(r);
       const durationMs = Math.round(performance.now() - started);
@@ -102,7 +103,8 @@ export function remoteRuntime(language: LanguageId): Runtime {
     async grade(source, tests, options) {
       const started = performance.now();
       options?.onStatus?.("Checking your work…");
-      const r = await execute(language, source, options?.setup, options?.signal);
+      const prepared = prepareSource(options?.prelude, source);
+      const r = shiftResult(await execute(language, prepared.source, options?.setup, options?.signal), prepared.offset);
       const out = parseOutput(r.stdout);
       const error = toError(r);
       const results = error ? crashedResults(tests) : runChecks(out.text, out.scene, tests);

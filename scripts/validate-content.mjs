@@ -24,7 +24,7 @@ import { solutionThrough, starterFor, TYPES_DIVIDER, MAIN_DIVIDER, isMainShaped,
 import { flattenLessons, languageOf, TIERS, YOUR_TURN_MARKER } from "../src/engine/types.ts";
 import { executeJs, runJsTests } from "../src/engine/runtimes/javascript/engine.ts";
 import { readFileSync, existsSync } from "node:fs";
-import { parseOutput, runChecks, toError } from "../src/engine/runtimes/remote-output.ts";
+import { parseOutput, prepareSource, runChecks, shiftResult, toError } from "../src/engine/runtimes/remote-output.ts";
 import { FOUNDATIONS } from "../src/content/foundations/index.ts";
 import { friendlyFailure } from "../src/engine/runtimes/friendly.ts";
 
@@ -77,6 +77,7 @@ for (const file of files) {
     }
     const language = languageOf(project);
     const setup = project.setup ?? "";
+    const prelude = project.prelude;
     const packages = project.packages ?? [];
     // Composition must be whitespace-idempotent around the types divider: one blank line each side, never more.
     for (const [kind, composed] of [["solution", solutionThrough(project, i)], ["starter", starterFor(project, i, {})]]) {
@@ -94,8 +95,8 @@ for (const file of files) {
       if (composed.split(TYPES_DIVIDER).length > 2) problems.push(`${tag}: ${kind} contains the types divider more than once`);
     }
     if (lessonFilter && !lesson.id.includes(lessonFilter)) return;
-    cases.push({ label: `${tag}::solution`, language, setup, packages, source: solutionThrough(project, i), tests: lesson.tests, expect: "pass" });
-    cases.push({ label: `${tag}::starter`, language, setup, packages, source: starterFor(project, i, {}), tests: lesson.tests, expect: "fail" });
+    cases.push({ label: `${tag}::solution`, language, setup, prelude, packages, source: solutionThrough(project, i), tests: lesson.tests, expect: "pass" });
+    cases.push({ label: `${tag}::starter`, language, setup, prelude, packages, source: starterFor(project, i, {}), tests: lesson.tests, expect: "fail" });
   });
   for (const f of featureIds) if (!unlocked.has(f)) problems.push(`${project.slug}: feature "${f}" is never unlocked by any lesson`);
 }
@@ -328,7 +329,8 @@ for (const c of cases) {
   } else if (RUNNER) {
     let r;
     try {
-      r = await runnerExecute(c);
+      const prepared = prepareSource(c.prelude, c.source);
+      r = shiftResult(await runnerExecute({ ...c, source: prepared.source }), prepared.offset);
     } catch (err) {
       problems.push(`${c.label}: the runner at ${RUNNER} did not answer (${err.message})`);
       results.push({ label: c.label, skipped: true, results: [] });

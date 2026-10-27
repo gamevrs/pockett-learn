@@ -98,6 +98,14 @@ export interface Project {
   /** Hidden code run before the learner's (e.g. SQL schema + seed data). */
   setup?: string;
   /**
+   * Compiled languages (C#, C++, Go, Rust) only: provided code compiled in front of the learner's file but never
+   * shown in the editor, for support code a lesson relies on but a learner should not have to scroll past. It must be
+   * self-contained (its own includes/imports) and may not open `main`. Line numbers in compiler and crash messages are
+   * shifted back by its length, so they stay the learner's own; an error that lies inside the prelude is reported as
+   * "the provided code". Projects without one behave exactly as before.
+   */
+  prelude?: string;
+  /**
    * Python only: Pyodide packages to load before running, e.g. ["sqlite3"]. They are fetched once
    * per page and cached. The content validator runs Python in local CPython and warns if a
    * listed package cannot be imported there.

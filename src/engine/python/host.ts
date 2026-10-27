@@ -172,8 +172,17 @@ export function preloadPython(eager = false) {
   else setTimeout(start, 1200);
 }
 
+/**
+ * Seconds the learner's program may run before the watchdog stops it. NumPy programs (the AI track) train
+ * small networks, which on a slow phone can take several seconds; everything else keeps the short limit
+ * that stops a runaway loop quickly.
+ */
+function runLimitFor(packages?: string[]): number {
+  return packages?.includes("numpy") ? 10 : 4;
+}
+
 /** A fresh, isolated namespace with the engine prelude installed. */
-function createNamespace(py: PyodideInstance) {
+function createNamespace(py: PyodideInstance, runLimit = 4) {
   const ns = py.runPython("dict()") as PyProxy;
   ns.set!("__name__", "__main__");
   py.runPython(ENGINE_PRELUDE, { globals: ns });
@@ -186,7 +195,7 @@ function createNamespace(py: PyodideInstance) {
   const runTest = fn("_run_test");
 
   const mod: PyModule = {
-    run_user: (source) => runUser(source) as string,
+    run_user: (source) => runUser(source, runLimit) as string,
     snapshot: () => snapshot() as string,
     call: (path, argsJson) => call(path, argsJson) as string,
     has_hook: (path) => Boolean(hasHook(path)),
@@ -209,7 +218,7 @@ export async function runProgram(source: string, onStatus?: StatusListener, pack
   const py = await loadPyodideOnce(onStatus);
   await ensurePackages(py, packages, onStatus);
   onStatus?.("Running your code…");
-  const mod = createNamespace(py);
+  const mod = createNamespace(py, runLimitFor(packages));
   try {
     const res = JSON.parse(mod.run_user(source)) as { stdout: string; error: RunError | null };
     const durationMs = Math.round(performance.now() - started);
@@ -237,7 +246,7 @@ export async function gradeProgram(
   const py = await loadPyodideOnce(onStatus);
   await ensurePackages(py, packages, onStatus);
   onStatus?.("Grading…");
-  const mod = createNamespace(py);
+  const mod = createNamespace(py, runLimitFor(packages));
   try {
     const res = JSON.parse(mod.run_user(source)) as { stdout: string; error: RunError | null };
     if (res.error) {

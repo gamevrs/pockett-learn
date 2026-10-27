@@ -7,6 +7,8 @@ export interface RunOptions {
   onStatus?: StatusListener;
   /** Hidden code that runs first (Project.setup), e.g. a SQL schema and seed rows. */
   setup?: string;
+  /** Compiled languages only: hidden code compiled in front of the learner's source (Project.prelude). */
+  prelude?: string;
   /** Python only: Pyodide packages to load first (e.g. "sqlite3"). Loaded once, then cached. */
   packages?: string[];
   /** Remote (compiled-language) runs only: aborting it rejects with RunCancelled. */

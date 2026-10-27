@@ -20,12 +20,16 @@ import { eventArena } from "./projects/event-arena";
 import { jsApi } from "./projects/js-api";
 import { graphqlGateway } from "./projects/graphql-gateway";
 import { rustBasics } from "./projects/rust-basics";
+import { rustInventory } from "./projects/rust-inventory";
 import { goBasics } from "./projects/go-basics";
+import { goInventory } from "./projects/go-inventory";
 import { cppBasics } from "./projects/cpp-basics";
+import { cppMemory } from "./projects/cpp-memory";
 import { aiFoundations } from "./projects/ai-foundations";
+import { aiNeural } from "./projects/ai-neural";
 
 /** Every playable project, in the order shown in the picker. */
-export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs, signalLab, cargoControl, storeApi, smartHome, seasonAnalytics, schemaStudio, countingHouse, csharpBasics, csharpLinq, csharpDelegates, csharpApi, formForge, eventArena, jsApi, graphqlGateway, rustBasics, goBasics, cppBasics, aiFoundations];
+export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs, signalLab, cargoControl, storeApi, smartHome, seasonAnalytics, schemaStudio, countingHouse, csharpBasics, csharpLinq, csharpDelegates, csharpApi, formForge, eventArena, jsApi, graphqlGateway, rustBasics, rustInventory, goBasics, goInventory, cppBasics, cppMemory, aiFoundations, aiNeural];
 
 /**
  * Planned (not yet built) projects. They fill out each language's path (Beginner → Intermediate →

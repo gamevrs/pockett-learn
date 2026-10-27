@@ -76,7 +76,12 @@ export function toError(r: RemoteResult): RunError | null {
     const panic = parseRustPanic(r.stderr);
     if (panic) return panic;
   }
-  if (r.compileError) return { type: "CompileError", message: r.compileError.trim().split("\n").slice(0, 6).join("\n"), line: lineFrom(r.compileError) };
+  if (r.compileError) {
+    const line = lineFrom(r.compileError);
+    // an error wholly inside a project's provided prelude has no line of the learner's to point at
+    const note = line === null && r.compileError.includes(PRELUDE_NAME) ? `Something in ${PRELUDE_NAME} could not build. It is not in a line you wrote: look at the code you added just before, which probably used it in an unexpected way.\n` : "";
+    return { type: "CompileError", message: note + r.compileError.trim().split("\n").slice(0, 6).join("\n"), line };
+  }
   if (r.exitCode && r.exitCode !== 0) return { type: "RuntimeError", message: summarize(r.stderr || `exited with code ${r.exitCode}`), line: lineFrom(r.stderr) };
   return null;
 }
@@ -117,4 +122,48 @@ export function runChecks(stdout: string, scene: Record<string, unknown>, tests:
       return { testId: t.id, description: t.description, passed: false, error: describeFailure(err) };
     }
   });
+}
+
+// ───────────────────────── hidden prelude ─────────────────────────
+//
+// A project may carry a `prelude` (Project.prelude): provided code compiled in front of the learner's
+// source but never shown in the editor. The learner's line 1 is then line `offset + 1` of the file the
+// compiler sees, so every line number in compiler output and crash reports is shifted back before
+// anything reads it. Projects without a prelude have offset 0 and pass through untouched.
+
+/** What a location inside the prelude is called in messages. */
+export const PRELUDE_NAME = "the provided code";
+
+/** The source the runner receives, and how many lines the prelude put in front of the learner's first line. */
+export function prepareSource(prelude: string | undefined, source: string): { source: string; offset: number } {
+  if (!prelude) return { source, offset: 0 };
+  const head = prelude.endsWith("\n") ? prelude : `${prelude}\n`;
+  return { source: head + source, offset: head.split("\n").length - 1 };
+}
+
+function shiftText(text: string, offset: number): string {
+  const place = (n: number) => n - offset;
+  return (
+    text
+      // gcc / go / rustc: main.cpp:12:5   ./main.go:12:5   --> main.rs:12:5   main.go:12 +0x1d
+      .replace(/\b(main\.(?:cpp|go|rs)|Program\.cs):(\d+)(:\d+)?/g, (_m, file: string, line: string, col: string | undefined) =>
+        place(Number(line)) >= 1 ? `${file}:${place(Number(line))}${col ?? ""}` : PRELUDE_NAME,
+      )
+      // Roslyn: Program.cs(12,5)
+      .replace(/\bProgram\.cs\((\d+),(\d+)\)/g, (_m, line: string, col: string) => (place(Number(line)) >= 1 ? `Program.cs(${place(Number(line))},${col})` : PRELUDE_NAME))
+      // .NET stack trace: in Program.cs:line 12
+      .replace(/\b(Program\.cs):line (\d+)/g, (_m, file: string, line: string) => (place(Number(line)) >= 1 ? `${file}:line ${place(Number(line))}` : PRELUDE_NAME))
+      // the source excerpt gutter that gcc and rustc print:   "  972 |     code"
+      .replace(/^(\s*)(\d+)( \|)/gm, (_m, pad: string, line: string, bar: string) => {
+        const shifted = place(Number(line));
+        const width = pad.length + line.length;
+        return shifted >= 1 ? `${String(shifted).padStart(width, " ")}${bar}` : `${"·".padStart(width, " ")}${bar}`;
+      })
+  );
+}
+
+/** Moves every line number in the runner's compiler output and crash report back to the learner's own numbering. */
+export function shiftResult(r: RemoteResult, offset: number): RemoteResult {
+  if (offset <= 0) return r;
+  return { ...r, compileError: r.compileError === null ? null : shiftText(r.compileError, offset), stderr: shiftText(r.stderr, offset) };
 }

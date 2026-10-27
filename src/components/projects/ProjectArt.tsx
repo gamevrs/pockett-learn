@@ -377,6 +377,53 @@ export function ProjectArt({ slug }: { slug: string }) {
           <path d="M300 43 H340 V76" fill="none" stroke="#ffffff" strokeOpacity=".22" strokeDasharray="4 5" />
         </g>
       )}
+      {slug === "go-inventory" && (
+        <g>
+          {/* a rescue depot: a rack of numbered bins with stock bars, a coiled rope, a handler lane that fans out to concrete types, and a rejected-records tray */}
+          <path d="M34 28 V152 M246 28 V152" stroke="#ffffff" strokeOpacity=".2" strokeWidth="4" strokeLinecap="round" />
+          {[0, 1, 2].map((r) => (
+            <path key={r} d={`M30 ${62 + r * 42} H250`} stroke="#ffffff" strokeOpacity=".22" strokeWidth="3" strokeLinecap="round" />
+          ))}
+          {[0, 1, 2].map((r) =>
+            [0, 1, 2, 3].map((c) => {
+              const fill = [[0.9, 0.55, 0.3, 0.75], [0.4, 0.95, 0.12, 0.6], [0.7, 0.25, 0, 0.85]][r][c];
+              const x = 42 + c * 51;
+              const y = 32 + r * 42;
+              return (
+                <g key={`${r}-${c}`}>
+                  <rect x={x} y={y} width="44" height="28" rx="5" fill="#101010" stroke="#ffffff" strokeOpacity={fill === 0 ? 0.3 : 0.14} strokeDasharray={fill === 0 ? "3 3" : undefined} />
+                  <rect x={x + 6} y={y + 17} width="32" height="4" rx="2" fill="#ffffff" opacity=".12" />
+                  {fill > 0 && <rect x={x + 6} y={y + 17} width={32 * fill} height="4" rx="2" fill={fill < 0.2 ? "#fbbf24" : "url(#g-go-inventory)"} />}
+                  <rect x={x + 6} y={y + 6} width={[16, 22, 12, 18][c]} height="5" rx="2.5" fill="#ffffff" opacity=".28" />
+                </g>
+              );
+            }),
+          )}
+          {/* a rope coil */}
+          {[34, 25, 16].map((r, i) => (
+            <circle key={r} cx="318" cy="70" r={r} fill="none" stroke="url(#g-go-inventory)" strokeWidth="4" strokeDasharray={i === 0 ? "none" : "52 14"} opacity={0.95 - i * 0.18} />
+          ))}
+          <path d="M318 36 C326 24 348 28 352 14" fill="none" stroke="url(#g-go-inventory)" strokeWidth="4" strokeLinecap="round" />
+          {/* handler lane: one interface node, three concrete types */}
+          <circle cx="40" cy="176" r="7" fill="none" stroke="#ffffff" strokeOpacity=".5" strokeWidth="2" />
+          <path d="M47 176 H78" stroke="#ffffff" strokeOpacity=".3" strokeWidth="2" />
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              <path d={`M78 176 C 96 176 96 ${160 + i * 16} 114 ${160 + i * 16}`} fill="none" stroke="url(#g-go-inventory)" strokeWidth="2.5" strokeLinecap="round" opacity={0.95 - i * 0.2} />
+              <rect x="114" y={153 + i * 16} width={[58, 46, 66][i]} height="14" rx="7" fill="#101010" stroke="url(#g-go-inventory)" strokeWidth="1.5" />
+              <rect x="122" y={158 + i * 16} width={[34, 22, 40][i]} height="4" rx="2" fill="#ffffff" opacity=".35" />
+            </g>
+          ))}
+          {/* the rejected-records tray */}
+          <rect x="256" y="132" width="116" height="66" rx="9" fill="none" stroke="#ffffff" strokeOpacity=".28" strokeDasharray="5 4" />
+          {[0, 1].map((i) => (
+            <g key={i}>
+              <rect x="268" y={142 + i * 26} width="60" height="9" rx="4.5" fill="#ffffff" opacity=".2" />
+              <rect x="334" y={140 + i * 26} width="28" height="13" rx="6.5" fill={i === 0 ? "#f87171" : "none"} stroke="#f87171" strokeWidth="1.5" />
+            </g>
+          ))}
+        </g>
+      )}
       {slug === "cpp-basics" && (
         <g>
           {/* a tokamak ring with its plasma path, a row of fuel rods, a dial and three coolant loops */}
@@ -414,6 +461,52 @@ export function ProjectArt({ slug }: { slug: string }) {
               strokeDasharray={i === 2 ? "5 6" : undefined}
             />
           ))}
+        </g>
+      )}
+      {slug === "cpp-memory" && (
+        <g>
+          {/* the workbench: three stack cells, one of them a pointer; the vault: a grid of bays; arrows between; a logbook timeline */}
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              <rect x="34" y={34 + i * 38} width="96" height="30" rx="6" fill="#101010" stroke="#ffffff" strokeOpacity={i === 1 ? 0.34 : 0.16} />
+              <rect x="42" y={43 + i * 38} width={[34, 26, 40][i]} height="5" rx="2.5" fill="#ffffff" opacity=".35" />
+              <rect x="42" y={53 + i * 38} width={[22, 38, 16][i]} height="4" rx="2" fill="url(#g-cpp-memory)" opacity=".9" />
+            </g>
+          ))}
+          {[0, 1, 2].map((r) =>
+            [0, 1, 2].map((c) => {
+              const state = [[1, 0, 2], [0, 1, 0], [1, 0, 3]][r][c];
+              const x = 214 + c * 54;
+              const y = 34 + r * 38;
+              return (
+                <g key={`${r}-${c}`}>
+                  <rect x={x} y={y} width="46" height="30" rx="6" fill="#101010" stroke={state === 3 ? "#f87171" : "#ffffff"} strokeOpacity={state === 0 ? 0.12 : state === 3 ? 0.9 : 0.3} strokeDasharray={state === 0 || state === 3 ? "4 3" : undefined} />
+                  {state === 1 && <rect x={x + 7} y={y + 12} width="32" height="6" rx="3" fill="url(#g-cpp-memory)" />}
+                  {state === 2 && <rect x={x + 7} y={y + 12} width="20" height="6" rx="3" fill="url(#g-cpp-memory)" opacity=".7" />}
+                  {state === 3 && <path d={`M${x + 15} ${y + 9} l16 12 m0 -12 l-16 12`} stroke="#f87171" strokeWidth="2" strokeLinecap="round" />}
+                </g>
+              );
+            }),
+          )}
+          <path d="M130 49 C 168 49 176 49 212 49" fill="none" stroke="url(#g-cpp-memory)" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M130 87 C 170 87 172 125 212 125" fill="none" stroke="url(#g-cpp-memory)" strokeWidth="2.5" strokeLinecap="round" />
+          <path d="M130 125 C 176 125 176 87 214 87" fill="none" stroke="#ffffff" strokeOpacity=".4" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" />
+          {[0, 1, 2].map((i) => (
+            <path key={i} d={`M${208 + (i === 1 ? 2 : 0)} ${i === 0 ? 49 : i === 1 ? 87 : 125} l6 -4 v8 z`} fill="url(#g-cpp-memory)" />
+          ))}
+          {/* logbook: lifetimes as nested bars */}
+          <g>
+            <rect x="34" y="158" width="332" height="44" rx="8" fill="none" stroke="#ffffff" strokeOpacity=".22" strokeDasharray="5 4" />
+            <rect x="46" y="167" width="150" height="6" rx="3" fill="url(#g-cpp-memory)" opacity=".9" />
+            <rect x="70" y="177" width="64" height="6" rx="3" fill="url(#g-cpp-memory)" opacity=".65" />
+            <rect x="150" y="177" width="80" height="6" rx="3" fill="url(#g-cpp-memory)" opacity=".5" />
+            <rect x="214" y="187" width="40" height="6" rx="3" fill="url(#g-cpp-memory)" opacity=".5" />
+            <rect x="268" y="167" width="14" height="6" rx="3" fill="#ffffff" opacity=".6" />
+            <rect x="268" y="177" width="14" height="6" rx="3" fill="#ffffff" opacity=".6" />
+            <rect x="268" y="187" width="14" height="6" rx="3" fill="#ffffff" opacity=".6" />
+            <rect x="296" y="167" width="56" height="6" rx="3" fill="#fbbf24" opacity=".8" />
+            <rect x="296" y="177" width="30" height="6" rx="3" fill="#fbbf24" opacity=".8" />
+          </g>
         </g>
       )}
       {slug === "csharp-linq" && (
@@ -538,6 +631,49 @@ export function ProjectArt({ slug }: { slug: string }) {
             <rect x="-6" y="-3" width="12" height="5" rx="2.5" fill="#0c0d0b" />
             <path d="M-15 -10 H-6 M6 -10 H15" stroke="#ffffff" strokeOpacity=".7" strokeWidth="2" strokeLinecap="round" />
           </g>
+        </g>
+      )}
+      {slug === "rust-inventory" && (
+        <g>
+          {/* a night sky: faint stars, one constellation lit by the learner's code, a telescope tracking its brightest star from the dome */}
+          {[
+            [40, 38, 1.6],
+            [88, 72, 1.2],
+            [130, 26, 2],
+            [206, 40, 1.4],
+            [330, 24, 1.8],
+            [372, 62, 1.3],
+            [362, 118, 2],
+            [54, 118, 1.4],
+            [304, 124, 1.2],
+            [22, 82, 1.1],
+          ].map(([cx, cy, r], i) => (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="#ffffff" opacity={0.45} />
+          ))}
+          <path d="M52 188 Q200 -14 348 188" fill="none" stroke="#ffffff" strokeOpacity=".14" strokeDasharray="3 6" />
+          <path d="M112 104 L164 70 L214 88 L262 50 L318 80" fill="none" stroke="url(#g-rust-inventory)" strokeWidth="1.6" opacity=".6" />
+          {[
+            [112, 104, 4],
+            [164, 70, 5],
+            [214, 88, 3.5],
+            [262, 50, 6.5],
+            [318, 80, 4],
+          ].map(([cx, cy, r], i) => (
+            <g key={i}>
+              <circle cx={cx} cy={cy} r={(r as number) * 2.6} fill="url(#glow-rust-inventory)" opacity={0.55} />
+              <circle cx={cx} cy={cy} r={r} fill="url(#g-rust-inventory)" />
+            </g>
+          ))}
+          <path d="M206 150 L262 54" stroke="url(#g-rust-inventory)" strokeWidth="1.4" strokeDasharray="4 5" opacity=".75" />
+          <path d="M140 196 A60 60 0 0 1 260 196 Z" fill="#1c1d1a" stroke="url(#g-rust-inventory)" strokeWidth="2" />
+          <path d="M194 140 L214 142 L222 196 L190 196 Z" fill="#0c0d0b" />
+          <path d="M0 196 H400 V220 H0 Z" fill="#ffffff" opacity=".06" />
+          {[
+            [24, 206, 70],
+            [300, 206, 80],
+          ].map(([x, y, w], i) => (
+            <rect key={i} x={x} y={y} width={w} height="4" rx="2" fill="#ffffff" opacity={0.14} />
+          ))}
         </g>
       )}
       {slug === "js-api" && (
@@ -759,6 +895,41 @@ export function ProjectArt({ slug }: { slug: string }) {
           <path d="M198 178 C 190 176, 188 164, 194 158 C 198 152, 208 152, 210 160 C 214 168, 210 176, 198 178 Z" fill="url(#g-ai-foundations)" />
           <circle cx="318" cy="171" r="7" fill="#ffffff" opacity=".62" />
           <path d="M254 156 V196" stroke="url(#g-ai-foundations)" strokeWidth="1.5" strokeDasharray="3 3" opacity=".8" />
+        </g>
+      )}
+      {slug === "ai-neural" && (
+        <g>
+          {/* a hand-drawn 7 on a pixel grid, a small network reading it, and the probabilities it gives */}
+          <rect x="26" y="34" width="86" height="86" rx="8" fill="#151515" stroke="#ffffff" strokeOpacity=".1" />
+          {[
+            [0, 0.5], [1, 0.9], [2, 1], [3, 1], [4, 0.8], [5, 0.3],
+            [10, 0.2], [14, 0.7], [15, 0.9], [20, 0.5], [21, 0.9], [26, 0.9], [27, 0.5], [32, 0.8], [33, 0.4],
+          ].map(([i, v]) => (
+            <rect key={i} x={34 + (i % 6) * 12.2} y={42 + Math.floor(i / 6) * 12.2} width="10.4" height="10.4" rx="2" fill="url(#g-ai-neural)" opacity={0.25 + v * 0.75} />
+          ))}
+          {Array.from({ length: 9 }).map((_, j) => {
+            const y = 34 + j * 18;
+            const on = j === 2 || j === 4 || j === 5 || j === 7;
+            return (
+              <g key={j}>
+                <path d={`M112 77 L176 ${y}`} stroke={on ? "url(#g-ai-neural)" : "#ffffff"} strokeOpacity={on ? 0.8 : 0.1} strokeWidth="1" />
+                {Array.from({ length: 10 }).map((_, k) => (
+                  <path key={k} d={`M176 ${y} L292 ${24 + k * 19.5}`} stroke={on && k === 7 ? "url(#g-ai-neural)" : "#ffffff"} strokeOpacity={on && k === 7 ? 0.9 : 0.05} strokeWidth="1" />
+                ))}
+                <circle cx="176" cy={y} r="5.5" fill={on ? "url(#g-ai-neural)" : "#151515"} stroke={on ? "none" : "#ffffff"} strokeOpacity=".35" />
+              </g>
+            );
+          })}
+          {Array.from({ length: 10 }).map((_, k) => (
+            <g key={k}>
+              <circle cx="292" cy={24 + k * 19.5} r="7" fill={k === 7 ? "url(#g-ai-neural)" : "#151515"} stroke="#ffffff" strokeOpacity={k === 7 ? 0 : 0.3} />
+              <rect x="306" y={22 + k * 19.5} width={k === 7 ? 62 : [8, 12, 6, 14, 9, 10, 7, 0, 11, 8][k]} height="4.5" rx="2.2" fill={k === 7 ? "url(#g-ai-neural)" : "#ffffff"} opacity={k === 7 ? 1 : 0.3} />
+            </g>
+          ))}
+          <rect x="26" y="134" width="86" height="58" rx="8" fill="#151515" stroke="#ffffff" strokeOpacity=".1" />
+          <path d="M36 144 C 52 168, 70 178, 102 182" fill="none" stroke="url(#g-ai-neural)" strokeWidth="3" strokeLinecap="round" />
+          <circle cx="102" cy="182" r="3.5" fill="url(#g-ai-neural)" />
+          <circle cx="176" cy="116" r="40" fill="url(#glow-ai-neural)" opacity=".25" />
         </g>
       )}
       {slug === "counting-house" && (

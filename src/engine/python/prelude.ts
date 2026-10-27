@@ -55,13 +55,13 @@ def _describe(exc, filename):
         message = str(exc)
     return {"type": "TimeoutError" if isinstance(exc, _Timeout) else type(exc).__name__, "message": message, "line": line}
 
-def _run_user(source):
+def _run_user(source, limit=4.0):
     buffer = _io.StringIO()
     error = None
     try:
         code = compile(source, "main.py", "exec")
         with _ctx.redirect_stdout(buffer), _ctx.redirect_stderr(buffer):
-            _guarded(lambda: exec(code, globals()), 4.0)
+            _guarded(lambda: exec(code, globals()), limit)
     except BaseException as exc:
         error = _describe(exc, "main.py")
     return _json.dumps({"stdout": buffer.getvalue(), "error": error})

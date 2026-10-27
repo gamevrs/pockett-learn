@@ -172,7 +172,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     const my = epoch.current;
     bootingRef.current = true;
     void loadRuntime(language)
-      .then((rt) => rt.run(codeRef.current, { onStatus: setStatusText, setup: project.setup, packages: project.packages }))
+      .then((rt) => rt.run(codeRef.current, { onStatus: setStatusText, setup: project.setup, prelude: project.prelude, packages: project.packages }))
       .then((out) => {
         if (my !== epoch.current) {
           out.program?.dispose();
@@ -199,7 +199,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
           setStatus("idle");
         }
       });
-  }, [index, done, language, project.setup, project.packages]);
+  }, [index, done, language, project.setup, project.prelude, project.packages]);
 
   // autosave the draft shortly after typing stops
   useEffect(() => {
@@ -247,7 +247,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
 
     try {
       const rt = await loadRuntime(language);
-      const opts = { onStatus: setStatusText, setup: project.setup, packages: project.packages, signal: ctl.signal };
+      const opts = { onStatus: setStatusText, setup: project.setup, prelude: project.prelude, packages: project.packages, signal: ctl.signal };
       const out = await rt.run(code, opts);
       if (my !== epoch.current) {
         out.program?.dispose();

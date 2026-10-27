@@ -42,7 +42,7 @@ export function ProjectHub({ project, prerequisites = [] }: { project: Project; 
     if (!build) return;
     let cancelled = false;
     loadRuntime(languageOf(project))
-      .then((rt) => rt.run(build.code, { setup: project.setup, packages: project.packages }))
+      .then((rt) => rt.run(build.code, { setup: project.setup, prelude: project.prelude, packages: project.packages }))
       .then((out) => {
         if (cancelled) {
           out.program?.dispose();
