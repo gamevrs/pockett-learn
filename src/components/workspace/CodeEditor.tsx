@@ -124,6 +124,77 @@ const defineThemes: BeforeMount = (monaco) => {
   });
 };
 
+/** Just enough of Monaco's suggest controller to hear which item is about to be inserted (an internal contribution, so every use is guarded). */
+interface SuggestControllerLike {
+  widget?: { value?: { getFocusedItem(): { item: SuggestItemLike } | undefined } };
+  cancelSuggestWidget?: () => void;
+  onWillInsertSuggestItem?: (listener: (e: { item: SuggestItemLike }) => void) => { dispose(): void };
+}
+interface SuggestItemLike {
+  completion: { kind: number; label: string | { label: string }; detail?: string };
+  resolve?: (token: unknown) => Promise<void>;
+}
+
+/**
+ * JavaScript completions come from Monaco's own TypeScript service, whose items insert only the name. After a
+ * function or method is accepted, add "()" and put the caret inside when it takes arguments, after when it takes none.
+ * The own-language providers (monaco-tools.ts) do this themselves with snippets.
+ */
+function addCallParens(editor: EditorInstance, monaco: MonacoInstance) {
+  try {
+    const controller = editor.getContribution("editor.contrib.suggestController") as SuggestControllerLike | null;
+    // "smart" Enter still accepts a fuzzy match for a finished word: `import math` became `import match`. Only accept
+    // on Enter when the item starts with what was typed, and never expand a snippet that is already typed in full
+    // (C# `try`, `else`, `do` end a line); otherwise close the list and let Enter be a new line.
+    editor.onKeyDown((e) => {
+      try {
+        if (e.keyCode !== monaco.KeyCode.Enter || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        const item = controller?.widget?.value?.getFocusedItem()?.item;
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!item || !model || !pos) return;
+        const word = model.getWordUntilPosition(pos).word.toLowerCase();
+        const label = typeof item.completion.label === "string" ? item.completion.label : item.completion.label.label;
+        const exactSnippet = item.completion.kind === monaco.languages.CompletionItemKind.Snippet && label.toLowerCase() === word;
+        if (word && (!label.toLowerCase().startsWith(word) || exactSnippet)) controller?.cancelSuggestWidget?.(); // Tab expands a snippet, Enter stays a new line
+      } catch {
+        /* leave Enter to Monaco */
+      }
+    });
+    controller?.onWillInsertSuggestItem?.(({ item }) => {
+      const model = editor.getModel();
+      const kind = item.completion.kind;
+      if (!model || model.getLanguageId() !== "javascript") return;
+      if (kind !== monaco.languages.CompletionItemKind.Function && kind !== monaco.languages.CompletionItemKind.Method) return;
+      const label = typeof item.completion.label === "string" ? item.completion.label : item.completion.label.label;
+      if (!/^[A-Za-z_$][\w$]*$/.test(label)) return;
+      // the insertion happens right after this event; look at the editor once it has settled
+      setTimeout(async () => {
+        try {
+          try {
+            await item.resolve?.(monaco.CancellationToken.None); // fills in the signature
+          } catch {
+            /* no signature: the caret goes inside the parentheses */
+          }
+          const pos = editor.getPosition();
+          if (!pos || editor.getModel() !== model) return;
+          const text = model.getLineContent(pos.lineNumber);
+          if (!text.slice(0, pos.column - 1).endsWith(label) || /^\s*\(/.test(text.slice(pos.column - 1))) return;
+          const detail = item.completion.detail ?? "";
+          const noArgs = new RegExp(String.raw`(?:^|[^\w$])` + label.replace(/\$/g, String.raw`\$`) + String.raw`\s*(?:<[^(]*>)?\(\s*\)`).test(detail);
+          const caret = new monaco.Selection(pos.lineNumber, pos.column + (noArgs ? 2 : 1), pos.lineNumber, pos.column + (noArgs ? 2 : 1));
+          editor.executeEdits("pockett-call-parens", [{ range: new monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column), text: "()" }], [caret]);
+          if (!noArgs) editor.trigger("pockett", "editor.action.triggerParameterHints", null);
+        } catch {
+          /* never let a convenience break editing */
+        }
+      }, 0);
+    });
+  } catch {
+    /* a Monaco build without this contribution: completions simply insert the name */
+  }
+}
+
 export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorMessage, revealKey, context, language = "python" }: CodeEditorProps) {
   const { theme } = useTheme();
   const editorRef = useRef<EditorInstance | null>(null);
@@ -195,6 +266,7 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
       editor.trigger("pockett", "hideSuggestWidget", null);
       onSubmitRef.current();
     });
+    addCallParens(editor, monaco);
     const model = editor.getModel();
     if (model) {
       model.setEOL(monaco.editor.EndOfLineSequence.LF); // typed newlines were CRLF on Windows, mixed with the LF starters

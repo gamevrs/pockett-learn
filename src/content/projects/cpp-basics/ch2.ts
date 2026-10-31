@@ -20,7 +20,7 @@ export const chapter2: Chapter = {
       title: "Interlocks: if, else and switch",
       minutes: 30,
       xp: 120,
-      concepts: ["if / else if / else", "comparison operators", "&& || !", "short-circuit", "switch", "break", "ternary operator", "= vs =="],
+      concepts: ["if / else if / else", "comparison operators", "&& || !", "short-circuit", "switch", "break", "ternary operator", "= vs ==", "conditions are booleans"],
       learn: md`### Making a decision
 
 \`if\` runs a block of code only when a **condition** is true. \`else\` handles the other case, and \`else if\` chains further questions. The first branch whose condition is true wins; the rest are skipped.
@@ -36,6 +36,64 @@ if (coreTemp >= 650) {
 ~~~
 
 The condition goes in parentheses. It must produce a \`bool\`. Always use braces \`{ }\`, even for a single statement: without them only the *next* line belongs to the \`if\`, and adding a second line later silently breaks the logic.
+
+### Why a condition? What does it give back?
+
+A reactor program has to answer questions: "Is the core above 520 degrees?", "Is the coolant flowing?" A **condition** is one of those questions, shaped so the only answer is yes or no. C++ evaluates it to a single \`bool\` value, \`true\` or \`false\`, and \`if\` just asks "did I get \`true\`?". You can look at the value yourself:
+
+~~~cpp
+double coreTemp = 548.0;
+std::cout << std::boolalpha;          // print true/false instead of 1/0
+std::cout << (coreTemp >= 520) << "\n";   // true
+bool tooHot = coreTemp > 600;         // keep the answer in a variable
+std::cout << tooHot << "\n";          // false
+~~~
+
+### Kinds of conditions you can write
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Comparison | \`coreTemp <= 650\` | smaller, bigger, or at the limit? |
+| Equality | \`mode == 'R'\` or \`name == "Helios-1"\` | the same value? (a \`char\` uses single quotes; two \`std::string\`s are compared by their letters, capitals count) |
+| Text contains | \`log.find("SCRAM") != std::string::npos\` | does \`log\` contain this text? \`find\` returns a position, or \`npos\` when there is none |
+| Contains in a vector | \`std::count(levels.begin(), levels.end(), 0) > 0\` | does a 0 appear at all? (\`#include <algorithm>\`) |
+| Empty or not | \`log.empty()\`, \`levels.size() > 0\` | is there nothing in it? |
+| Number as a condition | \`if (fuelRods)\` | is it non-zero? (see "Numbers as conditions" below) |
+| Function that answers yes/no | \`levels.empty()\` | the call itself returns a \`bool\` |
+| Range check | \`low < temp && temp < high\` | is it between two limits? |
+| Combined | \`a && b\`, \`a || b\`, \`!a\` | both, either, or the opposite |
+
+C++ has no \`low < temp < high\` shortcut. It compiles, but means something else (see the common mistakes at the end).
+
+### Several conditions: together, in order, or independent
+
+Conditions joined by \`&&\` or \`||\` become one yes/no answer. Separate \`if\` statements are independent: every true one runs. An \`else if\` chain is ordered: the first true branch runs and the rest are skipped. Same temperature, different output:
+
+~~~cpp
+double t = 700.0;
+
+// Separate ifs: each asks its own question
+if (t >= 520) { std::cout << "Warning\n"; }
+if (t >= 650) { std::cout << "SCRAM\n"; }
+// prints: Warning
+//         SCRAM
+
+// One chain: stops at the first yes (most severe first)
+if (t >= 650) {
+    std::cout << "SCRAM\n";
+} else if (t >= 520) {
+    std::cout << "Warning\n";
+}
+// prints: SCRAM
+~~~
+
+Use a chain when the outcomes exclude each other (one alarm level). Use separate \`if\`s when several things can be true at the same time.
+
+### How to pick the condition
+
+1. Say the question in plain words: "Has the core reached the SCRAM limit?"
+2. Turn it into a yes/no test: \`coreTemp >= maxTemp\`.
+3. Check the edge value. If the limit is 650, should exactly 650 count? That decides between \`>\` and \`>=\`. Try the limit itself, one below and one above.
 
 ### Comparison operators
 
@@ -284,7 +342,7 @@ for (const w of want) assert(lines.includes(w), 'No line is exactly "' + w + '".
       title: "Warm-up ramp: loops",
       minutes: 35,
       xp: 140,
-      concepts: ["while", "for", "do-while", "break", "continue", "nested loops", "off-by-one", "infinite loops"],
+      concepts: ["while", "for", "do-while", "break", "continue", "nested loops", "off-by-one", "infinite loops", "range-based for", "loop with a condition"],
       learn: md`### Repeating work
 
 A **loop** runs a block of code again and again while a condition holds. C++ has three flavours, and they are all the same idea.
@@ -368,6 +426,87 @@ std::string line;
 line += '#';
 line += "..";
 line += '\n';       // a newline character is a char too
+~~~
+
+### Which loop, and what about ranges?
+
+There are two reasons to repeat: "go through every item, or count" and "keep going until something changes".
+
+| Situation | Use |
+| --- | --- |
+| I know how many rounds, or I am counting | \`for (int i = 0; i < n; ++i)\` |
+| I have a container and want every element | range-based \`for (int x : v)\` |
+| I wait for a state to change | \`while\` |
+| It must run once before the first check | \`do ... while\` |
+
+The condition of a \`while\` is the same yes/no question you meet in an \`if\`, but it is asked again before **every** round. Something inside the body has to change the answer, or you get the infinite loop described above.
+
+**C++ has no \`range(...)\` function.** The counting \`for\` makes the sequence. \`++i\` and \`i++\` do the same job in this position; \`++i\` is the common habit. The stop value is where the test fails, so it is never visited:
+
+~~~cpp
+for (int i = 0; i < 5; ++i) { }        // i is 0, 1, 2, 3, 4
+for (int i = 2; i < 6; ++i) { }        // i is 2, 3, 4, 5
+for (int i = 0; i < 10; i += 3) { }    // i is 0, 3, 6, 9
+for (int i = 5; i > 0; --i) { }        // i is 5, 4, 3, 2, 1  (a countdown)
+~~~
+
+Starting at 0 with \`i < n\` gives exactly \`n\` rounds, and \`i\` lines up with the positions \`0\` to \`n - 1\` of a vector.
+
+### Three ways to walk the same vector
+
+~~~cpp
+std::vector<int> rods = {72, 85, 64};
+
+// 1. By index: you get the position and the value
+for (std::size_t i = 0; i < rods.size(); ++i) {
+    std::cout << "Rod " << i << ": " << rods[i] << "\n";
+}
+
+// 2. Straight over the elements: no counter at all
+for (int level : rods) {
+    std::cout << level << "\n";
+}
+
+// 3. Elements plus a position, with your own counter
+int slot = 0;
+for (int level : rods) {
+    std::cout << "Rod " << slot << ": " << level << "\n";
+    ++slot;
+}
+~~~
+
+The first prints \`Rod 0: 72\`, \`Rod 1: 85\`, \`Rod 2: 64\`; the second prints 72, 85, 64 on separate lines; the third matches the first. Prefer the range-based form when you only need the values: nothing to get off by one. Use the index loop when you need the position or want to step differently. For big elements write \`const auto& x : v\` (no copy, read only) or \`auto& x : v\` when you want to change them in place.
+
+### What happens each lap
+
+~~~cpp
+double rampTemp = 20.0;
+for (int tick = 1; tick <= 3; ++tick) {
+    rampTemp += 45.0;
+    std::cout << "Tick " << tick << ": " << rampTemp << "\n";
+}
+~~~
+
+| tick | test \`tick <= 3\` | rampTemp after | output |
+| --- | --- | --- | --- |
+| 1 | true | 65 | \`Tick 1: 65\` |
+| 2 | true | 110 | \`Tick 2: 110\` |
+| 3 | true | 155 | \`Tick 3: 155\` |
+| 4 | false | | loop ends |
+
+### Loops need conditions too
+
+Most real loops hold an \`if\`: the loop visits every element and the condition chooses which ones count.
+
+~~~cpp
+std::vector<double> temps = {412.0, 388.5, 455.0, 530.0};
+int hotCount = 0;
+for (double t : temps) {
+    if (t >= 450.0) {
+        ++hotCount;
+    }
+}
+std::cout << hotCount << "\n";   // 2 (455 and 530)
 ~~~
 
 ### Common mistakes

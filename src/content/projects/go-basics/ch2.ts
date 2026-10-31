@@ -58,6 +58,63 @@ if grams {          // non-boolean condition in if statement
 
 You have to write the comparison out: \`if grams != 0\`. It is one more word, and it removes a whole class of surprises.
 
+### What does a condition give back?
+
+The gate has to answer questions like *"is this parcel over the limit?"* A condition is that question, built so that only **yes** or **no** can come out. Go evaluates it to one value of type \`bool\`, \`true\` or \`false\`, and \`if\` only checks "did I get \`true\`?" You can print the answer itself to see it:
+
+~~~go
+grams := 2400
+fmt.Println(grams > 2000)    // true
+fmt.Println(grams == 500)    // false
+~~~
+
+### Kinds of conditions you can write
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Comparison | \`grams >= 500\` | Number against number: \`<\` \`>\` \`<=\` \`>=\` \`==\` \`!=\` |
+| Text equality | \`region == "north"\` | Same text, letter for letter? Case matters. |
+| Contains | \`strings.Contains(label, "PK")\` | Is the piece somewhere inside? |
+| Starts or ends with | \`strings.HasPrefix(parcelID, "PK-")\` | Does it begin (\`HasSuffix\`: end) with this? |
+| Emptiness | \`len(line) == 0\` or \`line == ""\` | Is there nothing there? Works for strings and slices. |
+| Function returning bool | \`unicode.IsDigit(r)\` | Ask a ready-made yes/no question. |
+| Range check | \`grams >= 500 && grams < 2000\` | Between two limits. Go has no \`500 <= grams < 2000\`; write both halves. |
+| Combined | \`accepted && !heavy\` | Several questions at once: \`&&\` all yes, \`!\` flips. |
+
+\`||\` means at least one yes. There is no truthiness to fall back on, so every row above is a real \`bool\`. Conditions combine freely: \`strings.HasPrefix(parcelID, "PK-") && grams > 0\` is one condition built from two. (Looking a key up in a map also gives a yes/no, the "comma ok" form, which lesson 8 introduces.)
+
+### Separate \`if\`s, an \`else if\` chain, or a tagless switch
+
+Separate \`if\`s are **independent**: every one that gets \`true\` runs. An \`else if\` chain is **one decision**: the first true branch runs and the rest are skipped. A tagless \`switch\` (below) is the same one-decision chain, just laid out as a tidy ladder.
+
+~~~go
+grams := 6000
+
+if grams > 5000 {
+	fmt.Println("heavy")
+}
+if grams > 1000 {
+	fmt.Println("medium")
+}
+// prints both lines:
+// heavy
+// medium
+
+if grams > 5000 {
+	fmt.Println("heavy")
+} else if grams > 1000 {
+	fmt.Println("medium")
+}
+// prints only:
+// heavy
+~~~
+
+### How to pick the condition
+
+1. Say the question in plain words: "Is this parcel too heavy to carry by hand?"
+2. Turn it into one yes/no test: \`grams > 5000\`.
+3. Check the **edge value**: what happens at exactly 5000? If that parcel should still go by hand, \`>\` is right; if it should not, you need \`>=\`.
+
 ### Combining conditions
 
 \`&&\` means *and*, \`||\` means *or* and \`!\` means *not*. They **short-circuit**: in \`a && b\`, if \`a\` is false then \`b\` is never evaluated, which is what lets you write \`if len(fields) == 3 && fields[2] != ""\` without the second half ever touching a missing element.
@@ -352,6 +409,84 @@ for r := range regionCount {   // r is a Region: 0, 1, 2, 3
 ~~~
 
 If you do not need one of the values, name it \`_\`. An unused index is a compile error: \`declared and not used: i\`.
+
+### Which form, and what numbers does a counting loop produce?
+
+A loop repeats for one of two reasons: you want to go **through** something (a count, a list of items), or you want to **wait until something changes**. The first is a three-part loop or a \`range\`. The second is the condition-only \`for\`, whose condition is the same yes/no question as in an \`if\`, asked again before every lap, so something in the body has to change the answer.
+
+| Situation | Form |
+| --- | --- |
+| I know how many laps, or want the position number | \`for i := 0; i < n; i++\` |
+| I want every item of a collection | \`for _, item := range items\` |
+| I wait for a state to change | \`for condition {\` |
+| I stop from the inside | \`for {\` plus \`break\` |
+
+Go has no \`do ... while\`; use \`for {\` and put the exit test at the end of the body with \`break\`.
+
+The start of a counting loop is included and the stop is **excluded**, so \`i < n\` gives exactly \`n\` laps and the counter matches the positions of a list of length \`n\` (0 up to \`n - 1\`):
+
+~~~go
+for i := 0; i < 5; i++ {}    // 0 1 2 3 4
+for i := 2; i < 6; i++ {}    // 2 3 4 5
+for i := 0; i < 10; i += 3 {} // 0 3 6 9
+for i := 10; i > 0; i -= 4 {} // 10 6 2   (counting down)
+for i := range 5 {}          // 0 1 2 3 4   (Go 1.22+, a shorthand for the first line)
+~~~
+
+### The same task three ways
+
+Printing the chutes, with \`chutes := []string{"north", "east", "south"}\` (a slice: a numbered list, lesson 7):
+
+~~~go
+// 1. By position
+for i := 0; i < len(chutes); i++ {
+	fmt.Println(i, chutes[i])        // 0 north, 1 east, 2 south
+}
+
+// 2. Straight over the items, ignoring the position with _
+for _, c := range chutes {
+	fmt.Println(c)                   // north, east, south
+}
+
+// 3. Position and item together
+for i, c := range chutes {
+	fmt.Println(i+1, c)              // 1 north, 2 east, 3 south
+}
+~~~
+
+Prefer form 2 when you only need the items and form 3 when you also need the position. The \`_\` is required in form 2: Go refuses to compile an unused variable.
+
+### What happens each lap
+
+~~~go
+for i := 1; i <= 3; i++ {
+	fmt.Println("Chute", i)
+}
+~~~
+
+| Lap | \`i\` | \`i <= 3\` | Output |
+| --- | --- | --- | --- |
+| 1 | 1 | true | Chute 1 |
+| 2 | 2 | true | Chute 2 |
+| 3 | 3 | true | Chute 3 |
+| (end) | 4 | false | the loop is over |
+
+### Loops need conditions too
+
+A loop visits everything and an \`if\` decides what to do with each visit. Together they filter and count:
+
+~~~go
+weights := []int{300, 4200, 80, 9100}
+heavy := 0
+for _, w := range weights {
+	if w > 1000 {
+		heavy++
+	}
+}
+fmt.Println(heavy)    // 2  (4200 and 9100)
+~~~
+
+In one sentence each: \`continue\` means "not this one, next please", \`break\` means "found it, stop now". Remember the forever-loop trap: \`for {\` only ends through a \`break\` or a \`return\` in its body.
 
 ### Reading until the input ends
 

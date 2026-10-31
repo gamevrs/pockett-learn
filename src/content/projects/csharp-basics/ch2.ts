@@ -207,7 +207,7 @@ assertEqual(scene.extraOk, false, "extraOk (int.TryParse of \"7x\" returns false
       title: "Making decisions",
       minutes: 25,
       xp: 120,
-      concepts: ["if / else if / else", "comparison", "&& || !", "ternary", "switch statement", "switch expression", "patterns"],
+      concepts: ["if / else if / else", "comparison", "&& || !", "ternary", "switch statement", "switch expression", "patterns", "conditions are bools"],
       learn: md`### Questions with yes/no answers
 
 A comparison produces a \`bool\`: \`==\` equal, \`!=\` not equal, \`<\`, \`>\`, \`<=\`, \`>=\`. Remember that **one** \`=\` stores a value and **two** \`==\` ask a question.
@@ -216,6 +216,63 @@ A comparison produces a \`bool\`: \`==\` equal, \`!=\` not equal, \`<\`, \`>\`, 
 int battery = 18;
 bool low = battery < 20;      // true
 ~~~
+
+### Why a condition? What does it give back?
+
+A program is full of questions it must answer before it can act: *is the battery below 20%? is the dock online? did the user type anything?* A **condition** is exactly such a question, written so that the only possible answers are **yes** or **no**. C# evaluates it and hands back one single value of type \`bool\`: \`true\` or \`false\`. An \`if\` does not do any maths itself, it only asks: "did I get \`true\`?" If so, the block runs.
+
+You can see the value for yourself by printing the question:
+
+~~~csharp
+int battery = 18;
+Console.WriteLine(battery < 20);     // True
+Console.WriteLine(battery == 18);    // True
+Console.WriteLine(battery > 50);     // False
+~~~
+
+(C# prints a \`bool\` with a capital letter, \`True\` or \`False\`.) Anything that produces a \`bool\` can sit inside the parentheses of an \`if\`: a comparison, a variable that already holds a \`bool\`, or a method call that returns one. Nothing else is allowed. Unlike some languages, C# has **no truthiness**: a number or a string is never silently treated as yes or no, so \`if (battery)\` and \`if (name)\` are compile errors.
+
+### Kinds of conditions you can write
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Comparison | \`battery <= 20\` | Is this number below or equal to that one? (\`<\` \`>\` \`<=\` \`>=\` \`==\` \`!=\`) |
+| Text equality | \`robot == "Rex"\` | Are these two strings identical? Case matters. |
+| Contains | \`note.Contains("jam")\` | Is this piece of text somewhere inside? |
+| Empty text | \`string.IsNullOrEmpty(note)\` | Is it \`null\` or \`""\`? (\`string.IsNullOrWhiteSpace\` also treats spaces as empty.) |
+| Method returning bool | \`char.IsDigit(c)\`, \`int.TryParse(s, out int n)\` | Ask a ready-made yes/no question. |
+| Pattern with \`is\` | \`battery is >= 20 and < 50\`, \`note is null\` | Does the value fit this shape or range? |
+| Range check | \`battery >= 20 && battery < 50\` | Is it between two limits? Spell out both sides. |
+| Combined | \`online && !charging\` | Several questions at once: \`&&\` needs all yes, \`!\` flips an answer (and \`or\` is written with two vertical bars). |
+
+Two notes. First, prefer \`&&\` and \`||\` over the single \`&\` and \`|\`: on bools the single forms also work, but they always evaluate **both** sides, so they lose the short-circuit safety. Second, the table shows what is *available*. Conditions combine freely, so \`online && (battery >= 30 || charging)\` is one condition built from three smaller ones.
+
+### Separate \`if\`s versus an \`else if\` chain
+
+This is where many beginners get stuck. Several plain \`if\` statements are **independent**: each one asks its own question and every one that gets \`true\` runs. An \`else if\` chain is **one decision**: the first true branch runs and the rest are skipped.
+
+~~~csharp
+int battery = 18;
+
+if (battery < 20) Console.WriteLine("Charge now");
+if (battery < 50) Console.WriteLine("Low");
+// prints both lines:
+// Charge now
+// Low
+
+if (battery < 20) Console.WriteLine("Charge now");
+else if (battery < 50) Console.WriteLine("Low");
+// prints only:
+// Charge now
+~~~
+
+Use separate \`if\`s when the checks are unrelated (several warnings may fire together). Use a chain when the answers exclude each other (one status out of several).
+
+### How to pick the condition
+
+1. Say the question in plain words: "Does this robot need charging?"
+2. Turn it into one yes/no test: \`battery < 20\`.
+3. Check the **edge value**. What should happen at exactly 20? If a robot with 20% still needs charging, you want \`<=\`, not \`<\`.
 
 ### \`if\`, \`else if\`, \`else\`
 
@@ -457,7 +514,7 @@ assert(!lines.includes("Hold at the dock"), 'Only one of the two messages should
       title: "Loops",
       minutes: 30,
       xp: 130,
-      concepts: ["while", "for", "do-while", "break", "continue", "nested loops", "off-by-one"],
+      concepts: ["while", "for", "do-while", "break", "continue", "nested loops", "off-by-one", "Enumerable.Range"],
       learn: md`### Repeat without copy-paste
 
 A loop runs a block of code again and again. Every loop answers three questions: where does it **start**, how long does it **keep going**, and how does each pass **move forward**?
@@ -541,6 +598,96 @@ Console.Write(rows);       // ####  ####  ####  (three lines)
 - You repeat until something happens: \`while\`.
 - You must do it at least once: \`do\` / \`while\`.
 - You are visiting every item of a collection: \`foreach\` (next lesson).
+
+### Which loop, and what is a range of numbers?
+
+There are two reasons to repeat. Either you want to go **through** something (every dock, every robot, "eight times"), or you want to keep going **until the world changes** (the battery is full, the scan is done). The first is a \`for\` or \`foreach\`. The second is a \`while\`, whose condition is the same yes/no question as in an \`if\`, simply asked again before every lap. Something inside the body has to change the answer, otherwise the loop never stops.
+
+| Situation | Loop |
+| --- | --- |
+| I know how many laps, or need the position number | \`for\` |
+| I just want every item in a collection | \`foreach\` |
+| I wait for something to happen | \`while\` |
+| It must run once before I can even ask | \`do\` / \`while\` |
+
+**Which numbers does a counting loop produce?** The start is included and the stop is **excluded**, so \`i < n\` gives exactly \`n\` laps and the counter lines up with the positions of an array of length \`n\` (0 up to \`n - 1\`).
+
+~~~csharp
+for (int i = 0; i < 5; i++)        // 0 1 2 3 4
+for (int i = 2; i < 6; i++)        // 2 3 4 5
+for (int i = 0; i < 10; i += 3)    // 0 3 6 9
+for (int n = 10; n > 0; n -= 4)    // 10 6 2   (counting down)
+~~~
+
+C# also has a ready-made sequence of numbers, \`Enumerable.Range\`, which lives in \`System.Linq\` (add \`using System.Linq;\` unless your project already includes it). Careful: its second argument is a **count**, not a stop value.
+
+~~~csharp
+foreach (int i in Enumerable.Range(0, 5)) { }   // 0 1 2 3 4   (5 numbers)
+foreach (int i in Enumerable.Range(2, 4)) { }   // 2 3 4 5     (start 2, 4 numbers)
+foreach (int i in Enumerable.Range(1, 3).Reverse()) { }   // 3 2 1
+~~~
+
+It has no step, so \`for\` is still the tool for "every third dock". It is handy when you want a \`foreach\` over plain numbers, or a list of numbers to feed into other code.
+
+### The same task three ways
+
+Printing every dock name, with \`string[] docks = { "North", "East", "South" };\`:
+
+~~~csharp
+// 1. By position: you get the index, so you can also use it
+for (int i = 0; i < docks.Length; i++)
+{
+    Console.WriteLine($"{i}: {docks[i]}");     // 0: North, 1: East, 2: South
+}
+
+// 2. Straight over the items: shortest and hardest to get wrong
+foreach (string dock in docks)
+{
+    Console.WriteLine(dock);                   // North, East, South
+}
+
+// 3. Items plus your own counter
+int number = 1;
+foreach (string dock in docks)
+{
+    Console.WriteLine($"Dock {number}: {dock}");   // Dock 1: North, Dock 2: East, Dock 3: South
+    number++;
+}
+~~~
+
+Prefer \`foreach\` when you only need the items. Reach for \`for\` when the position matters (changing items in place, comparing neighbours, skipping every other one).
+
+### What happens each lap
+
+~~~csharp
+for (int stop = 1; stop <= 3; stop++)
+{
+    Console.WriteLine($"Stop {stop}");
+}
+~~~
+
+| Lap | \`stop\` | \`stop <= 3\` | Output |
+| --- | --- | --- | --- |
+| 1 | 1 | true | Stop 1 |
+| 2 | 2 | true | Stop 2 |
+| 3 | 3 | true | Stop 3 |
+| (end) | 4 | false | the loop is over |
+
+### Loops need conditions too
+
+A loop visits everything, an \`if\` decides what to do with each visit. Together they filter and count:
+
+~~~csharp
+int[] charges = { 80, 15, 42, 9, 66 };
+int lowCount = 0;
+foreach (int c in charges)
+{
+    if (c < 20) lowCount++;
+}
+Console.WriteLine(lowCount);     // 2  (the robots at 15 and 9)
+~~~
+
+\`break\` and \`continue\` (see above) are those same two ideas inside a loop: \`continue\` means "not this one", \`break\` means "I found it, stop". And the forever-loop trap: \`while (true)\` has no way out except a \`break\` (or a \`return\`) in its body, so always point at the line that ends it.
 
 ### Common mistakes
 

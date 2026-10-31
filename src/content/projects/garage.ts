@@ -339,6 +339,22 @@ def throttle_curve(pedal):
 
 \`if\` runs code only when a condition is true.
 
+#### Why a condition? What does it give back?
+
+A car answers questions all day: *is the fuel under 10%? is the left key down?* A **condition** is one of those questions, written so that the only possible answers are yes or no. Python works the question out and hands back a single value: \`True\` or \`False\`. The \`if\` then asks one thing: "did I get True?"
+
+~~~python
+fuel = 8
+print(fuel < 10)       # True
+print(fuel == 50)      # False
+low = fuel < 10        # store the answer in a variable
+print(type(low))       # <class 'bool'>
+if low:
+    print("Low fuel!")
+~~~
+
+Notice \`==\` asks "are these equal?" while a single \`=\` stores a value. You can print a condition any time to see exactly what it answers.
+
 ~~~python
 if fuel < 10:
     print("Low fuel!")
@@ -355,7 +371,53 @@ if left and not right:
     ...
 ~~~
 
-Python checks the branches top to bottom and runs the **first** one that is true.`,
+Python checks the branches top to bottom and runs the **first** one that is true.
+
+#### Kinds of conditions you can write
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Comparison | \`fuel <= 10\` | Is this number smaller, larger, at most, at least? |
+| Equal / not equal | \`gear == 3\`, \`mode != "pit"\` | Same value? Works on text too. |
+| Between two limits | \`0 <= speed < 120\` | Is it inside a range? (one chained check) |
+| Membership | \`"turbo" in upgrades\`, \`"x" not in name\` | Is it inside this list or string? |
+| Text tests | \`code.isdigit()\`, \`name.startswith("GT")\` | A function that answers yes or no. |
+| Identity | \`driver is None\` | Is it the very same object? Use it for \`None\`. |
+| Truthiness | \`if upgrades:\` | Is the list non-empty? |
+| Combined | \`left and not right\`, \`a or b\` | Several questions, joined together. |
+
+**Truthiness.** Any value can sit in an \`if\`. These count as false: \`False\`, \`None\`, \`0\`, \`0.0\`, \`""\` (empty text), \`[]\`, \`{}\`. Nearly everything else counts as true. So \`if upgrades:\` means "if the list has something in it".
+
+**\`==\` versus \`is\`.** \`==\` asks "do these have equal values?". \`is\` asks "are these the same object in memory?". For numbers and text use \`==\`; use \`is\` mainly for \`None\`.
+
+Conditions can work **together** (\`and\` needs both, \`or\` needs either), be tried **in order** (an \`if\` / \`elif\` / \`else\` chain runs only the first true branch), or be **independent** (separate \`if\`s are each checked on their own). That last difference trips people up, so compare them with \`fuel = 8\`:
+
+~~~python
+# two separate ifs: both are true, both run
+if fuel < 10:
+    print("Low fuel!")
+if fuel < 30:
+    print("Getting low")
+# prints:
+# Low fuel!
+# Getting low
+
+# one chain: the first true branch wins, the rest are skipped
+if fuel < 10:
+    print("Low fuel!")
+elif fuel < 30:
+    print("Getting low")
+# prints:
+# Low fuel!
+~~~
+
+If you have many fixed choices, Python also has \`match\`, but an \`elif\` chain handles everything in this course.
+
+#### How to pick the condition
+
+1. Say the question in plain words: "Should the car turn left?"
+2. Turn it into a yes/no test: \`left and not right\`.
+3. Check the edge value. If the limit is 10, should exactly 10 count? \`fuel < 10\` says no, \`fuel <= 10\` says yes. Try the edge in your head before you run it.`,
           mission: `Time to steer. The scene calls your \`steer(left, right)\` function on every frame. \`left\` and \`right\` are True while the matching key is held.
 
 Return a wheel angle in degrees: **negative turns left, positive turns right, 0 is straight**. The moment this works, the track lights up and you can actually drive.`,
@@ -431,6 +493,74 @@ Build a list inside a loop:
 squares = []
 for n in range(1, 4):
     squares.append(n * n)   # [1, 4, 9]
+~~~
+
+#### Which loop, and what is range?
+
+A loop repeats a block. There are two reasons to repeat. A \`for\` loop says "do this once for every item, or a set number of times". A \`while\` loop says "keep doing this until something changes". Its condition is the same yes/no question as in an \`if\`, asked again before every lap.
+
+| Situation | Use |
+| --- | --- |
+| I have a list, or I know how many laps | \`for\` |
+| I am waiting for a state to change | \`while\` |
+
+\`range\` makes a run of numbers, and the stop value is never included. \`range(n)\` gives exactly \`n\` numbers starting at 0, so the numbers line up with list positions.
+
+~~~python
+print(list(range(5)))          # [0, 1, 2, 3, 4]
+print(list(range(2, 6)))       # [2, 3, 4, 5]
+print(list(range(0, 10, 3)))   # [0, 3, 6, 9]
+print(list(range(5, 0, -1)))   # [5, 4, 3, 2, 1]
+~~~
+
+The same job three ways, over a list of tires:
+
+~~~python
+tires = ["soft", "medium", "hard"]
+
+for i in range(len(tires)):          # by position
+    print(i, tires[i])
+for tire in tires:                   # the items directly
+    print(tire)
+for i, tire in enumerate(tires):     # items plus a counter
+    print(i, tire)
+~~~
+
+The first loop prints \`0 soft\`, \`1 medium\`, \`2 hard\`. The second prints \`soft\`, \`medium\`, \`hard\`. The third prints the same as the first. Prefer looping over the items directly. Reach for \`enumerate\` when you also need the position, and use \`range\` when you need numbers themselves, like these gates.
+
+What happens each lap of \`for n in range(1, 4): print(n * 20)\`:
+
+| Lap | n | Another number left? | Output |
+| --- | --- | --- | --- |
+| 1 | 1 | yes | 20 |
+| 2 | 2 | yes | 40 |
+| 3 | 3 | yes | 60 |
+| end | | no, so the loop stops | |
+
+A \`while\` loop must change what its condition looks at, or it never stops:
+
+~~~python
+fuel = 30
+laps = 0
+while fuel > 10:      # asked again every lap
+    fuel -= 8
+    laps += 1
+print(laps, fuel)     # 3 6
+~~~
+
+\`break\` leaves the loop at once; \`continue\` skips to the next lap. A loop can also hold an \`if\`, which is how you filter or count:
+
+~~~python
+gates = [20, 40, 60, 80]
+past_half = 0
+for g in gates:
+    if g == 40:
+        continue          # skip this one
+    if g > 70:
+        break             # stop everything
+    if g > 50:
+        past_half += 1
+print(past_half)          # 1 (only 60)
 ~~~`,
           mission: `A lap needs gates. Rather than typing each one, let a loop place them. The scene reads your \`checkpoints\` list: each number is a percentage of the way around the lap.
 

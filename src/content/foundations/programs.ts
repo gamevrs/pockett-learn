@@ -508,6 +508,11 @@ const lessons: ConceptLesson[] = [
       },
       {
         kind: "explain",
+        title: "What a condition gives back",
+        body: "A condition is a question with only a yes or no answer, like *is the tank below 20%?* Python works it out and gives back a single value, `True` or `False`. The `if` just asks: \"did I get True?\"\n\n" + py(`fuel = 15\nprint(fuel < 20)      # True\nprint(fuel == 100)    # False\nlow = fuel < 20       # keep the answer\nprint(type(low))      # <class 'bool'>`) + "\n\n`==` asks \"are these equal?\", while a single `=` stores a value. Print a condition any time to see exactly what it answers.",
+      },
+      {
+        kind: "explain",
         title: "One path or the other",
         body: "`else` gives the other path: when the condition is False, the `else` block runs instead. Exactly one of the two blocks runs: never both, never neither.",
         widget: trace("ifelse"),
@@ -533,6 +538,11 @@ const lessons: ConceptLesson[] = [
         body: "These are two separate `if` statements, not a chain. How many lines does this print?\n\n" + py(`n = 12\nif n > 5:\n    print("big")\nif n > 10:\n    print("huge")`),
         question: { type: "number", hint: "Each if is checked on its own. Count how many conditions are true for n = 12.", answer: 2 },
         explanation: "Each `if` is its own decision, so both get checked: 12 > 5 prints *big*, and 12 > 10 prints *huge*. If the second one were an `elif`, only *big* would print.",
+      },
+      {
+        kind: "explain",
+        title: "Kinds of conditions",
+        body: "Any yes/no question can be a condition. The common kinds:\n\n| Kind | Example | What it asks |\n| --- | --- | --- |\n| Comparison | `age < 12` | Smaller, larger, at most, at least? |\n| Equal / not equal | `colour == \"red\"` | Same value? Works on text too. |\n| Between two limits | `0 <= level < 100` | Inside a band? (one chained check) |\n| Membership | `\"tea\" in cart`, `\"x\" not in name` | Is it inside this list or text? |\n| Text tests | `code.isdigit()`, `name.startswith(\"Dr\")` | A function that answers yes or no |\n| Identity | `user is None` | The very same object? Use for `None` |\n| Truthiness | `if cart:` | Is the list non-empty? |\n| Combined | `a and b`, `a or b`, `not a` | Several questions joined |\n\n**Truthiness:** these count as false: `False`, `None`, `0`, `0.0`, `\"\"`, `[]`, `{}`. Nearly everything else counts as true.\n\n**`==` vs `is`:** `==` asks \"equal values?\", `is` asks \"the very same object?\". Use `==` for numbers and text, `is` mainly for `None`.\n\n**Pick a condition in three steps:** say the question in plain words, turn it into a yes/no test, then try the edge value. If the limit is 12, should exactly 12 count? `age < 12` says no, `age <= 12` says yes.\n\nPython also has `match` for many fixed choices, but an `elif` chain does the job here.",
       },
       {
         kind: "question",
@@ -599,6 +609,11 @@ const lessons: ConceptLesson[] = [
         widget: { type: "loop", props: { stop: 5, body: "print(i)" } },
       },
       {
+        kind: "explain",
+        title: "Which loop, and what is range?",
+        body: "A loop repeats lines, for one of two reasons. `for` means \"once for every item, or a set number of times\". `while` means \"keep going until something changes\": its condition is the same yes/no question as in an `if`, asked again before every pass, so the body must change what it looks at.\n\n| Situation | Use |\n| --- | --- |\n| I have a collection, or I know how many passes | `for` |\n| I am waiting for something to change | `while` |\n\n`range` makes the numbers, and the **stop value is never included**:\n\n" + py(`print(list(range(5)))          # [0, 1, 2, 3, 4]\nprint(list(range(2, 6)))       # [2, 3, 4, 5]\nprint(list(range(0, 10, 3)))   # [0, 3, 6, 9]\nprint(list(range(5, 0, -1)))   # [5, 4, 3, 2, 1]`) + "\n\n`range(n)` gives exactly `n` numbers starting at 0, so they match list positions. The third number is the **step**, and a negative step counts down.",
+      },
+      {
         kind: "question",
         title: "Count from 1 to 5",
         body: "`range(start, stop)` begins at `start` and stops just before `stop`. Change the numbers so the loop visits **1, 2, 3, 4, 5**.",
@@ -611,6 +626,11 @@ const lessons: ConceptLesson[] = [
         title: "A running total",
         body: "A common loop pattern is the **accumulator**: a variable set up before the loop that collects something on every pass, like a running total.\n\nWatch `total` grow.",
         widget: { type: "loop", props: { start: 1, stop: 5, acc: { name: "total", init: 0, op: "+" } } },
+      },
+      {
+        kind: "explain",
+        title: "Items, positions and early exits",
+        body: "The same job three ways, over a list:\n\n" + py(`tea = ["black", "green", "mint"]\nfor i in range(len(tea)):        # by position\n    print(i, tea[i])\nfor t in tea:                    # the items directly\n    print(t)\nfor i, t in enumerate(tea):      # items plus a counter\n    print(i, t)`) + "\n\nThe first prints `0 black`, `1 green`, `2 mint`; the second prints `black`, `green`, `mint`; the third prints the same as the first. Prefer the items directly, use `enumerate` when you also need the position, and `range` when the numbers themselves matter.\n\nWhat happens each pass of `for n in range(1, 4): print(n * 10)`:\n\n| Pass | n | Another number left? | Output |\n| --- | --- | --- | --- |\n| 1 | 1 | yes | 10 |\n| 2 | 2 | yes | 20 |\n| 3 | 3 | yes | 30 |\n| end | | no, so the loop stops | |\n\n`break` leaves the loop at once; `continue` skips to the next pass. A loop can also hold an `if`, which is how you filter or count:\n\n" + py(`readings = [4, 9, 0, 7, 12]\ngood = 0\nfor r in readings:\n    if r == 0:\n        continue    # skip a dead sensor\n    if r > 10:\n        break       # too high: stop checking\n    good += 1\nprint(good)             # 3 (4, 9 and 7)`),
       },
       {
         kind: "question",

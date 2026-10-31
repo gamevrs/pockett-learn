@@ -129,9 +129,28 @@ interface Item {
   range: { startLineNumber: number; endLineNumber: number; startColumn: number; endColumn: number };
 }
 
-/** Monaco needs an explicit insertText: without it the list renders, but accepting an item (Enter, Tab, click) throws. */
-function withInsertText(items: Item[]): Item[] {
-  return items.map((i) => (i.insertText === undefined ? { ...i, insertText: i.label } : i));
+/**
+ * Monaco needs an explicit insertText: without it the list renders, but accepting an item (Enter, Tab, click) throws.
+ * Functions, methods and macros also get their call parentheses, unless the code already has "(" right after the word.
+ */
+function withInsertText(monaco: Monaco, items: Item[], lineText: string): Item[] {
+  const K = monaco.languages.CompletionItemKind;
+  const snippet = monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
+  return items.map((i) => {
+    if (i.insertText !== undefined) return i;
+    if (i.kind !== K.Function && i.kind !== K.Method) return { ...i, insertText: i.label };
+    const after = lineText.slice(i.range.endColumn - 1);
+    const name = i.label;
+    if (name.endsWith("!")) {
+      // Rust macro: println!($0); when the "!" is already typed, only the name is replaced
+      if (/^\s*\(/.test(after)) return { ...i, insertText: name };
+      if (after.startsWith("!")) return { ...i, insertText: name.slice(0, -1) };
+      return { ...i, insertText: `${name}($0)`, insertTextRules: snippet };
+    }
+    if (/^\s*\(/.test(after)) return { ...i, insertText: name };
+    const params = i.detail?.includes("(") ? splitParams(i.detail).filter((p) => p !== "self" && p !== "cls" && p !== "&self" && p !== "&mut self") : null;
+    return { ...i, insertText: params && params.length === 0 ? `${name}()` : `${name}($0)`, insertTextRules: snippet };
+  });
 }
 
 function userMembers(monaco: Monaco, scan: Scan, owner: string, range: Item["range"], seen = new Set<string>()): Item[] {
@@ -161,7 +180,7 @@ function tableItems(monaco: Monaco, table: DocTable, range: Item["range"], langu
     const sig = strip ? entry[0].replace(strip, "") : entry[0];
     return {
       label: name,
-      kind: kindOverride ?? (isFn ? K.Method : K.Property),
+      kind: kindOverride === K.Class && isFn ? K.Method : kindOverride ?? (isFn ? K.Method : K.Property), // std::sort is a call, std::string is not
       detail: sig,
       documentation: md(docMarkdown(language, [sig, entry[1]])),
       sortText: "1" + name,
@@ -289,9 +308,10 @@ function generalCompletions(monaco: Monaco, scan: Scan, line: number, range: Ite
   if (language === "rust") for (const t of ["String", "Vec", "Option", "Result", "HashMap", "Some", "None", "Ok", "Err", "Box"]) push({ label: t, kind: K.Class, sortText: "3" + t, range });
   if (language === "cpp") push({ label: "std", kind: K.Module, detail: "namespace std", sortText: "3std", range });
 
-  for (const kw of KEYWORDS[language] ?? []) push({ label: kw, kind: K.Keyword, sortText: "4" + kw, range });
+  // a keyword sorts after the snippet of the same name, so Tab on a typed "for" expands the snippet instead of accepting nothing
+  for (const kw of KEYWORDS[language] ?? []) push({ label: kw, kind: K.Keyword, sortText: "4" + kw + "~", range });
   for (const [label, body, doc] of SNIPPETS[language] ?? []) {
-    out.push({ label, kind: K.Snippet, insertText: body, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail: doc, documentation: md(codeBlock(language, body.replace(/\$\{\d+:?([^}]*)\}/g, "$1").replace(/\$0/g, ""))), sortText: "5" + label, range });
+    out.push({ label, kind: K.Snippet, insertText: body, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail: doc, documentation: md(codeBlock(language, body.replace(/\$\{\d+:?([^}]*)\}/g, "$1").replace(/\$0/g, ""))), sortText: "4" + label, range });
   }
   return out;
 }
@@ -310,8 +330,8 @@ function sqlGeneral(monaco: Monaco, scan: Scan, range: Item["range"]): Item[] {
     }
   }
   for (const [name, entry] of Object.entries(SQL_FUNCTIONS)) out.push({ label: name, kind: K.Function, detail: entry[0], documentation: md(docMarkdown("sql", entry)), sortText: "3" + name, range });
-  for (const kw of KEYWORDS.sql) out.push({ label: kw, kind: K.Keyword, sortText: "4" + kw, range });
-  for (const [label, body, doc] of SNIPPETS.sql) out.push({ label, kind: K.Snippet, insertText: body, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail: doc, sortText: "5" + label, range });
+  for (const kw of KEYWORDS.sql) out.push({ label: kw, kind: K.Keyword, sortText: "4" + kw + "~", range });
+  for (const [label, body, doc] of SNIPPETS.sql) out.push({ label, kind: K.Snippet, insertText: body, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet, detail: doc, sortText: "4" + label, range });
   return out;
 }
 
@@ -459,18 +479,18 @@ export function registerEditorTools(monaco: Monaco): void {
           const beforeWord = lineText.slice(0, word.startColumn - 1);
           if (language === "sql") {
             const items = sqlCompletions(monaco, model, scan, position, range, beforeWord);
-            return { suggestions: withInsertText(items ?? []) };
+            return { suggestions: withInsertText(monaco, items ?? [], lineText) };
           }
           if (/\.\s*$/.test(beforeWord)) {
             const items = memberCompletions(monaco, scan, beforeWord.replace(/\.\s*$/, ""), position.lineNumber, range);
-            return { suggestions: withInsertText(items ?? []) };
+            return { suggestions: withInsertText(monaco, items ?? [], lineText) };
           }
           if ((language === "rust" || language === "cpp") && /::\s*$/.test(beforeWord)) {
             const items = pathCompletions(monaco, scan, beforeWord.replace(/::\s*$/, ""), range);
-            return { suggestions: withInsertText(items ?? []) };
+            return { suggestions: withInsertText(monaco, items ?? [], lineText) };
           }
           if (/(?:^|[^\w])(?:\d)$/.test(beforeWord + word.word) && !word.word) return { suggestions: [] };
-          return { suggestions: withInsertText(generalCompletions(monaco, scan, position.lineNumber, range, word.word)) };
+          return { suggestions: withInsertText(monaco, generalCompletions(monaco, scan, position.lineNumber, range, word.word), lineText) };
         } catch {
           return { suggestions: [] };
         }
@@ -594,7 +614,7 @@ export function registerEditorTools(monaco: Monaco): void {
           insertText: body,
           insertTextRules: K.CompletionItemInsertTextRule.InsertAsSnippet,
           detail: doc,
-          sortText: "9" + label,
+          sortText: "0" + label, // ahead of the TypeScript service's keyword of the same name
           range,
         })),
       };

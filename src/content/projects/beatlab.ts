@@ -374,7 +374,126 @@ else:
     print("other")
 ~~~
 
-Python checks the branches top to bottom and runs the **first** one that is true. Indentation shows what belongs inside.`,
+Python checks the branches top to bottom and runs the **first** one that is true. Indentation shows what belongs inside.
+
+### Why a condition? What does it give back?
+
+A drum machine asks yes/no questions on every step: *is this step a beat? is it a half-beat?* A **condition** is such a question. Python evaluates it to one value, \`True\` or \`False\`, and \`if\` just asks: "did I get True?"
+
+~~~python
+i = 8
+print(i % 4 == 0)      # True
+print(i % 3 == 0)      # False
+on_beat = i % 4 == 0   # keep the answer in a variable
+print(type(on_beat))   # <class 'bool'>
+~~~
+
+\`==\` asks "equal?", while a single \`=\` stores a value.
+
+### Kinds of conditions you can write
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Comparison | \`i < 8\` | Is this number smaller, larger, at most, at least? |
+| Equal / not equal | \`i % 4 == 0\`, \`name != "kick"\` | Same value? Works on text too. |
+| Between two limits | \`4 <= i < 8\` | Is it inside a band? (one chained check) |
+| Membership | \`i in [0, 4, 8, 12]\`, \`"k" in name\` | Is it inside this list or string? |
+| Text tests | \`name.isalpha()\`, \`name.startswith("hi")\` | A function that answers yes or no. |
+| Identity | \`sound is None\` | Is it the very same object? Use it for \`None\`. |
+| Truthiness | \`if hats_pattern:\` | Is the list non-empty? |
+| Combined | \`i > 4 and i % 2 == 0\`, \`a or b\`, \`not a\` | Several questions, joined together. |
+
+**Truthiness.** These count as false: \`False\`, \`None\`, \`0\`, \`0.0\`, \`""\`, \`[]\`, \`{}\`. Nearly everything else counts as true. (That makes \`if i % 4:\` true on every step that is *not* a beat.)
+
+**\`==\` versus \`is\`.** \`==\` asks "equal values?"; \`is\` asks "the same object?". Use \`==\` for numbers and text, and \`is\` mainly for \`None\`.
+
+Conditions can work **together** (\`and\` needs both, \`or\` needs either), be tried **in order** (an \`if\` / \`elif\` / \`else\` chain runs only the first true branch), or be **independent** (separate \`if\`s are each checked). Compare them for \`i = 4\`:
+
+~~~python
+# separate ifs: both are true, both run
+if i % 4 == 0:
+    print("beat")
+if i % 2 == 0:
+    print("half-beat")
+# prints:
+# beat
+# half-beat
+
+# one chain: first true branch wins
+if i % 4 == 0:
+    print("beat")
+elif i % 2 == 0:
+    print("half-beat")
+# prints:
+# beat
+~~~
+
+Python also has \`match\` for many fixed choices, but \`elif\` chains cover this course.
+
+### How to pick the condition
+
+1. Say the question in plain words: "Is this step on a beat?"
+2. Turn it into a yes/no test: \`i % 4 == 0\`.
+3. Check the edge value. Does step 0 count as a beat? \`0 % 4\` is \`0\`, so yes. Try the first and last step (0 and 15) in your head.
+
+### Which loop, and what is range?
+
+A loop repeats a block. \`for\` means "once for every item, or a set number of times". \`while\` means "keep going until something changes": its condition is the same yes/no question an \`if\` asks, re-asked before every lap. Here you know the count (16 steps), so you want \`for\`.
+
+\`range\` makes numbers, and the **stop value is never included**. \`range(n)\` gives exactly \`n\` numbers starting at 0, so they match positions in a list.
+
+~~~python
+print(list(range(5)))          # [0, 1, 2, 3, 4]
+print(list(range(2, 6)))       # [2, 3, 4, 5]
+print(list(range(0, 16, 4)))   # [0, 4, 8, 12]
+print(list(range(3, 0, -1)))   # [3, 2, 1]
+~~~
+
+The same job three ways, over a pattern:
+
+~~~python
+pattern = [2, 0, 1]
+
+for i in range(len(pattern)):         # by position
+    print(i, pattern[i])
+for hit in pattern:                   # the items directly
+    print(hit)
+for i, hit in enumerate(pattern):     # items plus a counter
+    print(i, hit)
+~~~
+
+The first prints \`0 2\`, \`1 0\`, \`2 1\`; the second prints \`2\`, \`0\`, \`1\`; the third prints the same as the first. Prefer the items directly; use \`enumerate\` when you also need the step number, and \`range\` when the numbers themselves matter, as with \`i % 4\` above.
+
+What happens each lap of \`for i in range(3): print(i % 2 == 0)\`:
+
+| Lap | i | Another number left? | Output |
+| --- | --- | --- | --- |
+| 1 | 0 | yes | True |
+| 2 | 1 | yes | False |
+| 3 | 2 | yes | True |
+| end | | no, so the loop stops | |
+
+A \`while\` loop must change what its condition looks at, or it never stops:
+
+~~~python
+step = 0
+while step < 16:
+    step += 4            # without this line it runs forever
+print(step)              # 16
+~~~
+
+\`break\` leaves the loop immediately; \`continue\` skips to the next lap. A loop with an \`if\` inside is how you filter or count:
+
+~~~python
+loud = 0
+for i in range(16):
+    if i % 2 == 1:
+        continue          # skip odd steps
+    if i > 8:
+        break             # stop after step 8
+    loud += 1
+print(loud)               # 5 (steps 0, 2, 4, 6, 8)
+~~~`,
           mission: `Hi-hats are busy: a hit on nearly every step. Typing 16 numbers is boring, so let a loop write the pattern.
 
 On every beat (steps 0, 4, 8, 12) the hat is an accent. On the half-beats (2, 6, 10, 14) it is a normal hit. The steps in between get a very quiet ghost hat. Run it and the shimmer joins the mix.`,

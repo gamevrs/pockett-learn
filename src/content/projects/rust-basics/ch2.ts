@@ -245,8 +245,75 @@ assert(lines.includes('"40m" is not a whole number: invalid digit found in strin
       title: "if and match",
       minutes: 30,
       xp: 110,
-      concepts: ["if", "else if", "if as an expression", "bool logic", "match on numbers", "ranges in patterns", "exhaustive match", "blocks as values"],
-      learn: md`### \`if\` needs a real bool
+      concepts: ["if", "else if", "if as an expression", "bool logic", "match on numbers", "ranges in patterns", "exhaustive match", "blocks as values", "conditions are booleans", "separate ifs vs else-if chain"],
+      learn: md`### Why a condition? What does it give back?
+
+Programs constantly have to answer questions: "is the tank below 20%?", "is the hatch sealed?", "did the crew count change?". A **condition** is exactly such a question, written so that the only possible answers are *yes* or *no*. Rust evaluates it to one single value of type \`bool\`: \`true\` or \`false\`. An \`if\` does nothing mysterious. It just asks "did I get \`true\`?" and runs its block if so.
+
+You can look at that value yourself, because it is an ordinary value you can store and print:
+
+~~~rust
+let tank_pct = 15;
+let low = tank_pct < 20;
+println!("{low}");
+println!("{}", tank_pct == 20);
+~~~
+
+~~~text
+true
+false
+~~~
+
+So \`if tank_pct < 20 { ... }\` is the same as computing \`true\` first and then testing it. Anything that produces a \`bool\` can be a condition.
+
+### Kinds of conditions you can write
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Comparison | \`depth > 40\`, \`crew <= 3\`, \`crew != 0\` | How do two numbers relate? |
+| Equality | \`crew == 6\`, \`status == "OK"\` | Are they the same? (text works too, and is case-sensitive) |
+| Empty text or list | \`name.is_empty()\` | Is there nothing in it? |
+| Contains / starts / ends | \`log.contains("leak")\`, \`tag.starts_with("HX")\` | Does this text have that piece? |
+| Inside a range | \`(20..=49).contains(&o2)\` | Is the value between two ends? (same as \`o2 >= 20 && o2 <= 49\`) |
+| A pattern test | \`matches!(crew, 4..=6)\` | Does the value fit this pattern? |
+| A method that returns a bool | \`ch.is_ascii_digit()\` | Whatever the method name says |
+| Both true | \`depth <= 40 && pumps_online\` | Are both parts yes? |
+| The opposite | \`!pumps_online\` | Is it not so? |
+
+What Rust does **not** have: truthiness. An integer, a string or an empty list is never "true-ish" or "false-ish". You always have to write the actual yes/no test (\`crew > 0\`, \`!name.is_empty()\`).
+
+Conditions can work **together**: \`&&\` (and) and \`||\` (at least one, "or") combine several into one answer. They can also be **tried in order**, or be **independent**. That difference trips up many beginners, so compare these two with \`o2 = 15\`:
+
+~~~rust
+// separate ifs: every one is asked
+if o2 < 50 { println!("low"); }
+if o2 < 20 { println!("critical"); }
+
+// an else-if chain: the first true branch wins, the rest are skipped
+if o2 < 20 {
+    println!("critical");
+} else if o2 < 50 {
+    println!("low");
+} else {
+    println!("ok");
+}
+~~~
+
+~~~text
+low
+critical
+critical
+~~~
+
+The first pair prints two lines because both questions are true. The chain prints one line because it stops at the first yes, so put the narrowest test first. When all the tests are about **one value**, a \`match\` (further down) says it more clearly than a long chain of \`else if\`.
+
+### How to pick the condition
+
+1. Say the question in plain words: "is the oxygen in the danger zone?"
+2. Turn it into a yes/no test: \`o2 < 20\`.
+3. Check the edge value. What should happen at exactly 20? If it counts as danger, you need \`<=\`, not \`<\`.
+
+### \`if\` needs a real bool
 
 ~~~rust
 if planned_depth > 40 {
@@ -486,7 +553,7 @@ assert(lines.includes("Dive status: GO"), 'Print the line "Dive status: GO".');`
       title: "Loops",
       minutes: 35,
       xp: 120,
-      concepts: ["loop", "while", "for", "ranges", "step_by", "break with a value", "continue", "labels"],
+      concepts: ["loop", "while", "for", "ranges", "step_by", "break with a value", "continue", "labels", "choosing a loop", "range end is excluded"],
       learn: md`### Three loops
 
 Rust has three ways to repeat code.
@@ -521,6 +588,83 @@ loop {
 ~~~
 
 (A loop that never ends is stopped after a few seconds, with a message that your program ran for too long.)
+
+### Which loop, and what is a range?
+
+A loop repeats a block. There are two different reasons to repeat:
+
+| Situation | Loop |
+| --- | --- |
+| I know how many times, or I have a collection to walk through | \`for\` |
+| I wait until something changes (the tank is full) | \`while\` (its condition is the same yes/no question as in an \`if\`, asked again before every lap) |
+| Repeat until I decide inside, or I need a value out | \`loop\` + \`break\` |
+| Must run at least once | Rust has no do-while: use \`loop\` and put the \`break\` test at the end |
+
+A range is just a sequence of whole numbers with a start and an end, and **the end is not included**. The count of numbers is simply end minus start:
+
+~~~rust
+for n in 0..5 { print!("{n} "); }                  // 0 1 2 3 4
+for n in 2..6 { print!("{n} "); }                  // 2 3 4 5
+for n in (0..10).step_by(3) { print!("{n} "); }    // 0 3 6 9
+for n in (0..10).rev().step_by(3) { print!("{n} "); } // 9 6 3 0
+~~~
+
+\`0..5\` gives five numbers, and they are exactly the valid positions of a five-item list (0 to 4), which is why the end is left out. A range never counts backwards by itself: \`5..2\` is empty. Use \`.rev()\` to go down.
+
+When the thing you want is the **items**, not the numbers, loop over the items directly. The same task three ways:
+
+~~~rust
+let levels = vec![12, 18, 25];
+
+for i in 0..levels.len() { println!("{}", levels[i]); }          // by index
+for lvl in &levels { println!("{lvl}"); }                        // the items
+for (i, lvl) in levels.iter().enumerate() { println!("{i}: {lvl}"); } // item + counter
+~~~
+
+The first two print \`12\`, \`18\`, \`25\`. The third prints \`0: 12\`, \`1: 18\`, \`2: 25\`. Prefer the middle one whenever you do not need the position. Use \`enumerate\` when you do. Index loops are the only ones that can run off the end by mistake. (\`&levels\` borrows the list, so you can still use it after the loop.)
+
+### What happens each lap
+
+~~~rust
+let mut tank = 30;
+while tank < 60 {
+    println!("tank {tank}");
+    tank += 10;
+}
+~~~
+
+| Lap | \`tank\` at the start | Test \`tank < 60\` | Output |
+| --- | --- | --- | --- |
+| 1 | 30 | true | \`tank 30\` |
+| 2 | 40 | true | \`tank 40\` |
+| 3 | 50 | true | \`tank 50\` |
+| (stop) | 60 | false | loop ends |
+
+If nothing inside the loop ever changed \`tank\`, the test would stay \`true\` forever: the classic endless loop.
+
+### \`break\`, \`continue\` and loops that use conditions
+
+\`continue\` skips the rest of this lap, \`break\` leaves the loop. Both are normally guarded by an \`if\`:
+
+~~~rust
+for n in 1..=6 {
+    if n == 2 { continue; }
+    if n == 5 { break; }
+    print!("{n} ");
+}
+// prints: 1 3 4
+~~~
+
+The same combination is how you count or filter: loop over everything, let a condition pick what matters.
+
+~~~rust
+let levels = [42, 18, 77, 15, 60];
+let mut low = 0;
+for &lvl in &levels {
+    if lvl < 20 { low += 1; }
+}
+println!("{low} tanks low");   // 2 tanks low
+~~~
 
 ### Ranges
 

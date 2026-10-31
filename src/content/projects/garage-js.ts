@@ -354,7 +354,7 @@ const throttleCurve = (pedal) => {
           title: "Steering wheel",
           minutes: 12,
           xp: 100,
-          concepts: ["if / else if / else", "=== and !==", "&& || !"],
+          concepts: ["if / else if / else", "=== and !==", "&& || !", "conditions are booleans", "truthy / falsy"],
           learn: `### Making decisions
 
 \`if\` runs a block only when its condition is true.
@@ -370,6 +370,74 @@ if (fuel < 10) {
 ~~~
 
 JavaScript checks the branches top to bottom and runs the **first** one that is true.
+
+### Why a condition? What does it give back?
+
+A car has to answer questions all the time: "Is the tank below 20%?", "Is the left key held?" A **condition** is one of those questions, written so the only possible answer is yes or no. JavaScript works the question out and hands back a single value: \`true\` or \`false\`. The \`if\` keyword does nothing clever. It just asks "did I get \`true\`?" and runs its block if so.
+
+You can look at that value yourself:
+
+~~~js
+const fuel = 15;
+console.log(fuel < 20);      // true
+console.log(fuel === 40);    // false
+const lowFuel = fuel < 10;   // store the answer in a variable
+console.log(lowFuel);        // false
+~~~
+
+### Kinds of conditions you can write
+
+Anything that ends up as \`true\` or \`false\` can sit inside the parentheses:
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Comparison | \`fuel <= 20\` | is it smaller, bigger, or at the limit? |
+| Equality | \`gear === "R"\` | is it exactly this value? (text is compared letter by letter, capitals count) |
+| Membership | \`["R", "N", "D"].includes(gear)\` | is it one of these? (also works on text: \`"turbo".includes("rb")\`) |
+| Empty or not | \`parts.length === 0\` | is there nothing in the list or the text? |
+| Truthiness | \`if (driverName)\` | is it a "real" value? (rules below) |
+| A function that answers yes/no | \`Array.isArray(x)\`, \`name.startsWith("T")\`, \`Number.isNaN(x)\` | the function itself returns \`true\` or \`false\` |
+| Range check | \`speed >= 0 && speed <= 120\` | is it between two limits? |
+| Combined | \`a && b\`, \`a || b\`, \`!a\` | both, either, or the opposite |
+
+JavaScript has no \`0 <= speed <= 120\` shortcut: write the two comparisons and join them with \`&&\`.
+
+**Truthiness.** Put a non-boolean in an \`if\` and JavaScript converts it. These count as false: \`false\`, \`0\`, \`""\` (empty text), \`null\`, \`undefined\` and \`NaN\`. Everything else counts as true, including \`"0"\`, \`"false"\`, \`[]\` and \`{}\`. That last pair surprises people: an empty array is still truthy, so test \`parts.length === 0\` instead.
+
+**\`===\` versus \`==\`.** With \`==\`, JavaScript converts types first, so \`0 == ""\` and \`"5" == 5\` are both \`true\`. With \`===\` they are \`false\`. Stick to \`===\`.
+
+### Several conditions: parallel, ordered, or independent
+
+Conditions joined with \`&&\` or \`||\` are decided together, as one yes/no. Separate \`if\` statements are independent, so every true one runs. An \`else if\` chain is ordered: the first true branch runs and the rest are skipped. Same speed, different results:
+
+~~~js
+const speed = 95;
+
+// Separate ifs: each asks its own question
+if (speed > 50) { console.log("fast"); }
+if (speed > 90) { console.log("very fast"); }
+if (speed > 120) { console.log("too fast"); }
+// prints: fast
+//         very fast
+
+// One chain: stops at the first yes (biggest limit goes first)
+if (speed > 120) {
+  console.log("too fast");
+} else if (speed > 90) {
+  console.log("very fast");
+} else if (speed > 50) {
+  console.log("fast");
+}
+// prints: very fast
+~~~
+
+Use a chain when the answers exclude each other (one steering angle, one alarm level). Use separate \`if\`s when several things can be true at once.
+
+### How to pick the condition
+
+1. Say the question in plain words: "Is only the left key held?"
+2. Turn it into a yes/no test: \`left && !right\`.
+3. Check the edge value. If the limit is 20, should exactly 20 count? That decides between \`<\` and \`<=\`. Try the limit itself, one below and one above.
 
 ### Comparisons
 
@@ -437,7 +505,7 @@ function steer(left, right) {
           title: "Checkpoint gates",
           minutes: 10,
           xp: 90,
-          concepts: ["arrays", "for loops", "push()", ".length"],
+          concepts: ["arrays", "for loops", "push()", ".length", "while", "break / continue"],
           learn: `### Arrays hold values in order
 
 ~~~js
@@ -468,6 +536,106 @@ const squares = [];
 for (let n = 1; n <= 3; n++) {
   squares.push(n * n);      // [1, 4, 9]
 }
+~~~
+
+### Which loop, and what about ranges?
+
+A loop repeats a block. There are two reasons to repeat:
+
+| Situation | Use |
+| --- | --- |
+| I know how many laps, or I have a list to go through | \`for\` |
+| I am waiting for something to change | \`while\` |
+| It must run once before the first check | \`do { } while (...)\` |
+
+A \`while\` loop has the same kind of yes/no condition as an \`if\`, but it is asked again before **every** lap. Whatever is inside the loop must eventually change the answer, or the loop never ends.
+
+~~~js
+let fuel = 100;
+let laps = 0;
+while (fuel > 25) {   // asked again every lap
+  fuel -= 30;         // this line is what eventually makes it false
+  laps++;
+}
+console.log(laps, fuel);   // 3 10
+~~~
+
+**JavaScript has no built-in \`range\`.** You count with the three parts of \`for\`, and the stop value is simply where the test fails, so it is never visited:
+
+~~~js
+for (let i = 0; i < 5; i++) {}        // i is 0, 1, 2, 3, 4
+for (let i = 2; i < 6; i++) {}        // i is 2, 3, 4, 5
+for (let i = 0; i < 10; i += 3) {}    // i is 0, 3, 6, 9
+for (let i = 5; i > 0; i--) {}        // i is 5, 4, 3, 2, 1  (a countdown)
+~~~
+
+Starting at 0 and testing \`i < n\` gives exactly \`n\` laps, and the counter matches the array positions \`0\` to \`length - 1\`. If you want the numbers as an array, \`Array.from({ length: 5 }, (_, i) => i)\` gives \`[0, 1, 2, 3, 4]\`.
+
+### Three ways to walk the same array
+
+~~~js
+const gates = [20, 40, 60, 80];
+
+// 1. By index: you get the position and the value
+for (let i = 0; i < gates.length; i++) {
+  console.log(\`Gate \${i + 1}: \${gates[i]}%\`);
+}
+
+// 2. Straight over the items: no counter at all
+for (const pct of gates) {
+  console.log(\`\${pct}%\`);
+}
+
+// 3. Items plus a position, without managing the counter yourself
+for (const [i, pct] of gates.entries()) {
+  console.log(\`Gate \${i + 1}: \${pct}%\`);
+}
+~~~
+
+The first prints \`Gate 1: 20%\` through \`Gate 4: 80%\`, the second prints \`20%\` through \`80%\`, and the third matches the first. Prefer \`for...of\` when you only need the values. Use \`.entries()\` when you also need the position. Keep the index loop for when you need to build the numbers yourself (like the gates here) or step by something other than 1. (\`gates.forEach((pct, i) => { ... })\` also works, but you cannot \`break\` out of it.)
+
+### What happens each lap
+
+~~~js
+let fuel = 100;
+for (let lap = 1; lap <= 3; lap++) {
+  fuel -= 30;
+  console.log(\`Lap \${lap}: \${fuel} left\`);
+}
+~~~
+
+| lap | test \`lap <= 3\` | fuel after | output |
+| --- | --- | --- | --- |
+| 1 | true | 70 | \`Lap 1: 70 left\` |
+| 2 | true | 40 | \`Lap 2: 40 left\` |
+| 3 | true | 10 | \`Lap 3: 10 left\` |
+| 4 | false | | loop ends |
+
+### break, continue and the forever loop
+
+\`break\` leaves the loop at once. \`continue\` skips the rest of this lap and goes to the next one.
+
+~~~js
+for (const pct of gates) {
+  if (pct === 40) continue;   // skip this gate
+  if (pct > 60) break;        // stop entirely
+  console.log(pct);
+}
+// prints 20, then 60
+~~~
+
+The trap: \`while (fuel > 0) { laps++; }\` never changes \`fuel\`, so the condition stays true forever and the page freezes.
+
+### Loops need conditions too
+
+Most real loops hold an \`if\`: the loop visits every item and the condition picks which ones count.
+
+~~~js
+let late = 0;
+for (const pct of gates) {
+  if (pct > 50) late++;
+}
+console.log(late);   // 2 (the 60 and 80 gates)
 ~~~`,
           mission: `A lap needs gates. Rather than typing each one, let a loop place them. The scene reads your \`checkpoints\` array: each number is a percentage of the way around the lap.
 

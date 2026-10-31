@@ -383,6 +383,38 @@ function insideString(line: string, at: number): boolean {
   return quote !== null;
 }
 
+/** Splits a pipe-table row into cells: `|` inside a closed `code` span or written `\|` does not split. */
+function splitRow(line: string): string[] {
+  let t = line.trim();
+  if (t.startsWith("|")) t = t.slice(1);
+  const cells: string[] = [];
+  let cur = "";
+  let ended = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (c === "\\" && t[i + 1] === "|") {
+      cur += "|";
+      i++;
+    } else if (c === "`") {
+      const close = t.indexOf("`", i + 1);
+      if (close < 0) cur += c;
+      else {
+        cur += t.slice(i, close + 1).replaceAll("\\|", "|");
+        i = close;
+      }
+    } else if (c === "|") {
+      cells.push(cur.trim());
+      cur = "";
+      ended = i === t.length - 1;
+    } else cur += c;
+  }
+  if (!ended || cur.trim() !== "") cells.push(cur.trim());
+  return cells;
+}
+
+const TABLE_SEP_RE = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/;
+const isTableStart = (lines: string[], i: number) => lines[i].includes("|") && i + 1 < lines.length && TABLE_SEP_RE.test(lines[i + 1]) && lines[i + 1].includes("-");
+
 export function Prose({ source, className = "", language = "python" }: { source: string; className?: string; language?: CodeLanguage }) {
   const blocks: React.ReactNode[] = [];
   const lines = source.trim().split("\n");
@@ -403,6 +435,42 @@ export function Prose({ source, className = "", language = "python" }: { source:
         <pre key={key++}>
           {lang === "text" ? <code>{body.join("\n")}</code> : <CodeBlock code={body.join("\n")} language={lang} />}
         </pre>,
+      );
+      continue;
+    }
+
+    if (isTableStart(lines, i)) {
+      const head = splitRow(line);
+      const align = splitRow(lines[i + 1]).map((c) => (c.startsWith(":") && c.endsWith(":") ? "center" : c.endsWith(":") ? "right" : undefined));
+      const rows: string[][] = [];
+      i += 2;
+      while (i < lines.length && lines[i].trim() !== "" && lines[i].includes("|")) rows.push(splitRow(lines[i++]));
+      const k = key++;
+      blocks.push(
+        <div key={k} className="prose-table-wrap" tabIndex={0} role="region" aria-label="Table">
+          <table>
+            <thead>
+              <tr>
+                {head.map((h, c) => (
+                  <th key={c} scope="col" style={{ textAlign: align[c] }}>
+                    {inline(h, `th${k}-${c}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, ri) => (
+                <tr key={ri}>
+                  {head.map((_, c) => (
+                    <td key={c} style={{ textAlign: align[c] }}>
+                      {inline(r[c] ?? "", `td${k}-${ri}-${c}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
       );
       continue;
     }
@@ -450,7 +518,8 @@ export function Prose({ source, className = "", language = "python" }: { source:
       lines[i].trim() !== "" &&
       !/^(~~~|```|### )/.test(lines[i]) &&
       !/^\s*[-*] /.test(lines[i]) &&
-      !/^\s*\d+[.)] /.test(lines[i])
+      !/^\s*\d+[.)] /.test(lines[i]) &&
+      !isTableStart(lines, i)
     ) {
       para.push(lines[i++]);
     }

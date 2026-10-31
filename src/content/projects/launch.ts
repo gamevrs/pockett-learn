@@ -218,7 +218,74 @@ while loaded < 30:
     loaded += 10             # same as loaded = loaded + 10
 ~~~
 
-Careful: if the condition never becomes false, the loop never ends.`,
+Careful: if the condition never becomes false, the loop never ends.
+
+### Which loop, and what is range?
+
+A loop repeats a block, and there are two reasons to do that. **\`for\`** means "once for every item, or a set number of times". **\`while\`** means "keep going until something changes": its condition is the same yes/no question an \`if\` asks (a single \`True\` or \`False\`), re-asked before every lap. Whoever writes the loop must make sure the body changes what that question looks at.
+
+| Situation | Use |
+| --- | --- |
+| I have a list, or I know how many laps | \`for\` |
+| I am waiting for a state to change | \`while\` |
+
+\`range\` produces numbers, and the **stop value is never included**. \`range(n)\` gives exactly \`n\` numbers starting at 0, which is why they match list positions.
+
+~~~python
+print(list(range(5)))          # [0, 1, 2, 3, 4]
+print(list(range(2, 6)))       # [2, 3, 4, 5]
+print(list(range(0, 10, 3)))   # [0, 3, 6, 9]
+print(list(range(5, 0, -1)))   # [5, 4, 3, 2, 1]
+~~~
+
+The same job three ways, over the engine list:
+
+~~~python
+engines = ["left", "middle", "right"]
+
+for i in range(len(engines)):         # by position
+    print(i, engines[i])
+for engine in engines:                # the items directly
+    print(engine)
+for i, engine in enumerate(engines):  # items plus a counter
+    print(i, engine)
+~~~
+
+The first prints \`0 left\`, \`1 middle\`, \`2 right\`; the second prints \`left\`, \`middle\`, \`right\`; the third prints the same as the first. Prefer the items directly. Use \`enumerate\` when you also need the position, and \`range\` when the numbers themselves matter, like a countdown.
+
+What happens each lap of \`for n in range(3, 0, -1): print(n)\`:
+
+| Lap | n | Another number left? | Output |
+| --- | --- | --- | --- |
+| 1 | 3 | yes | 3 |
+| 2 | 2 | yes | 2 |
+| 3 | 1 | yes | 1 |
+| end | | no, so the loop stops | |
+
+For a \`while\`, the loaded fuel is what changes:
+
+~~~python
+loaded = 0
+batches = 0
+while loaded < 25:       # asked again every lap
+    loaded += 10
+    batches += 1
+print(batches, loaded)   # 3 30
+~~~
+
+\`break\` leaves the loop immediately; \`continue\` jumps to the next lap. A loop can also hold an \`if\`, which is how you filter or count:
+
+~~~python
+readings = [4, 9, 0, 7, 12]
+good = 0
+for r in readings:
+    if r == 0:
+        continue          # skip a dead sensor
+    if r > 10:
+        break             # too high: stop checking
+    good += 1
+print(good)               # 3 (4, 9 and 7)
+~~~`,
           mission: `Rockets do not just go. They count: 10, 9, 8... and the engines only light at zero.
 
 Let a loop build the \`countdown\` list and print every number on its own line, then print LIFTOFF!. The scene reads your list and ticks through it on the console clock.
@@ -452,6 +519,22 @@ assert throttle_program(60) == 1.0, "throttle_program(60) must stay at 1.0: cap 
 
 \`if\` runs code only when a condition is true.
 
+### Why a condition? What does it give back?
+
+A flight computer must answer questions: *is the tank below 20%? are we too fast this low?* A **condition** is such a question, written so the only answers are yes or no. Python evaluates it to one value, \`True\` or \`False\`, and \`if\` just asks: "did I get True?"
+
+~~~python
+fuel = 15
+print(fuel < 20)       # True
+print(fuel == 100)     # False
+low = fuel < 20        # keep the answer in a variable
+print(type(low))       # <class 'bool'>
+if low:
+    print("Tank low")
+~~~
+
+\`==\` asks "equal?", while a single \`=\` stores a value. Print a condition whenever you want to see what it answers.
+
 ~~~python
 if fuel < 10:
     print("Low fuel!")
@@ -471,6 +554,52 @@ Comparisons: \`==\` equal, \`!=\` not equal, \`<\` \`>\` \`<=\` \`>=\`. Combine 
 if altitude < 25 and speed > 900:
     ...            # BOTH must be true
 ~~~
+
+### Kinds of conditions you can write
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Comparison | \`fuel_pct < 2\` | Is this number smaller, larger, at most, at least? |
+| Equal / not equal | \`stage == 2\`, \`status != "hold"\` | Same value? Works on text too. |
+| Between two limits | \`25 <= altitude_km < 70\` | Is it inside a band? (one chained check) |
+| Membership | \`"abort" in log\`, \`"x" not in code\` | Is it inside this list or string? |
+| Text tests | \`code.isdigit()\`, \`cmd.startswith("go")\` | A function that answers yes or no. |
+| Identity | \`pilot is None\` | Is it the very same object? Use it for \`None\`. |
+| Truthiness | \`if alarms:\` | Is the list non-empty? |
+| Combined | \`a and b\`, \`a or b\`, \`not a\` | Several questions, joined together. |
+
+**Truthiness.** These count as false: \`False\`, \`None\`, \`0\`, \`0.0\`, \`""\`, \`[]\`, \`{}\`. Nearly everything else counts as true, so \`if alarms:\` means "if the list has something in it".
+
+**\`==\` versus \`is\`.** \`==\` asks "equal values?"; \`is\` asks "the same object?". Use \`==\` for numbers and text, and \`is\` mainly for \`None\`.
+
+Conditions can work **together** (\`and\` needs both, \`or\` needs either), be tried **in order** (an \`if\` / \`elif\` / \`else\` chain runs only the first true branch), or be **independent** (separate \`if\`s are each checked). Compare them with \`fuel_pct = 1\` and \`altitude_km = 40\`:
+
+~~~python
+# separate ifs: both are true, both run
+if fuel_pct < 2:
+    print("Fuel critical")
+if altitude_km < 70:
+    print("Still low")
+# prints:
+# Fuel critical
+# Still low
+
+# one chain: first true branch wins
+if fuel_pct < 2:
+    print("Fuel critical")
+elif altitude_km < 70:
+    print("Still low")
+# prints:
+# Fuel critical
+~~~
+
+Python also has \`match\` for many fixed choices, but \`elif\` chains cover this course.
+
+### How to pick the condition
+
+1. Say the question in plain words: "Is it too fast in thick air?"
+2. Turn it into a yes/no test: \`altitude_km < 25 and speed > 1200\`.
+3. Check the edge value. If the limit is 25, does exactly 25 count? \`< 25\` says no, \`<= 25\` says yes.
 
 ### Returning True or False
 

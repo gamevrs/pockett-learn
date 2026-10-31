@@ -473,3 +473,47 @@
   font-size: 0.8rem;
   line-height: 1.6;
 }
+
+/* Tables (pipe-table output): scrolls sideways on narrow screens */
+.prose-lesson .prose-table-wrap {
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  scrollbar-width: thin;
+}
+.prose-lesson .prose-table-wrap:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.prose-lesson table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+.prose-lesson th,
+.prose-lesson td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  min-width: 7.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.prose-lesson td code {
+  white-space: nowrap; /* keep code tokens whole; a wide table scrolls sideways */
+}
+.prose-lesson td + td,
+.prose-lesson th + th {
+  border-left: 1px solid var(--line);
+}
+.prose-lesson th {
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom: 1px solid var(--line-strong);
+}
+.prose-lesson tbody tr:last-child td {
+  border-bottom: 0;
+}
