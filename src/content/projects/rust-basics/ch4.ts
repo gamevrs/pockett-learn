@@ -14,7 +14,7 @@ export const chapter4: Chapter = {
   title: "Types that model",
   blurb: "Describe the station with your own types, make \"might be missing\" and \"might fail\" part of the type system, and finish with a report.",
   lessons: [
-    // ───────────────────────── 12 ─────────────────────────
+    // ───────────────────────── 13 ─────────────────────────
     {
       id: "rust-basics-12-structs",
       title: "Structs and methods",
@@ -75,7 +75,7 @@ println!("{}", manta.needs_charge());
 - **Associated functions** (no \`self\`) are called with \`Type::name(...)\`. \`new\` is the usual name for a **constructor**, a function that builds a fresh value of the type. It is just a normal function with that name, not special syntax.
 - **\`&self\`** borrows read-only, **\`&mut self\`** borrows exclusively (the variable must be \`mut\`), and plain **\`self\`** takes ownership and uses the value up. These are exactly the three kinds of access from the last two lessons.
 - Inside an \`impl\`, \`Self\` is a nickname for the type, so \`-> Self\` and \`-> Drone\` mean the same.
-- You may write several \`impl\` blocks for one type. Lesson 13 adds a second one.
+- You may write several \`impl\` blocks for one type. Lesson 14 adds a second one.
 - Calling a method needs no \`&\` or \`*\`: \`manta.dive(30)\` borrows \`manta\` for you.
 
 In the mission, a dive costs battery: half the metres, taken away with \`saturating_sub\`. That is the subtraction twin of \`saturating_add\` from lesson 2: it stops at 0 instead of going below it, which a \`u32\` cannot do.
@@ -110,7 +110,7 @@ Scroll to the top of your file. The provided code makes a \`Json\` object like t
 Json::new().with("name", &self.name).with("battery", self.battery_pct)
 ~~~
 
-\`Json::new()\` is an associated function. \`with\` takes \`mut self\` (it owns the object), adds one key and **returns self**, so you can chain the next call. It is just a method that takes ownership and gives it back, like \`stamp\` in lesson 9. You will use it now in a \`card\` method that describes a drone to the station.
+\`Json::new()\` is an associated function. \`with\` takes \`mut self\` (it owns the object), adds one key and **returns self**, so you can chain the next call. It is just a method that takes ownership and gives it back, like \`stamp\` in lesson 10. You will use it now in a \`card\` method that describes a drone to the station.
 
 ### Common mistakes
 
@@ -131,7 +131,7 @@ You will define the \`Drone\` struct with a constructor, three methods and a \`c
         "Send scene(\"fleet\", vec![manta.card(), pip.card(), spare.card()]);",
       ],
       starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
-// Lesson 12: the drone bay. Define the Drone type in this part of the file (above main):
+// Lesson 13: the drone bay. Define the Drone type in this part of the file (above main):
 // #[derive(Debug, Clone)]
 // struct Drone { name: String, battery_pct: u32, depth_m: i32, active: bool }
 // impl Drone {
@@ -193,7 +193,7 @@ impl Drone {
     }
 }
 ${MAIN_DIVIDER}
-// Lesson 12: the drone bay.
+// Lesson 13: the drone bay.
 let mut manta = Drone::new("Manta");
 manta.dive(30);
 let mut pip = Drone::new("Pip");
@@ -273,7 +273,7 @@ assertEqual(scene.fleet.map((d) => d.needsCharge), [false, true, false], "fleet 
       ],
     },
 
-    // ───────────────────────── 13 ─────────────────────────
+    // ───────────────────────── 14 ─────────────────────────
     {
       id: "rust-basics-13-enums",
       title: "Enums and exhaustive match",
@@ -329,7 +329,7 @@ In a language without this, the new case silently falls through some \`default:\
 
 ### Pointers in the arms
 
-Because \`describe\` receives a pointer to the command (\`&Command\`), the names inside the arms are pointers to the data too: \`metres\` points at the number. Printing needs no star, but to use the number itself you write \`*metres\`, as in lesson 8.
+Because \`describe\` receives a pointer to the command (\`&Command\`), the names inside the arms are pointers to the data too: \`metres\` points at the number. Printing needs no star, but to use the number itself you write \`*metres\`, as in lesson 9.
 
 ### Methods on enums
 
@@ -366,7 +366,7 @@ enum Health { Good, Low, Critical }
 if drone.health() == Health::Critical { /* ... */ }
 ~~~
 
-\`==\` on your own types requires \`#[derive(PartialEq)]\` (the same kind of ability as \`Debug\` in lesson 12). Without it: error[E0369]: binary operation \`==\` cannot be applied to type \`Health\`. And \`{:?}\` on a variant without data prints its name: \`Critical\`.
+\`==\` on your own types requires \`#[derive(PartialEq)]\` (the same kind of ability as \`Debug\` in lesson 13). Without it: error[E0369]: binary operation \`==\` cannot be applied to type \`Health\`. And \`{:?}\` on a variant without data prints its name: \`Critical\`.
 
 ### Common mistakes
 
@@ -387,7 +387,7 @@ You will model commands as an enum, teach a drone to run them, and classify a dr
         "Send commands (&sent), reports (&reports), pipHealth (the Debug text, as a String) and mantaBattery",
       ],
       starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
-// Lesson 13: mission orders. Define these in this part of the file (above main):
+// Lesson 14: mission orders. Define these in this part of the file (above main):
 // #[derive(Debug)]  enum Command { Dive(i32), Surface, Charge { minutes: u32 }, Scan(String) }
 // #[derive(Debug, PartialEq)]  enum Health { Good, Low, Critical }
 // impl Drone {
@@ -447,7 +447,7 @@ impl Drone {
     }
 }
 ${MAIN_DIVIDER}
-// Lesson 13: mission orders.
+// Lesson 14: mission orders.
 let plan = vec![
     Command::Dive(40),
     Command::Scan(String::from("deep-ledge")),
@@ -549,7 +549,7 @@ assert(lines.includes("Pip must return to charge"), 'When pip.health() == Health
       ],
     },
 
-    // ───────────────────────── 14 ─────────────────────────
+    // ───────────────────────── 15 ─────────────────────────
     {
       id: "rust-basics-14-option",
       title: "Option: no null",
@@ -558,7 +558,7 @@ assert(lines.includes("Pip must return to charge"), 'When pip.health() == Health
       concepts: ["Option<T>", "Some", "None", "if let", "unwrap_or", "unwrap and expect", "Option<&T>", "? on Option"],
       learn: md`### Sometimes the honest answer is "nothing"
 
-Ask the dive log for dive number 8 when only five dives exist. What should the answer be? Zero? That looks like a real depth. Minus one? That looks like a real number too. A crash? That is harsh for a simple question. In lesson 8, \`get(7)\` gave the honest answer: \`None\`, "there is nothing there", while \`get(1)\` gave \`Some(25)\`, "here it is".
+Ask the dive log for dive number 8 when only five dives exist. What should the answer be? Zero? That looks like a real depth. Minus one? That looks like a real number too. A crash? That is harsh for a simple question. In lesson 9, \`get(7)\` gave the honest answer: \`None\`, "there is nothing there", while \`get(1)\` gave \`Some(25)\`, "here it is".
 
 \`Some\` and \`None\` are the two shapes of **\`Option\`**: a box that either holds a value or is empty. It is an ordinary enum from the standard library, available everywhere without an import:
 
@@ -662,7 +662,7 @@ let sample = match find_sample(catalogue, id) {
 };
 ~~~
 
-For an id that does not exist, \`weight_of\` returns \`None\` straight away. For a sample that exists but has not been weighed, \`find_sample\` succeeds and the function ends with the sample's own \`None\`. Lesson 15 uses the same operator for errors.
+For an id that does not exist, \`weight_of\` returns \`None\` straight away. For a sample that exists but has not been weighed, \`find_sample\` succeeds and the function ends with the sample's own \`None\`. Lesson 16 uses the same operator for errors.
 
 ### Common mistakes
 
@@ -674,7 +674,7 @@ For an id that does not exist, \`weight_of\` returns \`None\` straight away. For
 ### Going further (optional)
 
 - **Other helpers.** \`is_some()\` and \`is_none()\` ask yes or no. \`unwrap()\` and \`expect("message")\` give you the value and **panic** if the box is empty: *called \`Option::unwrap()\` on a \`None\` value*. They are fine in quick experiments and for cases that truly cannot fail, but when a user's data is involved, prefer \`match\`, \`if let\` or \`unwrap_or\`.
-- **\`map\` and closures.** \`weight.map(|w| w * 2)\` changes the value inside only when there is one: \`Some(420)\` becomes \`Some(840)\` and \`None\` stays \`None\`. The \`|w| w * 2\` part is a **closure**: a tiny function without a name, written on the spot and handed to another function. The name between the bars is its input, and what follows is its answer. Lesson 16 uses closures a lot.
+- **\`map\` and closures.** \`weight.map(|w| w * 2)\` changes the value inside only when there is one: \`Some(420)\` becomes \`Some(840)\` and \`None\` stays \`None\`. The \`|w| w * 2\` part is a **closure**: a tiny function without a name, written on the spot and handed to another function. The name between the bars is its input, and what follows is its answer. Lesson 17 uses closures a lot.
 - **Where the idea comes from.** Many languages have a value like \`null\` or \`undefined\` that any variable might secretly hold, and using it crashes the program. Its inventor later called it his billion-dollar mistake. Rust has no such value: "might be missing" is part of the type.
 - **Options and ownership.** \`Option<T>\` is \`Copy\` when \`T\` is, so an \`Option<u32>\` field can be read out of a borrowed struct freely (\`self.weight_g\`). An \`Option<String>\` is not \`Copy\` and moves like any String; to look without taking it use \`.as_ref()\` or match on a reference.`,
       mission: md`The station keeps a catalogue of samples collected on the reef. A catalogue is only useful if you can look things up, and a lookup honestly might find nothing. Some samples have also not been weighed yet, so the weight itself is optional.
@@ -689,7 +689,7 @@ You will define the \`Sample\` type, write lookups that return \`Option\`, and t
         "Loop over &catalogue adding up the known weights into total_weight_g and counting the None ones in unweighed. Print Catalogue weighs 570 g, 1 sample not weighed yet. Send catalogue (a Vec of cards), weight101, weight102, totalWeightG and unweighed",
       ],
       starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
-// Lesson 14: the sample catalogue. Define these in this part of the file (above main):
+// Lesson 15: the sample catalogue. Define these in this part of the file (above main):
 // #[derive(Debug, Clone)]  struct Sample { id: u32, name: String, depth_m: i32, weight_g: Option<u32> }
 // impl Sample { fn new(id: u32, name: &str, depth_m: i32, weight_g: Option<u32>) -> Sample
 //               fn card(&self) -> Json    keys: id, name, depthM, weightG }
@@ -746,7 +746,7 @@ fn weight_of(catalogue: &[Sample], id: u32) -> Option<u32> {
     sample.weight_g
 }
 ${MAIN_DIVIDER}
-// Lesson 14: the sample catalogue.
+// Lesson 15: the sample catalogue.
 let catalogue = vec![
     Sample::new(101, "brain coral", 18, Some(420)),
     Sample::new(102, "sea fan", 25, None),
@@ -866,7 +866,7 @@ assert(scene.catalogue[1].weightG === null, "the sea fan has no weight, so its w
       ],
     },
 
-    // ───────────────────────── 15 ─────────────────────────
+    // ───────────────────────── 16 ─────────────────────────
     {
       id: "rust-basics-15-result",
       title: "Result and the ? operator",
@@ -1014,7 +1014,7 @@ You will parse each line with small functions that return \`Result\`, chain them
         "Print Intake: 2 accepted, 3 rejected and send intake (a Vec of cards), problems (&problems) and acceptedCount",
       ],
       starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
-// Lesson 15: the intake desk. Define these in this part of the file (above main):
+// Lesson 16: the intake desk. Define these in this part of the file (above main):
 // #[derive(Debug)]  enum IntakeError { WrongFieldCount(usize), BadNumber(String), NegativeDepth(i32) }
 // impl IntakeError { fn describe(&self) -> String }    "expected 4 fields, found 2" / "\"deep\" is not a valid number" / "depth -5 is negative"
 // fn parse_unsigned(text: &str) -> Result<u32, IntakeError>
@@ -1071,7 +1071,7 @@ fn parse_sample(line: &str) -> Result<Sample, IntakeError> {
     Ok(Sample::new(id, parts[1].trim(), depth, Some(weight)))
 }
 ${MAIN_DIVIDER}
-// Lesson 15: the intake desk.
+// Lesson 16: the intake desk.
 let intake_lines = [
     "104,kelp,12,90",
     "105,urchin,deep,40",
@@ -1192,7 +1192,7 @@ assertEqual(scene.intake.map((s) => s.weightG), [90, 65], "intake weightG");`,
       ],
     },
 
-    // ───────────────────────── 16 ─────────────────────────
+    // ───────────────────────── 17 ─────────────────────────
     {
       id: "rust-basics-16-report",
       title: "HashMap, iterators and the station report",
@@ -1221,7 +1221,7 @@ Some(1)
 None
 ~~~
 
-\`HashMap<String, u32>\` means "keys are texts, values are numbers". \`get\` returns the same kind of box as in lesson 8: \`Some(value)\` when the key exists, \`None\` when it does not. Forget the \`use\` line and you get error[E0433]: failed to resolve: use of undeclared type \`HashMap\`, with the fix printed under it.
+\`HashMap<String, u32>\` means "keys are texts, values are numbers". \`get\` returns the same kind of box as in lesson 9: \`Some(value)\` when the key exists, \`None\` when it does not. Forget the \`use\` line and you get error[E0433]: failed to resolve: use of undeclared type \`HashMap\`, with the fix printed under it.
 
 ### Counting: the \`entry\` method
 
@@ -1242,7 +1242,7 @@ Some(2) Some(1)
 
 - \`entry(key)\` finds the slot for that key.
 - \`.or_insert(0)\` puts a 0 in the slot if it was empty, and gives you a **pointer to the number in the map**, which \`count\` holds.
-- \`*count += 1\` follows the pointer (the star, as in lesson 8) and adds one to the number itself.
+- \`*count += 1\` follows the pointer (the star, as in lesson 9) and adds one to the number itself.
 
 Lap by lap: \`deep\` is new, so it starts at 0 and becomes 1; \`shallow\` becomes 1; \`deep\` is found with 1 and becomes 2.
 
@@ -1252,7 +1252,7 @@ Lap by lap: \`deep\` is new, so it starts at 0 and becomes 1; \`shallow\` become
 
 You have written loops that look at every item and update some variables. An **iterator pipeline** says the same thing as a chain of steps. \`.iter()\` starts it, the middle steps (called **adaptors**) change or filter what flows through, and the last step (a **consumer**) collects the result. The middle steps are **lazy**: they do nothing until the last step asks for results.
 
-Many steps take a small piece of code written on the spot. That is called a **closure**: a tiny function without a name that you hand to another function. You saw one in lesson 14 (\`|w| w * 2\`). The part between the two bars is the input, and what follows is the answer. \`|s| s.depth_m >= 30\` reads: "given a sample \`s\`, answer yes when its depth is 30 or more".
+Many steps take a small piece of code written on the spot. That is called a **closure**: a tiny function without a name that you hand to another function. You saw one in lesson 15 (\`|w| w * 2\`). The part between the two bars is the input, and what follows is the answer. \`|s| s.depth_m >= 30\` reads: "given a sample \`s\`, answer yes when its depth is 30 or more".
 
 Here are three pipelines over the five samples of the report (depths 18, 25, 31, 12 and 22 metres):
 
@@ -1263,7 +1263,7 @@ let names: Vec<String> = all_samples.iter().map(|s| s.name.clone()).collect();
 ~~~
 
 - \`filter(...)\` keeps only the samples for which the closure says yes. Only the sponge at 31 m does, and \`count()\` counts it: \`deep_count\` is 1.
-- \`map(...)\` changes every item into something else: here each sample into a copy of its name (\`clone\` from lesson 9). \`collect()\` gathers the results into a \`Vec\`. \`names.join(", ")\` then glues a list of texts into one text with that separator between them.
+- \`map(...)\` changes every item into something else: here each sample into a copy of its name (\`clone\` from lesson 10). \`collect()\` gathers the results into a \`Vec\`. \`names.join(", ")\` then glues a list of texts into one text with that separator between them.
 - \`filter_map(...)\` is \`map\` plus a filter: the closure answers with a box, and items whose box is empty are dropped. Here \`s.weight_g\` is a weight in a box, so unweighed samples are skipped and \`sum()\` adds the rest.
 - \`sum()\` and \`collect()\` must know what to build, so the variable gets a type (\`let weighed_g: u32 = ...\`). Without it: error[E0283]: type annotations needed.
 
@@ -1295,7 +1295,7 @@ fn zone_for(depth_m: i32) -> &'static str {
 
 ### Moving two lists into one
 
-The mission starts with two lists, \`catalogue\` and \`intake\`. \`let mut all_samples = catalogue;\` hands the catalogue over under a new name (a move, lesson 9), and \`all_samples.extend(intake);\` pours every sample of \`intake\` into it. After those lines the old names are empty-handed, and the compiler would tell you so (E0382). That is the plan: you are finished with them. Likewise \`let fleet = vec![manta, pip, spare];\` moves the three drones into one list. The pipelines afterwards only borrow \`all_samples\`.
+The mission starts with two lists, \`catalogue\` and \`intake\`. \`let mut all_samples = catalogue;\` hands the catalogue over under a new name (a move, lesson 10), and \`all_samples.extend(intake);\` pours every sample of \`intake\` into it. After those lines the old names are empty-handed, and the compiler would tell you so (E0382). That is the plan: you are finished with them. Likewise \`let fleet = vec![manta, pip, spare];\` moves the three drones into one list. The pipelines afterwards only borrow \`all_samples\`.
 
 ### Common mistakes
 
@@ -1321,13 +1321,13 @@ You will merge the catalogue and the intake into one list, use iterator pipeline
       tasks: [
         "Above the divider add use std::collections::HashMap; and fn zone_for(depth_m: i32) -> &'static str (below 20 shallow, below 30 mid-water, otherwise deep)",
         "Merge the lists: let mut all_samples = catalogue; all_samples.extend(intake); Then weighed_g: u32 with iter().filter_map(|s| s.weight_g).sum(), deep_count with filter(|s| s.depth_m >= 30).count(), and names: Vec<String> with map(|s| s.name.clone()).collect()",
-        "Find deepest_dive with *dive_log.iter().max().unwrap_or(&0) and mean_depth by reusing your average_depth function from lesson 10",
+        "Find deepest_dive with *dive_log.iter().max().unwrap_or(&0) and mean_depth by reusing your average_depth function from lesson 11",
         "Count samples per zone in a HashMap<String, u32> using entry(...).or_insert(0) and *count += 1",
         "Move the drones into let fleet = vec![manta, pip, spare]; and collect the names of those that need_charge() into needs_charge: Vec<String> with filter and map",
         "Print the eight report lines (see the starter) and send fleet (cards), zoneCounts (&zone_counts), needsCharge (&needs_charge) and report: a Json with dives, deepest, meanDepth, samples, weighedG, deepSamples and needsCharge",
       ],
       starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
-// Lesson 16: the station report. Add these in this part of the file (above main):
+// Lesson 17: the station report. Add these in this part of the file (above main):
 // use std::collections::HashMap;
 // fn zone_for(depth_m: i32) -> &'static str          < 20 "shallow", < 30 "mid-water", otherwise "deep"
 ${MAIN_DIVIDER}
@@ -1362,7 +1362,7 @@ fn zone_for(depth_m: i32) -> &'static str {
     }
 }
 ${MAIN_DIVIDER}
-// Lesson 16: the station report.
+// Lesson 17: the station report.
 let mut all_samples = catalogue;
 all_samples.extend(intake);
 
@@ -1453,7 +1453,7 @@ for (const line of ["Zones:", "  shallow: 2", "  mid-water: 2", "  deep: 1"]) {
 assertEqual(scene.needsCharge, ["Pip"], "needsCharge (only Pip is below 20% battery)");
 assert(lines.includes("Drones needing charge: Pip"), 'Print the line "Drones needing charge: Pip" using needs_charge.join(", ").');
 assert(Array.isArray(scene.fleet) && scene.fleet.length === 3, 'Send the three drone cards again from the fleet Vec: scene("fleet", fleet_cards);');
-assertEqual(scene.fleet.map((d) => d.battery), [95, 15, 85], "fleet battery after the missions of lesson 13");`,
+assertEqual(scene.fleet.map((d) => d.battery), [95, 15, 85], "fleet battery after the missions of lesson 14");`,
         },
         {
           id: "t5",

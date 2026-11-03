@@ -188,7 +188,7 @@ wrapper.hits = 0           # set the label once, after def
         kind: "explain",
         title: "Who talks to whom?",
         body: P(
-          "A cache sits between your code and a slower store, usually a database. The first design question is **who is responsible for the cache**: your application code, or the cache itself.",
+          "Picture your fridge (the cache) and the supermarket (the database). Someone has to decide who restocks the fridge: you, or a helpful housemate? A cache sits between your code and a slower store, usually a database, and the first design question is **who is responsible for the cache**: your application code, or the cache itself.",
           "The most common answer is **cache-aside** (also called lazy loading). The application checks the cache first. On a miss it reads the database, **stores the result in the cache itself**, and returns it. On a write it updates the database and **deletes** the cached entry, so the next read refills it with fresh data.",
           py(`
 def get_price(event_id):
@@ -219,7 +219,7 @@ def set_price(event_id, price):
         title: "Read-through: the cache fetches for you",
         body: P(
           "In **read-through**, the app only ever talks to the cache. If the value is missing, the *cache* knows how to load it from the database, so loading logic lives in one place instead of being copied around the codebase.",
-          "That tidiness has a catch. Reads go through the cache, but **writes go to the database** (the app can't ask the cache to do it), so nothing tells the cache its copy is old. It keeps serving the old value until its time to live ends.",
+          "That tidiness has a catch. Reads go through the cache, but **writes go to the database** (the app can't ask the cache to do it), so nothing tells the cache its copy is old. It keeps serving the old value until its **time to live** (the number of seconds an entry may stay before it is thrown away) ends.",
           "Pick read-through below and try to catch it serving an old price.",
         ),
         widget: { type: "cache-patterns", props: { patterns: ["through"], initial: "through" } },
@@ -246,7 +246,7 @@ def set_price(event_id, price):
         kind: "explain",
         title: "Write-behind: answer first, save later",
         body: P(
-          "**Write-behind** (also called write-back) goes one step further: the write is acknowledged as soon as the **cache** has it, and the database is updated later in batches. Writes become very fast, and many updates to the same key can be merged into one database write.",
+          "**Write-behind** (also called write-back) goes one step further: the write is **acknowledged** (the caller is told 'done') as soon as the **cache** has it, and the database is updated later in **batches** (many changes sent together in one go). Writes become very fast, and many updates to the same key can be merged into one database write.",
           "The danger is in the gap. Until the flush, the only copy of your newest data lives in the cache's **memory**. If that node crashes, those writes are gone, and nobody was told.",
           "Make a write, then press **Crash the cache** before flushing.",
         ),
@@ -280,10 +280,10 @@ def set_price(event_id, price):
         kind: "explain",
         title: "What each pattern promises",
         body: P(
-          "Here is the comparison to keep. “Own write” means a reader who asks right after a write.",
+          "Here is the comparison to keep. “Own write” means a reader who asks right after a write. A **node** is one machine in the cache, and to **flush** is to copy waiting changes from the cache to the database.",
           txt(`
 pattern        own write seen   database freshness     main risk
-cache-aside    yes (miss, refill) always current       race: stale refill (lesson 5)
+cache-aside    yes (miss, refill) always current       race: stale refill (see "Why invalidation is hard")
 read-through   NO, until expiry  always current        stale reads after writes
 write-through  yes              always current        slower writes
 write-behind   yes              lags behind cache     acknowledged writes can be lost
@@ -557,7 +557,7 @@ seats left (at purchase)          0: don't cache    a wrong number oversells
         body: "Under **LRU** with room for 3, request **A, B, C, A, D** in that order. Make the cache throw out **B**.",
         widget: { type: "cache-evict", props: { capacity: 3, keys: ["A", "B", "C", "D", "E"], policies: ["lru"], initial: "lru" } },
         question: { type: "widget", goal: { policy: "lru", lastEvicted: "B" }, prompt: "Request A, B, C, A, D." },
-        explanation: "Asking for **A** a second time made it the *most* recently used, so when D arrived the oldest-untouched entry was B. LRU bets that **what you used recently, you'll use again soon**: the same locality idea behind CPU caches.",
+        explanation: "Asking for **A** a second time made it the *most* recently used, so when D arrived the oldest-untouched entry was B. LRU bets that **what you used recently, you'll use again soon**: the same 'locality' idea (things used lately tend to be used again) behind the caches inside CPUs. Trace, oldest to newest: A, B, C; then A is used again, so it moves to the newest end: B, C, A; then D arrives and the oldest, B, leaves.",
       },
       {
         kind: "question",
@@ -565,7 +565,7 @@ seats left (at purchase)          0: don't cache    a wrong number oversells
         body: "Now the same requests (A, B, C, A, D), but with **FIFO**. Which entry is evicted when D arrives?",
         widget: { type: "cache-evict", props: { capacity: 3, keys: ["A", "B", "C", "D", "E"], policies: ["lru", "fifo"], initial: "fifo" }, after: true },
         question: { type: "choice", options: ["A", "B", "C"], answer: 0 },
-        explanation: "FIFO only looks at **arrival order**: A came in first, so A leaves, even though it was used a moment ago. That's FIFO's weakness. It's trivially cheap to run, which is its only real appeal.",
+        explanation: "FIFO only looks at **arrival order**: A came in first, so A leaves, even though it was used a moment ago. The queue of arrivals is A, B, C; D joins the back and the front one (A) is dropped, leaving B, C, D. That's FIFO's weakness. It's trivially cheap to run, which is its only real appeal.",
       },
       {
         kind: "explain",
@@ -614,7 +614,7 @@ seats left (at purchase)          0: don't cache    a wrong number oversells
         title: "In real systems",
         body: P(
           "Two practical details. First, caches are limited by **bytes**, not by a count of entries, so a single 5 MB value can force out thousands of small ones. Measure size, and consider refusing to cache huge values.",
-          "Second, exact LRU needs a linked list updated on **every** read, which is costly at high speed. Production caches such as Redis therefore use **approximate** LRU/LFU: sample a handful of keys and evict the worst of the sample. It is nearly as good for a fraction of the work. Eviction policy is a setting (for example `allkeys-lru` or `allkeys-lfu`), so you choose it by looking at your traffic, not by guessing.",
+          "Second, exact LRU needs a **linked list** (items chained one to the next, so one can be moved to the front cheaply) updated on **every** read, which is costly at high speed. Production caches such as Redis therefore use **approximate** LRU/LFU: sample a handful of keys and evict the worst of the sample. It is nearly as good for a fraction of the work. Eviction policy is a setting (for example `allkeys-lru` or `allkeys-lfu`), so you choose it by looking at your traffic, not by guessing.",
         ),
       },
       {

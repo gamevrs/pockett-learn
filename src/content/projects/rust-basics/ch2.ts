@@ -45,7 +45,7 @@ With the first line above, this prints \`You got: Mara Okoye\`. Take it apart pi
 
 - \`String::new()\` makes an **empty piece of text that can grow**. That kind of text is called a \`String\`. We call the box \`line\`, and it needs \`mut\` because reading will add text to it.
 - \`std::io::stdin()\` is the way to reach standard input. \`.read_line(...)\` reads up to the next line break and **adds** it to the text you give it.
-- \`&mut line\` means "lend my box \`line\` out so that it can be changed". The \`&mut\` is how you let another piece of code write into your variable. Without it, \`read_line\` would have nowhere to put what it read. (Lesson 10 explains borrowing in full.)
+- \`&mut line\` means "lend my box \`line\` out so that it can be changed". The \`&mut\` is how you let another piece of code write into your variable. Without it, \`read_line\` would have nowhere to put what it read. (Lesson 11 explains borrowing in full.)
 - \`read_line\` can fail, so it hands back a **result box**: a box that holds *either* the answer *or* an error. \`.expect("message")\` says: "if the box holds an error, stop the program and show this message; otherwise carry on". Use it only when failing means something is badly broken.
 - \`line.trim()\` gives the text without the invisible spaces and line break at both ends. This matters because \`read_line\` keeps the line break, so \`"Mara Okoye\n"\` is not the same as \`"Mara Okoye"\`.
 
@@ -124,7 +124,7 @@ If the line holds \`35\`, \`depth\` is 35. If it holds \`40m\`, the message prin
 
 ### Sending a text to the board
 
-From now on, when you send a \`String\` to the board you write a leading \`&\`: \`scene("diver", &diver);\`. The \`&\` lends the text to \`scene\`. Without it, \`scene\` would take the text away from you and you could not use it afterwards. Lesson 9 shows exactly why.
+From now on, when you send a \`String\` to the board you write a leading \`&\`: \`scene("diver", &diver);\`. The \`&\` lends the text to \`scene\`. Without it, \`scene\` would take the text away from you and you could not use it afterwards. Lesson 10 shows exactly why.
 
 ### Common mistakes
 
@@ -135,7 +135,7 @@ From now on, when you send a \`String\` to the board you write a leading \`&\`: 
 
 ### Going further (optional)
 
-- The result box is an ordinary Rust enum with exactly two shapes, which you will build yourself in lesson 13: \`enum Result<T, E> { Ok(T), Err(E) }\`. \`"35".parse::<i32>()\` has the type \`Result<i32, ParseIntError>\`.
+- The result box is an ordinary Rust enum with exactly two shapes, which you will build yourself in lesson 14: \`enum Result<T, E> { Ok(T), Err(E) }\`. \`"35".parse::<i32>()\` has the type \`Result<i32, ParseIntError>\`.
 - Printing the error with \`{:?}\` shows its full structure, \`ParseIntError { kind: InvalidDigit }\`; \`{}\` gives the sentence. The kinds you will meet are \`Empty\`, \`InvalidDigit\`, \`PosOverflow\` and \`NegOverflow\` (a number too big for the type). A leftover line break is an invalid digit, which is why \`trim()\` comes before \`parse()\`.
 - \`match\` must cover every possible shape. Forget the \`Err\` branch and the compiler refuses to build: E0004, non-exhaustive patterns.
 - You can ask for the type with a variable annotation instead of the \`::<i32>\` form (nicknamed the **turbofish**): \`let n: i32 = text.parse().unwrap();\`. One of the two is required, since \`parse\` can build many types.
@@ -768,7 +768,7 @@ Without the label, \`break\` would only leave the inner loop and the outer one w
 ### Going further (optional)
 
 - Counting backwards: \`(1..=3).rev()\` walks 3, 2, 1, and \`(0..10).rev().step_by(3)\` gives 9 6 3 0.
-- Once you know \`Vec\` (lesson 8), you can loop over the items of a list directly instead of counting positions: \`for lvl in &levels { ... }\` visits each item. \`levels.iter().enumerate()\` gives you each item together with its position. Looping over the items is safer than looping over positions, because there is no position that can run off the end.
+- Once you know \`Vec\` (lesson 9), you can loop over the items of a list directly instead of counting positions: \`for lvl in &levels { ... }\` visits each item. \`levels.iter().enumerate()\` gives you each item together with its position. Looping over the items is safer than looping over positions, because there is no position that can run off the end.
 - A loop that counts how many items pass a test is just a loop plus an \`if\`: \`let mut low = 0;\`, then inside \`if lvl < 20 { low += 1; }\`.`,
       mission: md`Halcyon's machinery runs in cycles. The descent shaft is marked every ten metres, the oxygen tank drains by a fixed amount per hour until it reaches the reserve line, the ballast pumps fill the trim tank in steps, and the hull has a grid of seals where one of them is leaking.
 
@@ -939,7 +939,7 @@ let (east, north, below) = beacon;
 
 A tuple has a fixed length and its type spells out every part, so \`(i32, i32)\` and \`(i32, i32, i32)\` are different types. To print a whole tuple use \`{:?}\`, which prints \`(12, -4, 42)\`. Plain \`{}\` is an error, because a tuple has no single neat everyday text form.
 
-Use a tuple for a small, throw-away grouping. When the parts have meaning that deserves names, you will make a **struct** (lesson 12).
+Use a tuple for a small, throw-away grouping. When the parts have meaning that deserves names, you will make a **struct** (lesson 13).
 
 ### Arrays: many values of the same type
 
@@ -977,7 +977,7 @@ thread 'main' panicked at main.rs:5:20:
 index out of bounds: the len is 6 but the index is 9
 ~~~
 
-A panic is Rust's way of stopping a program that has a bug. It is loud, specific, and it never corrupts memory. (In lesson 8 you will meet the safe alternative, \`get\`, which returns an \`Option\`.)
+A panic is Rust's way of stopping a program that has a bug. It is loud, specific, and it never corrupts memory. (In lesson 9 you will meet the safe alternative, \`get\`, which returns an \`Option\`.)
 
 ### Looping over an array
 

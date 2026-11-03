@@ -216,7 +216,7 @@ ETag: "v7"
         kind: "explain",
         title: "A cache for everybody",
         body: P(
-          "The browser's cache belongs to **one person**. But between the browser and your server there can be caches serving **many** people: a company proxy, your hosting platform's cache, and above all a **CDN** (content delivery network).",
+          "Think of a corner shop and a big warehouse far away. If every customer drove to the warehouse, the roads would jam; so the shop keeps popular things on its shelves and only calls the warehouse when something runs out. A CDN does the same for web pages.\n\nThe browser's cache belongs to **one person**. But between the browser and your server there can be caches serving **many** people: a company **proxy** (a go-between server that fetches pages on people's behalf), your hosting platform's cache, and above all a **CDN** (content delivery network).",
           "A CDN runs servers in many cities, called **edges** or points of presence (POPs). A visitor's request goes to the nearest edge. If the edge has a fresh copy, it answers in a few milliseconds; if not, it fetches from your **origin** (your own server), keeps the answer and serves the next visitor from it.",
           "Below, the origin is in Virginia and three edges stand in Frankfurt, Singapore and São Paulo. The logo image is sent with `public, max-age=3600`. Tap people to send requests and watch which ones go all the way to the origin.",
         ),
@@ -261,7 +261,7 @@ ETag: "v7"
         body: P(
           "Sometimes one URL really does have several versions: compressed or not, English or German. The **Vary** header tells caches which request headers change the answer, so they can store one copy per variant:",
           txt(`
-Vary: Accept-Encoding           gzip and plain copies kept separately
+Vary: Accept-Encoding           gzip (compressed) and plain copies kept separately
 Vary: Accept-Language           one copy per language
 Vary: Cookie                    one copy per cookie value (!)
 `),
@@ -289,7 +289,7 @@ Vary: Cookie                    one copy per cookie value (!)
         title: "Getting stale content out of the world",
         body: P(
           "A year-long `max-age` is great for hashed assets and awful for a news feed. Pick the feed in the widget, send a request as Ana, press **Change it at the origin**, and send another. The edge still holds the old version, and the card turns red.",
-          "To fix that you can **purge** (also called invalidate): tell the CDN to delete its copies of a URL, or of everything tagged with a label (surrogate keys). A purge is a cache invalidation for the whole planet, with all the races from the invalidation lesson, so the safest approach is still a **short `s-maxage`** for dynamic data and **versioned URLs** for static data.",
+          "To fix that you can **purge** (also called invalidate): tell the CDN to delete its copies of a URL, or of everything tagged with a label (called **surrogate keys**, handy for 'delete every page that shows product 7'). A purge is a cache invalidation for the whole planet, with all the races from the invalidation lesson, so the safest approach is still a **short `s-maxage`** for dynamic data and **versioned URLs** for static data.",
         ),
         widget: { type: "cache-cdn", props: { resources: ["feed"], initial: "feed" } },
       },
@@ -380,13 +380,13 @@ Vary: Cookie                    one copy per cookie value (!)
         body: "Get all six right. Each wrong pick tells you what to think about instead.",
         widget: { type: "cache-decide" },
         question: { type: "widget", goal: { all: true }, prompt: "Decide all six cases correctly." },
-        explanation: "The pattern: cache what is **read often, changes rarely, is the same for many people and tolerates being a little old**. Leave uncached what is personal, rarely re-read, security-critical or must be exact at the moment of use. And note that the sixth case caches a **“not found”**, which people forget: negative caching protects the database from repeat misses.",
+        explanation: "The pattern: cache what is **read often, changes rarely, is the same for many people and tolerates being a little old**. Leave uncached what is personal, rarely re-read, security-critical or must be exact at the moment of use. And note that the sixth case caches a **“not found”**, which people forget: **negative caching** (remembering an answer of 'nothing found' for a while) protects the database from repeat misses.",
       },
       {
         kind: "explain",
         title: "Try these first",
         body: P(
-          "A cache hides slowness; sometimes the better move is to remove it. Before adding one to a slow page, check:\n\n1. **Is the query slow because it's missing an index?** A cache over a query that scans a million rows just hides a bug, and every miss is still terrible. (The next module covers indexes and query plans.)\n2. **Is it doing too much work per request?** Fetching 200 rows to show 10, or one query per item in a loop (the “N+1” pattern), can be cut by 10× with no cache.\n3. **Is the response bigger than it needs to be?** Compression and fewer fields help everyone.\n4. **Is the data really shared and re-read?** Check the hit rate you would get before you build anything.",
+          "A cache hides slowness; sometimes the better move is to remove it. Before adding one to a slow page, check:\n\n1. **Is the query slow because it's missing an index?** (An **index** is a lookup table the database keeps, like the index at the back of a book, so it need not read every row.) A cache over a query that scans a million rows just hides a bug, and every miss is still terrible. The next module covers indexes and **query plans** (the database's step-by-step route for answering a query).\n2. **Is it doing too much work per request?** Fetching 200 rows to show 10, or one query per item in a loop (the “N+1” pattern: 1 query for a list, then N more, one per item), can be cut by 10× with no cache.\n3. **Is the response bigger than it needs to be?** Compression and fewer fields help everyone.\n4. **Is the data really shared and re-read?** Check the hit rate you would get before you build anything.",
           "Cache after you understand why it's slow. A cache on top of a slow query makes the *typical* request fast and leaves the *rare* one (the cold miss) as awful as before.",
         ),
       },
@@ -404,13 +404,13 @@ Vary: Cookie                    one copy per cookie value (!)
           ],
           answer: 1,
         },
-        explanation: "A cache that has become load-bearing is a dependency like any other. Plan for its absence with the tools from the reliability module: timeouts, circuit breakers, and **load shedding** so the database isn't buried by the sudden miss storm. If the answer to “what if the cache is gone?” is “everything falls over”, the cache is now a single point of failure.",
+        explanation: "A cache that has become **load-bearing** (the system would collapse without it, like a wall that holds up the roof) is a dependency like any other. Plan for its absence with the tools from the reliability module: timeouts, circuit breakers, and **load shedding** so the database isn't buried by the sudden miss storm. If the answer to “what if the cache is gone?” is “everything falls over”, the cache is now a single point of failure.",
       },
       {
         kind: "explain",
         title: "Keys: where caches leak",
         body: P(
-          "A cache is a dictionary, and **the key decides who gets which answer**. Most cache security bugs are key bugs:\n\n- **Missing the user.** A key like `account_page` shared by every user returns one person's page to the next.\n- **Missing the tenant.** In a multi-tenant app, `report:2024` must be `tenant:42:report:2024`.\n- **Sloppy normalisation.** `?a=1&b=2` and `?b=2&a=1` are the same request but different keys, which wastes space; the reverse mistake (dropping a parameter that matters) serves the wrong data.\n- **Caching errors.** An error response stored for a minute turns a one-second blip into a minute-long outage.",
+          "A cache is a dictionary, and **the key decides who gets which answer**. Most cache security bugs are key bugs:\n\n- **Missing the user.** A key like `account_page` shared by every user returns one person's page to the next.\n- **Missing the tenant.** In a **multi-tenant** app (one app serving many separate customer companies), `report:2024` must be `tenant:42:report:2024`.\n- **Sloppy normalisation.** `?a=1&b=2` and `?b=2&a=1` are the same request but different keys, which wastes space; the reverse mistake (dropping a parameter that matters) serves the wrong data.\n- **Caching errors.** An error response stored for a minute turns a one-second blip into a minute-long outage.",
           "Treat key construction like a security boundary: write it in **one function**, with tests, and don't build keys by hand in a dozen places.",
         ),
       },
@@ -478,7 +478,7 @@ Vary: Cookie                    one copy per cookie value (!)
         points: [
           "Cache **read-heavy, slow-changing, widely shared** data that tolerates staleness; don't cache what's personal, rarely re-read, security-critical or must be exact when used.",
           "**Fix the slowness first** (index, N+1, over-fetching); a cache over a bad query leaves every miss terrible.",
-          "Plan for the cache being **gone**: a cache the database can't live without is a single point of failure.",
+          "Plan for the cache being **gone**: a cache the database can't live without is a **single point of failure** (one part whose breaking stops everything).",
           "**Keys are a security boundary**: include user, tenant, language and every parameter that changes the answer, built in one tested function, and cache errors only briefly if at all.",
         ],
       },

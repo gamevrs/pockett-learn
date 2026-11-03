@@ -6,15 +6,249 @@ import { js, md, rs } from "./util.ts";
  * Chapter 3: Owning your data. Vec, then the ideas that make Rust different: ownership and
  * borrowing, and finally the two string types, which are ownership and borrowing in disguise.
  *
- * Lessons 9 to 11 add functions above main (before MAIN_DIVIDER) and statements below it.
+ * Lesson 8 introduces functions on their own. Lessons 10 to 12 add functions above main (before MAIN_DIVIDER) and statements below it.
  */
 
 export const chapter3: Chapter = {
   id: "owning-your-data",
   title: "Owning your data",
-  blurb: "Growable lists, then the idea that makes Rust different: who owns a value, and who may borrow it.",
+  blurb: "Your own functions, growable lists, then the idea that makes Rust different: who owns a value, and who may borrow it.",
   lessons: [
     // ───────────────────────── 8 ─────────────────────────
+    {
+      id: "rust-basics-7b-functions",
+      title: "Functions",
+      minutes: 30,
+      xp: 110,
+      concepts: ["fn", "function", "parameters", "arguments", "return value", "-> Type", "last expression", "call", "scope"],
+      learn: md`### Why give a job a name?
+
+In the station's galley there is a laminated card on the wall: "How to work out how many air tanks a dive team needs". Nobody re-invents the sum each time. The crew reads the card, plugs in the number of divers, and gets an answer. The card has a **name**, it says what it **needs** (the number of divers) and what it **gives back** (the number of tanks).
+
+A **function** is exactly that card, written in code. You describe a job once, give it a name, and then **call** it whenever you want the job done. Without functions you would copy the same lines again and again, and fix the same mistake in five places.
+
+You already use functions: \`main\` is one, and \`scene\` is one that somebody else wrote and you call. Now you write your own.
+
+### Your first function
+
+~~~rust
+fn tanks_needed(divers: i32) -> i32 {
+    divers * 2
+}
+
+let order = tanks_needed(5);
+println!("{order}");
+~~~
+
+~~~text
+10
+~~~
+
+Read the first line piece by piece:
+
+- \`fn\` means "a function starts here". \`tanks_needed\` is its name (lowercase words joined with underscores, like variables).
+- \`(divers: i32)\` is the **parameter list**: the inputs the card needs. Each input has a name and, after a colon, its type. You always write the type here; Rust does not guess a function's input types.
+- \`-> i32\` says what kind of value comes **back**: the **return value**. Read the arrow as "gives back".
+- The part between the curly braces is the **body**: the steps of the card.
+- The last line of the body, **without a semicolon**, is the value that comes back. Here that is \`divers * 2\`.
+
+And the call, \`tanks_needed(5)\`:
+
+- \`5\` is the **argument**: the real value you hand over. Inside the function, the parameter \`divers\` is a name for it, so \`divers\` is \`5\` during this call. (The parameter is the name on the card; the argument is the value you put in.)
+- The call is worth whatever comes back, so \`let order = tanks_needed(5);\` stores \`10\`.
+
+Calling it again with another number does the same job again: \`tanks_needed(8)\` is \`16\`. That reuse is the whole point.
+
+### The semicolon trap
+
+The last line is the answer only when it has **no semicolon**. A semicolon turns the line into a statement that does its work and throws the value away. This is the most common first mistake:
+
+~~~rust
+fn tanks_needed(divers: i32) -> i32 {
+    divers * 2;
+}
+~~~
+
+~~~text
+error[E0308]: mismatched types
+~~~
+
+The function promised an \`i32\` (the \`-> i32\`) but the body ends with nothing, because the semicolon discarded the value. The compiler's help text points at the semicolon and tells you to remove it.
+
+### Two inputs, and answers that are not numbers
+
+Separate several parameters with commas. The arguments go in the same order.
+
+~~~rust
+fn is_deep(depth: i32, limit: i32) -> bool {
+    depth > limit
+}
+
+println!("{}", is_deep(42, 30));
+println!("{}", is_deep(12, 30));
+~~~
+
+~~~text
+true
+false
+~~~
+
+\`depth > limit\` is a comparison, and a comparison is itself a value (a \`bool\`), so it can be the last line. The type after the arrow can be any type: \`i32\`, \`f64\`, \`bool\`, \`String\`...
+
+### A function that gives nothing back
+
+Some cards only *do* something, such as print a line. Then you leave out the \`-> ...\` part, and the call is a statement of its own:
+
+~~~rust
+fn show_tanks(count: i32) {
+    println!("Tanks ready: {count}");
+}
+
+show_tanks(10);
+~~~
+
+~~~text
+Tanks ready: 10
+~~~
+
+### Where do functions go in this course?
+
+A function is not one of \`main\`'s steps; it is a separate card. In your file, functions go **above** the line that says *code inside main() goes below this line*, and the statements that run go below that line. From this lesson on you will see that line in the starter code.
+
+### Each function has its own names
+
+A function only sees what you hand it. The name \`divers\` belongs to \`tanks_needed\` alone: \`main\` cannot read it, and the function cannot read main's variables unless you pass them in as arguments. Using a name from the wrong place gives:
+
+~~~text
+error[E0425]: cannot find value \`divers\` in this scope
+~~~
+
+Passing things in as arguments keeps every function small and easy to understand on its own.
+
+### Common mistakes
+
+- A semicolon on the last line of a function that should give a value back (error[E0308]).
+- Forgetting a parameter's type, \`fn f(x)\`: the compiler asks for it. Handing over the wrong type is error[E0308] too, for example \`tanks_needed(3.5)\` when the parameter is an \`i32\`.
+- The wrong number of arguments: error[E0061]: this function takes 2 arguments but 1 argument was supplied.
+- Putting the function below the divider line, among main's steps.
+- Using a function's inside names from outside it (E0425).
+
+### Going further (optional)
+
+The keyword \`return\` also hands a value back, and it works anywhere in the body, so you can leave early: \`if divers == 0 { return 0; }\`. Most Rust code leaves the last line bare and uses \`return\` only for early exits.`,
+      mission: md`Each cycle the sensor array reports six depth readings. In lesson 7 you found the highest and the lowest. The divemaster now wants a quick check on how far apart they are, called the **spread**: if the gauge spread is more than 3 metres, the gauge may be drifting and someone should look at it.
+
+You will turn that check into three small function cards (one that works out the spread, one that decides whether it is too large, one that announces it) and use them on the readings you already have. The same spread card will also work on a night shift's numbers.`,
+      tasks: [
+        "Above the divider write fn spread(high: i32, low: i32) -> i32 that gives back high - low (no semicolon on the last line)",
+        "Above the divider write fn is_drifting(gap: i32) -> bool that gives back true when gap is more than 3",
+        "Above the divider write fn announce_spread(gap: i32), which gives nothing back and prints Gauge spread: {gap} m",
+        "In main: let gauge_spread = spread(highest, lowest); let drifting = is_drifting(gauge_spread); call announce_spread(gauge_spread) and print Drifting: true",
+        "Call the same card with other numbers: let night_spread = spread(52, 18); and print Night spread: 34 m",
+        "Send gaugeSpread, drifting and nightSpread to the board",
+      ],
+      starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
+// Lesson 8: functions. Write three function cards in this part of the file (above main):
+// fn spread(high: i32, low: i32) -> i32     gives back high - low   (no semicolon on the last line)
+// fn is_drifting(gap: i32) -> bool          gives back true when gap is more than 3
+// fn announce_spread(gap: i32)              gives nothing back; prints "Gauge spread: {gap} m"
+${MAIN_DIVIDER}
+// 1. let gauge_spread = spread(highest, lowest);   // highest and lowest come from lesson 7
+//    let drifting = is_drifting(gauge_spread);
+//    announce_spread(gauge_spread);                 // prints  Gauge spread: 4 m
+//    println!("Drifting: {drifting}");              // prints  Drifting: true
+// 2. let night_spread = spread(52, 18);             // the same card, other numbers
+//    println!("Night spread: {night_spread} m");    // prints  Night spread: 34 m
+// scene keys: gaugeSpread, drifting, nightSpread
+`,
+      solutionAdd: rs`fn spread(high: i32, low: i32) -> i32 {
+    high - low
+}
+
+fn is_drifting(gap: i32) -> bool {
+    gap > 3
+}
+
+fn announce_spread(gap: i32) {
+    println!("Gauge spread: {gap} m");
+}
+${MAIN_DIVIDER}
+// Lesson 8: functions.
+let gauge_spread = spread(highest, lowest);
+let drifting = is_drifting(gauge_spread);
+announce_spread(gauge_spread);
+println!("Drifting: {drifting}");
+
+let night_spread = spread(52, 18);
+println!("Night spread: {night_spread} m");
+
+scene("gaugeSpread", gauge_spread);
+scene("drifting", drifting);
+scene("nightSpread", night_spread);`,
+      explanation:
+        "spread takes two i32 parameters and its last line, high - low with no semicolon, is the value it gives back: 44 - 40 is 4. is_drifting ends with a comparison, which is a bool, so 4 > 3 gives true. announce_spread has no arrow, so it gives nothing back and is called as a statement; it prints on its own. The same spread card is called again with 52 and 18 and gives 34, which is the point of a function: one description, many uses.",
+      hints: [
+        { id: "h1", title: "The three cards", content: "fn spread(high: i32, low: i32) -> i32 { high - low } and fn is_drifting(gap: i32) -> bool { gap > 3 } and fn announce_spread(gap: i32) { println!(\"Gauge spread: {gap} m\"); } They all go above the divider line, before main. Neither of the first two has a semicolon on its last line: that line is the value they give back." },
+        { id: "h2", title: "Calling them", content: "let gauge_spread = spread(highest, lowest); let drifting = is_drifting(gauge_spread); announce_spread(gauge_spread); highest and lowest are the variables you made in lesson 7, so they are still available in main." },
+        { id: "h3", title: "Printing and the board", content: "println!(\"Drifting: {drifting}\"); let night_spread = spread(52, 18); println!(\"Night spread: {night_spread} m\"); Then scene(\"gaugeSpread\", gauge_spread); scene(\"drifting\", drifting); scene(\"nightSpread\", night_spread);" },
+      ],
+      tests: [
+        {
+          id: "t1",
+          description: "spread works out the gap between highest and lowest",
+          assertionCode: js`
+assertEqual(scene.gaugeSpread, 4, "gaugeSpread (spread(highest, lowest): 44 - 40; the last line of the function has no semicolon)");
+assert(lines.includes("Gauge spread: 4 m"), 'announce_spread must print the line "Gauge spread: 4 m".');`,
+        },
+        {
+          id: "t2",
+          description: "is_drifting gives back a bool",
+          assertionCode: js`
+assertEqual(scene.drifting, true, "drifting (is_drifting(gauge_spread): 4 is more than 3)");
+assert(lines.includes("Drifting: true"), 'Print the line "Drifting: true".');`,
+        },
+        {
+          id: "t3",
+          description: "The same function is called with other numbers",
+          assertionCode: js`
+assertEqual(scene.nightSpread, 34, "nightSpread (spread(52, 18))");
+assert(lines.includes("Night spread: 34 m"), 'Print the line "Night spread: 34 m".');`,
+        },
+      ],
+      unlocks: [],
+      checks: [
+        {
+          prompt: "With `fn add(a: i32, b: i32) -> i32 { a + b }`, what is the value of `add(2, 3)`?",
+          question: { type: "text", answer: ["5"] },
+          explanation: "The arguments fill the parameters in order, so `a` is 2 and `b` is 3. The last line `a + b`, with no semicolon, is the value that comes back: 5.",
+        },
+        {
+          prompt: "What is wrong with this function?\n\n~~~rust\nfn half(n: i32) -> i32 {\n    n / 2;\n}\n~~~",
+          question: {
+            type: "choice",
+            options: [
+              "The semicolon after `n / 2` throws the value away, so nothing is given back (E0308)",
+              "A function may not divide",
+              "Parameters have no types",
+              "`half` is a reserved word",
+            ],
+            answer: 0,
+          },
+          explanation: "The last line is the answer only without a semicolon. With the semicolon the body ends with nothing, but the arrow promised an `i32`.",
+        },
+        {
+          prompt: "How do you write a function that prints a line and gives nothing back?",
+          question: {
+            type: "choice",
+            options: ["Leave out the `->` and the type after it", "Write `-> nothing`", "Write `-> 0`", "It is not possible"],
+            answer: 0,
+          },
+          explanation: "A function with no arrow gives nothing back. You call it as a statement, like `show_tanks(10);`.",
+        },
+      ],
+    },
+
+    // ───────────────────────── 9 ─────────────────────────
     {
       id: "rust-basics-8-vec",
       title: "Vec: a growable list",
@@ -77,7 +311,7 @@ match dive_log.get(7) {
 }
 ~~~
 
-\`get\` hands back a box that is either holding the answer (\`Some(value)\`) or empty (\`None\`, "nothing there"). That box is called an **\`Option\`**, and lesson 14 is all about it. The \`match\` above opens the box and has one branch for each case, just like the result box in lesson 4. The big idea: instead of answering with a made-up number such as -1 for "not found", Rust's answer says honestly "this might be missing", and you must handle both cases.
+\`get\` hands back a box that is either holding the answer (\`Some(value)\`) or empty (\`None\`, "nothing there"). That box is called an **\`Option\`**, and lesson 15 is all about it. The \`match\` above opens the box and has one branch for each case, just like the result box in lesson 4. The big idea: instead of answering with a made-up number such as -1 for "not found", Rust's answer says honestly "this might be missing", and you must handle both cases.
 
 ### Looping over a Vec
 
@@ -94,7 +328,7 @@ for depth in dive_log.iter() {
 
 In the loop above, the first lap compares \`*depth\` (18) with \`deepest\` (the first item, 18): not bigger. The second lap compares 25: bigger, so \`deepest\` becomes 25, and so on to 35.
 
-(When you write \`for depth in dive_log\` with no \`.iter()\`, the loop takes the whole Vec away. Lesson 9 explains why that matters, and \`for depth in &dive_log\` is the borrowing form.)
+(When you write \`for depth in dive_log\` with no \`.iter()\`, the loop takes the whole Vec away. Lesson 10 explains why that matters, and \`for depth in &dive_log\` is the borrowing form.)
 
 ### Common mistakes
 
@@ -103,7 +337,7 @@ In the loop above, the first lap compares \`*depth\` (18) with \`deepest\` (the 
 - Pushing the wrong type: a Vec of \`i32\` will not take \`"deep"\` (E0308).
 - Forgetting \`mut\`: error[E0596]: cannot borrow \`dive_log\` as mutable, as it is not declared as mutable.
 - Comparing \`*depth\` with \`depth\`: \`if depth > deepest\` is a mismatched types error (\`&i32\` vs \`i32\`).
-- Adding to the Vec while looping over it. The compiler stops that (E0502), and lesson 10 explains the reason.`,
+- Adding to the Vec while looping over it. The compiler stops that (E0502), and lesson 11 explains the reason.`,
       mission: md`Every dive that leaves the airlock is written in the dive log. The log grows during the shift, the divemaster asks "what was the deepest one?" and "what was dive number 8?", and the log has to be kept in depth order for the weekly report.
 
 You will build the log from four earlier dives plus the planned one, search it, look up entries safely, and sort it. When this lesson passes, the **Dive log** lights up with the entries as bars.`,
@@ -116,7 +350,7 @@ You will build the log from four earlier dives plus the planned one, search it, 
         "Send diveLog (&dive_log), diveCount, deepest and shallowest to the board",
       ],
       starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
-// Lesson 8: the dive log.
+// Lesson 9: the dive log.
 // 1. let mut dive_log = vec![18, 25, 31, 12];   dive_log.push(planned_depth);   let dive_count = dive_log.len();
 // 2. let mut deepest = dive_log[0];  for depth in dive_log.iter() { if *depth > deepest { deepest = *depth; } }
 //    println!("{dive_count} dives logged, deepest {deepest} m");
@@ -126,7 +360,7 @@ You will build the log from four earlier dives plus the planned one, search it, 
 //    println!("Log in depth order: {:?} (shallowest {shallowest} m)", dive_log);
 // scene keys: diveLog, diveCount, deepest, shallowest      (lend the Vec with &, like &dive_log)
 `,
-      solutionAdd: rs`// Lesson 8: the dive log.
+      solutionAdd: rs`// Lesson 9: the dive log.
 let mut dive_log = vec![18, 25, 31, 12];
 dive_log.push(planned_depth);
 let dive_count = dive_log.len();
@@ -216,57 +450,18 @@ assert(lines.includes("Log in depth order: [12, 18, 25, 31, 35] (shallowest 12 m
       ],
     },
 
-    // ───────────────────────── 9 ─────────────────────────
+    // ───────────────────────── 10 ─────────────────────────
     {
       id: "rust-basics-9-ownership",
       title: "Ownership",
       minutes: 45,
       xp: 150,
       concepts: ["ownership", "move", "Copy", "clone", "drop", "scope", "stack and heap", "E0382"],
-      learn: md`### Part 1: functions in 3 minutes
+      learn: md`### Quick recap: functions
 
-This lesson (and the rest of the course) uses **functions**, and you have not written one yet except \`main\`. So here is the quick version.
+You wrote functions in lesson 8: \`fn name(parameter: Type) -> ReturnType { ... }\`, with the last line (no semicolon) as the value that comes back. This lesson passes values *into* functions, so keep that shape in mind. Functions still go above the divider line in your file.
 
-Imagine a recipe card: "double the amount". You write it once, and whenever a dish needs it you say "use the doubling card on 21". A **function** is such a card. You describe the job once, give it a name, and then **call** it whenever you want the job done.
-
-~~~rust
-fn double(number: i32) -> i32 {
-    number * 2
-}
-
-let answer = double(21);
-println!("{answer}");
-~~~
-
-~~~text
-42
-~~~
-
-Read the first line piece by piece:
-
-- \`fn\` says "a function starts here", and \`double\` is its name.
-- \`(number: i32)\` is the **parameter list**: the inputs the function needs. Each input has a name and, after a colon, its type (types are always written here). With two inputs you separate them with a comma: \`fn add(a: i32, b: i32) -> i32\`.
-- \`-> i32\` says what kind of value comes **back**: the **return value**. If a function gives nothing back, you leave the \`-> ...\` part out.
-- The body between the braces does the work. Its **last line, without a semicolon**, is the value that comes back. Here that is \`number * 2\`.
-- \`double(21)\` is the **call**: you hand over 21 as the input (an **argument**), and the call is worth whatever comes back, 42.
-
-A function that only does something and gives nothing back:
-
-~~~rust
-fn announce(text: &str) {
-    println!("Attention: {text}");
-}
-
-announce("tank low");
-~~~
-
-~~~text
-Attention: tank low
-~~~
-
-(\`&str\` is the type of text in quotes; lesson 11 explains it.) In this course's files, functions go **above** the comment line that says *code inside main() goes below this line*, and the statements that run go below it.
-
-### Part 2: one jar, one name on the label
+### One jar, one name on the label
 
 Every jar in the station's sample vault carries a label card, and the card names exactly one crew member who answers for that jar. Nobody else may open it, top it up or throw it out. If the jar changes hands, the card is rewritten and the previous keeper is out of the picture. When the keeper's shift ends, the jar is emptied and washed, right then, with no one left wondering whether it is still needed.
 
@@ -337,7 +532,7 @@ Vault sealed: coral core 7
 12
 ~~~
 
-(\`label.len()\` is how many bytes the text has. Lesson 11 explains more.) A function that wants to give the value back can **return** it:
+(\`label.len()\` is how many bytes the text has. Lesson 12 explains more.) A function that wants to give the value back can **return** it:
 
 ~~~rust
 fn stamp(mut label: String) -> String {     // 'mut' on a parameter works like mut on let:
@@ -354,7 +549,7 @@ println!("{stamped}");
 coral core 7 [stamped]
 ~~~
 
-That works, but handing a value in and out of every function would be exhausting. Lesson 10 fixes it with borrowing.
+That works, but handing a value in and out of every function would be exhausting. Lesson 11 fixes it with borrowing.
 
 ### Copy types: some values are just copied
 
@@ -391,7 +586,7 @@ extended_log.push(50);           // changes only the copy: dive_log still has 5 
 
 ### Common mistakes
 
-- Using a variable after it was moved into a function, a loop, or another variable (E0382). Ask: do I still need it? Borrow it (lesson 10), clone it, or restructure.
+- Using a variable after it was moved into a function, a loop, or another variable (E0382). Ask: do I still need it? Borrow it (lesson 11), clone it, or restructure.
 - Cloning everywhere to make the error go away. It compiles, but you have paid for copies you did not need.
 - Believing numbers move. They do not, because they are \`Copy\`.
 - Forgetting that \`let b = a;\` for a \`String\` is a move even though no function is involved.
@@ -413,7 +608,7 @@ You will write two small functions that take ownership of a label, move values a
         "Send sealedChars, stamped (&stamped), originalLen, extendedLen and copiedDepth to the board",
       ],
       starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
-// Lesson 9: ownership. Write two functions in this part of the file (above main):
+// Lesson 10: ownership. Write two functions in this part of the file (above main):
 // fn seal_in_vault(label: String) -> usize   prints "Vault sealed: {label}" and returns label.len()
 // fn stamp(mut label: String) -> String      push_str(" [stamped]") and return the label
 ${MAIN_DIVIDER}
@@ -436,7 +631,7 @@ fn stamp(mut label: String) -> String {
     label
 }
 ${MAIN_DIVIDER}
-// Lesson 9: ownership.
+// Lesson 10: ownership.
 let core_label = String::from("coral core 7");
 let backup_label = core_label.clone();
 let sealed_chars = seal_in_vault(core_label);
@@ -531,7 +726,7 @@ assert(lines.includes("42 and 42 are both usable"), 'Print the line "42 and 42 a
       ],
     },
 
-    // ───────────────────────── 10 ─────────────────────────
+    // ───────────────────────── 11 ─────────────────────────
     {
       id: "rust-basics-10-borrowing",
       title: "Borrowing",
@@ -645,7 +840,7 @@ The compiler would otherwise hand your caller a pointer into memory that has alr
 - A function that must **consume** the value (store it, destroy it, send it away) takes \`T\`.
 - Small \`Copy\` values (numbers, bools) are simply taken by value.
 
-(Lesson 11 shows that a function that only reads a list is even more flexible if it takes \`&[i32]\` instead of \`&Vec<i32>\`.)
+(Lesson 12 shows that a function that only reads a list is even more flexible if it takes \`&[i32]\` instead of \`&Vec<i32>\`.)
 
 ### Common mistakes
 
@@ -665,7 +860,7 @@ You will write three functions that **borrow**: one to read the log, one to add 
         "Send avgBefore, avgAfter, diveLog (&dive_log) and oxygenPct to the board",
       ],
       starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
-// Lesson 10: borrowing. Write these three functions in this part of the file (above main):
+// Lesson 11: borrowing. Write these three functions in this part of the file (above main):
 // fn average_depth(log: &Vec<i32>) -> f64         read only; sum the depths, then sum as f64 / log.len() as f64
 // fn record_dive(log: &mut Vec<i32>, depth: i32)  pushes onto the caller's Vec
 // fn top_up(level: &mut f64, amount: f64)         *level += amount;  and never above 100.0
@@ -698,7 +893,7 @@ fn top_up(level: &mut f64, amount: f64) {
     }
 }
 ${MAIN_DIVIDER}
-// Lesson 10: borrowing.
+// Lesson 11: borrowing.
 let avg_before = average_depth(&dive_log);
 record_dive(&mut dive_log, 28);
 let avg_after = average_depth(&dive_log);
@@ -774,7 +969,7 @@ assert(lines.includes("Oxygen topped up to 100.0%"), 'Print the line "Oxygen top
       ],
     },
 
-    // ───────────────────────── 11 ─────────────────────────
+    // ───────────────────────── 12 ─────────────────────────
     {
       id: "rust-basics-11-strings",
       title: "String and &str",
@@ -820,7 +1015,7 @@ fn first_word(text: &str) -> &str {
 }
 ~~~
 
-- \`text.find(' ')\` looks for the first space. Like \`get\` in lesson 8, it answers with a box: \`Some(position)\` when it finds one, \`None\` when there is none. The \`match\` opens the box.
+- \`text.find(' ')\` looks for the first space. Like \`get\` in lesson 9, it answers with a box: \`Some(position)\` when it finds one, \`None\` when there is none. The \`match\` opens the box.
 - \`&text[..end]\` means "a view of \`text\` from the start up to position \`end\`".
 - With no space, the whole text is the first word.
 
@@ -903,7 +1098,7 @@ It also needs to be honest about degrees: the thermometer reports \`18°C\`, whi
         "Send message, sender, wordCount, shout, allClear, readingBytes, readingChars and summary to the board",
       ],
       starterAdd: rs`// ─── ✏️ YOUR TURN ───────────────────────────
-// Lesson 11: the radio mast. Write this function in this part of the file (above main):
+// Lesson 12: the radio mast. Write this function in this part of the file (above main):
 // fn first_word(text: &str) -> &str      match text.find(' ') { Some(end) => &text[..end], None => text }
 ${MAIN_DIVIDER}
 // 1. let raw_message = String::from("  SURFACE: weather clear, sea state 2  ");
@@ -926,7 +1121,7 @@ ${MAIN_DIVIDER}
     }
 }
 ${MAIN_DIVIDER}
-// Lesson 11: the radio mast.
+// Lesson 12: the radio mast.
 let raw_message = String::from("  SURFACE: weather clear, sea state 2  ");
 let message = raw_message.trim();
 let words: Vec<&str> = message.split_whitespace().collect();

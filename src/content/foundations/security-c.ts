@@ -128,9 +128,8 @@ result:  pw PASSWORD=*** x
       },
       {
         kind: "explain",
-        title: "Going further: the code you did not write",
+        title: "The code you did not write",
         body: P(
-          "### Going further (optional)",
           "Everything above is about secrets. This second topic is about trusting other people's code. Imagine a shopping list that says only “cereal”: each week the shop might hand you a different brand, or a box someone tampered with. A better list says the exact brand, the size and the batch number, and you check the seal on the box. Software dependencies need the same exactness.",
           "A typical app is mostly other people's code: dozens of packages (ready-made libraries) that pull in hundreds more. Every one is trust you extended. The ways it goes wrong: a maintainer's account is **hijacked** and a malicious release published; a package name is a **typo-squat** (a look-alike name that relies on a slip of the finger: `pocket-dates` and `pocket-datse`); an old version has a **known vulnerability**; a package is **abandoned**; or a registry mirror (a copy of the package store) serves **tampered files**.",
           "The defences are mostly about *not changing by accident*. A **lockfile** is the exact shopping list: it records the exact version of every package, so every build installs what you tested. Install from it in CI (the automatic build robot) instead of resolving fresh. **Integrity hashes** are the seal on the box: a fingerprint of each package's files, so altered files are refused. Also let a bot propose updates as reviewable pull requests, scan for known vulnerabilities, and prefer fewer, well-maintained dependencies. Do the same for base images (the starting layer your app is packed on): pin them by **digest**, the fingerprint of the exact image, rather than by a name like `latest` that can change.",
@@ -173,7 +172,7 @@ result:  pw PASSWORD=*** x
         body: P(
           "Imagine you tell a helper: “Write the name the visitor gives you on the guest list.” A prankster says their name is “Sam, and also unlock the back door”. If the helper obeys the whole sentence, the visitor's words were treated as orders. Many attacks are that one mistake.",
           "Most famous web attacks share one root: a program builds a **command** out of text, mixes in text from a stranger, and the receiver cannot tell which part was supposed to be which. Whatever the stranger typed has become *part of the instructions*. That is **injection**.",
-          "A school library lets pupils look up a shelf. The program asks its database with a **query** (a question written in SQL, the language databases understand, which you met in the data module). A tiny reminder of what one looks like: `SELECT * FROM books WHERE shelf = 'History'` means “give me every book whose shelf is History”.",
+          "A school library lets pupils look up a shelf. The program asks its database with a **query** (a question written in SQL, the language databases understand, which you met in the data module's “Databases in ten minutes” lesson). A tiny reminder of what one looks like: `SELECT * FROM books WHERE shelf = 'History'` means “give me every book whose shelf is History”.",
           "Try the sensible inputs first, then the odd ones (tap the examples). The widget is a small mock of a real database, with the same rules.",
           "Here the program glues whatever the pupil types into the middle of that text. Watch what the widget builds.",
         ),
@@ -219,8 +218,6 @@ result:  pw PASSWORD=*** x
         body: P(
           "Now move the idea from the database to the browser. A comment box inserts what visitors type straight into the page. If someone types HTML, the browser cannot tell it from the page's own markup, and a `<script>` tag runs **on your site, with the visitor's login**. This is **cross-site scripting** (XSS).",
           "The cure is the same shape: keep data as data. **Escape output** for the place it lands (in HTML, `<` becomes `&lt;`), so the browser shows the characters instead of obeying them. Modern frameworks do this by default, so the main rule is: do not bypass them.",
-          "### Going further (optional)",
-          "The danger is the “escape hatches” that insert text as raw HTML: the browser property `innerHTML`, React's deliberately scary-named `dangerouslySetInnerHTML`, and raw template output. A **Content Security Policy** (CSP) is a header the server sends that tells the browser which scripts it may run, a second layer in case an XSS hole slips through.",
         ),
         widget: { type: "sec-inject", props: { kind: "html" } },
       },
@@ -238,10 +235,8 @@ result:  pw PASSWORD=*** x
         body: P(
           "Picture a bank clerk who obeys any note that arrives with your signature stamp on it, and a trickster who slips a note into your pocket that makes you stamp it for them. That is CSRF. Now picture a receptionist who phones any number a visitor writes down, including the private line to the manager's safe. That is SSRF.",
           "**CSRF** (cross-site request forgery, met in the cookies lesson) abuses the browser's helpfulness. Cookies go along with *every* request to their site, whoever caused it. A page on another site can make your browser submit a form to your bank or clinic, and the request arrives logged in. Defences: `SameSite` cookies, an **anti-CSRF token** (a secret number the real form carries and the attacker's page cannot know), checking the `Origin` header (which names the site that started the request), and never changing data on a `GET`.",
-          "**SSRF** (server-side request forgery) turns the tables. A feature makes the *server* fetch a URL the user supplied: link previews, webhooks (a URL another service calls when something happens), “import from URL”, PDF renderers. An attacker supplies an *internal* address, and the server, which sits inside your network, obliges: `http://localhost:8080/admin`, or an internal dashboard.",
+          "**SSRF** (server-side request forgery) turns the tables. A feature makes the *server* fetch a URL the user supplied: link previews, webhooks (a URL another service calls when something happens), “import from URL”, PDF renderers. An attacker supplies an *internal* address, and the server, which sits inside your network, obliges: `http://localhost:8080/admin`, or an internal dashboard, or `169.254.169.254`, a special internal address (the *metadata address*) on which cloud platforms can hand out the server's own credentials.",
           "The main defence is an **allowlist**: only fetch from destinations you named in advance. The mission below builds one. Note the trick it must survive: in `https://good.com@evil.com/x`, the part before the `@` is just a username, so the server would really contact `evil.com`.",
-          "### Going further (optional)",
-          "Cloud platforms often answer on a special internal address, `169.254.169.254`, the *metadata address*, that can hand out the server's own credentials. Addresses like it are *link-local* (only reachable from the machine's own network), and `localhost` is *loopback* (the machine itself). If you block instead of allowlist, you must block private, loopback and link-local addresses after looking up the name's real address (DNS), not follow redirects blindly, and fetch from a locked-down network.",
         ),
       },
       {
@@ -302,6 +297,16 @@ u.port      8443            (None when the URL gives no port)
           { id: "port", description: "an unusual port is refused", assertionCode: `H = {"images.example.com"}\nassert fetch_ok("https://images.example.com:8443/a.png", H) is False and fetch_ok("https://images.example.com:443/a.png", H) is True` },
         ],
         hints: ["Compare `u.hostname.lower()` with `in allowed_hosts`, an exact match, not `endswith` or `startswith`.", "Check `u.scheme == \"https\"` and `u.port in (None, 443)`; wrap `urlsplit(...)` and `u.port` in `try/except ValueError`."],
+      },
+      {
+        kind: "explain",
+        title: "Going further: escape hatches and internal addresses",
+        body: P(
+          "### Going further (optional)",
+          "Nothing here is needed for the lesson's questions; it is extra reading.",
+          "**XSS escape hatches.** The danger is anything that inserts text as raw HTML: the browser property `innerHTML`, React's deliberately scary-named `dangerouslySetInnerHTML`, and raw template output. A **Content Security Policy** (CSP) is a header the server sends that tells the browser which scripts it may run, a second layer in case an XSS hole slips through.",
+          "**Blocking instead of allowlisting SSRF.** Addresses like `169.254.169.254` are *link-local* (only reachable from the machine's own network), and `localhost` is *loopback* (the machine itself). If you block instead of allowlist, you must block private, loopback and link-local addresses after looking up the name's real address (DNS), not follow redirects blindly, and fetch from a locked-down network.",
+        ),
       },
       {
         kind: "recap",

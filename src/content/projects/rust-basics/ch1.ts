@@ -206,7 +206,7 @@ Look above \`fn main\` in your file. That block is **provided by pockett**: a sm
 ### Going further (optional)
 
 - A compiler message always has the same shape: \`error[E0423]\` is the severity and an error code, \`--> main.rs:2:5\` is the file, line and column, then comes your own line with \`^^^\` under the exact spot, and often a \`help:\` line.
-- \`{}\` is called **Display** (the neat text for people) and \`{:?}\` is called **Debug** (the programmer's view). Almost every type has Debug; you will add it to your own types in lesson 12.
+- \`{}\` is called **Display** (the neat text for people) and \`{:?}\` is called **Debug** (the programmer's view). Almost every type has Debug; you will add it to your own types in lesson 13.
 - Rust text is always UTF-8, so \`"café"\` and \`"🐠"\` are fine.`,
       mission: md`Welcome to **Halcyon Reef Station**: a small research base bolted to a reef shelf 42 metres below the surface. Six people live and work there. The station has pumps, tanks, drones and a lot of hardware, but its control room has no software yet. You are going to write all of it, one lesson at a time, in a single growing Rust program.
 
@@ -455,7 +455,7 @@ None
 
 - \`wrapping_add\` goes around like the odometer: 250 + 10 is 260, minus the 256 numbers of the box, gives 4.
 - \`saturating_add\` stops at the biggest value the box can hold, 255.
-- \`checked_add\` does not give a number at all when the answer does not fit. It gives \`None\`, which means "no answer". (An answer that does fit comes wrapped as \`Some(...)\`. Lesson 14 explains both.) Use \`{:?}\` to print it.
+- \`checked_add\` does not give a number at all when the answer does not fit. It gives \`None\`, which means "no answer". (An answer that does fit comes wrapped as \`Some(...)\`. Lesson 15 explains both.) Use \`{:?}\` to print it.
 
 ### Naming
 

@@ -215,7 +215,7 @@ def shipping_cost(kg, method):
         {
           kind: "explain",
           title: "The roles",
-          body: "Three roles make up Strategy. The **context** holds a strategy and delegates to it. The **strategy** is the shared method every option promises to have. The **concrete strategies** are the options.\n\n(In Python a strategy can even be a plain function: the checkout would just call `self.strategy(kg)`.)",
+          body: "Three roles make up Strategy. The **context** holds a strategy and **delegates** to it (hands the work over instead of doing it). The **strategy** is the shared method every option promises to have, which is its **interface** (the list of methods it offers to the outside). The **concrete strategies** are the options.\n\n(In Python a function can be stored and passed around like a number. So a strategy can even be a plain function: after `def express(kg): return 12 + 2 * kg` and `strategy = express`, the call `strategy(3)` gives 18, and the checkout would just call `self.strategy(kg)`.)",
           widget: { type: "pattern-roles", props: { pattern: "strategy", highlight: ["context"] } },
         },
         {
@@ -337,7 +337,7 @@ class Lighthouse:
         logbook.write(level)
         # the ferry company wants these warnings too...
 `) +
-            "\n\nThe lighthouse is **hard-wired** to every receiver. It has to know their names and their methods.",
+            "\n\nThe lighthouse is **hard-wired** to every receiver (the connections are written straight into its code, like a lamp soldered to the wall instead of plugged into a socket). It has to know their names and their methods.",
         },
         {
           kind: "question",
@@ -514,14 +514,14 @@ assert alarm.rang, "The lighthouse should call update() on any subscriber, not j
             ],
             answer: 1,
           },
-          explanation: "The subject's list holds a reference to every subscriber. Forget to unsubscribe and the closed screen stays in memory and keeps receiving updates: a classic Observer bug, often called a *lapsed listener*.",
+          explanation: "The subject's list holds a **reference** (a pointer that keeps the object alive in memory) to every subscriber. Forget to unsubscribe and the closed screen stays in memory and keeps receiving updates: a classic Observer bug, often called a *lapsed listener*.",
         },
         {
           kind: "recap",
           points: [
             "Observer replaces hard-wired calls with a **list of subscribers**.",
             "The **subject** has subscribe, unsubscribe and publish; observers only need `update(value)`.",
-            "Listeners can come and go at runtime and the subject's code never changes: **loose coupling**.",
+            "Listeners can come and go at runtime and the subject's code never changes: **loose coupling** (the two sides know almost nothing about each other, so changing one rarely breaks the other).",
             "Remember to unsubscribe when a listener goes away.",
           ],
         },
@@ -1130,7 +1130,7 @@ print(ask())
             py(`
 gateway.pay(12.50)    # dollars in, True or False out
 `) +
-            "\n\nThe company signs with an old bank whose SDK looks like this, and you can't edit it:\n\n" +
+            "\n\nThe company signs with an old bank whose SDK (software development kit: the ready-made code a **vendor**, an outside company, gives you to use their service) looks like this, and you can't edit it:\n\n" +
             py(`
 bank.send_payment(1250, "USD")   # cents and a currency; returns 0 for OK
 `) +
@@ -1150,7 +1150,7 @@ bank.send_payment(1250, "USD")   # cents and a currency; returns 0 for OK
             ],
             answer: 2,
           },
-          explanation: "The checkout's interface is a good one. The *bank* is the odd one out, so the fix belongs at the boundary, in **one** place, not spread across 40 call sites.",
+          explanation: "The checkout's interface is a good one. The *bank* is the odd one out, so the fix belongs at the **boundary** (the line where your code meets someone else's), in **one** place, not spread across 40 call sites.",
         },
         {
           kind: "explain",
@@ -1164,12 +1164,12 @@ bank.send_payment(1250, "USD")   # cents and a currency; returns 0 for OK
           body: "Use an adapter and pick the body of `pay` that charges the customer **exactly $12.50**.",
           widget: { type: "adapter" },
           question: { type: "widget", hint: "Pick the body of pay that turns our amount into what the provider expects.", goal: { ok: true } },
-          explanation: "`round(amount * 100)` turns dollars into whole cents, and the currency must be \"USD\". `int(amount)` drops the cents *and* forgets to convert; passing the raw amount sends a fraction the bank rejects. All of the translation lives in one small class.",
+          explanation: "`round(amount * 100)` turns dollars into whole cents (the round matters because computers store 12.50 * 100 approximately, so plain multiplication can leave a tiny fraction), and the currency must be \"USD\". `int(amount)` drops the cents *and* forgets to convert; passing the raw amount sends a fraction the bank rejects. All of the translation lives in one small class.",
         },
         {
           kind: "explain",
           title: "The roles",
-          body: "The **client** talks to the **target** interface. The **adapter** implements the target and holds the **adaptee**, translating every call. Neither the client nor the adaptee changes.",
+          body: "The **client** talks to the **target** interface. The **adapter** implements the target and holds the **adaptee** (the existing, awkward object being wrapped, here the bank), translating every call. Neither the client nor the adaptee changes.",
           widget: { type: "pattern-roles", props: { pattern: "adapter", highlight: ["adapter"] } },
         },
         {
@@ -1374,7 +1374,7 @@ def on_upper_click():
         {
           kind: "code",
           title: "Undo, for real",
-          body: "Finish `TypeText.undo` (remove the text this command added) and `History.undo` (undo the most recent command, if there is one). The tests also run a `Shout` command your history has never seen.",
+          body: "Finish `TypeText.undo` (remove the text this command added) and `History.undo` (undo the most recent command, if there is one).\n\nTwo Python reminders. A **slice** `text[:3]` means \"the first 3 characters\": `\"hello\"[:3]` is `\"hel\"`, and `\"hello\"[:0]` is `\"\"`. To undo typing `\"lo\"` from `\"hello\"` you keep `5 - 2 = 3` characters, which is `\"hello\"[:3]`. And `self.done.pop().undo()` has two parts: `pop()` removes and returns the last item of the list, then `.undo()` is called on that item. The tests also run a `Shout` command your history has never seen.",
           language: "python",
           starter: `class Document:
     def __init__(self):
@@ -1536,7 +1536,7 @@ def press_pause(self):
 def press_stop(self):
     if self.mode != "stopped": ...   # and again
 `) +
-            "\n\nThe rules for *one* stage are scattered across *every* method.",
+            "\n\n(`...` stands for code left out.) The rules for *one* stage are scattered across *every* method. A **transition** is a move from one stage to the next, such as playing to paused.",
         },
         {
           kind: "question",

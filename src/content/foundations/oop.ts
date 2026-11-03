@@ -1048,7 +1048,7 @@ def total_area(shapes):
         {
           kind: "explain",
           title: "Has-a",
-          body: "Inheritance says **is-a**. **Composition** says **has-a**: build an object out of other objects (its parts), and let it hand the work to them. A hero *has* a weapon and *has* a way of moving.\n\nSwap the parts and try both methods.",
+          body: "Inheritance says **is-a**. **Composition** says **has-a**: build an object out of other objects (its parts), and let it hand the work to them. Handing the work to a part is called **delegation**: the hero does not swing the sword itself, it asks its weapon to. A hero *has* a weapon and *has* a way of moving.\n\nSwap the parts and try both methods.",
           widget: { type: "oop-compose", props: HERO },
         },
         {
@@ -1064,7 +1064,7 @@ def total_area(shapes):
           body: "Build a hero that **flies** and fights with a **bow**, then attack.",
           widget: { type: "oop-compose", props: { ...HERO, showCount: true } },
           question: { type: "widget", hint: "Choose the bow and the flying parts, then press attack.", goal: { parts: { weapon: "bow", mover: "fly" }, called: "attack" } },
-          explanation: "You changed the hero's behaviour while it was running, just by swapping a part. `hero.attack()` itself never changed: it always asks `self.weapon` to do the work. Handing work to a part like that is called **delegation**.",
+          explanation: "You changed the hero's behaviour while it was running, just by swapping a part. `hero.attack()` itself never changed: it always asks `self.weapon` to do the work. That handing-over is the **delegation** from the first step.",
         },
         {
           kind: "explain",
@@ -1122,7 +1122,7 @@ class Car:
         return self.engine.start()    # delegate the work
 
 car = Car(PetrolEngine())
-car.engine = ElectricEngine()         # swap a part at runtime
+car.engine = ElectricEngine()         # swap a part while the program runs
 ~~~
 
 The rule of thumb **"favour composition over inheritance"** doesn't ban inheritance. It says: reach for parts first, and save inheritance for a true is-a.`,
@@ -1198,7 +1198,7 @@ class Car:
         {
           kind: "explain",
           title: "Four sentences to remember",
-          body: "When someone asks \"what are the four pillars of OOP?\", give the name, one sentence and an example:\n\n- **Encapsulation**: an object keeps its data inside and changes it only through its own methods, so its rules always hold. *A bank account that can't go negative.*\n- **Abstraction**: expose a simple interface and hide how it works. *`car.press_gas()`, not fuel injectors.*\n- **Inheritance**: a class builds on another, in an *is-a* relationship. *`class Dog(Animal)`.*\n- **Polymorphism**: one call, different behaviour for each object. *`shape.area()` for circles and squares.*",
+          body: "When someone asks \"what are the four pillars of OOP?\", give the name, one sentence and an example. (These are practice questions in the style job interviews use, a conversation where someone checks what you know. You do not need a job in mind: treat them as self-tests.) A **getter** is a method that reads a field and a **setter** is a method that changes it.\n\n- **Encapsulation**: an object keeps its data inside and changes it only through its own methods, so its rules always hold. *A bank account that can't go negative.*\n- **Abstraction**: expose a simple interface and hide how it works. *`car.press_gas()`, not fuel injectors.*\n- **Inheritance**: a class builds on another, in an *is-a* relationship. *`class Dog(Animal)`.*\n- **Polymorphism**: one call, different behaviour for each object. *`shape.area()` for circles and squares.*",
         },
         {
           kind: "question",
@@ -1219,7 +1219,7 @@ class Car:
         {
           kind: "question",
           title: "Spot the pillar",
-          body: "Classify each snippet. A wrong pick tells you why.",
+          body: "Classify each snippet. A wrong pick tells you why. In the snippets, `...` means \"details left out here\", and `ABC` with `@abstractmethod` marks a class that only lists what its children must do (you met both in the abstraction lesson).",
           widget: {
             type: "oop-spot",
             props: {

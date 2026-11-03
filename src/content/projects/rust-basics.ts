@@ -27,15 +27,16 @@ import { chapter4 } from "./rust-basics/ch4.ts";
  *   5 zone o2Status watch cleared verdict
  *   6 markersPassed hoursToReserve reservePct fullAfter checked leakRow leakSeal
  *   7 readings highest lowest average beacon
- *   8 diveLog diveCount deepest shallowest
- *   9 sealedChars stamped originalLen extendedLen copiedDepth
- *  10 avgBefore avgAfter diveLog oxygenPct
- *  11 message sender wordCount shout allClear readingBytes readingChars summary
- *  12 fleet
- *  13 commands reports pipHealth mantaBattery
- *  14 catalogue weight101 weight102 totalWeightG unweighed
- *  15 intake problems acceptedCount
- *  16 zoneCounts needsCharge fleet report
+ *   8 gaugeSpread drifting nightSpread
+ *   9 diveLog diveCount deepest shallowest
+ *  10 sealedChars stamped originalLen extendedLen copiedDepth
+ *  11 avgBefore avgAfter diveLog oxygenPct
+ *  12 message sender wordCount shout allClear readingBytes readingChars summary
+ *  13 fleet
+ *  14 commands reports pipHealth mantaBattery
+ *  15 catalogue weight101 weight102 totalWeightG unweighed
+ *  16 intake problems acceptedCount
+ *  17 zoneCounts needsCharge fleet report
  */
 export const rustBasics: Project = {
   slug: "rust-basics",
@@ -60,6 +61,7 @@ export const rustBasics: Project = {
     "if & match",
     "loops",
     "tuples & arrays",
+    "functions",
     "Vec",
     "ownership",
     "borrowing",

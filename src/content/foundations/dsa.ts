@@ -103,6 +103,14 @@ def largest(cards):
         if card > best:
             best = card      # hold the bigger one
     return best
+`) +
+          "\nTrace it on the cards [5, 2, 9]:\n\n" +
+          txt(`
+start:   best = 5          (the first card)
+card 5:  5 > 5? no         best stays 5
+card 2:  2 > 5? no         best stays 5
+card 9:  9 > 5? yes        best becomes 9
+return 9
 `),
       },
       {
@@ -341,7 +349,7 @@ def has_duplicate(items):
       {
         kind: "code",
         title: "Walk a linked list",
-        body: "Here's a linked list built from dicts: each node has a `\"value\"` and a `\"next\"` (the next node, or `None` at the end). Finish `to_list(head)` so it follows the links and returns the values as a Python list.\n\n" +
+        body: "Here's a linked list built from dicts: each node has a `\"value\"` and a `\"next\"` (the next node, or `None` at the end). `None` is Python's word for 'nothing here', and `node is not None` asks 'is this a real node, not the empty marker?', so `while node is not None:` means 'keep going until you fall off the end'. Finish `to_list(head)` so it follows the links and returns the values as a Python list.\n\n" +
           py(`
 c = {"value": 5, "next": None}
 b = {"value": 8, "next": c}

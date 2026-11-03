@@ -826,7 +826,7 @@ SELECT seats_left FROM stock WHERE show_id = 1;
       {
         kind: "explain",
         title: "A connection is a small piece of heavy machinery",
-        body: "Before your app can run one query, it must open a **connection**: a network round trip (or several), a TLS handshake, a login, and then the database sets up a session for you. In PostgreSQL each connection is a whole **operating-system process**, with a few megabytes of memory of its own. Opening one costs tens of milliseconds, and the server can only hold a few hundred at a time.\n\nA typical query takes 5 ms. If you open a fresh connection for every request, most of your time (and the database's) goes into the handshake. So apps keep connections open and **reuse** them: that is a **connection pool**.",
+        body: "Think of a taxi rank. If every passenger had to build a taxi before riding, nobody would get anywhere; instead taxis wait in a queue and are lent out again and again. A database connection is like that taxi, and a **pool** is the rank.\n\nBefore your app can run one query, it must open a **connection**: a network round trip (or several), a **TLS handshake** (the two sides agree on a secret code so nobody can eavesdrop), a login, and then the database sets up a session for you. In PostgreSQL each connection is a whole **operating-system process** (a separate running program that the computer has to manage), with a few megabytes of memory of its own. Opening one costs tens of milliseconds, and the server can only hold a few hundred at a time.\n\nA typical query takes 5 ms. If you open a fresh connection for every request, most of your time (and the database's) goes into the handshake. So apps keep connections open and **reuse** them: that is a **connection pool**.",
       },
       {
         kind: "question",
@@ -878,7 +878,7 @@ busy connections  =  requests per second  x  seconds per query
       {
         kind: "explain",
         title: "The serverless connection storm",
-        body: "Serverless functions change the picture. Each function instance may be its own little process with **no shared pool**, and a traffic spike makes the platform start *many* instances at once. If every instance opens its own connection, the database sees hundreds of simultaneous logins, pays the handshake cost for each, and finally hits its **maximum connections** limit and starts refusing them.\n\nThe cure is an external **pooler** (PgBouncer, a managed proxy) that sits between the functions and the database. Thousands of short-lived client connections go to the pooler; the pooler keeps a **small, stable set** of real connections to the database and lends them out. Compare the two below while a sale opens (triple traffic for 3 seconds).",
+        body: "Serverless functions (small pieces of code the hosting company starts on demand and stops again, so you run no server yourself) change the picture. Each function instance may be its own little process with **no shared pool**, and a traffic spike makes the platform start *many* instances at once. If every instance opens its own connection, the database sees hundreds of simultaneous logins, pays the handshake cost for each, and finally hits its **maximum connections** limit and starts refusing them.\n\nThe cure is an external **pooler** (a go-between program such as PgBouncer, or a managed proxy offered by your host) that sits between the functions and the database. Thousands of short-lived client connections go to the pooler; the pooler keeps a **small, stable set** of real connections to the database and lends them out. Compare the two below while a sale opens (triple traffic for 3 seconds).",
         widget: { type: "data-pool", props: { modes: ["direct", "pooler"], mode: "direct", pool: 10, rate: 200, queryMs: 20, spike: true } },
       },
       {
@@ -892,7 +892,7 @@ busy connections  =  requests per second  x  seconds per query
       {
         kind: "explain",
         title: "Session pooling or transaction pooling",
-        body: "A pooler can lend a server connection out in two ways:\n\n- **Session pooling**: a client keeps one server connection from connect to disconnect. Everything works, but you save little: a connection sits idle whenever its client is idle.\n- **Transaction pooling**: a server connection is lent only for the length of one transaction, then returned. A few dozen real connections can serve thousands of clients. This is what serverless needs.\n\nThe catch: with transaction pooling consecutive transactions from one client may run on **different** server connections, so anything that lives in the *session* quietly stops working: `SET` commands, session-level advisory locks, `LISTEN/NOTIFY`, temporary tables and (in some setups) prepared statements.",
+        body: "A pooler can lend a server connection out in two ways:\n\n- **Session pooling**: a client keeps one server connection from connect to disconnect. Everything works, but you save little: a connection sits idle whenever its client is idle.\n- **Transaction pooling**: a server connection is lent only for the length of one transaction, then returned. A few dozen real connections can serve thousands of clients. This is what serverless needs.\n\nThe catch: with transaction pooling consecutive transactions from one client may run on **different** server connections, so anything that lives in the *session* quietly stops working: `SET` commands (settings you change for your connection), session-level **advisory locks** (a lock your own code takes by name to keep other workers out), `LISTEN/NOTIFY` (a way for the database to send a message to waiting programs), temporary tables and (in some setups) **prepared statements** (a query the database parsed once and saved for reuse).",
       },
       {
         kind: "question",
@@ -964,7 +964,7 @@ def pool_size(rps, query_ms, headroom=1.5):
       {
         kind: "explain",
         title: "Two versions of your code, one database",
-        body: "Changing a table sounds like a quick job: rename a column and update the code. The trouble is that a deploy is not instant. Your site runs on eight servers, and they are replaced a few at a time. For several minutes **old code and new code run at the same time against the same database**. Any schema change has to work for both.\n\nLet us rename `orders.total` (a decimal, in euros) to `orders.total_cents` (a whole number). The most direct way is to do it in one go. Step through it and watch the failing servers (red).",
+        body: "Imagine changing the wheels of a car while it is driving down the road. That is what changing a live database feels like: the site must keep serving people the whole time.\n\nChanging a table sounds like a quick job: rename a column and update the code. The trouble is that a deploy is not instant. Your site runs on eight servers, and they are replaced a few at a time. For several minutes **old code and new code run at the same time against the same database**. Any schema change has to work for both.\n\nLet us rename `orders.total` (a decimal, in euros) to `orders.total_cents` (a whole number). The most direct way is to do it in one go. Step through it and watch the failing servers (red).",
         widget: { type: "data-migrate", props: { mode: "bigbang" } },
       },
       {
@@ -978,7 +978,7 @@ def pool_size(rps, query_ms, headroom=1.5):
       {
         kind: "explain",
         title: "Expand, migrate, contract",
-        body: "The safe pattern splits one risky change into several that are each safe on their own. Three phases:\n\n1. **Expand**: add the new thing next to the old one, without removing or changing anything. Old code does not notice.\n2. **Migrate**: get the data and the code across. The new code writes **both**; a **backfill** copies old rows; then readers switch to the new column.\n3. **Contract**: when nothing uses the old thing, delete it.\n\nEvery step can be deployed alone and rolled back alone. Walk through it, and run the backfill batches yourself.",
+        body: "The safe pattern splits one risky change into several that are each safe on their own. Three phases:\n\n1. **Expand**: add the new thing next to the old one, without removing or changing anything. Old code does not notice.\n2. **Migrate**: get the data and the code across. The new code writes **both**; a **backfill** copies old rows; then readers switch to the new column.\n3. **Contract**: when nothing uses the old thing, delete it.\n\nA **backfill** is a job that fills the new column for rows that already exist; until it has run, those rows hold `NULL` (the database's word for 'empty or unknown'). A **rollout** is the gradual replacement of old servers with new ones.\n\nEvery step can be deployed alone and rolled back alone. Walk through it, and run the backfill batches yourself.",
         widget: { type: "data-migrate", props: { mode: "expand" } },
       },
       {
@@ -1071,7 +1071,7 @@ SELECT COUNT(*) AS filled FROM orders WHERE total_cents IS NOT NULL;
       {
         kind: "explain",
         title: "Dangerous statements",
-        body: "Some schema changes are much more dangerous on a big, busy table than they look:\n\n- Adding a column with a **default** or **NOT NULL** can rewrite the whole table on older database versions, holding a lock all the way. Add it nullable, backfill, then add the constraint.\n- A plain **CREATE INDEX** blocks writes while it builds. Use the online variant (PostgreSQL's `CREATE INDEX CONCURRENTLY`).\n- Adding a **foreign key or check constraint** validates every existing row under a lock. Add it as 'not validated' first, then validate in the background.\n- **Changing a column's type** often rewrites the table. Treat it like a rename: add a new column, migrate, drop.\n- Any DDL can queue behind a long-running query, and then **block every query that arrives after it**. Set a lock timeout so the migration gives up instead of freezing the site.",
+        body: "Some schema changes are much more dangerous on a big, busy table than they look. (**DDL**, data definition language, means statements such as `ALTER TABLE` that change a table's shape rather than its rows.)\n\n- Adding a column with a **default** or **NOT NULL** can rewrite the whole table on older database versions, holding a lock all the way. Add it nullable, backfill, then add the constraint.\n- A plain **CREATE INDEX** blocks writes while it builds. Use the online variant (PostgreSQL's `CREATE INDEX CONCURRENTLY`).\n- Adding a **foreign key or check constraint** validates every existing row under a lock. Add it as 'not validated' first, then validate in the background.\n- **Changing a column's type** often rewrites the table. Treat it like a rename: add a new column, migrate, drop.\n- Any DDL can queue behind a long-running query, and then **block every query that arrives after it**. Set a lock timeout so the migration gives up instead of freezing the site.",
       },
       {
         kind: "question",
@@ -1129,7 +1129,7 @@ SELECT COUNT(*) AS filled FROM orders WHERE total_cents IS NOT NULL;
       {
         kind: "explain",
         title: "One writer, many readers",
-        body: "One database server has limits: it can fail, and it can only answer so many questions. The standard answer is **replication**: one **leader** (primary) accepts all the writes, and one or more **followers** (replicas) receive a copy of every change and serve reads. Followers give you:\n\n- **More read capacity**: spread the SELECTs across several machines.\n- **Failover**: if the leader dies, promote a follower.\n- **Locality**: a replica near your users answers faster.\n- **Backups and analytics** without disturbing the leader.\n\nThe leader streams its write log to the followers. When does the leader tell the client 'done'? In **synchronous** replication, only after a follower has also stored the change: safe but slower, and one slow follower stalls writes. In **asynchronous** replication, right away, and followers catch up **a moment later**: fast, but followers are always a little behind. That gap is **replication lag**.",
+        body: "In class, the teacher writes on the board and the pupils copy it into their notebooks a few seconds later. The board is the **leader**, the notebooks are the **followers**, and anyone glancing at a notebook may see yesterday's version.\n\nOne database server has limits: it can fail, and it can only answer so many questions. The standard answer is **replication**: one **leader** (primary) accepts all the writes, and one or more **followers** (replicas) receive a copy of every change and serve reads. Followers give you:\n\n- **More read capacity**: spread the `SELECT` queries (the ones that only read) across several machines.\n- **Failover**: if the leader dies, **promote** a follower (make it the new leader).\n- **Locality**: a replica physically near your users answers faster.\n- **Backups and analytics** without disturbing the leader.\n\nThe leader streams its write log to the followers. When does the leader tell the client 'done'? In **synchronous** replication, only after a follower has also stored the change: safe but slower, and one slow follower stalls writes. In **asynchronous** replication, right away, and followers catch up **a moment later**: fast, but followers are always a little behind. That gap is **replication lag**.",
       },
       {
         kind: "question",
@@ -1145,7 +1145,7 @@ SELECT COUNT(*) AS filled FROM orders WHERE total_cents IS NOT NULL;
           ],
           answer: 1,
         },
-        explanation: "That is the price of asynchronous replication: a window of acknowledged-but-unreplicated writes. Synchronous (or semi-synchronous, one follower must confirm) closes the window at the cost of write latency.",
+        explanation: "That is the price of asynchronous replication: a window of acknowledged-but-unreplicated writes. Synchronous (or **semi-synchronous**, where just one follower must confirm) closes the window at the cost of write latency.",
       },
       {
         kind: "explain",
@@ -1186,7 +1186,7 @@ SELECT COUNT(*) AS filled FROM orders WHERE total_cents IS NOT NULL;
       {
         kind: "explain",
         title: "Going back in time",
-        body: "A second guarantee is **monotonic reads**: once I have seen something, I should never see an older state. With reads bouncing between followers that lag differently, you can see the payment on one refresh and *lose* it on the next. Stickiness helps: pin each user's session to the same follower, so the data they see only moves forward.\n\nThis is the everyday meaning of **eventual consistency**: if writes stop, all replicas converge. Until then, different readers may see different versions, and your app must decide where that is acceptable (a like-count) and where it is not (a bank balance).",
+        body: "A second guarantee is **monotonic reads** ('monotonic' means only ever moving one way): once I have seen something, I should never see an older state. With reads bouncing between followers that lag differently, you can see the payment on one refresh and *lose* it on the next. Stickiness helps: pin each user's session to the same follower, so the data they see only moves forward.\n\nThis is the everyday meaning of **eventual consistency**: if writes stop, all replicas converge. Until then, different readers may see different versions, and your app must decide where that is acceptable (a like-count) and where it is not (a bank balance).",
         widget: { type: "data-replica", props: { route: "follower", lag: 600, routes: ["follower"] } },
       },
       {
@@ -1381,7 +1381,7 @@ def total(counter):
       {
         kind: "explain",
         title: "Two systems, two writes",
-        body: "When a customer places an order, the order service must do two things: **save the order** in its database, and **announce** 'order placed' on a message broker so the mail service can send a confirmation and the stock service can update. Written naively:\n\n" +
+        body: "When a customer places an order, the order service must do two things: **save the order** in its database, and **announce** 'order placed' on a **message broker** (a post office for programs: one program drops off a message, others pick it up) so the mail service can send a confirmation and the stock service can update. Written naively:\n\n" +
           py(`
 save_order(order)          # write 1: the database
 publish("order_placed")    # write 2: the broker
@@ -1429,7 +1429,7 @@ INSERT INTO outbox (event_id, type, payload, sent)
   VALUES ('evt-42', 'order_placed', '{"order":42}', false);
 COMMIT;   -- both rows exist, or neither does
 `) +
-          "\nA separate **relay** process polls (or tails the database's change log for) unsent outbox rows, publishes each to the broker, and marks it sent. If the relay is slow or the broker is down, rows simply wait. Now the data and the intent to announce it are saved **atomically**. Place orders, run the relay, and try the failures.",
+          "\nA separate **relay** process (a small helper that carries messages from the database to the broker) **polls** (checks again and again) for unsent outbox rows, or reads the database's change log as it grows, publishes each to the broker, and marks it sent. The **payload** is the message's contents, here a little piece of JSON. If the relay is slow or the broker is down, rows simply wait. Now the data and the intent to announce it are saved **atomically**. Place orders, run the relay, and try the failures.",
         widget: { type: "data-outbox", props: { mode: "outbox", fixedMode: true } },
       },
       {
@@ -1443,7 +1443,7 @@ COMMIT;   -- both rows exist, or neither does
       {
         kind: "explain",
         title: "At-least-once, so expect duplicates",
-        body: "The relay does two things that can't be atomic: publish to the broker, then mark the row sent. If it crashes in between, the row stays 'unsent' and the next run publishes it **again**. We could mark first and publish second, but then a crash loses the event. Losing is worse than repeating, so outbox relays choose **at-least-once** delivery.\n\nThe consumers therefore have to be **idempotent**: handling the same event twice must have the same effect as once. The usual technique is to give every event a unique id and have the consumer remember the ids it has processed. Turn on 'Relay crashes before marking sent' and see a customer get two e-mails; then tick 'Mail service ignores repeats'.",
+        body: "The relay does two things that can't be atomic: publish to the broker, then mark the row sent. If it crashes in between, the row stays 'unsent' and the next run publishes it **again**. We could mark first and publish second, but then a crash loses the event. Losing is worse than repeating, so outbox relays choose **at-least-once** delivery.\n\nThe consumers therefore have to be **idempotent** (a recap: you met this in the reliability and traffic modules): handling the same event twice must have the same effect as once. The usual technique is to give every event a unique id and have the consumer remember the ids it has processed. Turn on 'Relay crashes before marking sent' and see a customer get two e-mails; then tick 'Mail service ignores repeats'.",
         widget: { type: "data-outbox", props: { mode: "outbox", fixedMode: true } },
       },
       {

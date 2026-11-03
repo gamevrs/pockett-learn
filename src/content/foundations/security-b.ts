@@ -108,10 +108,9 @@ export const securityLessonsB: ConceptLesson[] = [
       },
       {
         kind: "explain",
-        title: "Going further: scopes and OpenID Connect",
+        title: "Scopes and OpenID Connect",
         body: P(
-          "### Going further (optional)",
-          "The code flow and PKCE above are the core. The rest of this lesson adds two extras that real sign-in buttons rely on.",
+          "The code flow and PKCE above are the core. The rest of this lesson adds two ideas that real sign-in buttons rely on, and the next question uses them.",
           "A **scope** names a slice of access: `rides:read` is not `rides:write`, and neither is `profile:delete`. The consent screen shows them, and the token carries only what was granted. Ask for the minimum, because every extra scope is blast radius if the token leaks.",
           "OAuth alone does not tell the app *who just signed in*. **OpenID Connect (OIDC)** is a thin layer on top that does. The app adds the scope `openid` to its request and the response includes a second token, the **ID token**: a signed statement that says who authenticated, when, and for which app. It is meant to be read by the **app**, to start a session. The **access token** is meant for the **API**.",
           "Run the flow again with `openid` on and see the extra token arrive.",
@@ -136,7 +135,7 @@ export const securityLessonsB: ConceptLesson[] = [
       },
       {
         kind: "question",
-        title: "Going further: why the implicit flow retired",
+        title: "Why the implicit flow retired",
         body: P(
           "Early browser apps could not keep secrets or make cross-site requests, so OAuth had a shortcut: the **implicit flow** returned the *access token directly* in the redirect, in the part of the URL after `#` (the *fragment*, which the browser keeps for itself and never sends to servers, but which stays in history and is readable by scripts). Try it, then turn on the interceptor and run it to the end.",
           "Reasons it was dropped: the token sits in the address bar and **browser history**, can leak through screenshots, referrer headers and any script on the page, and nothing ties it to the app that asked. Code + PKCE does the same job for single-page apps, with the token delivered over the back channel.",
