@@ -82,7 +82,7 @@ const SOLID = ["Single responsibility", "Open/closed", "Liskov substitution", "I
 /** Module 3: object-oriented programming, built around the four pillars. */
 export const oopModule: Module = {
   id: "oop",
-  part: "program",
+  part: "building",
   title: "Object-oriented programming",
   blurb: "Classes and objects, then the four pillars: encapsulation, abstraction, inheritance and polymorphism.",
   icon: "boxes",
@@ -101,9 +101,15 @@ export const oopModule: Module = {
           body: `Say you're writing a small game. Every player has a name, health points (hp) and a position, so you make variables:
 
 ~~~python
-p1_name, p1_hp, p1_x = "Ana", 80, 0
-p2_name, p2_hp, p2_x = "Ben", 50, 4
-p3_name, p3_hp, p3_x = "Cy", 90, 9
+p1_name = "Ana"
+p1_hp = 80
+p1_x = 0
+p2_name = "Ben"
+p2_hp = 50
+p2_x = 4
+p3_name = "Cy"
+p3_hp = 90
+p3_x = 9
 
 def heal(hp):
     return hp + 20
@@ -143,7 +149,7 @@ What actually happens?`,
         {
           kind: "explain",
           title: "Bundle it up",
-          body: "An **object** keeps one player's data together *with* the things a player can do. The data stored on an object are its **attributes**. The functions that belong to it are its **methods**.\n\nCreate a player, then tap `heal()`.",
+          body: "An **object** keeps one player's data together *with* the things a player can do. The data stored on an object are its **attributes**. The functions that belong to it are its **methods**. You call a method with a dot: `ben.heal()` means \"ask the object `ben` to do its `heal` action\".\n\nCreate a player, then tap `heal()`.",
           widget: PLAYER,
         },
         {
@@ -209,12 +215,12 @@ What actually happens?`,
           body: "Build **Rex** and **Bella**, then give **only Rex** a birthday.",
           widget: { type: "oop-factory", props: DOG },
           question: { type: "widget", hint: "Build Rex and Bella from the same class, then give a birthday to Rex only.", goal: { objects: 2, match: { name: "Rex", age: 4 }, onlyMatchChanged: true } },
-          explanation: "Both dogs came from one class, but each object has its own `age`. `rex.birthday()` changed Rex and left Bella alone. They even sit at different memory addresses: they really are two separate things.",
+          explanation: "Both dogs came from one class, but each object has its own `age`. `rex.birthday()` changed Rex and left Bella alone. Each dog lives in its own spot in the computer's memory: they really are two separate things.",
         },
         {
           kind: "explain",
           title: "__init__ and self",
-          body: `Creating an object runs a special method, \`__init__\` (the **constructor**), which fills in the starting values:
+          body: `When you build a new dog, it starts out empty, like a blank form. You need a moment to fill in its name and age. Python gives you a special method for that moment. It is always called \`__init__\` (two underscores on each side, which is Python's way of marking its own special names). It is also called the **constructor**, because it helps *construct* the object. It runs by itself, once, right when an object is created:
 
 ~~~python
 class Dog:
@@ -226,6 +232,39 @@ rex = Dog("Rex", 3)
 ~~~
 
 \`Dog("Rex", 3)\` makes a new, empty object, then calls \`__init__\` with **\`self\` set to that new object**. So \`self.name = name\` means "store the name on *this* dog".`,
+        },
+        {
+          kind: "explain",
+          title: "Methods, f-strings and +=",
+          body: `A **method** is just a function written inside the class. Its first parameter is always \`self\`, the dog it is working on. Here is the whole \`Dog\` class with two methods added, and how to use it:
+
+~~~python
+class Dog:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    def birthday(self):
+        self.age += 1
+
+    def describe(self):
+        return f"{self.name} is {self.age} years old"
+
+rex = Dog("Rex", 3)
+rex.birthday()
+print(rex.describe())
+~~~
+
+~~~text
+Rex is 4 years old
+~~~
+
+Two small tools appear here:
+
+- \`self.age += 1\` means "take the current age and add 1 to it". It is a shorter way to write \`self.age = self.age + 1\`.
+- An **f-string** is text with an \`f\` in front of the quotes. Anything inside \`{...}\` is replaced by its value, so \`{self.name}\` becomes \`Rex\` and \`{self.age}\` becomes \`4\`.
+
+Notice that you never type \`self\` when you call a method: \`rex.birthday()\` already tells Python which dog you mean.`,
         },
         {
           kind: "question",
@@ -350,13 +389,35 @@ print(rex.name)
         },
         {
           kind: "explain",
+          title: "Stopping a bad request with raise",
+          body: `Before we guard the account, you need one new tool: a way for your own code to say "no, that is not allowed" loudly. In Python you do that with \`raise\`.
+
+~~~python
+def check_age(age):
+    if age < 0:
+        raise ValueError("age cannot be negative")
+    return age
+
+check_age(-5)
+~~~
+
+\`raise ValueError("...")\` stops the function right there and reports an **error** with your message. (\`ValueError\` is Python's standard name for "this value is not acceptable".) The program then stops with a red message like this, unless some other code catches it:
+
+~~~text
+ValueError: age cannot be negative
+~~~
+
+Read the last line of a red error first: it names the kind of error and gives the message. Because \`raise\` ends the function immediately, nothing after it runs, so a bad request can never change anything. That is exactly what a guard needs.`,
+        },
+        {
+          kind: "explain",
           title: "One door in",
-          body: `**Encapsulation** means keeping an object's data inside it, and letting the outside world change that data only through methods that enforce the rules. A rule that must always hold is called an **invariant**.
+          body: `**Encapsulation** means keeping an object's data inside it, and letting the outside world change that data only through methods that enforce the rules. A rule that must always hold is called an **invariant** (it never varies).
 
 ~~~python
 class BankAccount:
     def __init__(self, owner, balance):
-        self._balance = balance      # internal
+        self._balance = balance      # internal (the underscore says "keep out")
 
     @property
     def balance(self):               # can read, can't assign
@@ -368,7 +429,7 @@ class BankAccount:
         self._balance -= amount
 ~~~
 
-\`@property\` lets anyone *read* \`acct.balance\` but not assign to it. Changes have to go through \`deposit()\` and \`withdraw()\`, which check first.`,
+The line \`@property\` is a **decorator**: a label written just above a method that changes how Python treats it. This one makes \`balance\` act like a plain value that you can *read* (\`acct.balance\`, with no parentheses) but not assign to. Changes have to go through \`deposit()\` and \`withdraw()\`, which check first. The leading underscore in \`_balance\` is a naming habit that means "internal: please don't touch from outside".`,
         },
         {
           kind: "question",
@@ -413,14 +474,14 @@ class BankAccount {
 }
 ~~~
 
-Some other class writes \`acct.balance = -999;\`. What happens?`,
+Java is another programming language, and it checks your whole program for mistakes *before* it starts running (that check is called compiling). Some other class writes \`acct.balance = -999;\`. What happens?`,
           question: { type: "choice", options: ["It works, just like in Python", "The program won't compile: balance is private", "It runs, but prints a warning", "Java silently ignores the line"], answer: 1 },
-          explanation: "In Java, C# and C++, `private` is enforced by the compiler: code outside the class can't even mention the field. Python gets the same design from conventions (`_balance`) and properties. Same idea, different enforcement, and a good point to make in an interview.",
+          explanation: "In Java, C# and C++, `private` is enforced by the compiler: code outside the class can't even mention the field. Python gets the same design from conventions (`_balance`) and properties. Same idea, different enforcement.",
         },
         {
           kind: "code",
           title: "Protect the invariant",
-          body: "Make the account refuse bad requests by raising `ValueError`:\n\n- `deposit()` refuses amounts that are 0 or negative.\n- `withdraw()` refuses amounts that are 0 or negative, or bigger than the balance.\n\nWatch out: without a check, `withdraw(-20)` would *add* $20.",
+          body: "Make the account refuse bad requests by raising `ValueError`, just like `check_age` did:\n\n- `deposit()` refuses amounts that are 0 or negative.\n- `withdraw()` refuses amounts that are 0 or negative, or bigger than the balance.\n\nWatch out: without a check, `withdraw(-20)` would *add* $20.",
           language: "python",
           starter: `class BankAccount:
     def __init__(self, owner, balance=0):
@@ -523,7 +584,13 @@ Some other class writes \`acct.balance = -999;\`. What happens?`,
         {
           kind: "explain",
           title: "Abstract classes: a written promise",
-          body: `Python can write an interface down with an **abstract base class**:
+          body: `Imagine a rule at a car factory: "every engine we make must be able to **start** and to **accelerate**." The rule says *what* an engine must do. It does not say how, because a petrol engine and an electric one do it differently. Python lets you write a rule like that down as code. It is called an **abstract base class**: a class that only lists what its children must offer, and is never used to make real objects itself.
+
+Three small pieces of new syntax appear:
+
+- \`import\` brings in a tool someone else already wrote. \`from abc import ABC, abstractmethod\` means "from Python's built-in \`abc\` toolbox, fetch two tools: \`ABC\` and \`abstractmethod\`".
+- \`class Engine(ABC)\` means "\`Engine\` is built on top of \`ABC\`", which marks it as a contract class.
+- \`@abstractmethod\` is a **decorator**: a label written just above a method that changes how Python treats it. This label says "every child class must write its own version of this method". The \`...\` after it is real Python for "nothing written here yet".
 
 ~~~python
 from abc import ABC, abstractmethod
@@ -543,7 +610,7 @@ class ElectricEngine(Engine):
         return "more current"
 ~~~
 
-\`Engine\` says *what* every engine must offer, with no *how*. Each subclass fills in the how.`,
+\`Engine\` says *what* every engine must offer, with no *how*. Each subclass (\`ElectricEngine\` here, written with the parent's name in brackets) fills in the how.`,
         },
         {
           kind: "question",
@@ -564,7 +631,7 @@ class ElectricEngine(Engine):
         {
           kind: "question",
           title: "Abstraction or encapsulation?",
-          body: "No two pillars get mixed up in interviews more often. Which of these is **abstraction**?",
+          body: "These two pillars get mixed up more often than any others. Which of these is **abstraction**?",
           question: {
             type: "choice",
             options: [
@@ -596,7 +663,7 @@ class ElectricEngine(Engine):
         {
           kind: "code",
           title: "Write the contract",
-          body: "Two jobs:\n\n- Mark `Payment.pay` with `@abstractmethod`, so nobody can create a plain `Payment()`.\n- Give `CardPayment` a `pay(amount)` that returns text like `\"Paid 20 with card 4242\"`.\n\n`checkout()` only knows the interface, and that's the point.",
+          body: "Two jobs (`pass` in the starter just means \"nothing here yet\"):\n\n- Mark `Payment.pay` with `@abstractmethod`, so nobody can create a plain `Payment()`. Put the label on its own line directly above `def pay`, like `Engine` did.\n- Give `CardPayment` a `pay(amount)` that returns text like `\"Paid 20 with card 4242\"`.\n\n`checkout()` only knows the interface, and that's the point.",
           language: "python",
           starter: `from abc import ABC, abstractmethod
 
@@ -911,7 +978,7 @@ for s in [Square(2), Pizza(10)]:
         {
           kind: "code",
           title: "Make them polymorphic",
-          body: "- Give `Circle` an `area()` method (use 3.14 for pi).\n- Write `total_area(shapes)`, which adds up `area()` for every shape. No `if`, no `isinstance`: just ask each shape.",
+          body: "- Give `Circle` an `area()` method (use 3.14 for pi; `**` is the power sign, so `self.radius ** 2` means radius times radius).\n- Write `total_area(shapes)`, which adds up `area()` for every shape. No `if` and no type-checking with `isinstance` (which asks \"is this object a Circle?\"): just ask each shape.",
           language: "python",
           starter: `class Square:
     def __init__(self, side):
@@ -956,7 +1023,7 @@ def total_area(shapes):
             { id: "t2", description: "total_area([Square(2), Circle(1)]) is 7.14", assertionCode: `got = total_area([Square(2), Circle(1)])\nassert abs(got - 7.14) < 1e-6, f"4 + 3.14 should be 7.14, got {got}"` },
             { id: "t3", description: "Works for any object with area() (duck typing)", assertionCode: `class Rug:\n    def area(self):\n        return 6\n\ngot = total_area([Rug(), Square(1)])\nassert abs(got - 7) < 1e-6, f"total_area should just call area() on each item; got {got}"` },
           ],
-          hints: ["`return 3.14 * self.radius ** 2` inside Circle's `area(self)`.", "`sum(shape.area() for shape in shapes)` does the whole loop, or use a for loop and a running total."],
+          hints: ["`return 3.14 * self.radius ** 2` inside Circle's `area(self)`.", "Start `total = 0`, loop `for shape in shapes:`, add `shape.area()` to `total`, then return `total`. (Experts can shorten it to `sum(shape.area() for shape in shapes)`.)"],
         },
         {
           kind: "recap",
@@ -1030,7 +1097,7 @@ Every Drive gets \`write()\`, including the ones that can't. And any change to a
               "Override write() in ReadOnlyDrive to raise an error",
               "Give drives a list of abilities: a ReadOnlyDrive has Read, a DiskDrive has Read and Write",
               "Delete write() from Drive and paste a copy into every drive that can save",
-              "Make ReadOnlyDrive inherit from Printer instead",
+              "Make ReadOnlyDrive inherit from some unrelated class instead",
             ],
             answer: 1,
           },
@@ -1335,7 +1402,33 @@ print(sum(s.area() for s in shapes))
         {
           kind: "explain",
           title: "Five rules of thumb",
-          body: "The pillars are what OOP *can* do. **SOLID** is five guidelines for doing it well, gathered by Robert C. Martin. In plain words:\n\n- **S**ingle responsibility: a class has one job, so it has one reason to change.\n- **O**pen/closed: add new behaviour by adding code, not by editing code that works.\n- **L**iskov substitution: a subclass must work anywhere its parent does.\n- **I**nterface segregation: don't force classes to implement methods they don't need.\n- **D**ependency inversion: depend on an interface you're handed, not a concrete class you build inside.",
+          body: `Think of a good toolbox: every tool has one clear purpose, tools can be swapped without rebuilding the box, and nothing is glued in place. Code can be organised the same way. The four pillars are what OOP *can* do. **SOLID** is five guidelines for doing it well, gathered by Robert C. Martin. Each letter is one guideline:
+
+| Letter | Name | In plain words |
+| --- | --- | --- |
+| S | Single responsibility | A class has one job, so it has only one reason to change. |
+| O | Open/closed | Add new behaviour by adding new code, not by editing code that already works. |
+| L | Liskov substitution | A subclass must work anywhere its parent works (you can *substitute* the child for the parent). |
+| I | Interface segregation | Keep promises small: don't force a class to offer methods it doesn't need (*segregation* means splitting apart). |
+| D | Dependency inversion | A class should be *handed* the helpers it needs, not build them itself. A *dependency* is anything your class needs in order to work. |
+
+To see the last one in code, compare two ways to write a class that saves orders. \`...\` below means "details left out".
+
+~~~python
+# Before: builds its own helper, so it is stuck with it
+class OrderService:
+    def __init__(self):
+        self.storage = MySQLDatabase()   # MySQL is one particular database program
+
+# After: is handed any helper that has save()
+class OrderService:
+    def __init__(self, storage):
+        self.storage = storage
+
+service = OrderService(FakeStorage())    # a "fake" is a pretend stand-in used in tests
+~~~
+
+In the second version, \`OrderService\` doesn't care which storage it gets, only that it can \`save()\`. Keep this before/after in mind as you go through the five puzzles below.`,
         },
         {
           kind: "question",

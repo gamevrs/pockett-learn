@@ -24,43 +24,25 @@ export const chapter2: Chapter = {
       concepts: ["if / else", "init statement", "scope", "switch", "tagless switch", "no fall-through", "&& || !"],
       learn: md`### An \`if\` is a question with a yes or no answer
 
-Every sorting hub is mostly rules: *if the parcel is too heavy, send it to the reject bin; if it is going north, use chute A.* Go writes a rule with \`if\`:
+Every sorting hub is mostly rules: *if the parcel is too heavy, send it to the reject bin; if it is going north, use chute A.* Go writes a rule with \`if\`. You already used a small one in the last lesson (\`if err != nil\`). Now the whole picture:
 
 ~~~go
-if grams > maxGrams {
+grams := 12000
+if grams > 25000 {
 	fmt.Println("too heavy")
 } else if grams > 10000 {
 	fmt.Println("freight")
 } else {
 	fmt.Println("fine")
 }
+// prints: freight
 ~~~
 
-Three things look different from other languages, and each one is a deliberate choice.
-
-- **No parentheses** around the condition. They are legal, but \`gofmt\` (the standard formatter) removes them.
-- **The braces are mandatory**, even for a single statement. Languages that let you skip them have a long history of bugs where someone added a second line to an \`if\` that did not actually belong to it. Go makes that bug impossible.
-- **The \`{\` must sit on the same line as the \`if\`, and \`else\` on the same line as the closing \`}\`.** Go's compiler quietly inserts a semicolon at the end of a line that ends in certain tokens, so a brace or an \`else\` on a new line is read as a new statement. You will see exactly these messages:
-
-~~~text
-syntax error: unexpected newline, expected { after if clause
-syntax error: unexpected keyword else, expected }
-~~~
-
-### The condition must be a real bool
-
-Go has no "truthy" values. \`0\`, \`""\` and \`nil\` are not false, they are simply not booleans, and the compiler says so:
-
-~~~go
-if grams {          // non-boolean condition in if statement
-}
-~~~
-
-You have to write the comparison out: \`if grams != 0\`. It is one more word, and it removes a whole class of surprises.
+Go checks the questions from top to bottom and runs the block of the **first** one that is true, then skips the rest. Here \`12000 > 25000\` is no, \`12000 > 10000\` is yes, so it prints \`freight\`. The final \`else\` has no question: it catches everything the earlier branches did not.
 
 ### What does a condition give back?
 
-The gate has to answer questions like *"is this parcel over the limit?"* A condition is that question, built so that only **yes** or **no** can come out. Go evaluates it to one value of type \`bool\`, \`true\` or \`false\`, and \`if\` only checks "did I get \`true\`?" You can print the answer itself to see it:
+The gate has to answer questions like *"is this parcel over the limit?"* The question between \`if\` and \`{\` is called a **condition**. It is built so that only **yes** or **no** can come out. Go works it out to one value of type \`bool\` (short for boolean): \`true\` or \`false\`. \`if\` only checks "did I get \`true\`?" You can print the answer itself to see it:
 
 ~~~go
 grams := 2400
@@ -68,20 +50,33 @@ fmt.Println(grams > 2000)    // true
 fmt.Println(grams == 500)    // false
 ~~~
 
-### Kinds of conditions you can write
+Two equals signs \`==\` ask "is it equal?". One equals sign \`=\` stores a value. Go has no "truthy" values: \`0\`, \`""\` and \`nil\` are not false, they are simply not booleans, and the compiler says so (\`non-boolean condition in if statement\`). So write the comparison out: \`if grams != 0\`.
 
-| Kind | Example | What it asks |
-| --- | --- | --- |
-| Comparison | \`grams >= 500\` | Number against number: \`<\` \`>\` \`<=\` \`>=\` \`==\` \`!=\` |
-| Text equality | \`region == "north"\` | Same text, letter for letter? Case matters. |
-| Contains | \`strings.Contains(label, "PK")\` | Is the piece somewhere inside? |
-| Starts or ends with | \`strings.HasPrefix(parcelID, "PK-")\` | Does it begin (\`HasSuffix\`: end) with this? |
-| Emptiness | \`len(line) == 0\` or \`line == ""\` | Is there nothing there? Works for strings and slices. |
-| Function returning bool | \`unicode.IsDigit(r)\` | Ask a ready-made yes/no question. |
-| Range check | \`grams >= 500 && grams < 2000\` | Between two limits. Go has no \`500 <= grams < 2000\`; write both halves. |
-| Combined | \`accepted && !heavy\` | Several questions at once: \`&&\` all yes, \`!\` flips. |
+### Three details that are different in Go
 
-\`||\` means at least one yes. There is no truthiness to fall back on, so every row above is a real \`bool\`. Conditions combine freely: \`strings.HasPrefix(parcelID, "PK-") && grams > 0\` is one condition built from two. (Looking a key up in a map also gives a yes/no, the "comma ok" form, which lesson 8 introduces.)
+Each one is a deliberate choice.
+
+- **No parentheses** around the condition. They are legal, but \`gofmt\` (the standard formatter) removes them.
+- **The braces are mandatory**, even for a single statement. That makes it impossible to add a second line to an \`if\` that does not actually belong to it.
+- **The \`{\` must sit on the same line as the \`if\`, and \`else\` on the same line as the closing \`}\`.** Go quietly inserts a semicolon at the end of some lines, so a brace or an \`else\` on a new line is read as a new statement. You will see messages like:
+
+~~~text
+syntax error: unexpected newline, expected { after if clause
+syntax error: unexpected keyword else, expected }
+~~~
+
+### Combining conditions
+
+\`&&\` means *and*, \`||\` means *or* and \`!\` means *not*. They **short-circuit**: in \`a && b\`, if \`a\` is false then \`b\` is never worked out.
+
+~~~go
+class := "Standard"
+chute := "A"
+accepted := class != "Invalid" && class != "Overweight" && chute != "reject"
+fmt.Println(accepted)   // true
+~~~
+
+Go has no \`500 <= grams < 2000\` shortcut: for "between two limits" write both halves, \`grams >= 500 && grams < 2000\`. Text is compared letter for letter and capitals count: \`region == "north"\` is false for \`"North"\`.
 
 ### Separate \`if\`s, an \`else if\` chain, or a tagless switch
 
@@ -109,23 +104,20 @@ if grams > 5000 {
 // heavy
 ~~~
 
-### How to pick the condition
-
-1. Say the question in plain words: "Is this parcel too heavy to carry by hand?"
-2. Turn it into one yes/no test: \`grams > 5000\`.
-3. Check the **edge value**: what happens at exactly 5000? If that parcel should still go by hand, \`>\` is right; if it should not, you need \`>=\`.
-
-### Combining conditions
-
-\`&&\` means *and*, \`||\` means *or* and \`!\` means *not*. They **short-circuit**: in \`a && b\`, if \`a\` is false then \`b\` is never evaluated, which is what lets you write \`if len(fields) == 3 && fields[2] != ""\` without the second half ever touching a missing element.
-
-~~~go
-accepted := class != "Invalid" && class != "Overweight" && chute != "reject"
-~~~
-
 ### The init statement
 
-An \`if\` may start with a short statement, then a semicolon, then the condition. The variable it declares exists **only inside the \`if\`, its \`else if\` branches and its \`else\`**:
+Often you compute a value just to test it. Write the computation on its own line first:
+
+~~~go
+kg := float64(grams) / 1000
+if kg >= 20 {
+	handling = "two-person lift"
+} else if kg >= 5 {
+	handling = "trolley"
+}
+~~~
+
+Go lets you squeeze the first line into the \`if\`, with a semicolon. The variable then exists **only inside the \`if\`, its \`else if\` branches and its \`else\`**:
 
 ~~~go
 if kg := float64(grams) / 1000; kg >= 20 {
@@ -133,14 +125,14 @@ if kg := float64(grams) / 1000; kg >= 20 {
 } else if kg >= 5 {
 	handling = "trolley"
 }
-fmt.Println(kg)   // undefined: kg
+fmt.Println(kg)   // undefined: kg  (it is gone after the if)
 ~~~
 
 This is the idiom for "compute something, test it, and then forget it", so a throwaway value does not leak into the rest of \`main\`. You will meet it constantly with errors: \`if err := doThing(); err != nil { ... }\`.
 
 ### There is no ternary operator
 
-Other languages have \`condition ? a : b\`. Go does not, and typing it gets you \`invalid character U+003F '?'\`. The language designers kept the feature set small on purpose: nested ternaries are famously hard to read, and an ordinary \`if\` is always clear. The Go way is to set a default and override it:
+Other languages have \`condition ? a : b\`. Go does not, and typing it gets you \`invalid character U+003F '?'\`. The Go way is to set a default and override it:
 
 ~~~go
 handling := "by hand"
@@ -165,8 +157,8 @@ default:
 ~~~
 
 - **A case can list several values**: \`case "east", "west":\`.
-- **There is no fall-through.** In C, once a case matches, execution rolls into the next case unless you write \`break\`. Go does the opposite: each case ends by itself, so you never write \`break\` just to stop. If you really want the old behaviour, there is a keyword, \`fallthrough\`, and it is rare enough that seeing it in code is a signal to look closely.
-- **Cases are checked top to bottom and the first match wins.** The compiler also rejects an obvious duplicate: \`duplicate case "north" (constant of type string) in expression switch\`.
+- **There is no fall-through.** In C, once a case matches, execution rolls into the next case unless you write \`break\`. Go does the opposite: each case ends by itself, so you never write \`break\` just to stop.
+- **Cases are checked top to bottom and the first match wins.**
 - **\`default\`** runs when nothing else matched. It can appear anywhere, but putting it last reads best.
 
 ### The tagless switch
@@ -186,9 +178,7 @@ default:
 }
 ~~~
 
-Because the first true case wins, you order the cases from the most specific to the most general. Reading the ladder above, a parcel of 300 g matches \`< 500\` and stops there, so the \`< 2000\` case never sees it.
-
-A value switch with a mismatched case type is a compile error too: \`switch n { case "four": }\` fails with \`cannot convert "four" (untyped string constant) to type int\`.
+Because the first true case wins, you order the cases from the most specific to the most general. A parcel of 300 g matches \`< 500\` and stops there, so the \`< 2000\` case never sees it.
 
 ### Common mistakes
 
@@ -196,7 +186,19 @@ A value switch with a mismatched case type is a compile error too: \`switch n { 
 - Writing \`if x = 5\` when you mean \`==\`. In Go an assignment is not an expression, so this is a syntax error rather than a silent bug.
 - Using the init-statement variable after the \`if\` is over (\`undefined: kg\`).
 - Ordering tagless cases from general to specific, so the first case swallows everything.
-- Expecting a case to fall through. It will not, so write a list (\`case "east", "west":\`) when two values share one body.`,
+- Expecting a case to fall through. It will not, so write a list (\`case "east", "west":\`) when two values share one body.
+
+### Going further (optional)
+
+**How to pick the condition.**
+
+1. Say the question in plain words: "Is this parcel too heavy to carry by hand?"
+2. Turn it into one yes/no test: \`grams > 5000\`.
+3. Check the **edge value**: what happens at exactly 5000? If that parcel should still go by hand, \`>\` is right; if it should not, you need \`>=\`.
+
+**Other things that give a yes or no.** Ready-made text questions from the \`strings\` package: \`strings.Contains(label, "PK")\` (is the piece somewhere inside?) and \`strings.HasPrefix(parcelID, "PK-")\` (does it begin with this? \`HasSuffix\` checks the end). Checking for nothing: \`line == ""\` is true for empty text. Later lessons add more, such as asking whether a list is empty (lesson 7) or whether a map holds a key (lesson 8).
+
+**\`fallthrough\`.** If you really want the C behaviour, there is a keyword \`fallthrough\`; it is rare enough that seeing it in code is a signal to look closely. A switch with a mismatched case type is a compile error: \`switch n { case "four": }\` fails with \`cannot convert "four" (untyped string constant) to type int\`. The compiler also rejects an obvious duplicate case.`,
       mission: md`The label scanner now hands you a parcel: PK-1001, 2400 g, bound for the north. Reading it is not enough. At the end of the belt stands the **sorting gate**, and it has to decide three things: how the parcel must be lifted, which weight class it belongs to, and which chute it should drop into.
 
 Write those rules. When the lesson passes, the **Sorting gate** lights up on the floor: the class badge appears on the scanner arch and chute A starts to glow.`,
@@ -340,9 +342,20 @@ assertEqual(scene.lane, "mainline", "lane (north is not east or west, so mainlin
       minutes: 30,
       xp: 120,
       concepts: ["for", "three-part loop", "condition-only loop", "infinite loop", "break / continue", "range", "runes", "scanner loop"],
-      learn: md`### Go has exactly one loop keyword
+      learn: md`### Why loop? And which loop?
 
-Other languages give you \`for\`, \`while\`, \`do ... while\` and \`foreach\`. Go has **\`for\`**, and it wears four outfits. That is a design decision: fewer keywords to learn, and one place to look for any kind of repetition.
+A belt at the hub moves parcels past the scanner all day. Nobody writes one instruction per parcel: you say "for every parcel that arrives, do this" once. That is a **loop**: a block of code that repeats. Go has exactly one loop keyword, \`for\`, and it wears several outfits.
+
+A loop repeats for one of two reasons. Either you want to go **through** something (a count, the letters of a code, a list of items), or you want to **wait until something changes** (the belt reaches full speed, the input ends). Use this table to choose:
+
+| Situation | Form |
+| --- | --- |
+| I know how many laps, or want the position number | \`for i := 0; i < n; i++\` |
+| I want every item of a collection (or every character of a string) | \`for _, item := range items\` |
+| I wait for a state to change | \`for condition {\` |
+| I stop from the inside | \`for {\` plus \`break\` |
+
+The "wait" form has the same yes/no condition as an \`if\`, asked again before every lap. Something in the body has to change the answer, or the loop never ends.
 
 ### 1. The three-part loop
 
@@ -350,9 +363,23 @@ Other languages give you \`for\`, \`while\`, \`do ... while\` and \`foreach\`. G
 for i := 3; i >= 1; i-- {
 	fmt.Println("Belt starts in", i)
 }
+// Belt starts in 3
+// Belt starts in 2
+// Belt starts in 1
 ~~~
 
-The parts are an **init** statement (runs once), a **condition** (checked before every pass) and a **post** statement (runs after every pass). \`i--\` is "subtract one" and \`i++\` is "add one". As with \`if\`, there are no parentheses and the braces are required. Notice that \`i\` is declared by the loop itself, so it is gone once the loop ends.
+The parts are an **init** statement (runs once), a **condition** (checked before every pass) and a **post** statement (runs after every pass). \`i--\` is "subtract one" and \`i++\` is "add one". As with \`if\`, there are no parentheses and the braces are required. \`i\` is declared by the loop itself, so it is gone once the loop ends.
+
+Lap by lap, for \`for i := 1; i <= 3; i++\`:
+
+| Lap | \`i\` | \`i <= 3\` | Output |
+| --- | --- | --- | --- |
+| 1 | 1 | true | Chute 1 |
+| 2 | 2 | true | Chute 2 |
+| 3 | 3 | true | Chute 3 |
+| (end) | 4 | false | the loop is over |
+
+The start is included and the stop is **excluded** when you use \`<\`, so \`i < n\` gives exactly \`n\` laps.
 
 ### 2. The condition-only loop: Go's "while"
 
@@ -361,11 +388,11 @@ Leave out the init and the post and you have a \`while\`:
 ~~~go
 count := 10
 for count > 0 {
-	count -= 3
+	count -= 3        // 7, 4, 1, -2 -> the loop stops
 }
 ~~~
 
-There is no \`while\` keyword. If you try one, the compiler gets confused in an unhelpful way (\`syntax error: unexpected name x at end of statement\`), because to Go it is just an unknown word followed by something unexpected. Write \`for\` instead.
+There is no \`while\` keyword. Write \`for\` instead.
 
 ### 3. The infinite loop
 
@@ -381,7 +408,7 @@ for {
 }
 ~~~
 
-\`break\` leaves the loop completely. \`continue\` skips the rest of this pass and jumps to the next one. A loop whose condition can never become false is the classic way to hang a program, so whenever you write \`for {\`, point at the \`break\`.
+\`break\` leaves the loop completely. \`continue\` skips the rest of this pass and jumps to the next one: \`continue\` means "not this one, next please", \`break\` means "found it, stop now". A loop whose condition can never become false is the classic way to hang a program (here, a run that goes on for several seconds is stopped with a time-out message), so whenever you write \`for {\`, point at the \`break\`.
 
 ### 4. \`range\`: walk over something
 
@@ -393,9 +420,21 @@ for pos, r := range "PK-1001" {
 }
 ~~~
 
-The \`r\` is a **rune**: Go's word for one Unicode character, stored as a number (80 is the code of \`P\`). Characters written in single quotes are runes too, which is why a digit test looks like \`r >= '0' && r <= '9'\`. Comparing a rune with a double-quoted string fails: \`invalid operation: r >= "0" (mismatched types rune and untyped string)\`.
+The \`r\` is a **rune**: Go's word for one character, stored as a number (80 is the code of the letter \`P\`). Characters written in single quotes are runes too, which is why a digit test looks like \`r >= '0' && r <= '9'\`. Comparing a rune with a double-quoted string fails: \`mismatched types rune and untyped string\`.
 
-Why does \`range\` hand out runes and not bytes? Because strings in Go are UTF-8: a letter like \`é\` takes two bytes. Ranging over \`"héy"\` gives positions \`0, 1, 3\` (the \`é\` occupies bytes 1 and 2), while \`len("héy")\` is 4 bytes but only 3 runes. The position is a *byte* position. You will rarely care about this with parcel codes, but it explains a lot of puzzling output later.
+Counting the digits in a code:
+
+~~~go
+digits := 0
+for _, r := range "A1B22" {
+	if r >= '0' && r <= '9' {
+		digits++
+	}
+}
+fmt.Println(digits)   // 3
+~~~
+
+The \`_\` means "I do not need the position". If you name a variable and never use it, Go refuses to compile (\`declared and not used\`).
 
 Since Go 1.22 you can also range over a **whole number**, which is the tidy way to do something N times, and over a typed constant:
 
@@ -408,22 +447,72 @@ for r := range regionCount {   // r is a Region: 0, 1, 2, 3
 }
 ~~~
 
-If you do not need one of the values, name it \`_\`. An unused index is a compile error: \`declared and not used: i\`.
+### Loops need conditions too
 
-### Which form, and what numbers does a counting loop produce?
+A loop visits everything and an \`if\` decides what to do with each visit. Together they count things and find the biggest. Here \`weights\` is a **slice**, a numbered list of values (lesson 7 teaches slices properly):
 
-A loop repeats for one of two reasons: you want to go **through** something (a count, a list of items), or you want to **wait until something changes**. The first is a three-part loop or a \`range\`. The second is the condition-only \`for\`, whose condition is the same yes/no question as in an \`if\`, asked again before every lap, so something in the body has to change the answer.
+~~~go
+weights := []int{300, 4200, 80, 9100}
+heavy := 0
+heaviest := 0
+for _, w := range weights {
+	if w > 1000 {
+		heavy++               // count the heavy ones
+	}
+	if w > heaviest {
+		heaviest = w          // a running maximum: remember the biggest so far
+	}
+}
+fmt.Println(heavy, heaviest)    // 2 9100
+~~~
 
-| Situation | Form |
-| --- | --- |
-| I know how many laps, or want the position number | \`for i := 0; i < n; i++\` |
-| I want every item of a collection | \`for _, item := range items\` |
-| I wait for a state to change | \`for condition {\` |
-| I stop from the inside | \`for {\` plus \`break\` |
+The running maximum starts at 0, then becomes 300, 4200, and finally 9100 as bigger values appear.
 
-Go has no \`do ... while\`; use \`for {\` and put the exit test at the end of the body with \`break\`.
+### Reading until the input ends
 
-The start of a counting loop is included and the stop is **excluded**, so \`i < n\` gives exactly \`n\` laps and the counter matches the positions of a list of length \`n\` (0 up to \`n - 1\`):
+The loop you will use most in this course reads standard input line by line. \`scanner.Scan()\` returns \`true\` when it managed to read another line and \`false\` when the input is over, so it is its own loop condition:
+
+~~~go
+for scanner.Scan() {
+	line := strings.TrimSpace(scanner.Text())
+	if line == "" {
+		continue          // a blank line on the belt: skip it
+	}
+	// ...use line...
+}
+~~~
+
+The loop continues from where lesson 4 stopped: that lesson read the first four lines, so this loop sees the manifest that follows. Each manifest row has three words separated by spaces: the parcel id, the region and the weight in grams, like this:
+
+~~~text
+PK-2001 north 2400
+~~~
+
+\`strings.Fields(line)\` splits a line on spaces and gives back the words as a slice (a numbered list). For that row, \`fields[0]\` is \`"PK-2001"\`, \`fields[1]\` is \`"north"\`, \`fields[2]\` is \`"2400"\`, and \`len(fields)\` is 3. A row with the wrong number of words is unreadable:
+
+~~~go
+fields := strings.Fields(line)
+if len(fields) != 3 {
+	unreadable++
+	continue
+}
+~~~
+
+To total the weights you convert the last word with \`strconv.Atoi\` (lesson 4). A \`:=\` inside a loop body declares new variables for that lap, so \`weight, err := strconv.Atoi(fields[2])\` makes a fresh \`err\` each time and it disappears at the end of the lap. That is fine here.
+
+### Common mistakes
+
+- An off-by-one in the condition: \`i <= 3\` runs four times starting from 0.
+- Forgetting to change the variable the condition tests, so the loop never ends.
+- Comparing a rune to a string (\`'0'\` is a rune, \`"0"\` is a string).
+- Leaving an unused loop variable (\`for i, r := range s\` when you only use \`r\`).
+- Forgetting \`continue\` for blank lines, so they get counted as bad rows.
+
+### Going further (optional)
+
+**Strings are UTF-8.** \`range\` hands out runes and not bytes because a letter like \`é\` takes two bytes. Ranging over \`"héy"\` gives positions \`0, 1, 3\` (the \`é\` occupies bytes 1 and 2), while \`len("héy")\` is 4 bytes but only 3 runes. The position is a *byte* position.
+
+**More counting patterns.**
 
 ~~~go
 for i := 0; i < 5; i++ {}    // 0 1 2 3 4
@@ -433,9 +522,9 @@ for i := 10; i > 0; i -= 4 {} // 10 6 2   (counting down)
 for i := range 5 {}          // 0 1 2 3 4   (Go 1.22+, a shorthand for the first line)
 ~~~
 
-### The same task three ways
+Go has no \`do ... while\`; use \`for {\` and put the exit test at the end of the body with \`break\`.
 
-Printing the chutes, with \`chutes := []string{"north", "east", "south"}\` (a slice: a numbered list, lesson 7):
+**Three ways to print a slice.** With \`chutes := []string{"north", "east", "south"}\`:
 
 ~~~go
 // 1. By position
@@ -454,70 +543,7 @@ for i, c := range chutes {
 }
 ~~~
 
-Prefer form 2 when you only need the items and form 3 when you also need the position. The \`_\` is required in form 2: Go refuses to compile an unused variable.
-
-### What happens each lap
-
-~~~go
-for i := 1; i <= 3; i++ {
-	fmt.Println("Chute", i)
-}
-~~~
-
-| Lap | \`i\` | \`i <= 3\` | Output |
-| --- | --- | --- | --- |
-| 1 | 1 | true | Chute 1 |
-| 2 | 2 | true | Chute 2 |
-| 3 | 3 | true | Chute 3 |
-| (end) | 4 | false | the loop is over |
-
-### Loops need conditions too
-
-A loop visits everything and an \`if\` decides what to do with each visit. Together they filter and count:
-
-~~~go
-weights := []int{300, 4200, 80, 9100}
-heavy := 0
-for _, w := range weights {
-	if w > 1000 {
-		heavy++
-	}
-}
-fmt.Println(heavy)    // 2  (4200 and 9100)
-~~~
-
-In one sentence each: \`continue\` means "not this one, next please", \`break\` means "found it, stop now". Remember the forever-loop trap: \`for {\` only ends through a \`break\` or a \`return\` in its body.
-
-### Reading until the input ends
-
-The loop you will use most in this course reads standard input line by line. \`scanner.Scan()\` returns \`true\` when it managed to read another line and \`false\` when the input is over, so it is its own loop condition:
-
-~~~go
-for scanner.Scan() {
-	line := strings.TrimSpace(scanner.Text())
-	if line == "" {
-		continue          // a blank line on the belt: skip it
-	}
-	// ...use line...
-}
-~~~
-
-\`scanner.Scan()\` also returns \`false\` if something went wrong while reading, so careful programs ask \`scanner.Err()\` after the loop. It continues from where lesson 4 stopped: that lesson read the first four lines, so this loop sees the manifest that follows.
-
-### Small details worth knowing
-
-- **\`strings.Fields(line)\`** splits a line on any run of spaces and gives back a list of the words. That list is a *slice*, and you pick words with \`fields[0]\`, \`fields[1]\`... Lesson 7 is all about slices; for now treat it as "numbered words". \`len(fields)\` tells you how many there are.
-- **Building a string with \`+=\`** is fine for a few hundred lines. (For huge outputs Go has \`strings.Builder\`.)
-- **A \`:=\` inside a loop body declares new variables for that pass.** In the manifest loop, \`weight, err := strconv.Atoi(...)\` creates an *inner* \`err\` that hides the outer one from lesson 4. That is legal and usually exactly what you want, but it is called **shadowing**, and it is worth knowing it is happening.
-- **Each pass gets its own copy of the loop variable** (Go 1.22 and later). A closure created in the loop sees that pass's value, not whatever the variable ended on.
-
-### Common mistakes
-
-- An off-by-one in the condition: \`i <= 3\` runs four times starting from 0.
-- Forgetting to change the variable the condition tests, so the loop never ends.
-- Comparing a rune to a string (\`'0'\` is a rune, \`"0"\` is a string).
-- Leaving an unused loop variable (\`for i, r := range s\` when you only use \`r\`).
-- Forgetting \`continue\` for blank lines, so they get counted as bad rows.`,
+**Small details.** Building a string with \`+=\` is fine for a few hundred lines (for huge outputs Go has \`strings.Builder\`). When a \`:=\` in the loop reuses a name that already exists outside the loop, the inner one hides the outer one; that is called *shadowing*. Since Go 1.22, each lap gets its own copy of the loop variable.`,
       mission: md`The belt is silent because nobody has started it. Start it with a countdown, ramp the belt up to full speed, and let it swallow the whole manifest that is waiting on standard input: thirteen rows, a blank line, and a couple of rows that nobody can read.
 
 You will count what arrived, add up the weights and keep a copy of every row for the next lesson. When this lesson passes the **Intake belt** starts running on the floor, with the crates it carries.`,
@@ -683,6 +709,8 @@ assertEqual(scene.heaviest, 31000, "heaviest (the largest weight seen so far, up
       concepts: ["arrays", "slices", "append", "len / cap", "slicing", "shared memory", "copy", "make", "strings.Split"],
       learn: md`### Arrays: a fixed row of boxes
 
+Think of the row of chutes at the end of the belt: a numbered line of bins, A to D. You pick one by its position. Programs need this all the time: the ids of today's parcels, the weights of every box. Instead of one variable per parcel, you keep **one name for the whole numbered row**.
+
 An **array** holds a fixed number of values of one type, and the number is part of the type:
 
 ~~~go
@@ -701,11 +729,13 @@ backup[0] = "Z"
 fmt.Println(labels[0], backup[0])   // A Z
 ~~~
 
+Because the array's length is part of its type, a package-level array like the mission's \`chuteLabels\` is declared above \`func main\`, in the part of the editor above the divider line, just like lesson 2's \`type\` and \`const\` declarations.
+
 Fixed-size arrays are handy for small tables, but most of the time you want a list that can grow. That is a slice.
 
 ### Slices: a window onto an array
 
-A **slice** has no size in its type: \`[]int\` is "a list of ints". Under the hood it is a tiny three-part value: a **pointer** to an array of elements, a **length** (\`len\`, how many elements you can see) and a **capacity** (\`cap\`, how many fit in the array before it runs out of room).
+A **slice** has no size in its type: \`[]int\` is "a list of ints" that can grow. Under the hood it is a small three-part value: a note of *where in memory the elements are stored* (the slice's "backing array"), a **length** (\`len\`, how many elements you can see) and a **capacity** (\`cap\`, how many fit in that stored array before it runs out of room). Picture a window cut in a wall of boxes: the window shows some of them (the length), and the wall may continue behind it (the capacity).
 
 ~~~go
 var ids []string            // nil slice: length 0, nothing allocated yet
@@ -713,7 +743,7 @@ weights := []int{300, 800}  // literal
 scratch := make([]int, 5)   // length 5, five zeros
 ~~~
 
-A nil slice is perfectly usable: \`len(ids)\` is 0, you can \`range\` over it and you can append to it. Most Go code starts with \`var ids []string\` and never worries.
+A \`nil\` slice (Go's "nothing here yet") is perfectly usable: \`len(ids)\` is 0, you can \`range\` over it and you can append to it. Most Go code starts with \`var ids []string\` and never worries.
 
 ### append
 
@@ -753,6 +783,20 @@ Because \`view\` still had spare capacity, \`append\` wrote straight into the sh
 
 The rule of thumb: a slice you got by slicing is a *view*. If you might append to it or change it and the original matters, copy first.
 
+### Putting it together: a quick trace
+
+The mission asks you to watch the capacity change as you append. Here is a tiny version you can follow by hand:
+
+~~~go
+var w []int                 // len 0, cap 0
+w = append(w, 10)           // len 1, cap 1
+w = append(w, 20)           // len 2, cap 2   (the array was full, so a bigger one was made)
+w = append(w, 30)           // len 3, cap 4
+fmt.Println(len(w), cap(w)) // 3 4
+~~~
+
+The capacities of an int slice follow a doubling pattern like 1, 2, 4, 8. That is an implementation detail, so your program should never depend on it. In the mission you just record \`cap(weights)\` after each append to *see* it.
+
 ### Looping over a slice
 
 ~~~go
@@ -765,7 +809,11 @@ for i, w := range weights {
 
 ### Splitting a string into a slice
 
-\`strings.Split(text, "\n")\` cuts a string at every separator and returns the pieces as a \`[]string\`. Wrap the text in \`strings.TrimSpace\` first, or the trailing newline leaves an empty piece at the end. This is how the manifest string from lesson 6 becomes a list of rows you can walk over again and again.
+\`strings.Split(text, "\n")\` cuts a string at every separator and returns the pieces as a \`[]string\`. Wrap the text in \`strings.TrimSpace\` first, or the trailing newline leaves an empty piece at the end. This is how the manifest string from lesson 6 becomes a list of rows you can walk over again and again. Each row looks like \`PK-2001 north 2400\`: after \`strings.Fields\` (lesson 6), \`fields[0]\` is the id and \`fields[2]\` is the weight text.
+
+### Reading the mission's summary line
+
+The last mission task prints twelve values on one line. Here is what each one stands for, in order: \`len(rows)\` (how many manifest rows), \`len(ids)\` and \`len(weights)\` (how many good rows), \`cap(weights)\` (the room in the weights list), \`backup[0]\` (the array copy, now \`"Z"\`) and \`chuteLabels[0]\` (the original, still \`"A"\`), then \`leaked\` (what the shared window overwrote) and \`untouched\` (what the capped window left alone), and finally the length and capacity of \`head\` and \`fixedHead\`: the window that could leak, and the window whose capacity was capped.
 
 ### When it goes wrong
 
@@ -934,7 +982,7 @@ assertEqual(scene.untouched, 19500, "untouched (restore original[3] = weights[3]
             ],
             answer: 0,
           },
-          explanation: "A slice is a small header (pointer, length, capacity). `append` cannot change *your* header; it hands back a new one with the larger length, possibly pointing at a freshly allocated array. If you drop the result the compiler stops you with `append(s, x) (value of type []int) is not used`.",
+          explanation: "A slice is a small header (where its elements are stored, a length and a capacity). `append` cannot change *your* header; it hands back a new one with the larger length, possibly referring to a freshly allocated array. If you drop the result the compiler stops you with `append(s, x) (value of type []int) is not used`.",
         },
       ],
     },
@@ -1012,7 +1060,7 @@ for name, n := range tally {
 visits every entry exactly once, but **in an order Go deliberately scrambles**, and the order changes from run to run. The Go team did that because programs kept accidentally depending on the order they happened to observe; randomising it makes the bug show up immediately. So if you need a stable order, build it yourself: collect the keys into a slice, sort it, and loop over the slice.
 
 ~~~go
-keys := make([]string, 0, len(tally))   // length 0, room for len(tally)
+keys := make([]string, 0, len(tally))   // make(type, length, capacity): start empty (length 0) with room for len(tally) items
 for name := range tally {
 	keys = append(keys, name)
 }
@@ -1026,7 +1074,7 @@ A pleasant surprise: \`fmt.Println(tally)\` prints a map **sorted by key** (\`ma
 
 ### Package-level lookup tables
 
-A table that every part of the program needs, like "which region does this word mean", belongs at the top of the file rather than inside \`main\`. At package level you cannot use \`:=\`, so you write \`var\`:
+A table that every part of the program needs, like "which region does this word mean", belongs at the top of the file rather than inside \`main\`. At package level you cannot use \`:=\`, so you write \`var\`. In the editor this goes above the divider line, as in lessons 2 and 7:
 
 ~~~go
 var regionOf = map[string]Region{
@@ -1064,7 +1112,7 @@ Always create the map with a literal or \`make\` before you store into it.
 - Forgetting that a map you passed around is shared.`,
       mission: md`The floor has four chutes and the manifest names regions in free text: some right, some in odd capitals, and one that does not exist at all (a parcel for the moon). You need a **lookup table** that turns a region word into a real chute, and a **tally** that counts how many parcels and how many grams are headed to each one.
 
-Unknown regions must not be silently counted as a chute. Set them aside, then print the tally in a stable order. When the lesson passes, the **Chute tally** lights up: each chute shows its parcel count.`,
+Unknown regions must not be silently counted as a chute. The mission counts every region first, because that is the simplest loop, and then removes the nonsense ones afterwards with \`delete\`. That way you practise both the counting idiom and \`delete\`. Then print the tally in a stable order. When the lesson passes, the **Chute tally** lights up: each chute shows its parcel count.`,
       tasks: [
         'Above the divider, declare the package-level lookup var regionOf = map[string]Region{"north": North, "south": South, "east": East, "west": West}',
         "Create three empty maps: tally (string to int), gramsBy (string to int) and unknown (string to int). Range over rows; skip a row unless it has three fields and a whole-number weight. Lower-case the region (strings.ToLower(fields[1])) as name and do tally[name]++",

@@ -69,7 +69,9 @@ Each \`print()\` makes a new line. A line that starts with \`#\` is a **comment*
 print("This one runs")
 ~~~
 
-Use double quotes \`"like this"\` or single quotes \`'like this'\`. Just close the quote you opened.`,
+Use double quotes \`"like this"\` or single quotes \`'like this'\`. Just close the quote you opened.
+
+Type your code in the editor and press **Run**: what you print shows up on the display. **Submit** checks your work against the tests listed under the mission. If you see a red message, that is Python telling you which line it could not understand: read it, fix the line and Run again.`,
           mission: `Beat Lab starts as a dark blueprint: no power, no sound, nothing.
 
 Boot it by printing three startup lines. The moment they run, the display lights up, shows your lines, and a metronome starts ticking out the beat.
@@ -122,14 +124,19 @@ beats = 4            # int   (whole number)
 gain = 0.8           # float (decimal number)
 ~~~
 
-Use \`=\` to store a value. Names are lowercase with underscores, like \`master_volume\`.
+Use \`=\` to store a value. Names are lowercase with underscores, like \`master_volume\`. Think of each variable as a box with a label: the name is the label, the value is what is inside.
 
 You can ask Python for the type with \`type(beats)\`. It works it out from the value: quotes make a string, digits make an int, a decimal point makes a float.
 
-### Two music words
+~~~python
+print(type(beats))     # <class 'int'>
+~~~
 
+### Music words
+
+- A **beat** is one tap of your foot. A **bar** is a group of 4 beats. Each beat is cut into 4 **steps**, so a bar has 16 steps.
 - **BPM** (beats per minute): how fast the track plays. House music is around 120.
-- **Swing**: pushes every second 16th note a little late, so the beat lilts instead of marching. \`0.0\` is straight, \`0.2\` is a gentle shuffle.`,
+- **Swing**: pushes every second step a little late, so the beat lilts instead of marching. \`0.0\` is straight, \`0.2\` is a gentle shuffle.`,
           mission: `Right now the machine ticks at a default speed with no name. Give it an identity.
 
 The scene reads these exact variable names, so spelling matters. Hit Run and the display shows your title, the metronome changes speed, and the master volume changes how loud everything is.`,
@@ -203,7 +210,17 @@ beat.upper()       # "X..."               (all capitals)
 "x.x.x".count("x") # 3                    (how many times it appears)
 ~~~
 
-Methods like \`.upper()\` and \`.count()\` are attached to the string with a dot. Strings can't be edited in place, so build a new one with \`+\` and \`*\`.`,
+Methods like \`.upper()\` and \`.count()\` are attached to the string with a dot. Strings can't be edited in place, so build a new one with \`+\` and \`*\`.
+
+You can chain methods: the first one runs, and the next one works on its result.
+
+~~~python
+"x.X".upper().count("X")   # "X.X" then count: 2
+~~~
+
+A **step** is one character of the pattern; 4 steps make a **beat**, and 4 beats (16 steps) make a **bar**.
+
+\`print("kick:", kick_pattern)\` with a comma shows both values on one line, separated by a space.`,
           mission: `Time for the heartbeat of the track: the kick drum.
 
 One beat is 4 steps, written \`"x..."\`. Build a four-on-the-floor bar: an accented first beat, then the plain beat three more times. When you Run, the KICK row lights up and it thumps in time.`,
@@ -275,7 +292,15 @@ nums[3:]             # [40, 50]       (from index 3 to the end)
 [0, 0, 1, 0].count(0)  # 3
 ~~~
 
-Indexes start at **0**, so a bar of 16 steps is index 0 to 15.
+Indexes start at **0**, so a bar of 16 steps is index 0 to 15. In a slice, \`[8:]\` means "from position 8 to the end".
+
+Printing the list after each edit shows what changed:
+
+~~~python
+bar = [0] * 4      # [0, 0, 0, 0]
+bar[1] = 2         # [0, 2, 0, 0]
+bar[3] = 0.5       # [0, 2, 0, 0.5]
+~~~
 
 ### Snare levels
 
@@ -339,42 +364,62 @@ assert clap_pattern[12] > 0, "The clap should hit on step 12 like the snare"` },
           concepts: ["for loops", "range()", "% (modulo)", "if / elif / else"],
           learn: `### Let a loop do the typing
 
-A **for loop** repeats code once per item. \`range(16)\` counts 0, 1, 2 ... 15.
+A drum bar has 16 steps. Writing sixteen numbers by hand is slow and easy to get wrong, so you let the computer repeat the work. A **for loop** repeats code once per item. The lines **indented** under the \`for\` line (pushed in with four spaces) are the ones that repeat.
 
 ~~~python
 for i in range(3):
-    print(i)        # 0, 1, 2
+    print(i)
 ~~~
 
-Build a list inside a loop with \`append\`:
+That prints three lines: \`0\`, \`1\`, \`2\`.
+
+### Which loop, and what is range?
+
+A loop repeats a block, and there are two kinds. \`for\` means "once for every item, or a set number of times". \`while\` means "keep going until something changes" (see Going further). Here you know the count, 16 steps, so you want \`for\`.
+
+\`range(16)\` makes the numbers 0, 1, 2 ... 15. The **stop value is never included**, so \`range(n)\` gives exactly \`n\` numbers starting at 0, which line up with positions in a list. \`list(...)\` turns them into a list so \`print\` can show them:
+
+~~~python
+print(list(range(5)))          # [0, 1, 2, 3, 4]
+print(list(range(2, 6)))       # [2, 3, 4, 5]
+print(list(range(0, 16, 4)))   # [0, 4, 8, 12]   (the third number is the step)
+~~~
+
+Build a list inside a loop with \`append\`, which adds one item to the end:
 
 ~~~python
 squares = []
 for i in range(4):
-    squares.append(i * i)    # [0, 1, 4, 9]
+    squares.append(i * i)    # i * i means i multiplied by itself
+print(squares)               # [0, 1, 4, 9]
 ~~~
 
 ### Remainders with %
 
-\`a % b\` is the remainder after dividing: \`7 % 4\` is \`3\`. It is perfect for patterns that repeat:
+Divide 7 into groups of 4: you get one group and **3 left over**. That leftover is the **remainder**, and \`7 % 4\` is \`3\`. It is perfect for patterns that repeat:
 
 ~~~python
 i % 2 == 0     # True on 0, 2, 4, 6 ... (every second step)
 i % 4 == 0     # True on 0, 4, 8, 12 ... (every beat)
 ~~~
 
+\`==\` asks "is it equal to?" (two equals signs; a single \`=\` stores a value). The answer is \`True\` or \`False\`.
+
 ### Making decisions
 
 ~~~python
-if i % 4 == 0:
-    print("beat")
-elif i % 2 == 0:
-    print("half-beat")
-else:
-    print("other")
+for i in range(4):
+    if i % 4 == 0:
+        print(i, "beat")
+    elif i % 2 == 0:
+        print(i, "half-beat")
+    else:
+        print(i, "other")
 ~~~
 
-Python checks the branches top to bottom and runs the **first** one that is true. Indentation shows what belongs inside.
+This prints \`0 beat\`, \`1 other\`, \`2 half-beat\`, \`3 other\`. (\`print\` with commas shows the values on one line, separated by spaces.)
+
+Python checks the branches top to bottom and runs the **first** one that is true. Step 0 is also divisible by 2, but the first test already matched, so it is a "beat" and not a "half-beat".
 
 ### Why a condition? What does it give back?
 
@@ -388,26 +433,30 @@ on_beat = i % 4 == 0   # keep the answer in a variable
 print(type(on_beat))   # <class 'bool'>
 ~~~
 
-\`==\` asks "equal?", while a single \`=\` stores a value.
+To pick a condition: say the question in plain words ("Is this step on a beat?"), turn it into a yes/no test (\`i % 4 == 0\`), and check the first and last values (step 0 and step 15) in your head.
 
-### Kinds of conditions you can write
+### Going further (optional)
+
+You do not need any of this for the mission.
+
+**Kinds of conditions.**
 
 | Kind | Example | What it asks |
 | --- | --- | --- |
-| Comparison | \`i < 8\` | Is this number smaller, larger, at most, at least? |
-| Equal / not equal | \`i % 4 == 0\`, \`name != "kick"\` | Same value? Works on text too. |
-| Between two limits | \`4 <= i < 8\` | Is it inside a band? (one chained check) |
+| Comparison | \`i < 8\` | Is this number smaller, larger, at most, at least? (\`<\` \`>\` \`<=\` \`>=\`) |
+| Not equal | \`name != "kick"\` | Different value? Works on text too. |
+| Between two limits | \`4 <= i < 8\` | Is it inside a band? |
 | Membership | \`i in [0, 4, 8, 12]\`, \`"k" in name\` | Is it inside this list or string? |
 | Text tests | \`name.isalpha()\`, \`name.startswith("hi")\` | A function that answers yes or no. |
-| Identity | \`sound is None\` | Is it the very same object? Use it for \`None\`. |
+| Identity | \`sound is None\` | Is it the very same object? (\`None\` means "nothing here".) |
 | Truthiness | \`if hats_pattern:\` | Is the list non-empty? |
-| Combined | \`i > 4 and i % 2 == 0\`, \`a or b\`, \`not a\` | Several questions, joined together. |
+| Combined | \`i > 4 and i % 2 == 0\`, \`a or b\`, \`not a\` | \`and\` needs both, \`or\` needs either, \`not\` flips the answer. |
 
-**Truthiness.** These count as false: \`False\`, \`None\`, \`0\`, \`0.0\`, \`""\`, \`[]\`, \`{}\`. Nearly everything else counts as true. (That makes \`if i % 4:\` true on every step that is *not* a beat.)
+**Truthiness.** These count as false: \`False\`, \`None\`, \`0\`, \`0.0\`, \`""\` (empty text), \`[]\` (empty list) and \`{}\` (an empty dictionary, which a later lesson teaches). Nearly everything else counts as true. (That makes \`if i % 4:\` true on every step that is *not* a beat.)
 
 **\`==\` versus \`is\`.** \`==\` asks "equal values?"; \`is\` asks "the same object?". Use \`==\` for numbers and text, and \`is\` mainly for \`None\`.
 
-Conditions can work **together** (\`and\` needs both, \`or\` needs either), be tried **in order** (an \`if\` / \`elif\` / \`else\` chain runs only the first true branch), or be **independent** (separate \`if\`s are each checked). Compare them for \`i = 4\`:
+**In order or independent.** Compare for \`i = 4\`:
 
 ~~~python
 # separate ifs: both are true, both run
@@ -430,26 +479,7 @@ elif i % 2 == 0:
 
 Python also has \`match\` for many fixed choices, but \`elif\` chains cover this course.
 
-### How to pick the condition
-
-1. Say the question in plain words: "Is this step on a beat?"
-2. Turn it into a yes/no test: \`i % 4 == 0\`.
-3. Check the edge value. Does step 0 count as a beat? \`0 % 4\` is \`0\`, so yes. Try the first and last step (0 and 15) in your head.
-
-### Which loop, and what is range?
-
-A loop repeats a block. \`for\` means "once for every item, or a set number of times". \`while\` means "keep going until something changes": its condition is the same yes/no question an \`if\` asks, re-asked before every lap. Here you know the count (16 steps), so you want \`for\`.
-
-\`range\` makes numbers, and the **stop value is never included**. \`range(n)\` gives exactly \`n\` numbers starting at 0, so they match positions in a list.
-
-~~~python
-print(list(range(5)))          # [0, 1, 2, 3, 4]
-print(list(range(2, 6)))       # [2, 3, 4, 5]
-print(list(range(0, 16, 4)))   # [0, 4, 8, 12]
-print(list(range(3, 0, -1)))   # [3, 2, 1]
-~~~
-
-The same job three ways, over a pattern:
+**Three ways to loop over a pattern.**
 
 ~~~python
 pattern = [2, 0, 1]
@@ -462,18 +492,9 @@ for i, hit in enumerate(pattern):     # items plus a counter
     print(i, hit)
 ~~~
 
-The first prints \`0 2\`, \`1 0\`, \`2 1\`; the second prints \`2\`, \`0\`, \`1\`; the third prints the same as the first. Prefer the items directly; use \`enumerate\` when you also need the step number, and \`range\` when the numbers themselves matter, as with \`i % 4\` above.
+\`pattern[i]\` means "the item at position i" (counting starts at 0). The first prints \`0 2\`, \`1 0\`, \`2 1\`; the second prints \`2\`, \`0\`, \`1\`; the third prints the same as the first. Prefer the items directly; use \`enumerate\` when you also need the step number.
 
-What happens each lap of \`for i in range(3): print(i % 2 == 0)\`:
-
-| Lap | i | Another number left? | Output |
-| --- | --- | --- | --- |
-| 1 | 0 | yes | True |
-| 2 | 1 | yes | False |
-| 3 | 2 | yes | True |
-| end | | no, so the loop stops | |
-
-A \`while\` loop must change what its condition looks at, or it never stops:
+**while loops.** A \`while\` loop keeps going as long as its condition is true, so it must change what the condition looks at, or it never stops. \`step += 4\` is short for \`step = step + 4\`:
 
 ~~~python
 step = 0
@@ -482,7 +503,7 @@ while step < 16:
 print(step)              # 16
 ~~~
 
-\`break\` leaves the loop immediately; \`continue\` skips to the next lap. A loop with an \`if\` inside is how you filter or count:
+**break and continue.** \`break\` leaves the loop immediately; \`continue\` skips to the next round. A loop with an \`if\` inside is how you filter or count:
 
 ~~~python
 loud = 0
@@ -557,7 +578,7 @@ assert len(hats_pattern) == 16, f"hats_pattern needs 16 steps but has {len(hats_
           concepts: ["def & return", "parameters", "** (power)", "arithmetic"],
           learn: `### Functions are reusable recipes
 
-A **function** takes inputs (parameters), does some work and sends back a result with \`return\`.
+You have used functions already: \`print()\`, \`len()\`. A **function** is a recipe you write yourself, once, so you can use it as often as you like. It takes inputs (called **parameters**), does some work and sends back a result with \`return\`.
 
 ~~~python
 def double(n):
@@ -566,32 +587,57 @@ def double(n):
 print(double(21))    # 42
 ~~~
 
-The **indented** lines are the body. The scene will call your function for you, as often as it needs.
+- \`def\` starts the definition, then the function's name, then the parameters in brackets, then a colon.
+- The **indented** lines are the body. Indentation is how Python groups code.
+- \`return\` gives the answer back to whoever called the function.
+
+\`return\` is not the same as \`print\`. \`print\` only shows something on the screen; \`return\` hands the value back so the rest of the program can use it:
+
+~~~python
+y = double(5) + 1    # double(5) gives back 10, so y is 11
+~~~
+
+The synth needs a number back from your function, so you will use \`return\`. The scene calls your function for you, as often as it needs.
 
 ### Notes are numbers
 
-Every piano key has a **MIDI number**: 69 is the A above middle C (440 Hz), 70 is the next key up, and so on. Each key is one **semitone**. Going up 12 semitones doubles the frequency, so one semitone multiplies it by 2 to the power of 1/12.
+Every key on a piano gets a number, called its **MIDI number**: higher number, higher sound. Neighbouring keys are one step apart, called a **semitone**. A sound is air wobbling back and forth; how fast it wobbles is its **frequency**, measured in **Hz** (wobbles per second). The note numbered 69 (the A above middle C) wobbles 440 times a second: 440 Hz.
+
+Twelve keys up (one **octave**) sounds like the same note, higher, and doubles the frequency. So each single key multiplies the frequency by the same amount: the number that gives 2 when you multiply it by itself 12 times, written \`2 ** (1/12)\`.
+
+### The maths you need
 
 ~~~python
-2 ** 3        # 8      (** is "to the power of")
-2 ** 0.5      # 1.414...
+2 ** 3        # 8      (** means "to the power of": 2 * 2 * 2)
+2 ** 0        # 1      (anything to the power 0 is 1)
+2 ** -1       # 0.5    (a negative power divides: 1 divided by 2)
+12 / 12       # 1.0    (/ divides, and always gives a float)
+-12 / 12      # -1.0
 ~~~
 
-The formula to turn a note into a frequency in Hz:
+Python does brackets first, then \`**\`, then \`*\` and \`/\`, then \`+\` and \`-\`. The formula for turning a note into a frequency in Hz:
 
 ~~~python
 frequency = 440 * 2 ** ((note - 69) / 12)
 ~~~
 
-Check it: note 69 gives \`2 ** 0\` = 1, so 440 Hz. Note 57 is 12 below, so \`2 ** -1\` = 0.5, so 220 Hz.`,
+Follow it step by step:
+
+| note | note - 69 | / 12 | 2 ** that | 440 * that |
+| --- | --- | --- | --- | --- |
+| 69 | 0 | 0.0 | 1.0 | 440.0 Hz |
+| 57 | -12 | -1.0 | 0.5 | 220.0 Hz (an octave down) |
+| 81 | 12 | 1.0 | 2.0 | 880.0 Hz (an octave up) |`,
           mission: `The bass is the only voice that plays a pitch, and **you** decide the pitch with maths.
 
-Write \`midi_to_hz(note)\` and the synth calls it to get the frequency of each bass note. Then write the bass line: 16 steps where a number is a MIDI note and \`0\` is a rest. Get the formula wrong and you will hear it: the bass goes out of tune!`,
+Write \`midi_to_hz(note)\` and the synth calls it to get the frequency of each bass note. Then write the bass line: 16 steps where a number is a MIDI note and \`0\` is a rest. Get the formula wrong and you will hear it: the bass goes out of tune!
+
+Note 33 is a deep A (55 Hz). Adding 3, 5 or 7 to it gives other notes that sound good together with it, so mixing \`root\`, \`root + 3\`, \`root + 5\` and \`root + 7\` makes a moody bass line.`,
           tasks: [
             "Define midi_to_hz(note) returning 440 * 2 ** ((note - 69) / 12)",
             "midi_to_hz(69) must be 440, and midi_to_hz(33) must be 55",
             "root = 33 (a deep A) and bass_notes = a list of 16 numbers",
-            "Use root + 3, root + 5 and root + 7 for a minor groove; 0 is a rest",
+            "Use root, root + 3, root + 5 and root + 7 for a moody bass line; 0 is a rest",
           ],
           starterAdd: py`# ─── ✏️ YOUR TURN ───────────────────────────
 # Lesson 6: write the maths that tunes the bass.
@@ -599,7 +645,7 @@ def midi_to_hz(note):
     # frequency = 440 * 2 ** ((note - 69) / 12)
     ...
 
-root = 33              # MIDI note 33 is a deep A (55 Hz)
+root = 33              # MIDI number 33 is a deep A (55 Hz)
 bass_notes = ...       # 16 steps: a MIDI note number = play it, 0 = rest
                        # use root, root + 3, root + 5, root + 7 ...
 `,
@@ -611,7 +657,7 @@ bass_notes = [root, 0, 0, root, 0, 0, root + 3, 0, root, 0, 0, root + 7, 0, root
 
 print("root note:", round(midi_to_hz(root), 1), "Hz")`,
           explanation:
-            "The scene calls midi_to_hz once for each different note and plays the bass at the frequency you return, and the display shows it. 33 is A1 at exactly 55 Hz. Adding 3 gives C, adding 7 gives E, adding 5 gives D: the notes of an A minor pentatonic scale, which almost always sounds good. Try changing root to 36 or 31 to shift the whole line.",
+            "The scene calls midi_to_hz once for each different note and plays the bass at the frequency you return, and the display shows it. 33 is A1 at exactly 55 Hz. Adding 3 gives C, adding 7 gives E, adding 5 gives D. Together with A they form a pentatonic scale (a set of five notes that sound good together), which is why a bass line built from them almost always works. Try changing root to 36 or 31 to shift the whole line.",
           hints: [
             { id: "h1", title: "The shape", content: "def midi_to_hz(note):  then an indented line:  return ..." },
             { id: "h2", title: "The formula", content: "return 440 * 2 ** ((note - 69) / 12)" },
@@ -647,7 +693,7 @@ prices["cake"] = 5       # add a pair
 prices["tea"] = 4        # change a value
 ~~~
 
-Values can be anything, even other dictionaries:
+Each pair is a **key** (the label, like \`"coffee"\`) and the **value** stored under it (like \`3\`). Values can be anything, even other dictionaries:
 
 ~~~python
 band = {
@@ -664,8 +710,16 @@ A for loop over a dictionary gives you its keys:
 ~~~python
 for name in band:
     print(name, band[name]["members"])
-~~~`,
-          mission: `A mix is all about balance. Build a mixing desk: a dictionary named \`tracks\` with one entry per instrument, each holding a \`volume\` (0 to 1), a \`pan\` (-1 is fully left, 1 is fully right) and a \`mute\` switch.
+~~~
+
+This prints \`drums 1\` and then \`guitar 2\`.
+
+### not
+
+\`not\` flips True to False and False to True. \`if not band[name]["loud"]:\` runs for the quiet bands only.
+
+A multi-line dictionary has a comma after every pair, even the last one, and each pair goes on its own line.`,
+          mission: `A mix is all about balance. Build a mixing desk: a dictionary named \`tracks\` with one entry per instrument, each holding a \`volume\` (0 to 1), a \`pan\` (the left/right position: -1 is fully left, 1 is fully right) and a \`mute\` switch (True silences the track). Each track has a volume **fader**, the slider that sets how loud it is.
 
 The hats are too loud, so turn them down. Then loop through the desk and collect the tracks that are not muted. Run it and every row gets a fader, a pan marker and a mute button on the stage.`,
           tasks: [
@@ -738,7 +792,7 @@ assert active == [n for n in tracks if not tracks[n]["mute"]], "active should co
           concepts: ["classes", "__init__", "self", "methods", "if / elif / else"],
           learn: `### Classes bundle data and behaviour
 
-A **class** is a blueprint. An **instance** is one thing built from it.
+You have used values that come with their own tools, like strings (\`.upper()\`) and lists (\`.append()\`). A **class** lets you design your own: a blueprint that keeps some data together with the functions that use it. An **instance** is one thing built from the blueprint.
 
 ~~~python
 class Dog:
@@ -752,23 +806,71 @@ rex = Dog("Rex")
 print(rex.speak())
 ~~~
 
+This prints:
+
+~~~text
+Rex says woof
+~~~
+
 - \`__init__\` runs when you create an instance.
 - \`self\` is the instance itself, so \`self.name\` is its data.
 - A **method** is a function inside the class. Call it with a dot: \`rex.speak()\`.
 
+### Keyword arguments
+
+When you call a function you can write each parameter's name next to its value. These are **keyword arguments**. These two lines do the same thing; the second says what the value means:
+
+~~~python
+rex = Dog("Rex")
+rex = Dog(name="Rex")
+~~~
+
+The name must match the parameter in \`__init__\`. The mission asks you to build the arranger this way.
+
 ### Counting bars
 
-Music is built in phrases. If a phrase is 4 bars long, \`bar % 4\` cycles 0, 1, 2, 3, 0, 1, 2, 3 ... and tells you where in the phrase you are. The last bar of a phrase (\`bar % 4 == 3\`) is the traditional place for a drum fill.
+Music is built in phrases. If a phrase is 4 bars long, \`bar % 4\` (the remainder after dividing by 4) cycles 0, 1, 2, 3, 0, 1, 2, 3 ... and tells you where in the phrase you are. The last bar of a phrase (\`bar % 4 == 3\`) is the traditional place for a drum fill.
 
 ~~~python
 bar = 7
 spot = bar % 4         # 3
 ~~~
 
-The scene counts bars from 0.`,
+The scene counts bars from 0. Here is what the arranger should answer for 4-bar phrases:
+
+| bar | bar % 4 | section |
+| --- | --- | --- |
+| 0 | 0 | groove (there is nothing before it to drop from) |
+| 1 | 1 | groove |
+| 2 | 2 | groove |
+| 3 | 3 | fill (last bar of the phrase) |
+| 4 | 0 | drop (first bar of a later phrase) |
+| 5 | 1 | groove |
+| 6 | 2 | groove |
+| 7 | 3 | fill |
+| 8 | 0 | drop |
+
+### Choosing with if, elif, else
+
+You need two comparisons. \`==\` asks "equal to?", and \`>\` asks "bigger than?". \`and\` joins two questions and is true only when **both** are true. \`phrase_bars - 1\` is ordinary subtraction (4 - 1 = 3). The first branch whose question is true wins:
+
+~~~python
+spot = 0
+bar = 4
+if spot == 3:
+    print("fill")
+elif spot == 0 and bar > 0:
+    print("drop")
+else:
+    print("groove")
+~~~
+
+This prints \`drop\`. With \`bar = 0\` the \`bar > 0\` part is false, so it would print \`groove\`.`,
           mission: `Every great track has a plan: groove, groove, groove, **fill**, then a big **drop**. Build the brain that plans it.
 
-Write an \`Arranger\` class with a \`section(bar)\` method. It receives the bar number and returns \`"groove"\`, \`"fill"\` or \`"drop"\`. The scene asks it once per bar: a fill is a snare roll that builds into the next bar, and a drop brings a crash cymbal and a double-strength kick and bass. Make one with \`arranger = Arranger(phrase_bars=4)\` and press Play.`,
+Write an \`Arranger\` class with a \`section(bar)\` method. It receives the bar number and returns \`"groove"\`, \`"fill"\` or \`"drop"\`. The scene asks it once per bar: a fill is a snare roll that builds into the next bar, and a drop brings a crash cymbal and a double-strength kick and bass. Make one with \`arranger = Arranger(phrase_bars=4)\` and press Play.
+
+Bar 0 stays a groove: it is the first bar of the first phrase, and a drop needs something before it to drop from. That is why the drop rule also checks that the bar is above 0.`,
           tasks: [
             "Class Arranger with __init__(self, phrase_bars) storing self.phrase_bars",
             'Method section(self, bar): the last bar of each phrase returns "fill"',

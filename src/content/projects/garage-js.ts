@@ -62,13 +62,27 @@ export const garageJs: Project = {
           concepts: ["console.log()", "strings", "comments"],
           learn: `### Talking to the dashboard
 
-\`console.log()\` writes a line of output. Text inside quotes is a **string**.
+A car has a dashboard: a screen where the car tells you what it is doing. Your code needs a way to tell *you* things too. \`console.log()\` is that way: it writes a line of text onto the dashboard panel next to the car.
+
+\`console.log()\` writes a line of output. Text inside quotes is a **string** (a piece of text).
 
 ~~~js
 console.log("Hello, garage!");
 ~~~
 
-Every call prints on its own line. The semicolon at the end marks where one statement stops. JavaScript can often guess it for you, but writing it keeps things clear.
+Press **Run** and the line appears on the dashboard. **Submit** checks your work against the test list and saves your progress.
+
+A **statement** is one complete instruction, and each \`console.log(...)\` is one statement. Every call prints on its own line. The semicolon at the end marks where one statement stops. JavaScript can often guess it for you, but writing it keeps things clear.
+
+Two calls give two lines:
+
+~~~js
+console.log("Engine on");
+console.log("Lights on");
+// dashboard shows:
+// Engine on
+// Lights on
+~~~
 
 ### Comments
 
@@ -135,7 +149,14 @@ let laps = 0;
 laps = laps + 1;   // fine, laps is a let
 ~~~
 
-Reach for \`const\` by default and switch to \`let\` only when you plan to reassign. Trying to reassign a \`const\` is an error, which is a handy safety net.
+To **reassign** a variable means to give it a new value later. Reach for \`const\` by default and switch to \`let\` only when you plan to reassign. Trying to reassign a \`const\` is an error, which is a handy safety net:
+
+~~~js
+const driver = "Ada";
+driver = "Max";   // TypeError: Assignment to constant variable.
+~~~
+
+A variable that has a name but no value yet holds \`undefined\`, which simply means "no value yet". You will see it in the starter code below as a placeholder to replace.
 
 ### Three basic types
 
@@ -147,9 +168,21 @@ const isReady = true;   // boolean
 
 Strings are text in quotes. JavaScript has a single **number** type for whole numbers and decimals alike. Booleans are \`true\` or \`false\`, lowercase and without quotes.
 
-\`typeof fuel\` tells you the type as a string, here \`"number"\`. Names are written in **camelCase**: start lowercase, and capitalise each new word, like \`topSpeed\`.
+Names are written in **camelCase**: start lowercase, and capitalise each new word, like \`topSpeed\`.
 
-Colours on the web are often **hex codes**: a string like \`"#ff3b6b"\` (red, green and blue, in base 16).`,
+### Colours as text
+
+Colours on the web are often written as **hex codes**: a \`#\` followed by six characters. Each character is a digit \`0-9\` or a letter \`a-f\`. The six characters are three pairs: how much red, how much green, how much blue (\`00\` is none, \`ff\` is the most).
+
+~~~js
+const red = "#ff0000";     // full red, no green, no blue
+const green = "#00ff00";   // no red, full green, no blue
+const paint = "#ff3b6b";   // a hot pink mix
+~~~
+
+### Going further (optional)
+
+\`typeof fuel\` tells you the type as a string, here \`"number"\`.`,
           mission: `The car is awake but anonymous. Give it an identity: a name, a paint job, a top speed and a turbo flag.
 
 The scene reads these exact names, so spelling and capitals matter: \`carName\`, not \`carname\`. The moment you Run, the car repaints itself and the name plate changes.`,
@@ -214,16 +247,18 @@ const double = speed * 2;   // 160
 
 ### Rounding
 
-\`Math.round()\` rounds to the nearest whole number. To keep one decimal place, scale up, round, then scale back down:
+\`Math.round()\` rounds to the nearest whole number, and that is all it knows. To keep one decimal place, shift the decimal point right (times 10), round, then shift it back (divide by 10):
 
 ~~~js
 Math.round(4.567)               // 5
 Math.round(4.567 * 10) / 10     // 4.6
 ~~~
 
+Step by step: 4.567 times 10 is 45.67; rounding gives 46; 46 divided by 10 is 4.6. For two decimals, use 100 instead of 10.
+
 ### Template literals mix values into text
 
-Use **backticks** instead of quotes, and put any expression inside \`\${ }\`:
+Use **backticks** instead of quotes, and put any variable or calculation inside \`\${ }\`:
 
 ~~~js
 // logs: Top speed: 80 km/h
@@ -231,14 +266,14 @@ console.log(\`Top speed: \${speed} km/h\`);
 ~~~
 
 \`n.toFixed(1)\` formats a number with exactly one decimal, so \`(5).toFixed(1)\` is \`"5.0"\`. It gives back a **string**, so use it for display, not for maths.`,
-          mission: `Real engines are about power-to-weight. More horsepower and less weight means faster acceleration.
+          mission: `Real engines are about power-to-weight: how much engine push each kilogram of car gets. More horsepower and less weight means a quicker car.
 
 Work out your car's acceleration from its specs and report its 0-100 time. The scene uses your \`acceleration\` number directly: hold **W** and feel the difference.`,
           tasks: [
             "powerToWeight = horsepower / weightKg",
             "acceleration = powerToWeight * 100  (km/h gained per second)",
-            "zeroTo100 = seconds to reach 100 km/h, rounded to 1 decimal (a number)",
-            "Log a line like: 0-100 km/h in 5.0s  (use a template literal)",
+            "zeroTo100 = 100 / acceleration (seconds to reach 100 km/h), rounded to 1 decimal with Math.round (a number)",
+            "Log a line like: 0-100 km/h in 5.0s  (use a template literal and toFixed(1))",
           ],
           starterAdd: js`// ─── ✏️ YOUR TURN ───────────────────────────
 // Lesson 3: do the engine maths.
@@ -290,6 +325,8 @@ assertClose(zeroTo100, Math.round((100 / acceleration) * 10) / 10, 1e-9, "zeroTo
           concepts: ["functions", "arrow functions", "return"],
           learn: `### Functions are reusable recipes
 
+Suppose you need "double this number" in twenty places. Retyping \`n * 2\` twenty times is slow and easy to get wrong. Instead you write the recipe once, give it a name, and use that name whenever you need it.
+
 A **function** takes inputs (parameters), does some work, and hands back a result with \`return\`.
 
 ~~~js
@@ -302,14 +339,14 @@ console.log(double(21));   // 42
 
 - \`function\` starts the definition, then the name and the parameters in brackets.
 - The body lives between the curly braces \`{ }\`.
-- \`return\` hands the answer back to whoever called the function. Without it, you get \`undefined\`.
+- \`return\` hands the answer back to whoever called the function. Without it, you get \`undefined\` (JavaScript's word for "no value").
 
 ### Arrow functions
 
 Modern JavaScript has a shorter way to write the same thing, stored in a \`const\`:
 
 ~~~js
-const double = (n) => {
+const twice = (n) => {
   return n * 2;
 };
 
@@ -318,7 +355,9 @@ const double = (n) => {
 const triple = (n) => n * 3;
 ~~~
 
-Important: the scene **calls your function for you**, many times a second. You write it once, and the car uses it.`,
+Read \`(n) => n * 3\` aloud as "n goes to n times 3". The \`=>\` is the arrow: inputs on its left, the result on its right.
+
+Important: the scene **calls your function for you**, many times a second. You never call \`throttleCurve\` yourself. You write it once, and the car uses it.`,
           mission: `A pedal that jumps straight from 0% to 100% power makes a twitchy car. Racing cars use a **throttle curve**: half-pressing the pedal gives *less than* half the power, so the car is smooth and controllable.
 
 Finish the arrow function \`throttleCurve(pedal)\`: it receives the pedal position from 0 to 1 and returns the power to use. Squaring the pedal is a classic progressive curve.`,
@@ -357,9 +396,11 @@ const throttleCurve = (pedal) => {
           concepts: ["if / else if / else", "=== and !==", "&& || !", "conditions are booleans", "truthy / falsy"],
           learn: `### Making decisions
 
-\`if\` runs a block only when its condition is true.
+A driver answers questions all day: "Is the tank nearly empty? Is the left key held?" The answer decides what happens next. In code, an \`if\` does the same job: it asks a question, and runs a block of code **only when the answer is yes**.
 
 ~~~js
+const fuel = 15;
+
 if (fuel < 10) {
   console.log("Low fuel!");
 } else if (fuel < 30) {
@@ -367,13 +408,14 @@ if (fuel < 10) {
 } else {
   console.log("Plenty");
 }
+// prints: Getting low
 ~~~
 
-JavaScript checks the branches top to bottom and runs the **first** one that is true.
+JavaScript checks the branches from top to bottom and runs the **first** one whose question is true, then skips the rest. Here \`15 < 10\` is no, \`15 < 30\` is yes, so it prints \`Getting low\`. The final \`else\` has no question: it catches everything the branches above did not.
 
 ### Why a condition? What does it give back?
 
-A car has to answer questions all the time: "Is the tank below 20%?", "Is the left key held?" A **condition** is one of those questions, written so the only possible answer is yes or no. JavaScript works the question out and hands back a single value: \`true\` or \`false\`. The \`if\` keyword does nothing clever. It just asks "did I get \`true\`?" and runs its block if so.
+The question inside the brackets is called a **condition**. It is written so the only possible answer is yes or no. JavaScript works the question out and hands back a single value: \`true\` or \`false\`. The \`if\` keyword does nothing clever. It just asks "did I get \`true\`?" and runs its block if so.
 
 You can look at that value yourself:
 
@@ -385,28 +427,63 @@ const lowFuel = fuel < 10;   // store the answer in a variable
 console.log(lowFuel);        // false
 ~~~
 
-### Kinds of conditions you can write
+The mission works the same way. The scene hands your function \`left\` and \`right\`: each one is just a yes/no answer to "is that key held down right now?", so they are already \`true\` or \`false\`.
 
-Anything that ends up as \`true\` or \`false\` can sit inside the parentheses:
+### Comparing values
 
-| Kind | Example | What it asks |
-| --- | --- | --- |
-| Comparison | \`fuel <= 20\` | is it smaller, bigger, or at the limit? |
-| Equality | \`gear === "R"\` | is it exactly this value? (text is compared letter by letter, capitals count) |
-| Membership | \`["R", "N", "D"].includes(gear)\` | is it one of these? (also works on text: \`"turbo".includes("rb")\`) |
-| Empty or not | \`parts.length === 0\` | is there nothing in the list or the text? |
-| Truthiness | \`if (driverName)\` | is it a "real" value? (rules below) |
-| A function that answers yes/no | \`Array.isArray(x)\`, \`name.startsWith("T")\`, \`Number.isNaN(x)\` | the function itself returns \`true\` or \`false\` |
-| Range check | \`speed >= 0 && speed <= 120\` | is it between two limits? |
-| Combined | \`a && b\`, \`a || b\`, \`!a\` | both, either, or the opposite |
+\`<\` \`>\` \`<=\` \`>=\` compare sizes. For "is it equal?" use \`===\`, and for "is it different?" use \`!==\`.
 
-JavaScript has no \`0 <= speed <= 120\` shortcut: write the two comparisons and join them with \`&&\`.
+~~~js
+5 === 5       // true
+5 === "5"     // false (a number is not the same as text)
+"R" !== "D"   // true
+~~~
 
-**Truthiness.** Put a non-boolean in an \`if\` and JavaScript converts it. These count as false: \`false\`, \`0\`, \`""\` (empty text), \`null\`, \`undefined\` and \`NaN\`. Everything else counts as true, including \`"0"\`, \`"false"\`, \`[]\` and \`{}\`. That last pair surprises people: an empty array is still truthy, so test \`parts.length === 0\` instead.
+Always write three equals signs. The shorter \`==\` quietly converts values before comparing (so \`5 == "5"\` is \`true\`), which causes surprises. Note that one \`=\` is not a comparison at all: it stores a value in a variable.
 
-**\`===\` versus \`==\`.** With \`==\`, JavaScript converts types first, so \`0 == ""\` and \`"5" == 5\` are both \`true\`. With \`===\` they are \`false\`. Stick to \`===\`.
+### Combining questions: and, or, not
 
-### Several conditions: parallel, ordered, or independent
+Sometimes one question is not enough. Three little words join or flip yes/no answers:
+
+- \`a && b\` means AND: both are true. Example: \`left && right\`.
+- \`a || b\` means OR: at least one is true. It is written with two vertical bars. Example: \`left || right\`.
+- \`!a\` means NOT: it flips true and false. Example: \`!right\`.
+
+So "the left key is held and the right key is NOT held" is:
+
+~~~js
+if (left && !right) {
+  // only left is held
+}
+~~~
+
+Reading \`left && !right\` out loud: "left, and not right". If \`left\` is \`true\` and \`right\` is \`false\`, then \`!right\` is \`true\`, and \`true && true\` is \`true\`, so the block runs.
+
+There is no \`0 <= speed <= 120\` shortcut in JavaScript: write both comparisons and join them with \`&&\`: \`speed >= 0 && speed <= 120\`.
+
+### An if inside a function
+
+Your mission puts the decisions inside a function that hands back an answer with \`return\` (you met this last lesson). Here is the same shape with numbers:
+
+~~~js
+function sign(n) {
+  if (n < 0) {
+    return -1;
+  } else if (n > 0) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+console.log(sign(-8));   // -1
+console.log(sign(5));    // 1
+console.log(sign(0));    // 0
+~~~
+
+When a \`return\` runs, the function ends right there. Only one branch ever returns.
+
+### Chain or separate ifs?
 
 Conditions joined with \`&&\` or \`||\` are decided together, as one yes/no. Separate \`if\` statements are independent, so every true one runs. An \`else if\` chain is ordered: the first true branch runs and the rest are skipped. Same speed, different results:
 
@@ -433,28 +510,20 @@ if (speed > 120) {
 
 Use a chain when the answers exclude each other (one steering angle, one alarm level). Use separate \`if\`s when several things can be true at once.
 
-### How to pick the condition
+### Going further (optional)
+
+**How to pick the condition.**
 
 1. Say the question in plain words: "Is only the left key held?"
 2. Turn it into a yes/no test: \`left && !right\`.
 3. Check the edge value. If the limit is 20, should exactly 20 count? That decides between \`<\` and \`<=\`. Try the limit itself, one below and one above.
 
-### Comparisons
-
-\`<\` \`>\` \`<=\` \`>=\` compare sizes. For equality, always use the strict versions: \`===\` (equal) and \`!==\` (not equal). They also compare the type, so \`5 === "5"\` is \`false\`. The loose \`==\` tries to convert types first, which causes surprises.
-
-### Combining conditions
-
-\`&&\` means AND, \`||\` means OR, and \`!\` flips true and false.
-
-~~~js
-if (left && !right) {
-  // left is held and right is not
-}
-~~~`,
+**Truthiness.** Put something that is not a boolean in an \`if\` and JavaScript converts it to \`true\` or \`false\` for you. These count as false: \`false\`, \`0\`, \`""\` (empty text), \`null\` and \`undefined\` (both mean "no value"), and \`NaN\` (a failed calculation: "not a number"). Everything else counts as true, including \`"0"\` and \`"false"\`. You will meet more of these as you learn lists and objects; for now, keep conditions as clear yes/no questions.`,
           mission: `Time to steer. The scene calls your \`steer(left, right)\` function on every frame. \`left\` and \`right\` are \`true\` while the matching key is held.
 
-Return a wheel angle in degrees: **negative turns left, positive turns right, 0 is straight**. The moment this works, the track lights up and you can actually drive.`,
+Return a wheel angle in degrees: **negative turns left, positive turns right, 0 is straight**. The moment this works, the track lights up and you can actually drive.
+
+Think of it as three questions in order: is only left held? is only right held? otherwise, go straight.`,
           tasks: [
             "Write the function steer(left, right)",
             "Only left held: return a negative angle (e.g. -30)",
@@ -506,20 +575,54 @@ function steer(left, right) {
           minutes: 10,
           xp: 90,
           concepts: ["arrays", "for loops", "push()", ".length", "while", "break / continue"],
-          learn: `### Arrays hold values in order
+          learn: `### Why lists and loops?
+
+Picture setting out traffic cones round a track. You could carry one cone, walk, put it down, walk back for the next... or you could keep all the cones in a **box** and tell a helper: "repeat: take a cone, place it, step 20 metres." In code, the box is an **array** (a list of values in order) and the helper is a **loop** (a block of code that repeats). Without them, 100 gates would need 100 lines.
+
+### Arrays hold values in order
 
 ~~~js
 const gears = [1, 2, 3, 4, 5];
 gears.push(6);              // add to the end
 console.log(gears.length);  // 6
-console.log(gears[0]);      // 1 (index 0)
+console.log(gears[0]);      // 1 (the first item)
 ~~~
 
-Notice \`gears\` is a \`const\`, yet \`push\` still works. \`const\` locks the *name* to this array; the array's contents can still change.
+- Each item has a position called its **index**. Counting starts at 0, so the first item is \`gears[0]\` and the last of six is \`gears[5]\`.
+- \`.length\` is how many items there are.
+- \`push(x)\` adds \`x\` at the end.
+
+Notice \`gears\` is a \`const\`, yet \`push\` still works. \`const\` locks the *name* to this array (the box stays on its shelf); the things inside the box can still change.
+
+### When do you reach for a loop?
+
+A loop repeats a block of code. There are three situations:
+
+| Situation | Use |
+| --- | --- |
+| I know how many times, or I have a list to go through | \`for\` |
+| I am waiting for something to change | \`while\` |
+| It must run once before the first check | \`do { } while (...)\` (a cousin of \`while\`; you will not need it yet) |
+
+A \`while\` loop asks a yes/no question (a condition, just like \`if\`) before **every** lap, and keeps going while the answer is \`true\`:
+
+~~~js
+let fuel = 100;
+let laps = 0;
+while (fuel > 25) {   // asked again before every lap
+  fuel -= 30;         // same as fuel = fuel - 30
+  laps++;             // same as laps = laps + 1
+}
+console.log(\`\${laps} laps, \${fuel} fuel left\`);   // 3 laps, 10 fuel left
+~~~
+
+Trace: fuel 100 is more than 25, so lap 1 leaves 70. 70 is more than 25, so lap 2 leaves 40. 40 is more than 25, so lap 3 leaves 10. 10 is not more than 25, so the loop stops.
+
+Whatever is inside a loop must eventually change the answer, or the loop never ends. \`while (fuel > 0) { laps++; }\` never touches \`fuel\`, so it spins forever. If that happens to you here, the run is stopped after a few seconds with a time-out message: fix the loop and run again.
 
 ### Repeat with a for loop
 
-A classic \`for\` loop has three parts: where to start, when to keep going, and what to do after each pass.
+A \`for\` loop packs three parts into its brackets, separated by semicolons: where to start, when to keep going, and what to do after each lap.
 
 ~~~js
 for (let n = 1; n <= 3; n++) {
@@ -527,40 +630,75 @@ for (let n = 1; n <= 3; n++) {
 }
 ~~~
 
-\`n++\` adds one to \`n\`. It uses \`let\` because the counter changes every pass.
+Read it aloud: "start with \`n\` at 1; keep going while \`n\` is at most 3; after each lap add one to \`n\`." (\`n++\` means "add one to n".) It uses \`let\` because the counter changes every lap.
 
-Build an array inside a loop:
+Here is the same loop, lap by lap:
+
+| n | test \`n <= 3\` | what happens | output |
+| --- | --- | --- | --- |
+| 1 | true | the block runs | \`1\` |
+| 2 | true | the block runs | \`2\` |
+| 3 | true | the block runs | \`3\` |
+| 4 | false | the loop ends | |
+
+### Build an array inside a loop
+
+The counter is a number you can calculate with. This loop pushes a new value every lap:
 
 ~~~js
 const squares = [];
 for (let n = 1; n <= 3; n++) {
-  squares.push(n * n);      // [1, 4, 9]
+  squares.push(n * n);      // lap 1 pushes 1, lap 2 pushes 4, lap 3 pushes 9
 }
+console.log(squares);       // [1, 4, 9]
 ~~~
 
-### Which loop, and what about ranges?
+The same idea gives evenly spaced numbers: a counter that goes 1, 2, 3, 4 multiplied by 20 gives 20, 40, 60, 80. That is exactly what the mission needs.
 
-A loop repeats a block. There are two reasons to repeat:
+### Walk through an array by index
 
-| Situation | Use |
-| --- | --- |
-| I know how many laps, or I have a list to go through | \`for\` |
-| I am waiting for something to change | \`while\` |
-| It must run once before the first check | \`do { } while (...)\` |
-
-A \`while\` loop has the same kind of yes/no condition as an \`if\`, but it is asked again before **every** lap. Whatever is inside the loop must eventually change the answer, or the loop never ends.
+To visit every item, count the index from 0 up to the last position. The loop stops when the index reaches \`length\`, because the last index is \`length - 1\`:
 
 ~~~js
-let fuel = 100;
-let laps = 0;
-while (fuel > 25) {   // asked again every lap
-  fuel -= 30;         // this line is what eventually makes it false
-  laps++;
+const gates = [20, 40, 60, 80];
+for (let i = 0; i < gates.length; i++) {
+  console.log(\`Gate \${i + 1}: \${gates[i]}%\`);
 }
-console.log(laps, fuel);   // 3 10
+// Gate 1: 20%
+// Gate 2: 40%
+// Gate 3: 60%
+// Gate 4: 80%
 ~~~
 
-**JavaScript has no built-in \`range\`.** You count with the three parts of \`for\`, and the stop value is simply where the test fails, so it is never visited:
+### break and continue
+
+\`break\` leaves the loop at once. \`continue\` skips the rest of this lap and goes to the next one.
+
+~~~js
+for (let i = 0; i < gates.length; i++) {
+  const pct = gates[i];
+  if (pct === 40) continue;   // skip this gate
+  if (pct > 60) break;        // stop entirely
+  console.log(pct);
+}
+// prints 20, then 60
+~~~
+
+### Loops need conditions too
+
+Most real loops hold an \`if\`: the loop visits every item and the condition picks which ones count.
+
+~~~js
+let late = 0;
+for (let i = 0; i < gates.length; i++) {
+  if (gates[i] > 50) late++;
+}
+console.log(late);   // 2 (the 60 and 80 gates)
+~~~
+
+### Going further (optional)
+
+Counting patterns. JavaScript has no built-in \`range\`: the stop value is simply where the test fails, so it is never visited.
 
 ~~~js
 for (let i = 0; i < 5; i++) {}        // i is 0, 1, 2, 3, 4
@@ -569,77 +707,14 @@ for (let i = 0; i < 10; i += 3) {}    // i is 0, 3, 6, 9
 for (let i = 5; i > 0; i--) {}        // i is 5, 4, 3, 2, 1  (a countdown)
 ~~~
 
-Starting at 0 and testing \`i < n\` gives exactly \`n\` laps, and the counter matches the array positions \`0\` to \`length - 1\`. If you want the numbers as an array, \`Array.from({ length: 5 }, (_, i) => i)\` gives \`[0, 1, 2, 3, 4]\`.
+Starting at 0 and testing \`i < n\` gives exactly \`n\` laps, and the counter matches the array positions 0 to \`length - 1\`.
 
-### Three ways to walk the same array
-
-~~~js
-const gates = [20, 40, 60, 80];
-
-// 1. By index: you get the position and the value
-for (let i = 0; i < gates.length; i++) {
-  console.log(\`Gate \${i + 1}: \${gates[i]}%\`);
-}
-
-// 2. Straight over the items: no counter at all
-for (const pct of gates) {
-  console.log(\`\${pct}%\`);
-}
-
-// 3. Items plus a position, without managing the counter yourself
-for (const [i, pct] of gates.entries()) {
-  console.log(\`Gate \${i + 1}: \${pct}%\`);
-}
-~~~
-
-The first prints \`Gate 1: 20%\` through \`Gate 4: 80%\`, the second prints \`20%\` through \`80%\`, and the third matches the first. Prefer \`for...of\` when you only need the values. Use \`.entries()\` when you also need the position. Keep the index loop for when you need to build the numbers yourself (like the gates here) or step by something other than 1. (\`gates.forEach((pct, i) => { ... })\` also works, but you cannot \`break\` out of it.)
-
-### What happens each lap
-
-~~~js
-let fuel = 100;
-for (let lap = 1; lap <= 3; lap++) {
-  fuel -= 30;
-  console.log(\`Lap \${lap}: \${fuel} left\`);
-}
-~~~
-
-| lap | test \`lap <= 3\` | fuel after | output |
-| --- | --- | --- | --- |
-| 1 | true | 70 | \`Lap 1: 70 left\` |
-| 2 | true | 40 | \`Lap 2: 40 left\` |
-| 3 | true | 10 | \`Lap 3: 10 left\` |
-| 4 | false | | loop ends |
-
-### break, continue and the forever loop
-
-\`break\` leaves the loop at once. \`continue\` skips the rest of this lap and goes to the next one.
-
-~~~js
-for (const pct of gates) {
-  if (pct === 40) continue;   // skip this gate
-  if (pct > 60) break;        // stop entirely
-  console.log(pct);
-}
-// prints 20, then 60
-~~~
-
-The trap: \`while (fuel > 0) { laps++; }\` never changes \`fuel\`, so the condition stays true forever and the page freezes.
-
-### Loops need conditions too
-
-Most real loops hold an \`if\`: the loop visits every item and the condition picks which ones count.
-
-~~~js
-let late = 0;
-for (const pct of gates) {
-  if (pct > 50) late++;
-}
-console.log(late);   // 2 (the 60 and 80 gates)
-~~~`,
+There is also a shorter way to visit every item of an array when you do not need the index. It is called \`for...of\`, and the next lesson teaches it.`,
           mission: `A lap needs gates. Rather than typing each one, let a loop place them. The scene reads your \`checkpoints\` array: each number is a percentage of the way around the lap.
 
-Place a gate every 20%: 20, 40, 60, 80. Drive through them for a split-time flash.`,
+Place a gate every 20%: 20, 40, 60, 80. Drive through them for a split-time flash.
+
+Hint from the lesson: let the loop counter go 1, 2, 3, 4, and push the counter times 20 each lap.`,
           tasks: [
             "Start with an empty array: const checkpoints = []",
             "Use a for loop to push 20, 40, 60, 80",
@@ -686,7 +761,7 @@ console.log(\`\${totalGates} gates armed\`);`,
           concepts: ["objects", "for...of", "Math.min & spread"],
           learn: `### Objects look things up by name
 
-An **object** maps keys to values.
+Think of a shop price list: you do not ask for "item number 2", you ask for "the price of tea". An **object** works like that list. It maps **keys** (the names, like \`tea\`) to values (like \`2\`).
 
 ~~~js
 const prices = { coffee: 3, tea: 2 };
@@ -700,6 +775,8 @@ console.log(prices[drink]);   // 3
 // add a new key
 prices.cake = 5;
 ~~~
+
+Just like with arrays, a \`const\` object is a locked box: the name always points to the same object, but you can still add or change what is inside it.
 
 ### Walk an array with for...of
 
@@ -717,17 +794,29 @@ console.log(total / times.length);
 
 ### Smallest and biggest
 
-\`Math.min(4, 2, 9)\` is \`2\`. To hand it an array, **spread** the array into separate arguments with \`...\`:
+\`Math.min(4, 2, 9)\` is \`2\`: you give it separate numbers (each one is an **argument**, a value you hand to a function) and it picks the smallest. To hand it an array instead, **spread** the array out into separate arguments with \`...\`. So \`Math.min(...[4, 2, 9])\` is the same as \`Math.min(4, 2, 9)\`:
 
 ~~~js
+const times = [31.2, 29.8, 30.5];
 Math.min(...times)    // 29.8
 Math.max(...times)    // 31.2
 ~~~
 
-Arrays also have built-in methods. \`times.reduce((sum, t) => sum + t, 0)\` adds them up in one line, using an arrow function.`,
+### Rounding the average
+
+The average above is \`total / times.length\`. To keep two decimals, use the same trick as in the engine lesson: multiply by 100, round, divide by 100.
+
+~~~js
+Math.round(30.5 * 100) / 100   // 30.5
+Math.round(30.1666 * 100) / 100   // 30.17
+~~~
+
+### Going further (optional)
+
+Arrays also have built-in functions of their own, called methods. \`times.reduce((sum, t) => sum + t, 0)\` adds all the items up in one line, using an arrow function.`,
           mission: `Soft tires grip better but wear out. Hard tires grip less but last. Store the compounds in an object, choose one, and the scene applies its grip: more grip means the car holds corners at higher speed.
 
-Then crunch your lap times for the pit board.`,
+Then crunch your lap times for the pit board. Round the average to 2 decimals with the multiply-by-100, round, divide-by-100 trick.`,
           tasks: [
             "tires: soft 1.15, medium 1.0, hard 0.85",
             "tire: pick one of the three names",
@@ -783,6 +872,8 @@ assertClose(averageLap, Math.round(mean * 100) / 100, 1e-9, "averageLap should b
           concepts: ["classes", "constructor", "this", "methods", "new"],
           learn: `### Classes bundle data and behaviour
 
+Imagine you want ten dogs. Each one remembers its own name and each knows how to bark. Writing that out ten separate times would be silly. Instead you draw up one blueprint, then stamp out as many dogs as you like. Your car needs an autopilot "brain" that remembers its own setting (how sharply to turn) and knows how to steer. That is what a **class** gives you.
+
 A **class** is a blueprint. An **instance** is one thing built from it with \`new\`.
 
 ~~~js
@@ -802,8 +893,25 @@ console.log(rex.speak());  // Rex says woof
 ~~~
 
 - \`constructor\` runs once, when \`new\` creates an instance.
-- \`this\` is the instance itself, so \`this.name\` is its own data.
+- \`this\` is the instance itself, so \`this.name\` is its own data. You store values on \`this\` because an ordinary variable inside the constructor vanishes when the constructor finishes, while \`this.name\` stays with the instance for as long as it lives.
 - Methods are functions written inside the class, without the \`function\` keyword. Call them with a dot: \`rex.speak()\`.
+
+A method can also take a parameter and mix it with the instance's own data, exactly what your mission needs:
+
+~~~js
+class Dog {
+  constructor(name) {
+    this.name = name;
+  }
+
+  greet(other) {
+    return \`\${this.name} says hi to \${other}\`;
+  }
+}
+
+const rex = new Dog("Rex");
+console.log(rex.greet("Fido"));   // Rex says hi to Fido
+~~~
 
 ### Sensors
 
@@ -813,10 +921,12 @@ The car has three distance sensors. They arrive as an **object** with values fro
 { left: 0.4, front: 1.0, right: 0.9 }
 ~~~
 
-Read them with a dot, like \`sensors.left\`, or unpack several at once: \`const { left, right } = sensors;\``,
+Read them with a dot, like \`sensors.left\`.
+
+A picture in words: with \`{ left: 0.2, front: 1.0, right: 0.8 }\` the left wall is close (0.2) and the right side is open (0.8). The car should turn toward the open side, which is the right. The difference \`right - left\` is \`0.8 - 0.2 = 0.6\`, a positive number, and a positive angle means "turn right". Multiply it by a **gain** (how strongly to react) of 10 and you get \`6\`.`,
           mission: `Final build: a car that drives itself. Create an \`Autopilot\` class whose \`steer(sensors)\` method looks at the left and right sensors and steers toward the side with more room.
 
-Steering = (right − left) × gain. Press **P** in the scene to hand the wheel to your class.
+Steering = (right - left) * gain. Press **P** in the scene to hand the wheel to your class.
 
 Bonus: add a \`throttle(sensors)\` method returning 0 to 1 and the car will use it to brake for corners.`,
           tasks: [

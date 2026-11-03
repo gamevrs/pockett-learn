@@ -6,7 +6,7 @@ const py = (code: string) => "~~~python\n" + code.trim() + "\n~~~";
 /** Module 4: design patterns. Each pattern: the pain first, then the mechanism, the roles, code, and when to use it. */
 export const patternsModule: Module = {
   id: "patterns",
-  part: "program",
+  part: "building",
   title: "Design patterns",
   blurb: "Proven shapes for code: Strategy, Observer, Factory, Decorator, Adapter, Command, State and more.",
   icon: "puzzle",
@@ -100,7 +100,7 @@ export const patternsModule: Module = {
             py(`
 class GreetingStrategy:
     def greet(self):
-        raise NotImplementedError
+        ...   # "details left out": each subclass fills this in
 
 class HelloStrategy(GreetingStrategy):
     def greet(self):
@@ -559,7 +559,7 @@ elif kind == "square":
         {
           kind: "explain",
           title: "One place that builds",
-          body: "A **factory** is the single place that knows which class goes with which name. Callers just ask: `make_shape(\"circle\")`. Try it, including a shape the factory doesn't know.",
+          body: "Think of ordering at a pizza counter: you say \"a margherita\" and the kitchen knows which recipe to follow. You never walk into the kitchen yourself. A **factory** is the same: the single place that knows which class goes with which name. Callers just ask: `make_shape(\"circle\")`. Try it, including a shape the factory doesn't know.",
           widget: { type: "factory", props: { view: "build" } },
         },
         {
@@ -573,7 +573,7 @@ elif kind == "square":
         {
           kind: "explain",
           title: "The roles",
-          body: "The **client** asks by name. The **factory** maps names to classes and builds them. Everything it returns follows the **product** interface (here, `Shape`), so the client can use any of them the same way.",
+          body: "The **client** (the code that needs a shape, such as the editor) asks by name. The **factory** maps names to classes and builds them. Everything it returns is a **product**, and all products follow the same **interface** (here, `Shape`: the list of things every shape can do), so the client can use any of them the same way. A \"call site\" is simply a place in the code where something gets called.",
           widget: { type: "pattern-roles", props: { pattern: "factory", highlight: ["factory"] } },
         },
         {
@@ -591,6 +591,29 @@ elif kind == "square":
             answer: 1,
           },
           explanation: "The client depends on a **name** and the **Shape interface**. Class names, constructor details and the registry all live inside the factory, which is why changes stay in one place.",
+        },
+        {
+          kind: "explain",
+          title: "A class can sit in a dictionary",
+          body: "The factory trick needs one idea that may feel odd: in Python, a class is a value, just like a number or a piece of text. You can put it in a variable or in a dictionary, and call it later. Writing the class name **without brackets** means \"the class itself\". Writing brackets **calls** it, which builds an object. Here is the same trick with plain functions first:\n\n" +
+            py(`
+def add(a, b):
+    return a + b
+
+ops = {"+": add}          # the function itself, no brackets
+print(ops["+"](2, 3))     # look it up, then call it
+`) +
+            "\n\n~~~text\n5\n~~~\n\nNow with classes:\n\n" +
+            py(`
+class Circle:
+    def __init__(self, size):
+        self.size = size
+
+SHAPES = {"circle": Circle}     # the class itself, no brackets
+shape = SHAPES["circle"](2)     # look it up, then call it: Circle(2)
+print(shape.size)
+`) +
+            "\n\n~~~text\n2\n~~~\n\n`SHAPES[\"circle\"]` gives back `Circle`, and the `(2)` after it builds the object. That is the whole factory. For an unknown name, `kind not in SHAPES` is `True`, and `raise ValueError(\"...\")` stops with a clear error (you met `raise` in the encapsulation lesson). The starter's `size ** 2` means \"size times size\" (`**` is power), and `round(x, 2)` rounds x to 2 decimal places.",
         },
         {
           kind: "code",
@@ -749,6 +772,24 @@ print(settings.theme)
           explanation: "Three calls, three separate objects, and only `a`'s changed. With the singleton, `a`, `b` and `c` are three names for **one** object, so all of them read \"dark\".",
         },
         {
+          kind: "explain",
+          title: "Class attributes and @classmethod",
+          body: "The starter code uses three things you have not seen yet. Here they are in a tiny example, a counter that all code shares:\n\n" +
+            py(`
+class Counter:
+    total = 0                 # class attribute: ONE value kept on the class itself
+
+    @classmethod
+    def bump(cls):            # cls means "this class", like self means "this object"
+        cls.total += 1
+
+Counter.bump()
+Counter.bump()
+print(Counter.total)
+`) +
+            "\n\n~~~text\n2\n~~~\n\n- A **class attribute** is written directly inside the class, not inside `__init__`. There is one copy for the whole class, not one per object. That is why `_instance = None` can remember the single object.\n- `@classmethod` is a **decorator** (a label above a method that changes how Python treats it). It makes the method receive the class as `cls` instead of an object as `self`, so you can call it as `Counter.bump()` with no object at all.\n- `cls()` means \"build an object of this class\", the same as `Settings()` in `Settings`.\n- `x is None` asks \"is x still empty?\". `_instance` starts as `None` (nothing stored yet), so the first call sees `None` and builds the object. Later calls find the stored one.",
+        },
+        {
           kind: "code",
           title: "Write get_instance",
           body: "Right now `get_instance` builds a new object every time. Make it build one only on the **first** call, keep it in the class attribute `_instance`, and return that same object from then on.",
@@ -879,7 +920,7 @@ class WrappedInsuredParcel(Parcel): ...
 class WrappedTrackedInsuredParcel(Parcel): ...
 # ...and a customer wants a second layer of wrap
 `) +
-            "\n\nEvery new add-on doubles the number of classes.",
+            "\n\nEvery new add-on doubles the number of classes. (`class WrappedParcel(Parcel)` means \"WrappedParcel is built on Parcel\", and `...` means \"details left out\".)",
         },
         {
           kind: "question",
@@ -992,6 +1033,30 @@ assert d.description() == "Parcel, bubble wrap, tracking", "description should b
             { id: "t3", description: "Two tracking layers stack", assertionCode: `assert round(Tracking(Tracking(Parcel())).cost(), 2) == 3.4, "Two tracking layers should cost 3.4"` },
           ],
           hints: ["Copy BubbleWrap's three methods into Tracking and change the numbers and the text.", "`cost` returns `self.inner.cost() + 0.7`."],
+        },
+        {
+          kind: "explain",
+          title: "Wrapping a function (what @ means)",
+          body: "You have just wrapped objects. Python can wrap **functions** the same way, and it has a short label for it. Two facts make it work:\n\n- A function is a value. You can hand it to another function as an argument, just like a number.\n- A function can build a new function inside itself and `return` it.\n\n" +
+            py(`
+def twice(fn):                 # fn is a function we are handed
+    def wrapper():             # a new function, made inside
+        return fn() + fn()     # it calls the original two times
+    return wrapper             # and we give the new function back
+
+def hi():
+    return "hi "
+
+hi = twice(hi)                 # replace hi with the wrapped version
+print(hi())
+`) +
+            "\n\n~~~text\nhi hi \n~~~\n\nThe line `hi = twice(hi)` is the whole trick. Python lets you write it as a label above the function instead:\n\n" +
+            py(`
+@twice
+def hi():
+    return "hi "
+`) +
+            "\n\nThat `@twice` line is called a **decorator**: it means \"after defining `hi`, run `hi = twice(hi)`\". With two labels stacked, the one closest to `def` is applied first, then the one above wraps the result. So `@shout` above `@polite` above `def ask` means `ask = shout(polite(ask))`: `polite` wraps the original, then `shout` wraps that. Calling `ask()` runs the outer layer first, which calls the inner layer, which calls the original function.",
         },
         {
           kind: "question",

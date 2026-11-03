@@ -124,6 +124,84 @@ def _q(f, *a):
 `;
 
 const lessons: ConceptLesson[] = [
+  // ───────────────────────── 0 ─────────────────────────
+  {
+    id: "fnd-programs-0-editor",
+    title: "Meet the editor",
+    summary: "Where you type, what Run and Submit do, how to read the tests and a red error, and what to do when a loop never ends.",
+    minutes: 4,
+    xp: 20,
+    steps: [
+      {
+        kind: "explain",
+        title: "Where you type",
+        body: "Learning to cook means standing in a kitchen. Learning to code means standing in the **editor**: the box where you write your program. Some lessons have a code step, and it comes with an editor already holding some **starter code**.\n\n- Click inside the box and type, exactly like in a notes app.\n- To move a line, cut it (Ctrl+X, or Cmd+X on a Mac), click where it should go and paste it (Ctrl+V).\n- Spaces at the start of a line matter in Python. Keep them as they are unless the lesson tells you to change them.\n\nNothing you type can break your computer. If you get in a mess, the editor has a reset option to bring the starter code back.",
+      },
+      {
+        kind: "explain",
+        title: "Run and Submit",
+        body: "Under the editor are two buttons that do different jobs.\n\n- **Run** is for trying. The computer carries out your program, and you see what it shows. Nothing is marked right or wrong. Run as often as you like.\n- **Submit** is for checking. Your program runs again, and the **tests** decide whether you got it right.\n\nA good habit is to Run, look at what happened, fix, and Run again. Submit when you think you have it.",
+      },
+      {
+        kind: "question",
+        title: "Which button?",
+        body: "You have changed a line and you just want to see what your program prints, without being marked. Which button do you press?",
+        question: { type: "choice", options: ["Run", "Submit"], answer: 0 },
+        explanation: "**Run** shows you what your program does, with no marking. **Submit** is the one that checks your work against the tests.",
+      },
+      {
+        kind: "explain",
+        title: "Output and the tests list",
+        body: "Whatever your program prints with `print` appears in the **output panel**, one line per `print`. If your program prints nothing, the panel stays empty. That is not a failure, it just means nothing was printed.\n\nThe **tests list** is a checklist of what the lesson expects. Each row is one small check, written in plain words, like *Prints 3, 2, 1, Liftoff! in that order*.\n\n- A tick means that check passed.\n- A cross means it did not. The row also tells you what went wrong, for example *Print 3, 2, 1 and then Liftoff!, one per line, in that order*. That message is a clue, so read it.\n\nYou are done when every row has a tick.",
+      },
+      {
+        kind: "question",
+        title: "A cross in the list",
+        body: "One row in the tests list shows a cross, and the message says *Liftoff! should be the very last line*. What does that tell you?",
+        question: { type: "choice", options: ["That check failed, and the message hints at how to fix it", "Your computer is broken", "The lesson is finished", "You must start the course again"], answer: 0 },
+        explanation: "A cross means that one check did not pass. The message is written to help you: here it says where `Liftoff!` belongs. Fix it, Run again, and the cross should turn into a tick.",
+      },
+      {
+        kind: "explain",
+        title: "What a red error looks like",
+        body: "Sometimes a line cannot be carried out, and the computer stops and shows an **error** in red. It looks something like this:\n\n" + out(`Traceback (most recent call last):\n  File "main.py", line 2, in <module>\n    prnt("B")\nNameError: name 'prnt' is not defined`) + "\n\nIt looks scary but it is just a message to you. **Read the last line first.** It names the problem: here, the name `prnt` is not known (a typo for `print`). The lines above it say *where*: `line 2` tells you which line to look at.\n\nAn error never means you broke anything. Fix the line it points at and Run again.",
+      },
+      {
+        kind: "question",
+        title: "Read the error",
+        body: "An error appears and it is long. Which part do you read first?",
+        question: { type: "choice", options: ["The last line, which names the problem", "The first line, because it came first", "Nothing: errors cannot be read", "Only the colour"], answer: 0 },
+        explanation: "The **last line** says what went wrong, and the line number just above it says where. Start there.",
+      },
+      {
+        kind: "question",
+        title: "A program that never ends",
+        body: "Later you will meet **loops**: lines that repeat. If you write one that never finishes (it keeps repeating forever), your program will seem stuck and the output may keep growing. What should you do?",
+        question: {
+          type: "choice",
+          options: [
+            "Wait for it: it will finish eventually",
+            "Do not worry: the runner stops long programs after a time limit and tells you. Then read your loop, find why it never ends, fix it and Run again",
+            "Close the computer",
+            "Delete the whole lesson",
+          ],
+          answer: 1,
+        },
+        explanation: "A loop that never ends is a normal mistake, not a disaster. The runner cuts a program off after a time limit and shows a message. Then look at the loop and ask: *what changes each time round that would make it stop?* You will practise spotting that in the loops lesson.",
+      },
+      {
+        kind: "recap",
+        points: [
+          "Type in the editor box; the starter code is already there for you.",
+          "Run tries your program with no marking; Submit checks it against the tests.",
+          "Output from `print` shows in the output panel; the tests list shows a tick or a cross per check.",
+          "A red error is a message: read the last line first, and the line number above it.",
+          "A program that never ends gets stopped by the runner. Find what should make the loop stop, fix it and Run again.",
+        ],
+      },
+    ],
+  },
+
   // ───────────────────────── 1 ─────────────────────────
   {
     id: "fnd-programs-1-instructions",
@@ -135,7 +213,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "A list of instructions",
-        body: "A **program** is a list of instructions. The computer carries them out **one at a time, top to bottom**, exactly as written. That's all \"running a program\" means.\n\n`print(...)` is the instruction that shows something on the screen. Press **Run line 1** and keep stepping.",
+        body: "When you make toast you follow steps in order: bread in, press down, wait, butter. A **program** is the same thing for a computer: a list of instructions. It carries them out **one at a time, top to bottom**, exactly as written. That's all \"running a program\" means.\n\nWe write programs in a language called **Python**. `print(...)` is the instruction that shows something on the screen: the brackets hold what to show, and quotes mark text. Press **Run line 1** and keep stepping.",
         widget: trace("morning"),
       },
       {
@@ -169,12 +247,12 @@ const lessons: ConceptLesson[] = [
           options: ["It prints A, then stops with an error", "It prints A and C, skipping the broken line", "It prints A, B and C: Python works out you meant print", "Nothing is printed at all"],
           answer: 0,
         },
-        explanation: "Lines run in order, so **A** is printed first. Line 2 asks for something called `prnt`, which doesn't exist, so Python stops right there with a *NameError*. It never skips a broken line and never guesses what you meant, so line 3 never runs.",
+        explanation: "Lines run in order, so **A** is printed first. Line 2 asks for something called `prnt`, which doesn't exist, so Python stops right there with a *NameError* (Python met a name it doesn't know). It never skips a broken line and never guesses what you meant, so line 3 never runs.",
       },
       {
         kind: "code",
         title: "Fix the countdown",
-        body: "This program should count down and then launch, but its lines are jumbled. Reorder them so it prints:\n\n" + out("3\n2\n1\nLiftoff!"),
+        body: "This program should count down and then launch, but its lines are jumbled. Click in the editor and move the lines around (cut and paste), then press **Run** to see what it prints. When the tests list under it shows ticks, press **Submit**. The goal is this output:\n\n" + out("3\n2\n1\nLiftoff!"),
         language: "python",
         starter: `print("Liftoff!")\nprint(1)\nprint(3)\nprint(2)\n`,
         solution: `print(3)\nprint(2)\nprint(1)\nprint("Liftoff!")\n`,
@@ -208,7 +286,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "Every value has a type",
-        body: "Programs work with **values**: numbers, words, yes-or-no answers. Every value has a **type**, which tells Python what kind of thing it is and what you can do with it. The four you'll meet most:\n\n- `int`: a whole number, like `42` or `-7`\n- `float`: a number with a decimal point, like `3.5` or `2.0`\n- `str` (a *string*): text in quotes, like `\"hello\"`\n- `bool` (a *boolean*): `True` or `False`",
+        body: "Your phone treats the number 7 differently from the word \"seven\": you can add numbers, but you can't add words. A computer needs to know which is which too.\n\nPrograms work with **values**: numbers, words, yes-or-no answers. Every value has a **type**, which tells Python what kind of thing it is and what you can do with it. The four you'll meet most:\n\n- `int`: a whole number, like `42` or `-7`\n- `float`: a number with a decimal point, like `3.5` or `2.0`\n- `str` (a *string*): text in quotes, like `\"hello\"`\n- `bool` (a *boolean*): `True` or `False`\n\nThere is also a fifth, special value, `None`, which means \"nothing here\". You'll meet it again when functions come up.",
       },
       {
         kind: "question",
@@ -235,22 +313,22 @@ const lessons: ConceptLesson[] = [
       {
         kind: "question",
         title: "Same symbol, different job",
-        body: "`+` adds numbers. What does it do with two strings?\n\n" + py(`print("2" + "2")`),
+        body: "The `+` sign adds numbers. What does it do with two strings?\n\n" + py(`print("2" + "2")`),
         widget: { type: "evaluate", props: { predict: true, resultType: "str", stages: [{ expr: '"2" + "2"', focus: '"2" + "2"', note: "Both sides are strings, so + joins them." }, { expr: '"22"' }] } },
         question: { type: "choice", options: ["4", "22", "2 + 2", "An error"], answer: 1 },
-        explanation: "For strings, `+` means **join** (programmers say *concatenate*): `\"2\"` followed by `\"2\"` is `\"22\"`. Python decides what an operator does from the **types** of the values, not from what they look like.",
+        explanation: "For strings, `+` means **join** (programmers say *concatenate*): `\"2\"` followed by `\"2\"` is `\"22\"`. Python decides what the `+` sign does from the **types** of the values, not from what they look like.",
       },
       {
         kind: "question",
         title: "Mixing types",
         body: "And with a string on one side and a number on the other?\n\n" + py(`print("2" + 2)`),
         question: { type: "choice", options: ["4", "22", "An error", "2 2"], answer: 2 },
-        explanation: "Python won't guess whether you meant to add (4) or to join (\"22\"), so it stops with a **TypeError**: *can only concatenate str (not \"int\") to str*. When the types don't match, you convert one of them yourself.",
+        explanation: "Python won't guess whether you meant to add (4) or to join (\"22\"), so it stops with a **TypeError**: *can only concatenate str (not \"int\") to str*. Remember: the last line of an error is the part to read, because it names the problem. This one says you tried to join text and a number. When the types don't match, you convert one of them yourself.",
       },
       {
         kind: "explain",
         title: "Converting between types",
-        body: "Each type has a function that converts a value into it:\n\n- `int(\"7\")` gives the number `7`\n- `str(7)` gives the text `\"7\"`\n- `float(\"2.5\")` gives the number `2.5`\n\nStep through: the conversion happens first, then the addition.",
+        body: "Each type has a ready-made tool that converts a value into it. (Programmers call such a tool a **function**: you write its name, put the value in brackets, and it hands back a new value. Lesson 7 shows how to make your own.)\n\n- `int(\"7\")` gives the number `7`\n- `str(7)` gives the text `\"7\"`\n- `float(\"2.5\")` gives the number `2.5`\n\nHere is `str` in a full line, so you can see it before you need it:\n\n" + py(`print("I have " + str(3) + " apples")`) + "\n\nPrints:\n\n" + out("I have 3 apples") + "\n\nThe `3` became the text `\"3\"`, so `+` could join it to the other text. Python also has a shortcut that does the converting for you: put an `f` before the opening quote and write the value inside curly brackets, `f\"I have {3} apples\"`. It gives the same text. This is called an **f-string**.\n\nStep through the widget: the conversion happens first, then the addition.",
         widget: {
           type: "evaluate",
           props: {
@@ -273,7 +351,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "code",
         title: "Fix the TypeError",
-        body: "This program crashes with a TypeError. Fix the `print` line so it shows exactly `I have 3 apples`, and keep `apples` a number.",
+        body: "In this program, `apples = 3` stores the number 3 under the name `apples` (a name that holds a value is called a **variable**; the next lesson is all about them). The `print` line then tries to use it, and the program crashes with a TypeError. Fix the `print` line so it shows exactly `I have 3 apples`, and keep `apples` a number. Do it like the `str(3)` example above, but with `apples` in the brackets.",
         language: "python",
         starter: `apples = 3\nprint("I have " + apples + " apples")\n`,
         solution: `apples = 3\nprint("I have " + str(apples) + " apples")\n`,
@@ -288,7 +366,7 @@ const lessons: ConceptLesson[] = [
         points: [
           "Every value has a type: `int`, `float`, `str` or `bool`.",
           "Quotes make a `str`, even `\"42\"` or `\"True\"`.",
-          "What an operator does depends on the types: `+` adds numbers but joins strings.",
+          "What a symbol like `+` does depends on the types: `+` adds numbers but joins strings.",
           "Mixing a string and a number with `+` is a TypeError. Convert first with `int()`, `float()` or `str()`.",
         ],
       },
@@ -306,7 +384,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "A box with a label",
-        body: "A **variable** is a name for a value: think of a box with a label on it. `age = 36` makes a box labelled `age` and puts 36 inside. After that, writing `age` means \"whatever is in that box right now\".\n\nStep through and watch the boxes.",
+        body: "A **variable** is a name for a value: think of a box with a label on it. `age = 36` makes a box labelled `age` and puts 36 inside. After that, writing `age` means \"whatever is in that box right now\". Without names, you would have to remember every value yourself; with them, the computer remembers and you just say the label.\n\nOne extra: `print` can show several things at once. Separate them with commas and it puts a space between them, so `print(name, age)` shows `Ada 37`.\n\nStep through and watch the boxes.",
         widget: trace("boxes"),
       },
       {
@@ -314,15 +392,15 @@ const lessons: ConceptLesson[] = [
         title: "Not an equation",
         body: "In maths, `x = x + 1` is impossible. In code you'll write it all the time. What does this print?\n\n" + py(`x = 5\nx = x + 1\nprint(x)`),
         question: { type: "number", hint: "Read it as: take x, add 1, put the result back into x.", answer: 6 },
-        explanation: "`=` means **store**, not *is equal to*. Python works out the right side first using the current value (5 + 1 = 6), then puts the result into the box on the left, replacing what was there.",
+        explanation: "`=` means **store**, not *is equal to*. Python works out the right side first using the current value (5 + 1 = 6), then puts the result into the box on the left, replacing what was there.\n\nThis update is so common that Python has a shorthand: `x += 1` means exactly `x = x + 1`. In the same way `x -= 2` takes 2 away and `x *= 3` multiplies by 3.",
       },
       {
         kind: "question",
         title: "Copies, not links",
-        body: "`b = a` puts a's value into b. What happens to `b` when `a` changes afterwards?",
+        body: "`b = a` puts a's value into b. Here is the whole program:\n\n" + py(`a = 3\nb = a\na = 10\nprint(b)`) + "\n\nWhat does `print(b)` show?",
         widget: trace("copyint", { predict: true }),
         question: { type: "choice", options: ["3", "10", "13", "An error"], answer: 0 },
-        explanation: "`b = a` put a copy of the 3 into `b` at that moment. Changing `a` later only changes the `a` box: variables aren't linked to each other. (Lists can look like an exception. The last lesson of this module shows what's really happening there.)",
+        explanation: "`b = a` put a copy of the 3 into `b` at that moment. Changing `a` later only changes the `a` box: variables aren't linked to each other.\n\nA note for later: the \"box that holds the value\" picture is exactly right for numbers and text, which can't be changed in place. Lists can be changed in place, and there the picture needs a small upgrade: the box holds an *arrow* to the list. The last lesson of this module explains it. For numbers, nothing you learn here will be wrong.",
       },
       {
         kind: "explain",
@@ -340,15 +418,22 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "Watch the swap",
-        body: "Here's the three-line swap running. Python also has a one-line shortcut for this, `a, b = b, a`, which does the same job.",
+        body: "Here's the three-line swap running. Python also has a one-line shortcut for this, `a, b = b, a`. It packs the two values on the right together, then unpacks them into the two names on the left, all in one go, so no temporary box is needed. You can also use it to fill several names at once: `x, y = 3, 4`.",
         widget: trace("goodswap"),
       },
       {
         kind: "question",
         title: "Good names",
-        body: "Names can use letters, digits and underscores. They can't start with a digit, and they can't be one of Python's own words such as `if` or `class`. Which of these are allowed?",
+        body: "Names can use letters, digits and underscores. They can't start with a digit, and they can't be a word Python already uses for itself (such as `print` or `class`). Which of these are allowed?",
         question: { type: "choice", options: ["total_score", "2nd_place", "firstName", "my-score", "class", "_count"], answer: [0, 2, 5] },
         explanation: "`total_score`, `firstName` and `_count` are fine. `2nd_place` starts with a digit, `my-score` would be read as *my minus score*, and `class` is reserved by Python. Beyond the rules, pick names that say what's inside: `total_score` beats `ts`.",
+      },
+      {
+        kind: "question",
+        title: "Case and order",
+        body: "Names are **case-sensitive** (`Age` and `age` are different boxes), and a box must be filled before you read it. What happens here?\n\n" + py(`age = 12\nprint(Age)`),
+        question: { type: "choice", options: ["It prints 12", "It stops with a NameError", "It prints Age", "It prints nothing and carries on"], answer: 1 },
+        explanation: "There is a box called `age` but none called `Age`, so Python stops with a *NameError* (it met a name it does not know). The same error happens if you use a name on a line **before** the line that fills it.",
       },
       {
         kind: "code",
@@ -368,7 +453,8 @@ const lessons: ConceptLesson[] = [
         points: [
           "A variable is a labelled box: `name = value` stores the value under that name.",
           "`=` means store. The right side is worked out first, then it replaces what was in the box.",
-          "`b = a` copies the value. Changing `a` later doesn't change `b`.",
+          "`b = a` copies the value. Changing `a` later doesn't change `b`. (Lists need an upgraded picture later: the box holds an arrow.)",
+          "`x += 1` is shorthand for `x = x + 1`.",
           "To swap two variables, park one value in a temporary variable first, or write `a, b = b, a`.",
           "Names use letters, digits and underscores, can't start with a digit, and should say what they hold.",
         ],
@@ -387,7 +473,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "One piece at a time",
-        body: "An **expression** is anything that works out to a value, like `2 + 3 * 4`. Python evaluates it piece by piece, following **precedence** rules much like maths: `*` and `/` before `+` and `-`, parentheses first, and operators of the same rank from left to right.\n\nStep through it.",
+        body: "A calculator can't read your mind: when you type `2 + 3 * 4`, it needs a rule for what to do first. Python has rules too.\n\nAn **expression** is anything that works out to a value, like `2 + 3 * 4`. The signs in it (`+`, `*` and so on) are called **operators**. Python works an expression out piece by piece, following **precedence** rules (which sign goes first) much like maths: parentheses first, then `**` (power: `2 ** 3` is 8), then `*` and `/`, then `+` and `-`. Signs of the same rank go from left to right.\n\nStep through it.",
         widget: {
           type: "evaluate",
           props: {
@@ -425,21 +511,35 @@ const lessons: ConceptLesson[] = [
       {
         kind: "question",
         title: "Asking, not storing",
-        body: "A **comparison** asks a question and answers with a bool: `5 > 3` is `True`, `2 >= 9` is `False`. Which line *asks* whether `x` equals 5?",
+        body: "A **comparison** asks a question and answers with a bool (`True` or `False`). The signs are:\n\n- `<` smaller, `>` larger\n- `<=` smaller or equal, `>=` larger or equal\n- `==` equal, `!=` not equal\n\nSo `5 > 3` is `True`, `2 >= 9` is `False` and `4 != 4` is `False`. Which line *asks* whether `x` equals 5?",
         question: { type: "choice", options: ["x = 5", "x == 5", "x === 5", "x =? 5"], answer: 1 },
-        explanation: "`==` asks a question and gives back True or False. A single `=` stores a value in a box. Mixing them up is one of the most common bugs there is (in Python, `if x = 5:` won't even run). `===` belongs to JavaScript, not Python.",
+        explanation: "`==` asks a question and gives back True or False. A single `=` stores a value in a box. Mixing them up is one of the most common bugs there is: putting `x = 5` where a question is expected is an error. `===` belongs to JavaScript, not Python.",
       },
       {
         kind: "question",
         title: "Even or odd?",
-        body: "`%` is how programs test whether a number is even. When is `n % 2 == 0` True?",
+        body: "Programs often need to know if a number is even, for example to colour every second row of a table. `%` is how they test it. When is `n % 2 == 0` True?",
         question: { type: "choice", options: ["When n is even", "When n is odd", "Only when n is 0", "When n divided by 2 is 0"], answer: 0 },
         explanation: "Even numbers split into pairs with nothing left over, so the remainder is 0. Odd numbers always have 1 left over. `n % 2 == 0` is a test you'll write again and again.",
       },
       {
+        kind: "code",
+        title: "Odd and even",
+        body: "Your turn to write expressions. Replace the two `False` values with comparisons, so `n_is_odd` is `True` when `n` is odd and `m_is_even` is `True` when `m` is even. Use `%` and `==`. Run to see the two answers.",
+        language: "python",
+        starter: `n = 7\nm = 10\n\nn_is_odd = False\nm_is_even = False\n\nprint(n_is_odd, m_is_even)\n`,
+        solution: `n = 7\nm = 10\n\nn_is_odd = n % 2 == 1\nm_is_even = m % 2 == 0\n\nprint(n_is_odd, m_is_even)\n`,
+        tests: [
+          { id: "t1", description: "n_is_odd is True", assertionCode: `assert n_is_odd is True, "n is 7, an odd number, so n_is_odd should be True (use n % 2 == 1)"` },
+          { id: "t2", description: "m_is_even is True", assertionCode: `assert m_is_even is True, "m is 10, an even number, so m_is_even should be True (use m % 2 == 0)"` },
+          { id: "t3", description: "Prints True True", assertionCode: `assert __stdout__.strip() == "True True", "Print both answers on one line: True True"` },
+        ],
+        hints: ["An odd number leaves a remainder of 1 when divided by 2, so ask whether n % 2 is equal to 1.", "n_is_odd = n % 2 == 1 and m_is_even = m % 2 == 0. The % goes first, then the == compares."],
+      },
+      {
         kind: "explain",
         title: "Combining questions",
-        body: "`and`, `or` and `not` combine booleans:\n\n- `a and b` is True only when **both** are True\n- `a or b` is True when **at least one** is True\n- `not a` flips True and False\n\nYou can board if you have a ticket **and** you're on time. Flip the inputs and watch the result.",
+        body: "A **boolean** is just a True or False answer. `and`, `or` and `not` combine booleans. Precedence applies here too: comparisons first, then `not`, then `and`, then `or`.\n\n- `a and b` is True only when **both** are True\n- `a or b` is True when **at least one** is True\n- `not a` flips True and False\n\nYou can board if you have a ticket **and** you're on time. Flip the inputs and watch the result.",
         widget: { type: "truth-table", props: { inputs: ["a", "b"], expr: "a and b", meaning: { a: "has a ticket", b: "is on time" } } },
       },
       {
@@ -474,7 +574,8 @@ const lessons: ConceptLesson[] = [
       {
         kind: "recap",
         points: [
-          "Python works an expression out piece by piece: parentheses, then `*` `/` `//` `%`, then `+` `-`, left to right.",
+          "Python works an expression out piece by piece: parentheses, then `**`, then `*` `/` `//` `%`, then `+` `-`, left to right.",
+          "Comparisons are `<` `>` `<=` `>=` `==` `!=`, and each gives True or False.",
           "`/` always gives a float; `//` counts full groups; `%` gives the remainder.",
           "`n % 2 == 0` tests whether n is even.",
           "`==` asks whether two values are equal; `=` stores a value.",
@@ -495,8 +596,13 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "Programs can choose",
-        body: "An `if` statement checks a condition. The **indented** lines underneath it run only when the condition is True.\n\nStep through it.",
+        body: "In real life: *if it's raining, take an umbrella*. You check something, and only then do something. Programs do the same with `if`.\n\nThe check is called a **condition**: a question with a yes or no answer, such as `temp > 25`. The `if` line ends with a **colon** `:`, which means \"the lines that belong to this check come next\". Those lines are **indented**: pushed to the right by four spaces. They run only when the condition is True. A line that is not pushed right is outside the `if` and always runs.\n\nStep through it.",
         widget: trace("ifhot"),
+      },
+      {
+        kind: "explain",
+        title: "What a condition gives back",
+        body: "Python works a condition out and gives back a single value, `True` or `False`. The `if` just asks: \"did I get True?\"\n\n" + py(`fuel = 15\nprint(fuel < 20)      # True\nprint(fuel == 100)    # False\nlow = fuel < 20       # keep the answer\nprint(type(low))      # <class 'bool'>`) + "\n\n`==` asks \"are these equal?\", while a single `=` stores a value. Print a condition any time to see exactly what it answers.",
       },
       {
         kind: "question",
@@ -505,11 +611,6 @@ const lessons: ConceptLesson[] = [
         widget: trace("ifcold", { selectLine: true, startAt: 2 }),
         question: { type: "widget", hint: "18 is not greater than 25, so that if is skipped. Which line runs instead?", goal: { line: 4 } },
         explanation: "`18 > 25` is False, so the indented `print(\"Shorts\")` is skipped and Python goes straight to line 4, the first line after the `if` block. Indentation is how Python knows which lines belong to the `if`.",
-      },
-      {
-        kind: "explain",
-        title: "What a condition gives back",
-        body: "A condition is a question with only a yes or no answer, like *is the tank below 20%?* Python works it out and gives back a single value, `True` or `False`. The `if` just asks: \"did I get True?\"\n\n" + py(`fuel = 15\nprint(fuel < 20)      # True\nprint(fuel == 100)    # False\nlow = fuel < 20       # keep the answer\nprint(type(low))      # <class 'bool'>`) + "\n\n`==` asks \"are these equal?\", while a single `=` stores a value. Print a condition any time to see exactly what it answers.",
       },
       {
         kind: "explain",
@@ -542,7 +643,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "Kinds of conditions",
-        body: "Any yes/no question can be a condition. The common kinds:\n\n| Kind | Example | What it asks |\n| --- | --- | --- |\n| Comparison | `age < 12` | Smaller, larger, at most, at least? |\n| Equal / not equal | `colour == \"red\"` | Same value? Works on text too. |\n| Between two limits | `0 <= level < 100` | Inside a band? (one chained check) |\n| Membership | `\"tea\" in cart`, `\"x\" not in name` | Is it inside this list or text? |\n| Text tests | `code.isdigit()`, `name.startswith(\"Dr\")` | A function that answers yes or no |\n| Identity | `user is None` | The very same object? Use for `None` |\n| Truthiness | `if cart:` | Is the list non-empty? |\n| Combined | `a and b`, `a or b`, `not a` | Several questions joined |\n\n**Truthiness:** these count as false: `False`, `None`, `0`, `0.0`, `\"\"`, `[]`, `{}`. Nearly everything else counts as true.\n\n**`==` vs `is`:** `==` asks \"equal values?\", `is` asks \"the very same object?\". Use `==` for numbers and text, `is` mainly for `None`.\n\n**Pick a condition in three steps:** say the question in plain words, turn it into a yes/no test, then try the edge value. If the limit is 12, should exactly 12 count? `age < 12` says no, `age <= 12` says yes.\n\nPython also has `match` for many fixed choices, but an `elif` chain does the job here.",
+        body: "Any yes/no question can be a condition. The kinds you can use now:\n\n| Kind | Example | What it asks |\n| --- | --- | --- |\n| Comparison | `age < 12` | Smaller, larger, at most, at least? |\n| Equal / not equal | `colour == \"red\"`, `colour != \"red\"` | Same value, or a different one? Works on text too. |\n| Between two limits | `0 <= level < 100` | Inside a band? (one chained check) |\n| Combined | `a and b`, `a or b`, `not a` | Several questions joined |\n\n**Pick a condition in three steps:** say the question in plain words, turn it into a yes/no test, then try the edge value. If the limit is 12, should exactly 12 count? `age < 12` says no, `age <= 12` says yes.\n\nMore kinds (is something inside a list, is a list empty, is a value `None`) come at the end of this lesson, under *Going further*.",
       },
       {
         kind: "question",
@@ -555,7 +656,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "code",
         title: "Ticket prices",
-        body: "Finish `ticket_price` so it gives the right price for an `age`:\n\n- under 12 pays **5**\n- 65 and over pays **7**\n- everyone else pays **10**\n\n`def` and `return` come in two lessons' time. For now, just set `price` using if / elif / else.",
+        body: "A cinema charges by age:\n\n- under 12 pays **5**\n- 65 and over pays **7**\n- everyone else pays **10**\n\nThe starter wraps the work in a **function** (a named recipe: lesson 7 explains them properly). `def ticket_price(age):` means \"here is a recipe called `ticket_price` that is given an `age`\", and `return price` hands the answer back at the end. Leave those two lines alone. Your job is the middle: set `price` using `if` / `elif` / `else`, the way the lesson showed, with the lines inside indented.",
         language: "python",
         starter: `def ticket_price(age):\n    price = 10\n    # set price to 5 for under-12s and to 7 for 65 and over\n    return price\n`,
         solution: `def ticket_price(age):\n    if age < 12:\n        price = 5\n    elif age >= 65:\n        price = 7\n    else:\n        price = 10\n    return price\n`,
@@ -568,9 +669,14 @@ const lessons: ConceptLesson[] = [
         hints: ["\"Under 12\" is age < 12, and \"65 and over\" is age >= 65.", "if age < 12: price = 5, then elif age >= 65: price = 7, then else: price = 10, each on its own indented line."],
       },
       {
+        kind: "explain",
+        title: "Going further (optional)",
+        body: "### Going further (optional)\n\nThese kinds of condition use things from later lessons, so come back to this once you have met lists in lesson 8.\n\n| Kind | Example | What it asks |\n| --- | --- | --- |\n| Membership | `\"tea\" in cart`, `\"x\" not in name` | Is it inside this list or text? |\n| Text tests | `code.isdigit()`, `name.startswith(\"Dr\")` | A tool attached to the text that answers yes or no |\n| Identity | `user is None` | Is it the special \"nothing\" value `None`? |\n| Truthiness | `if cart:` | Is the list non-empty? |\n\n**Truthiness:** these count as false: `False`, `None`, `0`, `0.0`, `\"\"` (empty text), `[]` (empty list), `{}` (empty dictionary). Nearly everything else counts as true.\n\n**`==` vs `is`:** `==` asks \"equal values?\", `is` asks \"the very same thing in memory?\" (lesson 9 explains that). Use `==` for numbers and text, `is` mainly for `None`.\n\nPython also has `match` for many fixed choices, but an `elif` chain does the job here.",
+      },
+      {
         kind: "recap",
         points: [
-          "`if` runs its indented block only when the condition is True.",
+          "An `if` line asks a condition (a yes/no question) and ends with a colon; the indented lines under it run only when the answer is True.",
           "`else` catches everything else: exactly one of the two blocks runs.",
           "In an if / elif / else chain the first True condition wins and the rest are skipped, so order matters.",
           "Separate `if` statements are each checked on their own.",
@@ -591,7 +697,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "Doing it again",
-        body: "A **loop** repeats lines. A `while` loop checks its condition, runs the indented body, then jumps back up and checks again, until the condition is False.\n\nStep through and count the jumps back to line 2.",
+        body: "Imagine counting 100 sheep. You wouldn't write 100 lines; you'd say \"keep counting until I reach 100\". A **loop** lets a program do that: it repeats lines.\n\nA `while` loop checks its condition (the yes/no question from the last lesson), runs the indented body (the lines pushed right under it), then jumps back up and checks again, until the condition is False.\n\nStep through and count the jumps back to line 2.",
         widget: trace("countdown"),
       },
       {
@@ -605,13 +711,13 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "for and range",
-        body: "A `for` loop runs once for each value in a sequence. `range(5)` gives 0, 1, 2, 3, 4: it **starts at 0** and **stops before** 5. That's five values, but 5 isn't one of them.\n\nStep through the passes.",
+        body: "A `for` loop runs its body once for each value that something hands out. `range(5)` hands out 0, 1, 2, 3, 4: it **starts at 0** and **stops before** 5. That's five values, but 5 isn't one of them.\n\nThe name after `for` (here `i`) is a variable that the loop creates and refills with the next value on every pass. Each time round, `i` is a different number.\n\nStep through the passes.",
         widget: { type: "loop", props: { stop: 5, body: "print(i)" } },
       },
       {
         kind: "explain",
         title: "Which loop, and what is range?",
-        body: "A loop repeats lines, for one of two reasons. `for` means \"once for every item, or a set number of times\". `while` means \"keep going until something changes\": its condition is the same yes/no question as in an `if`, asked again before every pass, so the body must change what it looks at.\n\n| Situation | Use |\n| --- | --- |\n| I have a collection, or I know how many passes | `for` |\n| I am waiting for something to change | `while` |\n\n`range` makes the numbers, and the **stop value is never included**:\n\n" + py(`print(list(range(5)))          # [0, 1, 2, 3, 4]\nprint(list(range(2, 6)))       # [2, 3, 4, 5]\nprint(list(range(0, 10, 3)))   # [0, 3, 6, 9]\nprint(list(range(5, 0, -1)))   # [5, 4, 3, 2, 1]`) + "\n\n`range(n)` gives exactly `n` numbers starting at 0, so they match list positions. The third number is the **step**, and a negative step counts down.",
+        body: "A loop repeats lines, for one of two reasons. `for` means \"a set number of times, or once for every item\". `while` means \"keep going until something changes\", so the body must change what the condition looks at.\n\n| Situation | Use |\n| --- | --- |\n| I know how many passes | `for` |\n| I am waiting for something to change | `while` |\n\n`range` can also start somewhere else, and take bigger steps. The **stop value is never included**:\n\n" + py(`for i in range(2, 6):      # 2, 3, 4, 5\n    print(i)\nfor i in range(0, 10, 3):  # 0, 3, 6, 9\n    print(i)\nfor i in range(5, 0, -1):  # 5, 4, 3, 2, 1\n    print(i)`) + "\n\nThe third number is the **step**: how much to move each pass. A negative step counts down.",
       },
       {
         kind: "question",
@@ -628,11 +734,6 @@ const lessons: ConceptLesson[] = [
         widget: { type: "loop", props: { start: 1, stop: 5, acc: { name: "total", init: 0, op: "+" } } },
       },
       {
-        kind: "explain",
-        title: "Items, positions and early exits",
-        body: "The same job three ways, over a list:\n\n" + py(`tea = ["black", "green", "mint"]\nfor i in range(len(tea)):        # by position\n    print(i, tea[i])\nfor t in tea:                    # the items directly\n    print(t)\nfor i, t in enumerate(tea):      # items plus a counter\n    print(i, t)`) + "\n\nThe first prints `0 black`, `1 green`, `2 mint`; the second prints `black`, `green`, `mint`; the third prints the same as the first. Prefer the items directly, use `enumerate` when you also need the position, and `range` when the numbers themselves matter.\n\nWhat happens each pass of `for n in range(1, 4): print(n * 10)`:\n\n| Pass | n | Another number left? | Output |\n| --- | --- | --- | --- |\n| 1 | 1 | yes | 10 |\n| 2 | 2 | yes | 20 |\n| 3 | 3 | yes | 30 |\n| end | | no, so the loop stops | |\n\n`break` leaves the loop at once; `continue` skips to the next pass. A loop can also hold an `if`, which is how you filter or count:\n\n" + py(`readings = [4, 9, 0, 7, 12]\ngood = 0\nfor r in readings:\n    if r == 0:\n        continue    # skip a dead sensor\n    if r > 10:\n        break       # too high: stop checking\n    good += 1\nprint(good)             # 3 (4, 9 and 7)`),
-      },
-      {
         kind: "question",
         title: "A total that never grows",
         body: "This tries to multiply 1 × 2 × 3. What does it print?",
@@ -645,7 +746,7 @@ const lessons: ConceptLesson[] = [
         title: "Round and round",
         body: "What happens when you run this?\n\n" + py(`n = 1\nwhile n < 5:\n    print(n)`),
         question: { type: "choice", options: ["It prints 1, 2, 3, 4", "It prints 1 forever", "It prints nothing", "It prints 1 once, then stops"], answer: 1 },
-        explanation: "Nothing in the body changes `n`, so `n < 5` is True every time: an **infinite loop**. A `while` loop needs something in its body that eventually makes the condition False, here `n = n + 1`.",
+        explanation: "Nothing in the body changes `n`, so `n < 5` is True every time: an **infinite loop**. A `while` loop needs something in its body that eventually makes the condition False, here `n = n + 1`.\n\nIf you ever run one for real, the runner won't let it go on forever: it stops the program after a time limit and shows a message (you saw this in *Meet the editor*). The fix is always to find what should change each pass.",
       },
       {
         kind: "code",
@@ -659,6 +760,11 @@ const lessons: ConceptLesson[] = [
           { id: "t2", description: "Prints the total", assertionCode: `assert __stdout__.strip() == "55", "Print the total once, after the loop"` },
         ],
         hints: ["range stops just before its second number. Which numbers does range(1, 10) give?", "To include 10, the stop value has to be 11: range(1, 11)."],
+      },
+      {
+        kind: "explain",
+        title: "Going further (optional)",
+        body: "### Going further (optional)\n\n`break` leaves the loop at once; `continue` skips the rest of this pass and jumps to the next. Here is each with numbers, using the `+=` shorthand from lesson 3:\n\n" + py(`total = 0\nfor n in range(1, 10):\n    if n == 3:\n        continue    # skip 3\n    if n > 5:\n        break       # stop for good at 6\n    total += n\nprint(total)`) + "\n\nPrints:\n\n" + out("12") + "\n\nThe passes that add are n = 1, 2, 4 and 5 (3 is skipped, and at 6 the loop ends), so the total is 1 + 2 + 4 + 5 = 12.\n\nLoops over *lists* (and `enumerate`, which hands out a position and an item together) come after you meet lists in lesson 8.",
       },
       {
         kind: "recap",
@@ -684,7 +790,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "Name a block of code",
-        body: "A **function** is a named, reusable block of code. `def` defines it, but nothing inside runs until you **call** it by writing its name with parentheses.\n\nWatch Python jump into the function and back out, once per call.",
+        body: "You have been calling functions since lesson 1: `print(...)`, `int(...)` and `str(...)` are functions that someone else wrote. In `print(\"Hi\")`, `print` is the function's name and `\"Hi\"` is what you hand to it. The `def` keyword (short for *define*) lets you build your own, so you stop copy-pasting the same lines.\n\nA **function** is a named, reusable block of code. `def` defines it, but nothing inside runs until you **call** it by writing its name with brackets.\n\n- The name in the brackets of the `def` line is the **parameter**: a placeholder that receives a value.\n- The value you put in the brackets when you call it is the **argument**.\n\nIn `def greet(name):` the parameter is `name`. In `greet(\"Ada\")` the argument is `\"Ada\"`. A function can have two parameters, `def area(width, height):` called as `area(3, 4)`, or none at all, `def hello():` called as `hello()`.\n\nWatch Python jump into the function and back out, once per call.",
         widget: trace("greet"),
       },
       {
@@ -697,7 +803,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "Handing a value back",
-        body: "`return` sends a value **back** to the line that called the function. The call is then replaced by that value, so `y = square(4)` becomes `y = 16`.",
+        body: "A vending machine takes your coins and hands something back. A function can do that too: `return` sends a value **back** to the line that called the function. The call is then replaced by that value, so `y = square(4)` becomes `y = 16`.\n\nIf a function has no `return`, it hands back `None`, Python's word for \"no value\".",
         widget: trace("square"),
       },
       {
@@ -711,7 +817,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "question",
         title: "Two boxes, one name",
-        body: "There's a `count` outside the function and one inside it. What does the last line print?",
+        body: "Each call of a function gets its own private room, called a **frame**. A variable made inside the function is **local**: it lives only in that room. A variable made outside every function is **global**: it lives in the main room. The widget shows the rooms as separate boxes.\n\nThere's a `count` outside the function and one inside it. What does the last line print?",
         widget: trace("scope", { predict: true }),
         question: { type: "choice", options: ["outside: 0", "outside: 10", "An error"], answer: 1 },
         explanation: "Assigning to `count` inside `reset` creates a **local** variable in reset's own frame. The **global** `count` is a different box and stays 10. When the function ends, its frame and its local variables disappear.",
@@ -742,6 +848,11 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
         hints: ["print shows the number on screen, but the function still hands back None.", "Replace print(...) with return width * height."],
       },
       {
+        kind: "explain",
+        title: "Going further (optional)",
+        body: "### Going further (optional)\n\n**Refusing bad input.** A function can stop with an error of its own, using `raise`:\n\n" + py(`def set_age(age):\n    if age < 0:\n        raise ValueError("age cannot be negative")\n    return age`) + "\n\nCalling `set_age(-5)` stops the program with a red error whose last line reads `ValueError: age cannot be negative`. `ValueError` is the name of the kind of problem (\"this value is not acceptable\"), and the text in brackets is your message. You are choosing to stop rather than carry on with nonsense.\n\n**Borrowing code.** Python comes with extra tools you must ask for with `import`. For example `import math` gives you `math.sqrt(16)`, which is `4.0`. The word before the dot is the toolbox, the word after it is the function.",
+      },
+      {
         kind: "recap",
         points: [
           "`def` defines a function; its body runs only when the function is called.",
@@ -765,7 +876,7 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
       {
         kind: "explain",
         title: "Many values, one name",
-        body: "A **list** holds several values in order, like `fruits = [\"apple\", \"banana\", \"cherry\", \"date\"]`. Each item has a position called its **index**, and indexes **start at 0**, so `fruits[0]` is the first item.\n\nTap the items.",
+        body: "Imagine storing 30 test scores. Thirty separate variables would be a mess; you want one box with 30 slots. That is a **list**. It holds several values in order, like `fruits = [\"apple\", \"banana\", \"cherry\", \"date\"]`. Each item has a position called its **index**, and indexes **start at 0**, so `fruits[0]` is the first item.\n\nTap the items.",
         widget: { type: "list-index", props: { name: "fruits", items: FRUITS } },
       },
       {
@@ -800,13 +911,18 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
       {
         kind: "explain",
         title: "Grow it, loop over it",
-        body: "Lists can grow: `append` adds an item to the end. And a `for` loop can visit every item in turn, no indexes needed.",
+        body: "Lists can grow: `append` adds an item to the end. And a `for` loop can visit every item in turn, no indexes needed (the loop variable simply takes each item in order, just like it took each number from `range`). `len(scores)` gives how many items the list has.",
         widget: trace("scores"),
       },
       {
         kind: "explain",
+        title: "More list tools",
+        body: "A few more tools you will see in later modules:\n\n" + py(`nums = [5, 6, 7]\nlast = nums.pop()     # removes the last item and hands it back\nprint(last, nums)     # 7 [5, 6]\nnums.remove(5)        # removes the first item equal to 5\nprint(nums)           # [6]\nprint(6 in nums)      # True: is 6 somewhere in the list?`) + "\n\nA name followed by a dot and a tool, like `nums.pop()`, means \"ask this list to do something\"; the tools attached to a value this way are called **methods**. `pop()` on an empty list, or `remove` of an item that isn't there, is an error.",
+      },
+      {
+        kind: "explain",
         title: "Look it up by key",
-        body: "A **dictionary** maps **keys** to **values**, the way a contacts list maps names to phone numbers. You look things up by key instead of by position: `ages[\"Lin\"]`.\n\nTap a key.",
+        body: "A **dictionary** maps **keys** to **values**, the way a contacts list maps names to phone numbers. You look things up by key instead of by position: `ages[\"Lin\"]`.\n\nYou write one with curly brackets, each key and value joined by a colon: `ages = {\"Ada\": 36, \"Lin\": 28, \"Sam\": 41}`. Then `ages[\"Lin\"]` gives `28`. Asking for a key that isn't there stops with a **KeyError**; `ages.get(\"Zed\", 0)` instead gives a fallback (`0`) when the key is missing, and `\"Lin\" in ages` asks whether a key exists.\n\nTap a key.",
         widget: {
           type: "list-index",
           props: {
@@ -841,6 +957,11 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
         hints: ["for item in cart: visits each name in turn.", "Look up each price with prices[item] and add it to total."],
       },
       {
+        kind: "explain",
+        title: "Going further (optional)",
+        body: "### Going further (optional)\n\n**Loop by position, or with `enumerate`.** Three ways to go through one list:\n\n" + py(`tea = ["black", "green", "mint"]\nfor i in range(len(tea)):        # by position\n    print(i, tea[i])\nfor t in tea:                    # the items directly\n    print(t)\nfor i, t in enumerate(tea):      # position and item together\n    print(i, t)`) + "\n\nThe first and third print `0 black`, `1 green`, `2 mint`; the second prints `black`, `green`, `mint`. In the third, `enumerate` hands out two things on each pass and `i, t` takes them apart (the unpacking from lesson 3). Prefer the items directly, and use `enumerate` when you need the position too.\n\n**Skipping and stopping.** Inside a loop, `continue` skips to the next pass and `break` leaves the loop:\n\n" + py(`readings = [4, 9, 0, 7, 12]\ngood = 0\nfor r in readings:\n    if r == 0:\n        continue    # skip a dead sensor\n    if r > 10:\n        break       # too high: stop checking\n    good += 1\nprint(good)`) + "\n\nIt prints `3` (the readings 4, 9 and 7 count).\n\n**Slices.** `nums[1:3]` takes the items from position 1 up to, but not including, 3:\n\n" + py(`nums = [10, 20, 30, 40, 50]\nprint(nums[1:3])   # [20, 30]\nprint(nums[2:])    # [30, 40, 50]  (from position 2 to the end)\nprint(nums[:2])    # [10, 20]      (from the start up to 2)`) + "\n\n**Tuples and sets.** A *tuple* is a list that can't be changed after it is made, written with round brackets: `point = (3, 4)`, and `x, y = point` unpacks it. A *set* keeps each value at most once and has no order: `seen = {1, 2, 2, 3}` holds just 1, 2 and 3, `seen.add(4)` adds one, and `2 in seen` asks if it's there.\n\n**Text is a row of letters too.** `len(\"hello\")` is `5` and `\"hello\"[1]` is `\"e\"`. `\"a b c\".split()` cuts text at the spaces into the list `[\"a\", \"b\", \"c\"]`, and `\"1,2\".split(\",\")` cuts at commas, giving `[\"1\", \"2\"]`.",
+      },
+      {
         kind: "recap",
         points: [
           "A list keeps values in order. Indexes start at 0, so the last item is at `len(items) - 1`.",
@@ -864,7 +985,7 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
       {
         kind: "explain",
         title: "Names point at objects",
-        body: "Here's what's really going on with lists. The list itself is an **object** that lives in memory. A variable doesn't hold the object: it holds a **reference**, an arrow pointing at it.\n\nWatch what `other = nums` copies.",
+        body: "Lesson 3 pictured a variable as a box that holds a value. That picture is safe for numbers and text, because they can't be changed in place: you can only replace them. Lists *can* be changed in place (with `append`, for example), so we need a more accurate picture. Everything in Python is really an arrow; for numbers you never notice, because a number never changes under you.\n\nThe list itself is an **object** that lives in memory. A variable doesn't hold the object: it holds a **reference**, an arrow pointing at it. Think of two friends each holding a note with the same home address: they both go to the same house.\n\nWatch what `other = nums` copies.",
         widget: trace("alias0"),
       },
       {
@@ -888,7 +1009,7 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
         title: "Which change is shared?",
         body: "`a` and `b` point at the same list. Which line changes what `a` sees?",
         question: { type: "choice", options: ["b.append(9)", "b = [9]", "b = b + [9]"], answer: 0 },
-        explanation: "`b.append(9)` changes the shared object, so `a` sees it. The other two use `=`, which points `b` at a **new** list and leaves the old one, and `a`, untouched. It's the same rule you saw with numbers: `=` changes where a name points, while methods like `append` change the object itself.",
+        explanation: "`b.append(9)` changes the shared object, so `a` sees it. The other two use `=`, which points `b` at a **new** list and leaves the old one, and `a`, untouched. Remember the rule: `=` changes where a name points (for numbers that looks like \"replacing the value\"), while methods like `append` change the object itself.",
       },
       {
         kind: "question",
@@ -900,8 +1021,13 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
       },
       {
         kind: "explain",
+        title: "A function that calls itself",
+        body: "Think of Russian nesting dolls. To count the dolls, you open one, and inside is a smaller set of dolls: the same job again, on something smaller. You stop when the last doll is empty.\n\nA function can work like that. It can call **itself** on a smaller version of the problem, which is called **recursion**. Here is the smallest example, adding 1 + 2 + ... + n:\n\n" + py(`def total(n):\n    if n == 0:\n        return 0\n    return n + total(n - 1)\n\nprint(total(3))`) + "\n\nPrints:\n\n" + out("6") + "\n\nOn paper it unrolls like this:\n\n- `total(3)` is `3 + total(2)`\n- `total(2)` is `2 + total(1)`\n- `total(1)` is `1 + total(0)`\n- `total(0)` is `0`. It answers straight away, with no further call. That is the **base case**: the case that stops the chain.\n\nNow work back up: `total(1)` is 1 + 0 = 1, `total(2)` is 2 + 1 = 3, and `total(3)` is 3 + 3 = **6**. Every recursive function needs a base case and a call on a smaller problem.",
+      },
+      {
+        kind: "explain",
         title: "The call stack",
-        body: "Every function call gets its own **frame** holding that call's local variables. Frames pile up as calls are made and come off as they return: that pile is the **call stack**.\n\nA function can even call itself, which is called **recursion**. `fact(4)` works out 4 × 3 × 2 × 1 by calling `fact(3)`, which calls `fact(2)`, and so on, until the **base case** `n == 1` answers directly. Each call has its own `n`.",
+        body: "Every function call gets its own **frame** (the private room from lesson 7) holding that call's local variables. Frames pile up as calls are made and come off as they return: that pile is the **call stack**, like a stack of plates where you only touch the top one.\n\nThe classic recursive example is the **factorial**, written `n!`: multiply a number by every whole number below it, down to 1. So `4!` is 4 × 3 × 2 × 1 = 24. Notice that `4!` is 4 × `3!`, and `3!` is 3 × `2!`, and so on, until `1!`, which is just 1.\n\n`fact(4)` follows exactly that: it calls `fact(3)`, which calls `fact(2)`, and so on, until the base case `n == 1` answers directly. Each call has its own `n`.",
         widget: trace("fact"),
       },
       {
@@ -922,7 +1048,7 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
       {
         kind: "code",
         title: "Don't change my list",
-        body: "`with_item` should return a **new** list with `item` added at the end, and leave the original exactly as it was. Right now it changes the caller's list. Fix it.",
+        body: "`with_item` should return a **new** list with `item` added at the end, and leave the original exactly as it was. Right now it changes the caller's list. Fix it. (Remember `.copy()` from the traces above: it makes a second, independent list.)",
         language: "python",
         starter: `def with_item(items, item):\n    items.append(item)\n    return items\n`,
         solution: `def with_item(items, item):\n    result = items.copy()\n    result.append(item)\n    return result\n`,
@@ -949,7 +1075,7 @@ assert _got + 1 == 5, "area(2, 2) + 1 should be 5"` },
 
 export const programsModule: Module = {
   id: "programs",
-  part: "program",
+  part: "start",
   title: "How programs run",
   blurb: "Values, variables, decisions, loops, functions, memory and the call stack.",
   icon: "code",

@@ -18,7 +18,7 @@ const LAYER_ANSWER = { ip: "internet", port: "transport", dns: "app", status: "a
 /** Module: networking. From "two computers joined by a link" to everything that happens when you type a URL. */
 export const networkModule: Module = {
   id: "network",
-  part: "machine",
+  part: "hood",
   title: "Networking",
   blurb: "IP addresses, ports and packets, DNS, TCP and UDP, HTTP, and the layers that carry a request.",
   icon: "network",
@@ -235,7 +235,12 @@ export const networkModule: Module = {
         {
           kind: "explain",
           title: "Private and public",
-          body: "Three ranges are set aside as **private**. They're used *inside* homes and offices, and millions of networks reuse them:\n\n- `10.x.x.x`\n- `172.16.x.x` to `172.31.x.x`\n- `192.168.x.x`\n\nYour router has one **public** address, unique on the whole internet. When a device inside sends a packet out, the router swaps the private address for its public one and remembers who asked, so replies find their way back. This trick is called **NAT** (network address translation).\n\nOne more special address: `127.0.0.1`, **loopback**, always means *this computer itself*.",
+          body: "Three ranges are set aside as **private**. They're used *inside* homes and offices, and millions of networks reuse them:\n\n- `10.x.x.x`\n- `172.16.x.x` to `172.31.x.x`\n- `192.168.x.x`\n\nYour router has one **public** address, unique on the whole internet. Private addresses are like extension numbers inside a company: they only make sense inside the building.\n\nOne more special address: `127.0.0.1`, **loopback**, always means *this computer itself*. Its usual name is `localhost`.",
+        },
+        {
+          kind: "explain",
+          title: "NAT: the reception desk",
+          body: "If a million homes all use `192.168.1.20`, how does a reply find the right one? The router acts like a company reception desk. When a device inside sends a packet out, the router swaps the private return address for its own public one and writes down who asked. When the reply comes back to the public address, it looks at its notes and passes the reply to the right device inside.\n\nThis trick is called **NAT** (network address translation).",
         },
         {
           kind: "question",
@@ -248,7 +253,7 @@ export const networkModule: Module = {
         {
           kind: "explain",
           title: "Same network or not?",
-          body: "An address has two parts: the **network** and the **device** on it. A common split is **/24**: the first 24 bits (three bytes) name the network, and the last byte names the device.\n\n- Same first three bytes: **same network**. Send directly.\n- Different: hand the packet to the **router**.\n\nThat's the first decision your computer makes for every packet.",
+          body: "An address has two parts: the **network** and the **device** on it. A common split is **/24**: the first 24 bits (three bytes) name the network, and the last byte names the device.\n\n- Same first three bytes: **same network**. Send directly.\n- Different: hand the packet to the **router**.\n\nThat's the first decision your computer makes for every packet.\n\n(/24 is just the most common split. Other splits exist, such as /16, where only the first two bytes name the network, and /8, where only the first one does.)",
           widget: { type: "net-ip", props: { initial: [192, 168, 1, 20], compare: [192, 168, 1, 30], editable: "both" } },
         },
         {
@@ -262,7 +267,7 @@ export const networkModule: Module = {
         {
           kind: "code",
           title: "Check it in Python",
-          body: "Write `same_network(a, b)`: it gets two addresses as text and returns `True` when they share a /24 network (the same first three numbers).\n\n`\"192.168.1.20\".split(\".\")` gives `['192', '168', '1', '20']`.",
+          body: "Write `same_network(a, b)`: it gets two addresses as text and returns `True` when they share a /24 network (the same first three numbers).\n\nTwo tools from the Python module do the work. Splitting text into a list, and slicing the first few items of a list:\n\n~~~python\nparts = \"192.168.1.20\".split(\".\")\nprint(parts)       # ['192', '168', '1', '20']\nprint(parts[:3])   # ['192', '168', '1']   the first three items\nprint([1, 2, 3] == [1, 2, 3])   # True: lists compare item by item\n~~~\n\nSo take the first three items of each address, compare the two lists, and `return` the answer (a comparison is already `True` or `False`). Write it in the editor and press **Run**, then **Submit**.",
           language: "python",
           starter: "def same_network(a, b):\n    # compare the first three numbers of each address\n    return a == b\n",
           solution: "def same_network(a, b):\n    return a.split(\".\")[:3] == b.split(\".\")[:3]\n",
@@ -305,7 +310,7 @@ export const networkModule: Module = {
           body: "Your laptop, `192.168.1.20`, sends a packet to `203.0.113.80`. Where does the packet go first?",
           question: {
             type: "choice",
-            options: ["Straight to 203.0.113.80", "To the home router, the default gateway", "To every device on the LAN", "To the DNS server"],
+            options: ["Straight to 203.0.113.80", "To the home router, the default gateway", "To every device on the LAN", "To a name server (a computer that looks up website names)"],
             answer: 1,
           },
           explanation: "`203.0.113` isn't the laptop's network (`192.168.1`), so it can't deliver directly. Anything for another network goes to the **default gateway**, which forwards it onwards.",
@@ -333,7 +338,7 @@ Destination        Next hop   Hops
 192.168.1.0/24     R1         2
 203.0.113.0/24     R4         1
 `) +
-            "\n\nRouters build these tables themselves. They constantly swap notes with their neighbours (*routing protocols*), so when a link fails the tables change within moments. The real internet is the same idea at enormous scale: tens of thousands of networks, each run by a different company, announcing what they can reach.",
+            "\n\nRouters build these tables themselves. They constantly swap notes with their neighbours (*routing protocols*; a **protocol** is an agreed set of rules for talking), so when a link fails the tables change within moments. The real internet is the same idea at enormous scale: tens of thousands of networks, each run by a different company, announcing what they can reach.",
         },
         {
           kind: "question",
@@ -357,7 +362,7 @@ Destination        Next hop   Hops
         {
           kind: "question",
           title: "Time to live",
-          body: "Every router lowers a number in the packet called the **TTL** (time to live) by 1, and throws the packet away when it reaches 0. Why?",
+          body: "Every router lowers a number in the packet called the **TTL** (time to live, here counted in hops) by 1, and throws the packet away when it reaches 0. Why?",
           question: {
             type: "choice",
             options: [
@@ -413,7 +418,7 @@ Destination        Next hop   Hops
         {
           kind: "question",
           title: "Sort the post",
-          body: "This server runs four programs, each **listening** on its own port. Deliver each incoming packet to the program its destination port belongs to.",
+          body: "A program **listens** on a port when it tells the operating system 'send me anything addressed to this port'. This server runs four programs, each listening on its own port. Deliver each incoming packet to the program its destination port belongs to.",
           widget: { type: "net-ports", props: {} },
           question: { type: "widget", hint: "Match each packet's destination port to the program that listens on that port.", goal: { done: true } },
           explanation: "The operating system does exactly this for every packet: read the destination port and hand the data to the program listening there. Nothing listened on 8080, so that packet was **rejected**.",
@@ -480,7 +485,7 @@ Destination        Next hop   Hops
           title: "Where to knock",
           body: "Your browser opens `https://shop.example.com`. Which port does it connect to on the server?",
           question: { type: "text", hint: "Every protocol has a default port. Which one does https use?", answer: ["443"], placeholder: "port number" },
-          explanation: "`https` means port **443** unless the URL says otherwise. (`http` would mean 80.) You can write a port explicitly, like `http://localhost:3100`.",
+          explanation: "`https` means port **443** unless the URL says otherwise. (`http` would mean 80.) You can write a port explicitly, like `http://localhost:3100` (`localhost` is the name for 127.0.0.1, this computer itself).",
         },
         {
           kind: "recap",
@@ -505,7 +510,7 @@ Destination        Next hop   Hops
         {
           kind: "explain",
           title: "Two ways to send",
-          body: "Ports belong to the **transport** layer, and it comes in two main flavours:\n\n- **TCP** sets up a **connection**, numbers every byte, confirms what arrived and resends what didn't. You get all the data, in order, or an error.\n- **UDP** sends independent **datagrams** and forgets them. No setup, no confirmations, no resends. Less waiting, no guarantees.",
+          body: "Sending a letter, you can pick registered mail (signed for, receipts, resent if lost) or a postcard (drop it in the box and hope). Networks offer the same two choices.\n\nPorts belong to the **transport** layer. (A *layer* is one job in the chain that carries your data; lesson 9 lists them all. The transport layer's job is getting data to the right program.) It comes in two main flavours:\n\n- **TCP** is registered mail. It sets up a **connection**, numbers every byte, confirms what arrived and resends what didn't. You get all the data, in order, or an error.\n- **UDP** is the postcard. It sends independent **datagrams** and forgets them. No setup, no confirmations, no resends. Less waiting, no guarantees.",
         },
         {
           kind: "question",
@@ -518,7 +523,7 @@ Destination        Next hop   Hops
         {
           kind: "explain",
           title: "Numbers and receipts",
-          body: "TCP numbers **bytes**, not packets. `seq=101` means *the bytes in this segment start at byte 101*.\n\nThe receiver replies with an **ACK** (acknowledgement) naming the **next byte it expects**: `ack=201` means *I have everything up to byte 200; send 201 next*.\n\nIf the sender hears nothing back in time, a **timeout** fires and it sends the segment again.",
+          body: "TCP's name for one packet-sized piece of data is a **segment**. TCP numbers **bytes**, not segments. `seq=101` means *the bytes in this segment start at byte 101*.\n\nThe receiver replies with an **ACK** (acknowledgement) naming the **next byte it expects**: `ack=201` means *I have everything up to byte 200; send 201 next*.\n\nIf the sender hears nothing back in time, a **timeout** fires and it sends the segment again.",
         },
         {
           kind: "question",
@@ -608,6 +613,11 @@ name    domain      top-level domain (TLD)
           explanation: "The TLD is the last part: **org**. `example.org` is the domain someone registered, and `mail` is one name they made inside it.",
         },
         {
+          kind: "explain",
+          title: "Who does the asking",
+          body: "No single computer knows every name. Instead, the answer is spread over many servers, and a helper does the legwork for you:\n\n- A **resolver** is that helper (usually run by your internet provider). Your browser asks it, and it asks the other servers.\n- A **root** server knows who runs each top-level domain, like `.com`.\n- A **TLD server** knows who runs each domain inside its top-level domain, like `example.com`.\n- An **authoritative** server is the one that holds the real answer for that domain.\n\nIn the next step you'll watch all four at work.",
+        },
+        {
           kind: "question",
           title: "Follow a lookup",
           body: "Nobody has looked anything up yet, so every cache is empty. Look up `www.example.com` and step through every stage.",
@@ -628,7 +638,7 @@ name    domain      top-level domain (TLD)
         {
           kind: "explain",
           title: "Caching and TTL",
-          body: "Every DNS answer comes with a **TTL** (time to live) in seconds, like *keep this for 300 s*. Browsers and resolvers **cache** answers for that long, so most lookups never leave your computer.\n\nThe resolver also caches the steps: once it knows where the `.com` servers are, it can skip the root for every other `.com` name.",
+          body: "Every DNS answer comes with a **TTL** (time to live) in seconds, like *keep this for 300 s*. (Same name as the routing TTL, different job: that one counted hops, this one is a cache lifetime.) Browsers and resolvers **cache** answers for that long, so most lookups never leave your computer.\n\nThe resolver also caches the steps: once it knows where the `.com` servers are, it can skip the root for every other `.com` name.",
         },
         {
           kind: "question",
@@ -698,7 +708,14 @@ GET /about HTTP/1.1
 Host: shop.example.com
 Accept: text/html
 `) +
-            "\n\nThe **response** starts with a **status line**, then headers, a blank line and the body:\n\n" +
+            "\n\nThis request has no body, so it ends with an empty line right after `Accept`. Written out with `⏎` marking each line break, it is:\n\n" +
+            text(`
+GET /about HTTP/1.1 ⏎
+Host: shop.example.com ⏎
+Accept: text/html ⏎
+⏎
+`) +
+            "\n\nThe empty line (the second ⏎ in a row at the end) is how the server knows the headers are finished. The real invisible line break is two characters, written `\\r\\n` in code.\n\nThe **response** starts with a **status line**, then headers, a blank line and the body:\n\n" +
             text(`
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
@@ -729,7 +746,7 @@ Content-Length: 17
         {
           kind: "question",
           title: "Collect the set",
-          body: "Get the server to answer with a **200**, a **301**, a **404** and a **500**.",
+          body: "Get the server to answer with a **200**, a **301**, a **404** and a **500**. Try these paths: `/about`, `/old-about`, `/nope` and `/api/report`.",
           widget: { type: "net-http", props: { methods: ["GET"], hostToggle: false } },
           question: { type: "widget", hint: "Different paths give different statuses. Try several until you have seen all four.", goal: { seen: [200, 301, 404, 500] } },
           explanation: "`/old-about` has moved (301, with a `Location` header saying where), `/nope` doesn't exist (404, a client mistake), and `/api/report` crashed on the server (500). Note that a 404 means the network worked fine: the server answered, it just has nothing at that path.",
@@ -763,7 +780,7 @@ Content-Length: 17
         {
           kind: "code",
           title: "Write a request by hand",
-          body: "HTTP really is just text. Write `build_request(path, host)` that returns a GET request with a `Host` header. HTTP ends each line with `\\r\\n`, and a blank line ends the headers, so the text finishes with `\\r\\n\\r\\n`.\n\nFor `build_request(\"/about\", \"shop.example.com\")` the result is:\n\n" +
+          body: "HTTP really is just text. Write `build_request(path, host)` that returns a GET request with a `Host` header. HTTP ends each line with a line break written `\\r\\n` inside a Python string (two invisible characters: carriage return and newline), and a blank line ends the headers, so the text finishes with `\\r\\n\\r\\n`.\n\nYou can build the text by gluing strings with `+`, or with an f-string that drops values into `{ }`:\n\n~~~python\nname = \"Ada\"\nprint(\"Hi \" + name + \"!\")   # Hi Ada!\nprint(f\"Hi {name}!\")         # Hi Ada!\n~~~\n\nFor `build_request(\"/about\", \"shop.example.com\")` the result is:\n\n" +
             text(`
 "GET /about HTTP/1.1\\r\\nHost: shop.example.com\\r\\n\\r\\n"
 `),
@@ -808,7 +825,7 @@ Content-Length: 17
         {
           kind: "explain",
           title: "Each job on its own layer",
-          body: "Every protocol you've met solves **one** problem and relies on the one below it:\n\n- **Application** (HTTP, DNS): *what* to say.\n- **Transport** (TCP, UDP): *which program*, and whether delivery is reliable.\n- **Internet** (IP): *which machine*, across many networks.\n- **Link** (Ethernet, Wi-Fi): to the *next device* on this cable or radio channel.\n\nThis four-layer stack is the **TCP/IP model**.",
+          body: "A **protocol** is an agreed set of rules for talking, the way two people agree to speak the same language. Every protocol you've met solves **one** problem and relies on the one below it, and each job gets its own **layer**:\n\n- **Application** (HTTP, DNS): *what* to say.\n- **Transport** (TCP, UDP): *which program*, and whether delivery is reliable.\n- **Internet** (IP): *which machine*, across many networks.\n- **Link** (Ethernet, Wi-Fi): to the *next device* on this cable or radio channel.\n\nThis four-layer stack is the **TCP/IP model**.\n\nTwo words you'll meet in the next steps: a **MAC address** is a device's hardware address, a name built into its network card that identifies it on the local link; and a **checksum** is a small number computed from the data, so the receiver can recompute it and spot damage in transit.",
         },
         {
           kind: "question",
@@ -823,7 +840,7 @@ Content-Length: 17
           body: "Sending works top-down: each layer puts **its own header** in front of what it was handed. This is **encapsulation**. Wrap the HTTP request all the way down into an Ethernet frame.",
           widget: { type: "net-layers", props: { wrapOnly: true, fixedModel: true } },
           question: { type: "widget", hint: "Each layer puts its header in front: HTTP data, then TCP, then IP, then Ethernet.", goal: { depth: 4 } },
-          explanation: "HTTP data inside a **TCP segment** (ports), inside an **IP packet** (addresses), inside an **Ethernet frame** (the next device's hardware address, plus a checksum). Like envelopes inside envelopes.",
+          explanation: "HTTP data inside a **TCP segment** (ports), inside an **IP packet** (addresses), inside an **Ethernet frame** (a frame is the link layer's name for its packet: it carries the next device's MAC address, plus a checksum). Like envelopes inside envelopes.",
         },
         {
           kind: "question",
@@ -978,7 +995,7 @@ scheme    host              port  path
         {
           kind: "code",
           title: "Split a URL in Python",
-          body: "Python's `urllib.parse.urlsplit` takes a URL apart: `u.scheme`, `u.hostname`, `u.port` (`None` when the URL doesn't write one) and `u.path`.\n\nFinish `url_parts(url)` so it returns `(host, port, path)`, filling in the usual port (443 for https, 80 for http) and using `\"/\"` when the path is empty.",
+          body: "Python's `urllib.parse.urlsplit` takes a URL apart: `u.scheme`, `u.hostname`, `u.port` (`None` when the URL doesn't write one) and `u.path`.\n\nFinish `url_parts(url)` so it returns `(host, port, path)`, filling in the usual port (443 for https, 80 for http) and using `\"/\"` when the path is empty.\n\nTwo small Python tricks help. `a or b` gives `a` if it has a value, otherwise `b`; and `x if test else y` picks one of two values:\n\n~~~python\nport = None\nprint(port or 80)                          # 80   (None means 'nothing', so use 80)\nprint(443 if \"https\" == \"https\" else 80)   # 443\n~~~\n\nA function can return several values at once by listing them with commas, which Python groups into a **tuple** (a fixed list written in parentheses): `return (host, port, path)`.",
           language: "python",
           starter: "from urllib.parse import urlsplit\n\n\ndef url_parts(url):\n    u = urlsplit(url)\n    # u.scheme, u.hostname, u.port (None if not written), u.path\n    return (u.hostname, u.port, u.path)\n",
           solution: "from urllib.parse import urlsplit\n\n\ndef url_parts(url):\n    u = urlsplit(url)\n    port = u.port or (443 if u.scheme == \"https\" else 80)\n    return (u.hostname, port, u.path or \"/\")\n",

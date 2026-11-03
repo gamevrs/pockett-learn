@@ -13,6 +13,7 @@ export function FoundationsHub() {
   const lessons = trackLessons(FOUNDATIONS);
   const done = lessons.filter((l) => progress.completed[l.id]).length;
   const pct = lessons.length ? Math.round((done / lessons.length) * 100) : 0;
+  const nextLesson = lessons.find((l) => !progress.completed[l.id]) ?? null;
   const parts = FOUNDATIONS.parts.map((part) => {
     const modules = FOUNDATIONS.modules.filter((m) => m.part === part.id);
     const partLessons = modules.flatMap((m) => m.lessons);
@@ -36,15 +37,13 @@ export function FoundationsHub() {
               How computers and code really work, one small step at a time. Every step asks you to try something: flip bits, program a CPU, type
               shell commands, send packets, step through code, build objects and wire up patterns.
             </p>
-            <p className="mt-6 text-sm text-ink-3">Two paths you can take in any order:</p>
+            <p className="mt-6 text-sm text-ink-3">The modules build on each other, so go in order. You can jump to any module you like.</p>
             <div className="mt-3 flex flex-wrap gap-3">
-              {parts.map((p, i) =>
-                p.next ? (
-                  <Link key={p.id} href={`/learn/${p.next.id}`} className={`btn ${i === 0 ? "btn-primary" : ""} !h-11 !px-5`}>
-                    {p.done === 0 ? `Start: ${p.title}` : `Continue: ${p.title}`} <ArrowRight className="h-4 w-4" />
-                  </Link>
-                ) : null,
-              )}
+              {nextLesson ? (
+                <Link href={`/learn/${nextLesson.id}`} className="btn btn-primary !h-11 !px-5">
+                  {done === 0 ? "Start with the first lesson" : "Continue where you left off"} <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : null}
             </div>
           </div>
           <div className="card p-5">
@@ -98,7 +97,7 @@ export function FoundationsHub() {
           </div>
           <div className="mt-8 space-y-6">
             {p.modules.map((m) => (
-              <ModuleCard key={m.id} module={m} index={FOUNDATIONS.modules.indexOf(m)} nextId={p.next?.id ?? null} anyDone={p.done > 0} completed={progress.completed} />
+              <ModuleCard key={m.id} module={m} index={FOUNDATIONS.modules.indexOf(m)} nextId={nextLesson?.id ?? null} anyDone={done > 0} completed={progress.completed} />
             ))}
           </div>
         </section>

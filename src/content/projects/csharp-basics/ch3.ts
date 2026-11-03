@@ -21,7 +21,7 @@ export const chapter3: Chapter = {
       concepts: ["arrays", "indexes", "foreach", "List<T>", "generics", "Add / Remove", "reference semantics"],
       learn: md`### Many values under one name
 
-An **array** is a fixed-size row of values of the same type, numbered from **0**.
+Think of a shelf with six numbered slots, or a row of lockers. Instead of six variables called \`slot1\`, \`slot2\`... you want one name for the whole row. An **array** is a fixed-size row of values of the same type, numbered from **0**.
 
 ~~~csharp
 int[] weights = { 4, 12, 7, 25 };      // four ints
@@ -32,7 +32,11 @@ Console.WriteLine(weights[2]);         // 7   (the third item: index 2)
 Console.WriteLine(weights[^1]);        // 25  (^1 means "first from the end")
 ~~~
 
-A new array is filled with **default values**: \`0\` for numbers, \`false\` for bools and \`null\` for strings and other reference types, *not* an empty string. The size is fixed when the array is created. Reading or writing outside it (\`weights[4]\`) crashes with an \`IndexOutOfRangeException\`: the last valid index is always \`Length - 1\`.
+A new array is filled with **default values**: \`0\` for numbers, \`false\` for bools and \`null\` for strings (and other things that are not plain numbers), *not* an empty string. The size is fixed when the array is created. Reading or writing outside it (\`weights[4]\`) crashes with an \`IndexOutOfRangeException\`: the last valid index is always \`Length - 1\`.
+
+### null: "nothing here yet"
+
+An empty string slot holds \`null\`, the special value for "nothing here yet". (You met it with \`??\` in lesson 4; lesson 10 explains it fully.) Ask whether a slot is empty with \`slot == null\` or whether it is filled with \`slot != null\`. A type written with a question mark, such as \`string?\`, says "this might be null", so a variable that visits unfilled slots is declared \`string? slot\`.
 
 ### \`foreach\`: visit every item
 
@@ -42,13 +46,28 @@ foreach (int w in weights)
 {
     total += w;
 }
+// total is 4 + 12 + 7 + 25 = 48
 ~~~
 
 \`foreach\` hands you each item in turn and handles the counting for you. You cannot assign to the loop variable, and you should not add or remove items from the collection while looping over it (that throws an \`InvalidOperationException\`). Use a \`for\` loop with an index when you need the position or want to change items.
 
+### Finding the biggest: a running maximum
+
+To find the largest value, keep a variable for "the biggest so far" and replace it whenever you see something bigger:
+
+~~~csharp
+int[] weights = { 4, 12, 7, 25 };
+int heaviest = weights[0];          // start with the first item
+foreach (int w in weights)
+{
+    if (w > heaviest) heaviest = w;   // found a bigger one: remember it
+}
+// heaviest: 4, then 12, then 12, then 25  ->  25
+~~~
+
 ### \`List<T>\`: a collection that grows
 
-A \`List<T>\` is like an array that can resize. The \`<T>\` is a **type argument** ("generics"): \`List<string>\` is a list *of* strings, and the compiler will only let you put strings in it.
+A \`List<T>\` is like an array that can resize. The \`<T>\` in angle brackets says what kind of item it holds: \`List<string>\` is a list *of* strings, and the compiler will only let you put strings in it. (C# calls this a *generic* type; the \`T\` stands for "some type".)
 
 ~~~csharp
 List<string> queue = new() { "Lamp", "Desk", "Chair" };   // new() works because the type is on the left
@@ -67,17 +86,25 @@ Printing a whole collection with \`string.Join\` is the tidy way:
 Console.WriteLine($"Queue ({queue.Count}): {string.Join(", ", queue)}");
 ~~~
 
-### Useful helpers
+### Sorting
 
-- \`Array.Sort(weights)\` sorts an array **in place**; \`queue.Sort()\` does the same for a list. \`Array.Reverse\` flips it.
-- Because implicit usings include \`System.Linq\`, you can also write \`weights.Sum()\`, \`weights.Max()\` and \`weights.Min()\`. Write the loops by hand once so you understand them; LINQ is a natural next step.
-- \`queue.ToArray()\` and \`weights.ToList()\` convert between the two.
+\`Array.Sort(weights)\` sorts an array **in place** (it rearranges the original instead of making a new one); \`queue.Sort()\` does the same for a list. After sorting \`{ 4, 12, 7, 25 }\`, \`weights[0]\` is the smallest, 4.
 
 ### Array or List?
 
 Use a **List** by default when the number of items changes. Use an **array** when the size is fixed and known (a board with 6 slots, the days of a week, a pixel row).
 
-### Arrays and lists are shared, not copied
+### Common mistakes
+
+- Off by one: an array of 6 has indexes 0 to 5.
+- Using \`Length\` on a list or \`Count\` on an array.
+- Forgetting that unfilled string slots are \`null\`, not \`""\`.
+- Changing a list while you \`foreach\` over it.
+- Thinking \`b = a\` copies an array (see below).
+
+### Going further (optional)
+
+**Arrays and lists are shared, not copied.**
 
 ~~~csharp
 int[] a = { 1, 2, 3 };
@@ -88,13 +115,7 @@ Console.WriteLine(a[0]);   // 99
 
 Numbers, bools and chars are copied on assignment, but arrays, lists and most objects are **references**: two variables can point at one thing. Make a real copy with \`a.ToArray()\` or \`new List<int>(list)\`.
 
-### Common mistakes
-
-- Off by one: an array of 6 has indexes 0 to 5.
-- Using \`Length\` on a list or \`Count\` on an array.
-- Forgetting that unfilled string slots are \`null\`, not \`""\`.
-- Changing a list while you \`foreach\` over it.
-- Thinking \`b = a\` copies an array.`,
+**Handy helpers.** \`Array.Reverse\` flips an array. Because implicit usings are on in this project, you can also write \`weights.Sum()\`, \`weights.Max()\` and \`weights.Min()\` (these come from LINQ, a toolbox for working with collections). Write the loops by hand once so you understand them. \`queue.ToArray()\` and \`weights.ToList()\` convert between the two kinds.`,
       mission: md`The warehouse shelves have six slots in a row, and a loading queue grows and shrinks all day. A fixed row is an array. A queue that changes is a list. A rack of parcel weights wants sorting so the heavy ones go on the floor.
 
 When this lesson passes, the **Shelves** panel shows your slots (empty ones included), your queue and a bar for each weight.`,
@@ -230,7 +251,7 @@ Dictionary<string, int> stock = new()
 };
 ~~~
 
-The two type arguments are the key type and the value type: here SKU text to a count.
+The two type arguments are the key type and the value type: here a product code (SKU, the label on a bin) as text, mapped to a count.
 
 ### Reading, adding, updating
 
@@ -243,7 +264,7 @@ stock.Remove("CHAIR");              // delete a pair
 Console.WriteLine(stock.Count);     // number of pairs
 ~~~
 
-The indexer \`[ ]\` both adds and replaces. \`stock.Add("LAMP", 1)\` is stricter and throws an \`ArgumentException\` if the key already exists.
+The square brackets \`[ ]\` both add and replace. \`stock.Add("LAMP", 1)\` is stricter and throws an \`ArgumentException\` if the key already exists.
 
 ### Missing keys
 
@@ -267,7 +288,7 @@ stock.GetValueOrDefault("SOFA");     // 0 (the default of int) when missing
 
 ### Looping over a dictionary
 
-\`foreach\` gives you one \`KeyValuePair\` per entry, with \`.Key\` and \`.Value\`.
+\`foreach\` gives you one \`KeyValuePair\` per entry, with \`.Key\` and \`.Value\`. You can use either loop below; the second one just names the two halves for you.
 
 ~~~csharp
 foreach (KeyValuePair<string, int> pair in stock)
@@ -275,7 +296,7 @@ foreach (KeyValuePair<string, int> pair in stock)
     Console.WriteLine($"{pair.Key,-8}{pair.Value,3}");
 }
 
-foreach (var (sku, qty) in stock)      // deconstruction: names for both halves
+foreach (var (sku, qty) in stock)      // another way: give a name to each half of the pair
 {
     if (qty == 0) Console.WriteLine($"{sku} is sold out");
 }
@@ -299,8 +320,6 @@ foreach (char c in "robot")
 ### Keys
 
 A key must have a stable identity: strings, numbers, chars, enums and records all work well. String keys are **case-sensitive**: \`"lamp"\` and \`"LAMP"\` are different. Create \`new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)\` if you want them to match.
-
-If you only need to remember *which* things you have seen (no values), a \`HashSet<string>\` is a dictionary without the values.
 
 ### Common mistakes
 
@@ -422,20 +441,9 @@ assertEqual([...scene.lowStock].sort(), ["CHAIR", "MIRROR"], "lowStock (counts b
       concepts: ["methods", "parameters", "return values", "static classes", "optional & named arguments", "overloading", "scope"],
       learn: md`### Name a piece of work
 
-When the same calculation appears twice, or a block of code deserves a name, turn it into a **method**: a named, reusable piece of work. Write it once, call it as often as you like.
+A recipe card has a name ("Pancakes"), a list of what you give it (eggs, flour) and what you get back (a stack of pancakes). A **method** is that kind of card for code: a named, reusable piece of work. When the same calculation appears twice, or a block of code deserves a name, turn it into a method. Write it once, call it as often as you like.
 
-~~~csharp
-static int Distance(int x1, int y1, int x2, int y2)
-{
-    return Math.Abs(x1 - x2) + Math.Abs(y1 - y2);
-}
-~~~
-
-Read the first line as a contract: it **returns an \`int\`**, it is **called \`Distance\`**, and it **takes four ints**. The values you pass in are **arguments**; the names in the declaration are **parameters**. \`return\` sends a value back and ends the method. (\`static\` and \`public\` are explained in lesson 11. For now: \`public\` lets other code call it, and \`static\` means you call it on the class itself.)
-
-### Where methods live in this file
-
-In a top-level-statements file, anything that is a *type* goes below your statements, under the divider line. Methods you share across the program are written inside a \`static class\` there, and you call them with the class name in front:
+In this file methods live inside a class, below the divider line, because a class is the home for named pieces of work. Your statements above the divider call them with the class name in front:
 
 ~~~csharp
 Console.WriteLine(Planner.Distance(0, 0, 6, 2));   // 8
@@ -443,16 +451,28 @@ Console.WriteLine(Planner.Distance(0, 0, 6, 2));   // 8
 // ───── type declarations go below this line ─────
 static class Planner
 {
-    public static int Distance(int x1, int y1, int x2, int y2) =>
-        Math.Abs(x1 - x2) + Math.Abs(y1 - y2);
+    public static int Distance(int x1, int y1, int x2, int y2)
+    {
+        return Math.Abs(x1 - x2) + Math.Abs(y1 - y2);
+    }
 }
 ~~~
 
-For a tiny helper that only one spot needs, a **local function** written between your statements is fine (\`int Square(int n) => n * n;\`). It can see the variables above it, and it **cannot be overloaded**. For anything shared, prefer a method in a class.
+The first line of the method is its promise to anyone who calls it. Read it left to right:
+
+- \`public\` means any code may call it.
+- \`static\` means you call it through the class name (\`Planner.Distance\`), without first making a \`Planner\` object. Lesson 11 shows the other kind. For now, write \`public static\` on every method in the class.
+- \`int\` is the **return type**: the method gives back an \`int\`.
+- \`Distance\` is its name.
+- \`(int x1, int y1, int x2, int y2)\` are its **parameters**: four ints it needs.
+
+The values you pass in at the call, such as \`0, 0, 6, 2\`, are **arguments**; the names in the declaration are parameters. \`return\` sends a value back and ends the method. The distance walked along a grid (the sum of the sideways and up-down gaps, called the *Manhattan distance*) from (0,0) to (6,2) is 6 + 2 = 8.
+
+**Local functions.** For a tiny helper that only one spot needs, a *local function* written between your statements is fine (\`int Square(int n) => n * n;\`). It can see the variables above it and cannot be overloaded. For anything shared, prefer a method in a class.
 
 ### Short form and \`void\`
 
-When a method is a single expression, use \`=>\` (as above). A method that does something but gives nothing back has the return type \`void\`:
+When a method is a single expression, you can write \`=>\` instead of the braces and \`return\`. The \`Distance\` method above could be \`public static int Distance(int x1, int y1, int x2, int y2) => Math.Abs(x1 - x2) + Math.Abs(y1 - y2);\`. A method that does something but gives nothing back has the return type \`void\`:
 
 ~~~csharp
 public static void Announce(string text) => Console.WriteLine($">> {text}");
@@ -473,7 +493,7 @@ Console.WriteLine(count);   // still 5
 
 ### Optional and named arguments
 
-Give a parameter a default value and callers may leave it out. Optional parameters must come **last**. Name an argument at the call to say which parameter you mean:
+Give a parameter a default value and callers may leave it out (it is then an *optional parameter*). Optional parameters must come **last**. Name an argument at the call to say which parameter you mean:
 
 ~~~csharp
 public static double Minutes(int distance, double pace = 1.5) => Math.Round(distance / pace, 1);
@@ -485,7 +505,7 @@ Planner.Minutes(8, pace: 2.0);    // same, but the call explains itself
 
 ### Overloading
 
-Several methods in one class may share a name if their parameter lists differ. The compiler picks the one that fits the arguments.
+*Overloading* means giving two different methods the same name. Several methods in one class may share a name if their parameter lists differ. The compiler picks the one that fits the arguments.
 
 ~~~csharp
 public static string Format(int distance) => $"{distance} m";
@@ -499,7 +519,7 @@ The return type alone is not enough to tell overloads apart.
 
 ### Scope: who can see what
 
-Variables declared inside a method exist only while it runs. A method in a class cannot see your top-level variables at all, so everything it needs must arrive as a parameter. That is a feature: the method can be understood, and checked, on its own.
+*Scope* means where a name can be seen. Variables declared inside a method exist only while it runs. A method in a class cannot see your top-level variables at all, so everything it needs must arrive as a parameter. That is a feature: the method can be understood, and checked, on its own.
 
 ### Design tips
 
@@ -656,7 +676,7 @@ assertClose(scene.totalMinutes, 13.3, 0.0001, "totalMinutes (Minutes(totalMeters
       concepts: ["null", "nullable reference types", "?", "??", "?.", "??=", "int?", "NullReferenceException"],
       learn: md`### What is \`null\`?
 
-\`null\` means *"there is no value here"*. A reference type variable (\`string\`, an array, a \`List\`, any object) can hold \`null\` instead of pointing at something. Using such a variable as if it held something crashes the program with the most common runtime error in C#:
+\`null\` means *"there is no value here"*. You have already met it three times (\`??\` in lesson 4, empty array slots in lesson 7, a missing dictionary key in lesson 8). Think of an empty parcel slot: the slot exists, but nothing sits in it. A variable of a type such as \`string\`, an array or a \`List\` (a thing that is not a plain number) can hold \`null\` instead of pointing at something. Using such a variable as if it held something crashes the program with the most common runtime error in C#:
 
 ~~~csharp
 string? note = null;
@@ -672,7 +692,7 @@ Modern projects switch on *nullable reference types*. Then the type tells you th
 - \`string\` means **never null**
 - \`string?\` means **might be null**, so check before you use it
 
-The compiler follows your code and warns you (the CS86xx warnings in an editor) wherever a possible null could reach a place that cannot handle it. Treat those warnings as real bugs waiting to happen. You already met this: \`Console.ReadLine()\` returns \`string?\`, and the dictionary \`TryGetValue\` can hand back a missing value.
+The compiler follows your code and warns you wherever a possible null could reach a place that cannot handle it. Treat those warnings as real bugs waiting to happen. You already met this: \`Console.ReadLine()\` returns \`string?\`, and the dictionary \`TryGetValue\` can hand back a missing value.
 
 ### The tools
 

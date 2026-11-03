@@ -11,7 +11,7 @@ const COUNTDOWN_NAMES = { "14": "start", "15": "one" };
 /** Module 2: inside the computer (parts, memory, the CPU's loop, clock, buses, caches, I/O, boot). */
 export const computerModule: Module = {
   id: "computer",
-  part: "machine",
+  part: "start",
   title: "Inside the computer",
   blurb: "CPU, memory and addresses, the fetch-decode-execute cycle, buses, storage and how the parts talk.",
   icon: "circuit",
@@ -27,7 +27,7 @@ export const computerModule: Module = {
         {
           kind: "explain",
           title: "Meet the machine",
-          body: "A phone, a laptop and a giant server look nothing alike, but inside they're built from the same few kinds of parts. Some do the **processing**, some **remember** things, and some move information **in** and **out**.\n\nTap each part to find out what it does.",
+          body: "Think of a kitchen. The **cook** does the work, the **countertop** holds what the cook is using right now, and the **pantry** stores everything else for later. A computer has the same split: the cook is the processor, the countertop is memory, the pantry is storage.\n\nA phone, a laptop and a giant server look nothing alike, but inside they're built from the same few kinds of parts. Some do the **processing**, some **remember** things, and some move information **in** and **out**.\n\nTap each part to find out what it does.",
           widget: { type: "computer-machine", props: { mode: "explore" } },
         },
         {
@@ -44,7 +44,7 @@ export const computerModule: Module = {
           body: "You're halfway through an essay and haven't saved yet. The power cuts out. Where was the unsaved part of your essay, the part that's now lost?",
           question: {
             type: "choice",
-            options: ["In memory (RAM)", "In storage (the SSD)", "Inside the CPU", "On the screen"],
+            options: ["In memory (RAM)", "In storage (the SSD, a drive with no moving parts)", "Inside the CPU", "On the screen"],
             answer: 0,
           },
           explanation: "While you work, a document lives in **memory (RAM)**, which is fast but forgets everything without power. Saving copies it to **storage**, which keeps it. The screen only *shows* a picture of your work; the actual bytes were in RAM.",
@@ -101,7 +101,7 @@ export const computerModule: Module = {
                   label: "Open a photo",
                   path: [
                     { part: "mouse", text: "You double-click the photo. The mouse reports the click to the computer." },
-                    { part: "cpu", text: "The CPU, running the operating system, works out which file you clicked and asks storage for it." },
+                    { part: "cpu", text: "The CPU, running the operating system (the main program that looks after the whole machine; more on it later), works out which file you clicked and asks storage for it." },
                     { part: "storage", text: "Storage finds the file's bytes. For a CPU this is a long wait, which is why big files take a moment to open." },
                     { part: "ram", text: "The bytes are copied into memory, where the CPU can reach them quickly." },
                     { part: "cpu", text: "Photos are stored squeezed (compressed), so the CPU unpacks them, working out a colour for every pixel." },
@@ -221,7 +221,7 @@ export const computerModule: Module = {
             props: { mode: "rw", initial: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 87, 64, 0, 0], names: { "12": "score", "13": "best" } },
           },
           question: { type: "widget", hint: "Read address 12 to see your score, then write that same number into address 13.", goal: { cells: { "13": 87 } } },
-          explanation: "Copying is a **read** (address 12 holds 87) followed by a **write** (87 into address 13). The score at 12 is untouched: reading never changes a box. Notice the names: when a program says `best = score`, this is what really happens. A variable is a friendly name for an address.",
+          explanation: "Copying is a **read** (address 12 holds 87) followed by a **write** (87 into address 13). The score at 12 is untouched: reading never changes a box. Notice the names in the widget: later, in programming, you will write a line like `best = score`, and this read-then-write is what really happens. The names are friendly labels for boxes 12 and 13.",
         },
         {
           kind: "question",
@@ -268,7 +268,7 @@ export const computerModule: Module = {
         {
           kind: "explain",
           title: "The CPU's loop",
-          body: "Every CPU runs the same three-beat loop, over and over, as long as it has power:\n\n- **Fetch** the next instruction from memory.\n- **Decode** it: work out what it means.\n- **Execute** it: do it.\n\nHere's a toy CPU with 16 bytes of memory and a short program in it. Press **Step** a few times and watch the three stages take turns.",
+          body: "Think of following a recipe: read the next line, work out what it asks for, do it, then move to the next line. A CPU does exactly that, with no creativity at all. Every CPU runs the same three-beat loop, over and over, as long as it has power:\n\n- **Fetch** the next instruction from memory.\n- **Decode** it: work out what it means.\n- **Execute** it: do it.\n\nHere's a toy CPU with 16 bytes of memory and a short program in it. (Real CPUs have several scratch slots; this toy has just one, called **A**: the number the CPU is working on right now, like the number on a calculator's display. The assembly module later uses a toy CPU with four.)\n\nThe toy knows only a few instructions. The five in this program are:\n\n- `LOAD 14`: copy the number in memory box 14 into A.\n- `ADD 15`: add the number in box 15 to A.\n- `STORE 13`: copy A into box 13.\n- `OUT`: show whatever A holds, on the output line.\n- `HALT`: stop.\n\nBoxes 14 and 15 hold 5 and 7. So the program does: A = 5, then A = 5 + 7 = 12, then box 13 = 12, then shows 12, then stops.\n\nPress **Step** a few times and watch the three stages take turns.",
           widget: { type: "computer-cpu", props: { program: ADD_PROGRAM, names: ADD_NAMES } },
         },
         {
@@ -298,7 +298,7 @@ export const computerModule: Module = {
         {
           kind: "question",
           title: "Run the program",
-          body: "Step through the whole program until the CPU stops. Watch PC count up on every fetch, and watch **A** (a register the CPU computes with, called the *accumulator*).",
+          body: "Step through the whole program until the CPU stops. Watch PC count up on every fetch, and watch **A** (the CPU's scratch pad, a register called the *accumulator*). You already know what to expect: 12 on the output.",
           widget: { type: "computer-cpu", props: { program: ADD_PROGRAM, names: ADD_NAMES } },
           question: { type: "widget", hint: "Press the step button until the CPU halts, and watch PC and A change on the way.", goal: { halted: true } },
           explanation: "LOAD 14 put 5 in A, ADD 15 made it 12, STORE 13 wrote 12 into memory, OUT showed it, and HALT stopped the CPU. Five instructions, fifteen steps. A real CPU does exactly this, just billions of times a second.",
@@ -332,15 +332,15 @@ export const computerModule: Module = {
             options: ["Show 1, 2, 3, 4… and never stop", "Show 1 once, then stop", "Show 1 over and over", "Crash at address 4"],
             answer: 0,
           },
-          explanation: "After OUT, JUMP 1 sends PC back to address 1, so ADD 15 runs again and again, adding 1 each time: 1, 2, 3, … There's no HALT on that path, so it never stops: a **loop**. Every loop you'll ever write, `for` or `while`, becomes a jump like this underneath.",
+          explanation: "After OUT, JUMP 1 sends PC back to address 1, so ADD 15 runs again and again, adding 1 each time: 1, 2, 3, … There's no HALT on that path, so it never stops: a **loop**. Every \"repeat these steps\" loop, in any programming language, becomes a jump like this underneath.",
         },
         {
           kind: "question",
           title: "Make it stop",
-          body: "**JZ** (jump if zero) only jumps when A is 0. This countdown shows the start number, subtracts 1, and stops once it reaches 0.\n\nRight now it starts at 5. Change the number at address **14** so the program shows exactly **3, 2, 1** and halts. Then run it to check.",
+          body: "**JZ** (jump if zero) only jumps when A is 0. **SUB** is like ADD but subtracts. This countdown shows the start number (OUT), subtracts 1, and stops once it reaches 0.\n\nRight now it starts at 5. Change the number at address **14** so the program shows exactly **3, 2, 1** and halts. Then run it to check.",
           widget: { type: "computer-cpu", props: { program: COUNTDOWN(5), names: COUNTDOWN_NAMES, editable: [14], granularity: "instruction" } },
           question: { type: "widget", hint: "The program shows the start number and subtracts 1 each time. Which start number gives 3, 2, 1?", goal: { out: [3, 2, 1], halted: true } },
-          explanation: "Start at **3**: OUT 3, SUB gives 2, JZ doesn't jump (A isn't 0), JUMP 1 loops back… until SUB makes A = 0 and JZ jumps to HALT. A loop plus a decision: with just these, a CPU can compute anything a computer can compute.",
+          explanation: "Start at **3**: OUT 3, SUB gives 2, JZ doesn't jump (A isn't 0), JUMP 1 loops back… until SUB makes A = 0 and JZ jumps to HALT. A loop plus a decision: these two ideas are the heart of what any computer does.",
         },
         {
           kind: "recap",
@@ -392,7 +392,7 @@ export const computerModule: Module = {
         {
           kind: "question",
           title: "More work per tick",
-          body: "Real CPUs don't wait for one instruction to finish before starting the next. Like an assembly line, they overlap fetch, decode and execute, and they can run several instructions side by side. So *how much* gets done per tick matters as much as how many ticks there are.\n\nWhich CPU gets more done each second?",
+          body: "Real CPUs don't wait for one instruction to finish before starting the next. Like an assembly line (called a **pipeline** in a CPU), they overlap fetch, decode and execute, and they can run several instructions side by side. So *how much* gets done per tick matters as much as how many ticks there are. This is the **work per tick** (the widget calls it *ipc*, instructions per clock).\n\nWhich CPU gets more done each second?",
           question: {
             type: "choice",
             options: ["CPU A: 4 GHz, finishes 1 instruction per tick", "CPU B: 3 GHz, finishes 2 instructions per tick", "They're equal", "You can't compare them"],
@@ -466,7 +466,7 @@ export const computerModule: Module = {
         {
           kind: "explain",
           title: "Wires that everyone shares",
-          body: "The CPU and memory are joined by a **bus**: a bundle of parallel wires that the parts share. The wires come in three groups:\n\n- **Address lines** say *where*.\n- **Data lines** carry *the value*.\n- A **control line** says *read* or *write*.\n\nEach wire carries one bit at a time. Send a read and watch each group light up.",
+          body: "Think of a shared road that every part of the computer uses to send messages to the others. That road is the **bus**: the CPU and memory are joined by a bundle of parallel wires that the parts share. The wires come in three groups:\n\n- **Address lines** say *where*.\n- **Data lines** carry *the value*.\n- A **control line** says *read* or *write*.\n\nEach wire carries one bit at a time. Send a read and watch each group light up.",
           widget: { type: "computer-bus", props: { devices: false, ram: [5, 18, 0, 42, 7, 99, 0, 0, 13, 0, 64, 0, 2, 0], initial: { op: "read", addr: 3 } } },
         },
         {
@@ -510,7 +510,7 @@ export const computerModule: Module = {
         {
           kind: "explain",
           title: "Devices live at addresses too",
-          body: "The bus doesn't only reach memory. Here, address **14** belongs to a **screen** and address **15** to a **keyboard**. The CPU talks to them with exactly the same reads and writes it uses for memory. This trick is called **memory-mapped I/O**.\n\nSend the write that's set up below and watch which part answers.",
+          body: "The bus doesn't only reach memory. Here, address **14** belongs to a **screen** and address **15** to a **keyboard**. The CPU talks to them with exactly the same reads and writes it uses for memory. This trick is called **memory-mapped I/O** (I/O is short for input/output).\n\nSend the write that's set up below and watch which part answers.",
           widget: { type: "computer-bus", props: { ram: [5, 18, 0, 42, 7, 99, 0, 0, 13, 0, 64, 0, 2, 0], initial: { op: "write", addr: 14, data: 72 } } },
         },
         {
@@ -569,7 +569,7 @@ export const computerModule: Module = {
         {
           kind: "explain",
           title: "Fast or big: pick one",
-          body: "Memory that's very fast has to be small: it takes more chip space and power per byte, and it has to sit right next to the CPU. Memory that's big is slower. So computers stack several kinds into a ladder, from tiny and instant to huge and slow.\n\nTap each rung. The times are typical figures; real chips vary.",
+          body: "Memory that's very fast has to be small: it takes more chip space and power per byte, and it has to sit right next to the CPU. Memory that's big is slower. So computers stack several kinds into a ladder, from tiny and instant to huge and slow.\n\nTap each rung. (L1, L2 and L3 are three levels of **cache**: L1 is the smallest and fastest, L3 the biggest and slowest of the three. The next steps explain what a cache is.) The times are typical figures; real chips vary.",
           widget: { type: "computer-latency" },
         },
         {
@@ -649,7 +649,7 @@ export const computerModule: Module = {
         {
           kind: "explain",
           title: "Checking, again and again",
-          body: "A CPU runs billions of instructions a second, but you might press a key only a few times a second. Hundreds of millions of ticks can pass between presses. How does the CPU even notice one?\n\nThe simplest way is **polling**: every so often, stop the real work and check the keyboard. Press the key a few times and watch the timeline.",
+          body: "Imagine waiting for a visitor. You could walk to the door every minute and look (tiring, and mostly pointless), or you could install a doorbell and carry on with your day. Computers face the same choice.\n\nA CPU runs billions of instructions a second, but you might press a key only a few times a second. Hundreds of millions of ticks can pass between presses. How does the CPU even notice one?\n\nThe simplest way is **polling**, the walk-to-the-door way: every so often, stop the real work and check the keyboard. Press the key a few times and watch the timeline.",
           widget: { type: "computer-interrupts", props: { mode: "polling", pollEvery: 4 } },
         },
         {
@@ -689,7 +689,7 @@ export const computerModule: Module = {
         {
           kind: "explain",
           title: "Interrupts: let the device knock",
-          body: "With **interrupts**, the CPU doesn't check at all. When something happens, the device sends a signal on a dedicated wire, the **interrupt line**. The CPU finishes its current instruction, saves its place (its PC and registers), jumps to a small piece of code called an **interrupt handler**, then restores everything and carries on as if nothing happened.\n\nSwitch to **Interrupts** and press the key a few times.",
+          body: "With **interrupts**, the CPU doesn't check at all. When something happens, the device sends a signal on a dedicated wire, the **interrupt line**. The CPU finishes its current instruction, saves its place (its PC and registers), jumps to a small piece of code called an **interrupt handler** (the code that deals with that one event, usually part of a **driver**: the piece of the operating system that knows how to talk to one kind of device), then restores everything and carries on as if nothing happened.\n\nSwitch to **Interrupts** and press the key a few times.",
           widget: { type: "computer-interrupts", props: { mode: "choose" } },
         },
         {
@@ -726,10 +726,10 @@ export const computerModule: Module = {
               stages: [
                 { icon: "finger", title: "The key goes down", text: "Pressing the key closes a tiny switch underneath it.", tag: "hardware" },
                 { icon: "keyboard", title: "The keyboard notices", text: "A small chip inside the keyboard scans its grid of switches many times a second, spots the closed one, and turns it into a key code: a number meaning “the A key went down”.", tag: "hardware" },
-                { icon: "usb", title: "Over the cable", text: "The computer's USB controller asks the keyboard for news every few milliseconds and collects the key code. (USB itself works by polling, done by a dedicated chip so the CPU doesn't have to.)", tag: "hardware" },
+                { icon: "usb", title: "Over the cable", text: "The computer's USB controller (the chip that looks after USB sockets) asks the keyboard for news every few milliseconds and collects the key code. (USB itself works by polling, done by a dedicated chip so the CPU doesn't have to.)", tag: "hardware" },
                 { icon: "interrupt", title: "Interrupt!", text: "The USB controller raises an interrupt. The CPU saves its place and jumps to the handler.", tag: "CPU" },
                 { icon: "kernel", title: "The driver translates", text: "The handler belongs to the operating system's keyboard driver. It turns the code into an event, “A pressed”, taking Shift and your keyboard layout into account. Then the CPU goes back to what it was doing.", tag: "OS" },
-                { icon: "app", title: "Delivered to your app", text: "The operating system works out which window you're typing into and puts the event in that app's queue.", tag: "OS" },
+                { icon: "app", title: "Delivered to your app", text: "The operating system works out which window you're typing into and puts the event in that app's queue (a waiting line of events the app deals with one by one).", tag: "OS" },
                 { icon: "screen", title: "The letter appears", text: "The app reads the event, adds the letter to your text and redraws. From finger to screen typically takes a few to a few dozen milliseconds.", tag: "app" },
               ],
             },
@@ -789,25 +789,9 @@ export const computerModule: Module = {
       xp: 60,
       steps: [
         {
-          kind: "question",
-          title: "The power-on puzzle",
-          body: "You press the power button. Memory is empty (it forgot everything when the power went off), yet the CPU starts fetching instructions straight away. Where can its very first instructions come from?",
-          question: {
-            type: "choice",
-            options: [
-              "A small firmware chip on the motherboard that keeps its contents without power",
-              "From memory (RAM), which keeps a copy of the start-up code",
-              "From the operating system on the SSD, which the CPU reads directly",
-              "From the internet",
-            ],
-            answer: 0,
-          },
-          explanation: "When a CPU starts up, its PC is set to a fixed address chosen by the chip's designers. The motherboard wires that address to a **firmware** chip (flash memory that keeps its contents without power) holding the start-up code: **UEFI** on modern PCs, the **BIOS** on older ones. The CPU can't read the SSD yet: it needs code that knows *how* to read it first.",
-        },
-        {
           kind: "explain",
           title: "The boot, step by step",
-          body: "Starting a computer is a relay race: each small program gets just enough working to hand over to a bigger one. Step through it.",
+          body: "Imagine waking up in a dark room: you can't make breakfast yet, but you can find the light switch, and with the light you can find the kitchen. Starting a computer is like that, a relay race: each small program gets just enough working to hand over to a bigger one.\n\nThree words you will see: the **motherboard** is the big circuit board that all the parts plug into; **firmware** is a small program stored permanently on a chip on that board; and the **bootloader** and **kernel** are programs you will meet in a moment. Step through it.",
           widget: {
             type: "computer-journey",
             props: {
@@ -822,6 +806,22 @@ export const computerModule: Module = {
               ],
             },
           },
+        },
+        {
+          kind: "question",
+          title: "The power-on puzzle",
+          body: "You press the power button. Memory is empty (it forgot everything when the power went off), yet the CPU starts fetching instructions straight away. Where can its very first instructions come from?",
+          question: {
+            type: "choice",
+            options: [
+              "A small firmware chip on the motherboard that keeps its contents without power",
+              "From memory (RAM), which keeps a copy of the start-up code",
+              "From the operating system on the SSD, which the CPU reads directly",
+              "From the internet",
+            ],
+            answer: 0,
+          },
+          explanation: "When a CPU starts up, its PC is set to a fixed address chosen by the chip's designers. The motherboard wires that address to a **firmware** chip (flash memory that keeps its contents without power) holding the start-up code: **UEFI** on modern PCs, the **BIOS** on older ones. The CPU can't read the SSD yet: it needs code that knows *how* to read it first.",
         },
         {
           kind: "question",
@@ -846,7 +846,7 @@ export const computerModule: Module = {
           body: "When the bootloader loads the kernel, it copies it from storage *into* somewhere. Tap that part.",
           widget: { type: "computer-machine", props: { mode: "pick" } },
           question: { type: "widget", hint: "The CPU can only run what is in the fast, working memory.", goal: { picked: "ram" } },
-          explanation: "Into **memory**. The CPU can only fetch instructions from memory, so every program, including the operating system itself, must be copied there from storage before it can run.",
+          explanation: "Into **memory**. Programs on a drive can't run from there: they must be copied into main memory (RAM) first, and that includes the operating system itself. The firmware is the one exception, because it runs straight from its own chip.",
         },
         {
           kind: "question",
@@ -899,7 +899,7 @@ export const computerModule: Module = {
         {
           kind: "explain",
           title: "What's next",
-          body: "You can now follow a program all the way down: it's bytes in storage, copied into memory, fetched and run by the CPU one instruction at a time, talking to devices over the bus and handling interrupts as they come in.\n\nNext, you'll look closer at each layer: **assembly**, the CPU's real instructions (like LOAD, ADD and JUMP, but richer); **C**, a language that sits just above them; the **operating system** that shares the machine out; and the **network** that connects machines together.",
+          body: "You can now follow a program all the way down: it's bytes in storage, copied into memory, fetched and run by the CPU one instruction at a time, talking to devices over the bus and handling interrupts as they come in.\n\nNext, you'll learn to write programs yourself in Python. After that you'll look closer at each layer: **assembly**, the CPU's real instructions (like LOAD, ADD and JUMP, but richer); **C**, a language that sits just above them; the **operating system** that shares the machine out; and the **network** that connects machines together.",
           widget: { type: "computer-machine", props: { mode: "explore" } },
         },
         {

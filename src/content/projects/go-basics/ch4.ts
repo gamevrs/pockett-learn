@@ -24,7 +24,36 @@ export const chapter4: Chapter = {
       concepts: ["sort.Slice", "less function", "multi-key sort", "function values", "closures", "func parameters"],
       learn: md`### Putting a slice in order
 
-The hub's dispatch office wants the parcels in a different order for different crews: heaviest first for the people who lift, region by region for the people who load vans. Go's \`sort\` package sorts any slice with one call, as long as you say what "comes first" means:
+The hub's dispatch office wants the parcels in a different order for different crews: heaviest first for the people who lift, region by region for the people who load vans. Go's \`sort\` package sorts any slice with one call, as long as you say what "comes first" means. To say it, you hand \`sort\` a small function. So first, one fact about functions.
+
+### Functions are values
+
+In Go a function is a value like any other. You can store one in a variable, pass one to another function and return one from a function. A function written inline, with no name, is a **function literal**:
+
+~~~go
+double := func(n int) int { return n * 2 }
+fmt.Println(double(21)) // 42
+~~~
+
+The ordering rule you give \`sort.Slice\` below is exactly that: a function value you hand over. You can write your own functions that take functions. A filter keeps whatever a test function approves:
+
+~~~go
+func filter(list []Parcel, keep func(Parcel) bool) []Parcel {
+	var out []Parcel
+	for _, p := range list {
+		if keep(p) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+~~~
+
+The type \`func(Parcel) bool\` reads as "a function that takes a Parcel and returns a bool".
+
+### Sorting with a function you pass in
+
+Here is the sort call:
 
 ~~~go
 weights := []int{2400, 800, 19500, 650}
@@ -42,7 +71,7 @@ Notice what you do *not* write: a loop, a swap, an algorithm. You describe the o
 
 - Use a strict comparison: \`<\` or \`>\`, **not** \`<=\` or \`>=\`. Two equal things must not each claim to come first.
 - Be consistent: if \`less(a, b)\` is true then \`less(b, a)\` must be false.
-- Look at the slice you are sorting. The closure reads \`weights[i]\`, so it must use the same slice that is being reordered.
+- Look at the slice you are sorting. Your function reads \`weights[i]\`, so it must use the same slice that is being reordered.
 
 ### Sorting by more than one key
 
@@ -64,37 +93,19 @@ sort.Slice(list, func(i, j int) bool {
 \`sort.Slice\` rearranges the slice you give it. Every other variable looking at the same backing array (lesson 7!) sees the new order too. The manifest order matters to the rest of the hub, so sort a **copy**:
 
 ~~~go
-byWeight := append([]Parcel(nil), parcels...) // a new slice with its own array
+byWeight := make([]Parcel, len(parcels)) // a new slice with its own array
+copy(byWeight, parcels)                  // copy every element across (lesson 7)
 sort.Slice(byWeight, func(i, j int) bool { return byWeight[i].Grams > byWeight[j].Grams })
 // parcels is untouched
 ~~~
 
-\`append([]Parcel(nil), parcels...)\` starts from an empty (nil) slice and appends every element, so Go allocates a fresh array. It is the short idiom for "clone this slice".
-
-### Functions are values
-
-In Go a function is a value like any other. You can store one in a variable, pass one to another function and return one from a function. A function written inline, with no name, is a **function literal**:
+There is a shorter way to write the same copy, and the mission uses it:
 
 ~~~go
-double := func(n int) int { return n * 2 }
-fmt.Println(double(21)) // 42
+byWeight := append([]Parcel(nil), parcels...)
 ~~~
 
-The \`less\` argument above is exactly that: a function value you hand to \`sort.Slice\`. You can write your own functions that take functions. A filter keeps whatever a test function approves:
-
-~~~go
-func filter(list []Parcel, keep func(Parcel) bool) []Parcel {
-	var out []Parcel
-	for _, p := range list {
-		if keep(p) {
-			out = append(out, p)
-		}
-	}
-	return out
-}
-~~~
-
-The type \`func(Parcel) bool\` reads as "a function that takes a Parcel and returns a bool".
+Read it from the inside: \`[]Parcel(nil)\` is an empty slice of Parcels (a \`nil\` slice with its type written out). \`append\` then adds every element of \`parcels\` to it (the \`...\` spreads the slice into separate values), and because the starting slice has no room, Go allocates a fresh array. The result is a clone of \`parcels\` that you can sort without touching the original.
 
 ### Closures: functions that remember
 
@@ -131,7 +142,7 @@ fmt.Println(other()) // BIN-01: its own n
 
 ### Loop variables and closures (Go 1.22 and later)
 
-Older Go versions shared one loop variable across all iterations, so closures created in a loop all saw its final value, a famous trap. Since Go 1.22 every iteration gets its **own** copy of the variable:
+Older Go versions shared one loop variable across all iterations, so closures created in a loop (functions that *capture* the variable, see above) all saw its final value, a famous trap. Since Go 1.22 every iteration gets its **own** copy of the variable:
 
 ~~~go
 var funcs []func() int
@@ -427,7 +438,7 @@ panic: runtime error: invalid memory address or nil pointer dereference
 panic: assignment to entry in nil map
 ~~~
 
-An unhandled panic prints the message, a **goroutine trace** and exits with status 2:
+An unhandled panic prints the message, a **stack trace** (the chain of function calls that led to the panic) and exits with status 2 (a non-zero exit status means "the program failed"):
 
 ~~~text
 panic: boom
@@ -458,7 +469,7 @@ func attempt(task func()) (err error) {
 }
 ~~~
 
-Walk through it. \`attempt\` defers a closure, then runs the task. If the task finishes normally, \`recover()\` returns \`nil\` and nothing happens. If the task panics, Go unwinds the stack, reaches the deferred closure, \`recover()\` returns the panic value, and the closure stores an error in the named result \`err\`. The caller gets a normal error instead of a crash. That is the whole trick, and the reason the result has to be named.
+Walk through it. \`attempt\` defers a closure, then runs the task. If the task finishes normally, \`recover()\` returns \`nil\` and nothing happens. If the task panics, Go leaves each function on the way out (this is called *unwinding* the stack), reaches the deferred closure, \`recover()\` returns the panic value, and the closure stores an error in the named result \`err\`. The caller gets a normal error instead of a crash. That is the whole trick, and the reason the result has to be named.
 
 ### When NOT to use panic and recover
 
@@ -485,7 +496,7 @@ You will write a \`closeHub\` that uses \`defer\`, a \`mustRegion\` that panics 
         "Declare closeHub() (steps []string) above the divider: defer three appends in this code order: \"belts stopped\", \"lamps off\", \"doors locked\". Then append \"closing\" and return steps",
         "Declare mustRegion(name string) Region, which looks the name up in regionOf and panics with \"mustRegion: unknown region \" + name when it is not there",
         "Declare attempt(task func()) (err error): it runs task, and a deferred function uses recover() to set err to fmt.Errorf(\"recovered: %v\", r) when the task panics; otherwise it returns nil",
-        "In main: steps := closeHub(), then run these four tasks through attempt and append every non-nil err.Error() to a []string called caught: mustRegion(\"moon\"); a nil *Van calling v.Load(parcels[0]); _ = rows[99]; and an empty func(){}",
+        "In main: steps := closeHub(), then run these four tasks through attempt and append every non-nil err.Error() to a []string called caught: mustRegion(\"moon\"); a nil *Van calling v.Load(parcels[0]) (make one with var v *Van, which is nil because it points at nothing, then call v.Load(parcels[0]) inside the task); _ = rows[99]; and an empty func(){}",
         "Print fmt.Println(steps) and fmt.Println(caught), then send closeSteps (steps) and caught with scene",
       ],
       starterAdd: go`// ─── ✏️ YOUR TURN: new declarations ───────────
@@ -684,7 +695,7 @@ fmt.Println(string(data), err)
 // {"ID":"PK-2001","Chute":"A","Kg":2.4} <nil>
 ~~~
 
-Two things to notice. \`Marshal\` returns **bytes and an error** (the usual Go shape, so always check \`err\`; it fails for things like channels or values with infinite floats). And the keys are \`ID\`, \`Chute\`, \`Kg\`, copied from the field names. Outside Go, JSON keys are usually lower case.
+*Marshal* just means "turn a Go value into JSON text" (and *unmarshal* is the reverse). Two things to notice. \`Marshal\` returns **bytes** (the raw numbers a text is stored as; \`string(data)\` turns them back into readable text) **and an error** (the usual Go shape, so always check \`err\`; it fails for things like channels or values with infinite floats). And the keys are \`ID\`, \`Chute\`, \`Kg\`, copied from the field names. Outside Go, JSON keys are usually lower case.
 
 ### Struct tags: telling json what to call each field
 
@@ -699,7 +710,7 @@ type Entry struct {
 // {"id":"PK-2001","chute":"A","kg":2.4}
 ~~~
 
-The compiler ignores tags; only libraries that look for them (through reflection) care. That is also why a typo in a tag is silent: \`json:"chute"\` written as \`josn:"chute"\` is not an error, the tag is just never read. Keep the exact format: key, colon, quoted value, no spaces around the colon.
+The compiler ignores tags; only libraries that go looking for them while the program runs care. That is also why a typo in a tag is silent: \`json:"chute"\` written as \`josn:"chute"\` is not an error, the tag is just never read. Keep the exact format: key, colon, quoted value, no spaces around the colon.
 
 Options come after a comma:
 
@@ -746,7 +757,7 @@ var back Manifest
 err = json.Unmarshal(data, &back)
 ~~~
 
-Why the \`&\`? \`Unmarshal\` has to **fill in** your variable. Go passes arguments by copy, so handing over \`back\` would give it a copy to fill, which you would never see. \`&back\` is the variable's *address*, a pointer (you met pointers in lesson 11), so \`Unmarshal\` can write into the real one. Forget it and you get an error value instead of data:
+Why the \`&\`? \`Unmarshal\` has to **fill in** your variable. Go passes arguments by copy, so handing over \`back\` would give it a copy to fill, which you would never see. \`&back\` is the variable's *address* (the "slip of paper with the bay number" from lesson 11: \`&x\` means "the address of x"), so \`Unmarshal\` can write into the real one. Forget it and you get an error value instead of data:
 
 ~~~text
 json: Unmarshal(non-pointer main.Manifest)
@@ -766,7 +777,7 @@ If you do not know the shape in advance, decode into \`map[string]any\`. JSON nu
 
 ### A round trip as a test
 
-A quick way to trust your encoding is to decode what you just encoded and compare: \`json.Unmarshal(data, &back)\` and then check \`len(back.Entries) == len(m.Entries)\`. It will not catch everything, but it catches the missing-tag and unexported-field mistakes quickly.
+A *round trip* means going out and back: encode a value, decode the result, and see whether you got the same thing. A quick way to trust your encoding is to decode what you just encoded and compare: \`json.Unmarshal(data, &back)\` and then check \`len(back.Entries) == len(m.Entries)\`. It will not catch everything, but it catches the missing-tag and unexported-field mistakes quickly.
 
 ### Common mistakes
 
@@ -978,7 +989,21 @@ This lesson has very little new syntax. It is about *using* what you have, which
 
 ### Step 1: write down what goes in and what comes out
 
-\`buildReport\` gets the hub name and shift, the vans (each one knows which parcel IDs it carries), the parcels (so we can look up weights and classes), the overflow list and the reject reasons. It returns a \`Report\`: how many parcels were sorted, how many rejected, how many overflowed, the revenue, the heaviest parcel and a count per chute.
+\`buildReport\` gets the hub name and shift, the vans (each one knows which parcel IDs it carries), the parcels (so we can look up weights and classes), the overflow list and the reject reasons. It returns a \`Report\`: how many parcels were sorted, how many rejected, how many overflowed, the revenue, the heaviest parcel and a count per chute. The \`Report\` type is already written for you in the starter (shown here without its JSON tags):
+
+~~~go
+type Report struct {
+	Hub      string
+	Shift    int
+	Sorted   int
+	Rejected int
+	Overflow int
+	Revenue  string         // text such as "$41.70"
+	Heaviest string         // the ID of the heaviest sorted parcel
+	PerChute map[string]int // chute letter -> parcels sorted into it
+	Reasons  map[string]int // reject reason -> how many
+}
+~~~
 
 ~~~go
 func buildReport(hub string, shift int, vans []Van, parcels []Parcel,
@@ -1049,11 +1074,16 @@ fmt.Printf("%-10s %s\n", "Revenue", report.Revenue)
 // Revenue    $41.70
 ~~~
 
-Per-chute counts come from a map, whose iteration order is random (lesson 8). Collect the keys, \`sort.Strings\` them, then print, so the report is the same every time.
+Per-chute counts come from a map, whose iteration order is random (lesson 8). Collect the keys, \`sort.Strings\` them, then print, so the report is the same every time. The mission's chute line uses this exact format, with four spaces between the label and the count:
+
+~~~go
+fmt.Printf("Chute %s    %d\n", name, report.PerChute[name])
+// Chute A    3
+~~~
 
 ### Step 5: check yourself with an invariant
 
-A good report can audit itself. Every manifest row ended in exactly one place: in a van (sorted), on the overflow tray, or in the reject bin. So:
+An *invariant* is a rule that must always be true. A good report can audit itself. Every manifest row ended in exactly one place: in a van (sorted), on the overflow tray, or in the reject bin. So:
 
 ~~~go
 balanced := report.Sorted+report.Overflow+report.Rejected == len(rows)

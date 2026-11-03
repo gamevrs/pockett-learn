@@ -77,7 +77,7 @@ const SCHED_BASIC = [
 /** Operating systems and the Unix shell: what an OS does, processes, files, the shell, pipes, permissions, jobs. */
 export const unixModule: Module = {
   id: "unix",
-  part: "machine",
+  part: "hood",
   title: "Operating systems and the Unix shell",
   blurb: "What an OS does, processes, files and permissions, and a terminal to practise the shell in.",
   icon: "terminal",
@@ -145,9 +145,9 @@ export const unixModule: Module = {
         {
           kind: "explain",
           title: "What a system call is",
-          body: "A **system call** is a request from a program to the kernel. In machine code, the program puts a number saying *which* request into a register, the details into other registers, and runs one special instruction (`syscall` on x86-64 chips). The CPU switches to kernel mode and jumps to the kernel.\n\nPrinting `hi` on the screen, for example, comes down to this call:\n\n" +
+          body: "A **system call** is a request from a program to the kernel. Think of the kernel's front desk: you can't walk into the back office, you fill in a request form and hand it over. In machine code, the form is a number saying *which* request into a register, the details in other registers, and then one special instruction (`syscall` on x86-64 chips). The CPU switches to kernel mode and jumps to the kernel.\n\nPrinting `hi` on the screen, for example, comes down to this call:\n\n" +
             sh(`write(1, "hi\\n", 3)    write to output 1 (the terminal) these 3 bytes`) +
-            "\n\nPython's `print(\"hi\")` does exactly this underneath. Linux has a few hundred system calls, with names like `open`, `read`, `write`, `mmap` (get memory), `fork` (make a process) and `kill` (send a signal).",
+            "\n\nThe `print` command of the language you learned earlier does exactly this underneath. Two more you will meet again: `open` (get access to a file) and `read` (get bytes from it). Linux has a few hundred system calls in all.",
         },
         {
           kind: "question",
@@ -186,7 +186,7 @@ export const unixModule: Module = {
           points: [
             "The **operating system** shares the CPU, memory, files and devices between programs and keeps them from interfering with each other.",
             "The **kernel** runs in kernel mode with full control; every other program runs in **user mode**, where the CPU blocks direct use of hardware.",
-            "Programs ask the kernel for shared things with **system calls** such as `read`, `write`, `open` and `mmap`.",
+            "Programs ask the kernel for shared things with **system calls** such as `read`, `write` and `open`.",
             "Plain computation on a program's own memory, like adding two numbers, needs no system call.",
           ],
         },
@@ -314,7 +314,7 @@ export const unixModule: Module = {
         {
           kind: "explain",
           title: "Files live in directories",
-          body: "A disk is just an enormous row of numbered blocks. The OS's **file system** turns it into something you can use: named **files**, grouped into **directories** (another word for folders), which can hold more directories.\n\nAt the very top sits one directory called the **root**, written `/`. Everything hangs below it, so the whole thing is a **tree** (drawn upside down, with the root at the top).\n\nTap anything to see its path.",
+          body: "A disk is just an enormous row of numbered blocks. The OS's **file system** turns it into something you can use: named **files**, grouped into **directories** (another word for folders), which can hold more directories.\n\nAt the very top sits one directory called the **root**, written `/`. Everything hangs below it, so the whole thing is a **tree** (drawn upside down, with the root at the top).\n\nIn these exercises you are a user called **ada**. Each user gets a **home directory** for their own files, and ada's is `/home/ada`. Later you'll see it written as `~`, which is just a short way to write your home; `~/photos` means `/home/ada/photos`.\n\nTap anything to see its path.",
           widget: { type: "unix-paths", props: { files: PATHS_TREE, explore: true, input: false } },
         },
         {
@@ -364,7 +364,7 @@ export const unixModule: Module = {
         {
           kind: "question",
           title: "Home, written ~",
-          body: "Each user has a **home directory** for their own files: `/home/ada` for ada, `/home/bob` for bob (on a Mac it's `/Users/ada`). Because it's used so often, the shell lets you write your home as `~`. For ada, `~/photos` is short for `/home/ada/photos`.\n\nWhen **bob** types `~/music`, what absolute path does he mean?",
+          body: "Each user has a **home directory** for their own files: `/home/ada` for ada, `/home/bob` for bob (on a Mac it's `/Users/ada`). Because it's used so often, the shell lets you write your home as `~` (you saw this at the start of the lesson). For ada, `~/photos` is short for `/home/ada/photos`.\n\nWhen **bob** types `~/music`, what absolute path does he mean?",
           question: { type: "text", hint: "~ stands for the user's own home. For bob that is /home/bob.", answer: ["/home/bob/music", "/home/bob/music/"], placeholder: "/…" },
           explanation: "`~` is bob's own home, `/home/bob`, so `~/music` is `/home/bob/music`. The same `~` means a different place for each user.",
         },
@@ -382,7 +382,7 @@ export const unixModule: Module = {
             ],
             answer: 0,
           },
-          explanation: "A file is really known by its **full path**, so `/home/ada/todo.txt` and `/home/ada/projects/todo.txt` are two different files. Names are case-sensitive on Linux, too: `Todo.txt` and `todo.txt` are different files.",
+          explanation: "A file is really known by its **full path**, so `/home/ada/todo.txt` and `/home/ada/projects/todo.txt` are two different files. Names are also case-sensitive on Linux:`Todo.txt` and `todo.txt` are different files.",
         },
         {
           kind: "recap",
@@ -407,7 +407,7 @@ export const unixModule: Module = {
         {
           kind: "explain",
           title: "Meet the shell",
-          body: "So far you've tapped and pointed. Programmers often drive the OS by typing instead, in a **shell**: a program that reads the command you type, runs it, and shows the result. The most common one on Linux is **bash**, and the window it runs in is the **terminal**.\n\nWhen the shell is ready it shows a **prompt**. `ada@pockett:~$` means: user **ada**, on the computer called **pockett**, in the directory `~`.\n\nType `pwd` (*print working directory*) and press **Enter**.",
+          body: "So far you've tapped and pointed. Programmers often drive the OS by typing instead, in a **shell**: a program that reads the command you type, runs it, and shows the result. The most common one on Linux is **bash**, and the window it runs in is the **terminal**.\n\nWhen the shell is ready it shows a **prompt**. `ada@pockett:~$` means: user **ada**, on the computer called **pockett**, in the directory `~`.\n\nType `pwd` (*print working directory*) and press **Enter**.\n\nThis practice shell behaves like Linux. On Windows, WSL or Git Bash give you the same commands for your own machine.",
           widget: { type: "unix-terminal", props: { files: HOME4, task: "Type `pwd` and press Enter.", suggest: ["pwd"] } },
         },
         {
@@ -442,7 +442,7 @@ export const unixModule: Module = {
         {
           kind: "question",
           title: "Move with cd",
-          body: "`cd` (*change directory*) moves you. It takes a relative or an absolute path.",
+          body: "`cd` (*change directory*) moves you. It takes a relative or an absolute path. And `cd` with nothing after it goes straight home.",
           widget: { type: "unix-terminal", props: { files: HOME4, task: "Get to `~/projects/site` with `cd`.", solution: ["cd projects/site"] } },
           question: { type: "widget", hint: "cd takes a relative path (from where you are) or an absolute one (from /).", goal: { cwd: "~/projects/site" } },
           explanation: "Either `cd projects` then `cd site`, or both in one go: `cd projects/site`. The prompt changed to show where you are, and `pwd` would now print `/home/ada/projects/site`.",
@@ -466,7 +466,7 @@ export const unixModule: Module = {
         {
           kind: "question",
           title: "Several levels at once",
-          body: "Try `mkdir archive/2026/october`. It fails, because `mkdir` won't create missing parent directories. Look for the option that does (try `mkdir --help`).",
+          body: "Try `mkdir archive/2026/october`. It fails, because `mkdir` won't create missing parent directories. Almost every command explains itself with `--help`; for `mkdir` it lists, among others:\n\n" + sh("-p, --parents   make parent directories as needed") + "\n\nSo the option you want is `-p`. Try it.",
           widget: { type: "unix-terminal", props: { files: HOME4, tree: true, task: "Create `~/archive/2026/october`.", solution: ["mkdir -p archive/2026/october"] } },
           question: { type: "widget", hint: "Run mkdir --help and look for the option that creates parent directories.", goal: { dirs: ["~/archive/2026/october"] } },
           explanation: "`mkdir -p archive/2026/october` creates every missing directory along the path (*p* for *parents*) and doesn't complain about ones that already exist. Almost every command explains itself with `--help`.",
@@ -541,7 +541,7 @@ export const unixModule: Module = {
         {
           kind: "explain",
           title: "rm: there is no undo",
-          body: "`rm` **removes** files. There's **no Trash and no undo**: the file system forgets the name and marks the space as free, ready to be reused by the next file that gets written.\n\nDirectories need `rm -r` (*recursive*: the directory and everything inside it). `rmdir` removes only **empty** directories, which makes it the safer choice when you expect one to be empty.\n\nBe extra careful with `rm -r`, and with `*`, which the shell replaces with every name in the directory: `rm *` deletes everything in it.",
+          body: "`rm` **removes** files. There's **no Trash and no undo**: the file system forgets the name and marks the space as free, ready to be reused by the next file that gets written.\n\nDirectories need `rm -r` (*recursive*: the directory and everything inside it). `rmdir` removes only **empty** directories, which makes it the safer choice when you expect one to be empty.\n\nBe extra careful with `rm -r`, and with `*`, which the shell replaces with every name in the directory: `rm *` deletes everything in it. (And note: Ctrl+Z in a terminal is not undo; it pauses a program, covered later.)",
         },
         {
           kind: "question",
@@ -585,7 +585,7 @@ export const unixModule: Module = {
         {
           kind: "explain",
           title: "Small tools, joined up",
-          body: "Unix comes with dozens of small programs that each do **one** job: show the first lines, keep the matching lines, sort, count. Each one reads text in and writes text out.\n\nThe **pipe**, `|`, joins them: the output of the command on the left becomes the input of the command on the right. Neither program knows or cares whether it's talking to a person or to another program.\n\nTry `cat fruits.txt`, then `cat fruits.txt | sort`.",
+          body: "Picture a factory conveyor belt: one machine cuts, the next paints, the next boxes. No machine does everything; the belt joins them.\n\nUnix comes with dozens of small programs that each do **one** job: show the first lines, keep the matching lines, sort, count. Each one reads text in (its *standard input*) and writes text out (its *standard output*).\n\nThe **pipe**, `|`, is the belt. It joins them: the output of the command on the left becomes the input of the command on the right. Neither program knows or cares whether it's talking to a person or to another program.\n\nTry `cat fruits.txt`, then `cat fruits.txt | sort`.",
           widget: { type: "unix-terminal", props: { files: HOME6, suggest: ["cat fruits.txt", "cat fruits.txt | sort"] } },
         },
         {
@@ -599,7 +599,7 @@ export const unixModule: Module = {
         {
           kind: "question",
           title: "Find lines: grep",
-          body: "`grep PATTERN FILE` prints only the lines that contain the pattern.",
+          body: "`grep PATTERN FILE` prints only the lines that contain the pattern. For example, `grep INFO server.log` prints only the lines with the word `INFO` in them, such as:\n\n" + sh("09:00:01 INFO server started\n09:00:04 INFO user ada logged in") + "\n\n(and the other INFO lines after them).",
           widget: { type: "unix-terminal", props: { files: HOME6, task: "Show only the lines of `server.log` that contain `ERROR`.", solution: ["grep ERROR server.log"] } },
           question: { type: "widget", hint: "Put the word the wanted lines have in common first, then the file name.", goal: { output: LOG.filter((l) => l.includes("ERROR")).join("\n") } },
           explanation: "`grep ERROR server.log` kept 3 of the 12 lines. The odd name comes from an old editor command, *g/re/p*: **g**lobally search for a **r**egular **e**xpression and **p**rint. Patterns can be much fancier than one word.",
@@ -623,7 +623,7 @@ export const unixModule: Module = {
         {
           kind: "question",
           title: "Why sort before uniq?",
-          body: "`uniq` removes repeated lines, but only repeats that sit **next to each other**. Why do people write `sort fruits.txt | uniq` rather than just `uniq fruits.txt`?",
+          body: "`uniq` removes repeated lines (so `a a b` becomes `a b`), but only repeats that sit **next to each other**. Why do people write `sort fruits.txt | uniq` rather than just `uniq fruits.txt`?",
           question: {
             type: "choice",
             options: [
@@ -702,7 +702,7 @@ export const unixModule: Module = {
         {
           kind: "question",
           title: "Who can do what?",
-          body: "`ls -l` shows:\n\n" + sh("-rwxr-x--- 1 ada team 812 Oct 25 09:14 deploy.sh") + "\n\nBob is in the `team` group; Eve isn't. What can they do with `deploy.sh`?",
+          body: "`ls -l` shows:\n\n" + sh("-rwxr-x--- 1 ada team 812 Oct 25 09:14 deploy.sh") + "\n\nThe columns are: permissions, link count (`1`, ignore it for now), owner (`ada`), group (`team`), size in bytes (`812`), last-changed date and time, and the name.\n\nBob is in the `team` group; Eve isn't. What can they do with `deploy.sh`?",
           question: {
             type: "choice",
             options: [
@@ -727,7 +727,7 @@ export const unixModule: Module = {
           body: "What number is `rwxr-xr-x`?",
           widget: { type: "unix-perms", props: { mode: "700", name: "tool.sh" }, live: true },
           question: { type: "number", hint: "r is worth 4, w is 2 and x is 1. Add them up within each group of three letters.", answer: 755 },
-          explanation: "`rwx` = 7, `r-x` = 5, `r-x` = 5, so **755**: the usual setting for programs and scripts. Only the owner can change it, and everyone can read and run it. The other number you'll see everywhere is **644** (`rw-r--r--`), for ordinary files.",
+          explanation: "`rwx` = 7, `r-x` = 5, `r-x` = 5, so **755**: the usual setting for programs and scripts. Only the owner can change it, and everyone can read and run it. The other number you'll see everywhere is **644** (`rw-r--r--`), for ordinary files.\n\nTo apply a number, put it after `chmod`: `chmod 755 hello.sh` sets `hello.sh` to `rwxr-xr-x`.",
         },
         {
           kind: "question",
@@ -817,8 +817,8 @@ export const unixModule: Module = {
         {
           kind: "explain",
           title: "Signals",
-          body: "A **signal** is a tiny message the kernel delivers to a process. The ones you'll meet most:\n\n- `TERM` (15): *please stop*. The default for `kill`. A program can catch it and save its work first.\n- `INT` (2): *interrupt*. What **Ctrl+C** sends to the foreground program.\n- `KILL` (9): *stop now*. It can't be caught or ignored: the kernel simply ends the process. `kill -9 PID`.\n- `TSTP`: *pause*. What **Ctrl+Z** sends; `fg` resumes the job in the foreground, `bg` in the background.\n\nTry it: run `sleep 100`, press **Ctrl+Z**, run `jobs`, then `fg`, then **Ctrl+C**.",
-          widget: { type: "unix-terminal", props: { suggest: ["sleep 100", "jobs", "fg", "kill -l"] } },
+          body: "A **signal** is a tiny message the kernel delivers to a process. The ones you'll meet most:\n\n- `TERM` (15): *please stop*. The default for `kill`. A program can catch it and save its work first.\n- `INT` (2): *interrupt*. What **Ctrl+C** sends to the foreground program.\n- `KILL` (9): *stop now*. It can't be caught or ignored: the kernel simply ends the process. `kill -9 PID`.\n\nThe number in brackets is the signal's number, so `kill -9 PID` and `kill -KILL PID` mean the same. Try it: run `sleep 100`, then press **Ctrl+C** to interrupt it. (`kill -l` lists every signal.)",
+          widget: { type: "unix-terminal", props: { suggest: ["sleep 100", "jobs", "kill -l"] } },
         },
         {
           kind: "question",
@@ -830,9 +830,9 @@ export const unixModule: Module = {
         },
         {
           kind: "explain",
-          title: "Environment variables",
-          body: "Every process also carries **environment variables**: named settings like `HOME=/home/ada` or `USER=ada`, copied from the process that started it. Before running a command, the shell replaces `$NAME` with that variable's value.\n\nTry `echo $HOME`, `echo $USER` and `env` (which lists them all). `export NAME=value` sets one for this shell and everything it starts.",
-          widget: { type: "unix-terminal", props: { suggest: ["echo $HOME", "echo $USER", "env", "export COLOUR=lime", "echo $COLOUR"] } },
+          title: "Going further: pausing jobs, environment variables",
+          body: "### Going further (optional)\n\nThe core of this lesson is done: processes, PIDs, background jobs and `kill`. What follows is extra.\n\n**Pausing jobs.** `TSTP` is the *pause* signal, sent by **Ctrl+Z**. Try it: run `sleep 100`, press **Ctrl+Z**, run `jobs` to see it stopped, then `fg` to bring it back to the foreground (or `bg` to let it carry on in the background), and **Ctrl+C** to end it.\n\n**Environment variables.** Every process also carries **environment variables**: named settings like `HOME=/home/ada` or `USER=ada`, copied from the process that started it. Before running a command, the shell replaces `$NAME` with that variable's value.\n\nTry `echo $HOME`, `echo $USER` and `env` (which lists them all). `export NAME=value` sets one for this shell and everything it starts.",
+          widget: { type: "unix-terminal", props: { suggest: ["sleep 100", "jobs", "fg", "echo $HOME", "echo $USER", "env", "export COLOUR=lime", "echo $COLOUR"] } },
         },
         {
           kind: "question",
@@ -845,7 +845,7 @@ export const unixModule: Module = {
         {
           kind: "question",
           title: "Your own command",
-          body: "You wrote a script, `~/bin/greet`. Typing `greet` doesn't work yet. It needs execute permission, and `~/bin` needs to be on your `PATH`. Put it at the front with:\n\n" + sh('export PATH="$HOME/bin:$PATH"'),
+          body: "You wrote a script, `~/bin/greet`. Typing `greet` doesn't work yet. It needs execute permission, and `~/bin` needs to be on your `PATH`. Put it at the front with:\n\n" + sh('export PATH="$HOME/bin:$PATH"') + "\n\nRead that line in pieces. `PATH` is one long text holding directories separated by colons, like `/usr/bin:/bin`. `$PATH` pastes in the old list. `$HOME/bin:` puts your own `bin` directory in front of it, and `export` saves the new list for this shell. So the shell looks in `~/bin` first.",
           widget: {
             type: "unix-terminal",
             props: {
@@ -862,7 +862,7 @@ export const unixModule: Module = {
           kind: "recap",
           points: [
             "Each command runs as a process; `ps` lists them with their **PIDs**.",
-            "`&` runs a command in the **background**; `jobs`, `fg` and `bg` manage jobs; Ctrl+C interrupts and Ctrl+Z pauses.",
+            "`&` runs a command in the **background**; Ctrl+C interrupts. (Optional: `jobs`, `fg`, `bg` and Ctrl+Z pause and resume jobs.)",
             "`kill PID` sends `TERM` (a polite stop); `kill -9 PID` sends `KILL`, which can't be ignored.",
             "**Environment variables** like `HOME` and `PATH` travel with every process; the shell finds commands by searching the `PATH` directories.",
           ],

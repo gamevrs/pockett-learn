@@ -60,10 +60,16 @@ export const launch: Project = {
           concepts: ["print()", "strings", "comments"],
           learn: `### Talking to the launch console
 
-\`print()\` sends a line of text to the screen. Text inside quotes is called a **string**.
+A computer does nothing until you tell it what to do, and it cannot speak unless you give it words to say. \`print()\` is how your program speaks: it sends a line of text to the screen. Text inside quotes is called a **string**.
 
 ~~~python
 print("Hello, Moon!")
+~~~
+
+That one line shows this on the console:
+
+~~~text
+Hello, Moon!
 ~~~
 
 Each \`print()\` makes a new line. Lines that start with \`#\` are **comments**: notes for humans that Python skips.
@@ -73,7 +79,14 @@ Each \`print()\` makes a new line. Lines that start with \`#\` are **comments**:
 print("This one runs")
 ~~~
 
-Strings can use double quotes \`"like this"\` or single quotes \`'like this'\`. Just close the quote you opened. Capital letters matter: \`"go"\` and \`"GO"\` are different strings.`,
+Strings can use double quotes \`"like this"\` or single quotes \`'like this'\`. Just close the quote you opened. Capital letters matter: \`"go"\` and \`"GO"\` are different strings.
+
+### How this page works
+
+- **Type** your code in the editor, below the lesson text.
+- **Run** carries out your program. Whatever it prints appears on the console, line by line. Run as often as you like; nothing is lost.
+- **Submit** checks your work against the **tests** listed under the mission. Each test turns green when your code passes it and shows a message when it does not, which tells you what to fix.
+- A **red message** is an error: Python telling you it could not understand a line. It names the line and the problem. Read the last line first. For example, \`prnt("hi")\` gives \`NameError: name 'prnt' is not defined\`, which just means "I do not know a word called prnt". Fix the spelling and Run again. Errors are normal and nothing breaks.`,
           mission: `Mission Control is dark. The rocket on Pad A is only a blueprint and the console screen has no signal.
 
 Wake the console by printing three status lines. The moment they run, the pad lights come on, the gantry powers up and your lines appear on the console screen.`,
@@ -128,9 +141,16 @@ is_ready = True      # bool  (True or False)
 
 Use \`=\` to store a value. Names are lowercase with underscores, like \`fuel_tons\`.
 
-You can check a type with \`type(seats)\`. Python works it out from the value: quotes make a string, digits make an int, a decimal point makes a float.
+Think of a variable as a box with a label on it. The label is the name, and the box holds the value. Later you write the label and Python hands you what is in the box.
 
-Colours on the web are often **hex codes**: a string like \`"#f2f4fa"\` (red, green and blue in base 16).`,
+You can check a type with \`type(seats)\`. Python works it out from the value: quotes make a string, digits make an int, a decimal point makes a float. A whole number written with \`.0\`, like \`80.0\`, is still a float because of that point.
+
+~~~python
+print(type(seats))      # <class 'int'>
+print(type(fuel))       # <class 'float'>
+~~~
+
+Colours on the web are often written as **hex codes**: a string like \`"#f2f4fa"\` (a \`#\`, then 6 characters from 0-9 and a-f that say how much red, green and blue to mix).`,
           mission: `Pad A is lit, but the rocket is still a wireframe ghost. Paint it, name it and fuel it.
 
 The scene looks your variables up by their exact names. The moment you Run, the rocket gets its paint job, the crew climb aboard and the fuel gauge fills to your number.`,
@@ -139,7 +159,7 @@ The scene looks your variables up by their exact names. The moment you Run, the 
             'rocket_name: text, at least 2 letters (e.g. "Pathfinder")',
             'rocket_color: a hex colour like "#f2f4fa"',
             "crew: a whole number of astronauts, 1 to 8",
-            "fuel_tons: a float between 20 and 400 (e.g. 80.0)",
+            "fuel_tons: a float between 20 and 400 tonnes (e.g. 80.0)",
             "has_escape_tower: True or False",
           ],
           starterAdd: py`# ─── ✏️ YOUR TURN ───────────────────────────
@@ -183,9 +203,13 @@ assert 20 <= fuel_tons <= 400, "fuel_tons should be between 20 and 400"` },
           minutes: 18,
           xp: 90,
           concepts: ["lists", "for loops", "range()", "while loops"],
-          learn: `### Lists hold many values
+          learn: `### Why loops?
 
-A **list** keeps values in order. Add to the end with \`append()\` and count them with \`len()\`.
+A rocket countdown is 10, 9, 8 ... 1. Printing it by hand would take ten lines of \`print\`. A **loop** repeats a piece of code for you, so you write it once.
+
+### Lists hold many values
+
+A **list** keeps values in order, inside square brackets. Add to the end with \`append()\` and count the items with \`len()\`.
 
 ~~~python
 engines = ["left", "middle"]
@@ -193,43 +217,61 @@ engines.append("right")
 print(len(engines))      # 3
 ~~~
 
-### for loops repeat once per item
+### for loops repeat once per number or item
 
-\`range(start, stop, step)\` makes the numbers from \`start\` up to (but not including) \`stop\`. A negative step counts down.
+\`range(start, stop, step)\` makes numbers from \`start\` up to, but **not including**, \`stop\`. A negative step counts down. A \`for\` loop takes those numbers one at a time. The lines **indented** under the \`for\` line (pushed in with four spaces) are the ones that repeat.
 
 ~~~python
 for n in range(3, 0, -1):
-    print(n)             # 3, 2, 1
+    print(n)
 ~~~
 
-Build a list inside a loop:
+That prints three lines: \`3\`, \`2\`, \`1\`. (The loop would reach 0 next, but the stop value is never included.)
+
+Inside a loop you can do two jobs at once: build a list and print each number.
 
 ~~~python
-squares = []
-for n in range(1, 4):
-    squares.append(n * n)    # [1, 4, 9]
+countdown = []
+for n in range(3, 0, -1):
+    countdown.append(n)      # add n to the end of the list
+    print(n)                 # and show it
+print(countdown)             # printed after the loop, because it is not indented
 ~~~
 
-### while loops repeat until a condition is false
+This prints \`3\`, \`2\`, \`1\` and then \`[3, 2, 1]\`.
+
+### while loops repeat until a question stops being true
+
+A \`for\` loop runs a set number of times. A **\`while\`** loop keeps going for as long as a yes/no question is true, and checks it again before every round. Two new symbols appear in it:
+
+- \`<\` means "is smaller than". \`loaded < 30\` asks "is loaded smaller than 30?" and the answer is \`True\` or \`False\`.
+- \`+=\` adds to a variable. \`loaded += 10\` is a short way to write \`loaded = loaded + 10\`.
 
 ~~~python
 loaded = 0
 while loaded < 30:
-    loaded += 10             # same as loaded = loaded + 10
+    loaded += 10
+print(loaded)         # 30
 ~~~
 
-Careful: if the condition never becomes false, the loop never ends.
+Here is what happens, round by round:
 
-### Which loop, and what is range?
+| Round | loaded before | loaded < 30? | loaded after |
+| --- | --- | --- | --- |
+| 1 | 0 | True | 10 |
+| 2 | 10 | True | 20 |
+| 3 | 20 | True | 30 |
+| end | 30 | False, so the loop stops | |
 
-A loop repeats a block, and there are two reasons to do that. **\`for\`** means "once for every item, or a set number of times". **\`while\`** means "keep going until something changes": its condition is the same yes/no question an \`if\` asks (a single \`True\` or \`False\`), re-asked before every lap. Whoever writes the loop must make sure the body changes what that question looks at.
+Careful: the lines inside a \`while\` must change the thing the question looks at. If \`loaded\` never grew, the question would stay true forever and the program would never finish. If your program seems stuck, look for that missing line, fix it and Run again.
 
-| Situation | Use |
-| --- | --- |
-| I have a list, or I know how many laps | \`for\` |
-| I am waiting for a state to change | \`while\` |
+### Going further (optional)
 
-\`range\` produces numbers, and the **stop value is never included**. \`range(n)\` gives exactly \`n\` numbers starting at 0, which is why they match list positions.
+You do not need this for the mission.
+
+**Which loop?** Use \`for\` when you have a list or know how many rounds you want. Use \`while\` when you are waiting for something to change.
+
+**More ways to use range.** \`list(...)\` turns the numbers into a list so \`print\` can show them:
 
 ~~~python
 print(list(range(5)))          # [0, 1, 2, 3, 4]
@@ -238,7 +280,7 @@ print(list(range(0, 10, 3)))   # [0, 3, 6, 9]
 print(list(range(5, 0, -1)))   # [5, 4, 3, 2, 1]
 ~~~
 
-The same job three ways, over the engine list:
+**Positions in a list.** Each item has a position, and counting starts at **0**: \`engines[0]\` is \`"left"\`, \`engines[1]\` is \`"middle"\`. The same job three ways:
 
 ~~~python
 engines = ["left", "middle", "right"]
@@ -251,29 +293,9 @@ for i, engine in enumerate(engines):  # items plus a counter
     print(i, engine)
 ~~~
 
-The first prints \`0 left\`, \`1 middle\`, \`2 right\`; the second prints \`left\`, \`middle\`, \`right\`; the third prints the same as the first. Prefer the items directly. Use \`enumerate\` when you also need the position, and \`range\` when the numbers themselves matter, like a countdown.
+\`print(i, engines[i])\` with two values prints them on one line with a space between. The first loop prints \`0 left\`, \`1 middle\`, \`2 right\`; the second prints \`left\`, \`middle\`, \`right\`; the third prints the same as the first. Prefer the items directly. Use \`enumerate\` when you also need the position.
 
-What happens each lap of \`for n in range(3, 0, -1): print(n)\`:
-
-| Lap | n | Another number left? | Output |
-| --- | --- | --- | --- |
-| 1 | 3 | yes | 3 |
-| 2 | 2 | yes | 2 |
-| 3 | 1 | yes | 1 |
-| end | | no, so the loop stops | |
-
-For a \`while\`, the loaded fuel is what changes:
-
-~~~python
-loaded = 0
-batches = 0
-while loaded < 25:       # asked again every lap
-    loaded += 10
-    batches += 1
-print(batches, loaded)   # 3 30
-~~~
-
-\`break\` leaves the loop immediately; \`continue\` jumps to the next lap. A loop can also hold an \`if\`, which is how you filter or count:
+**break and continue.** \`break\` leaves the loop immediately; \`continue\` jumps to the next round. They are usually used with an \`if\`, which runs its indented lines only when its question is true (lesson 6 teaches it properly). Here \`==\` asks "is it equal to?" and \`>\` means "is bigger than":
 
 ~~~python
 readings = [4, 9, 0, 7, 12]
@@ -290,7 +312,7 @@ print(good)               # 3 (4, 9 and 7)
 
 Let a loop build the \`countdown\` list and print every number on its own line, then print LIFTOFF!. The scene reads your list and ticks through it on the console clock.
 
-Then use a \`while\` loop to pump fuel into the tank in 10-tonne batches until it holds \`fuel_tons\`.`,
+Then use a \`while\` loop to pump fuel into the tank in 10-tonne batches until it holds \`fuel_tons\` (the amount you chose in lesson 2). Count the batches as you go.`,
           tasks: [
             "Start with an empty list: countdown = []",
             "Use a for loop with range(10, 0, -1) to append 10, 9, ... 1 and print each number",
@@ -355,45 +377,69 @@ assert loaded - 10 < fuel_tons, "Stop as soon as the tank is full (do not add ex
           minutes: 18,
           xp: 90,
           concepts: ["arithmetic", "f-strings", "round()", "comparisons"],
-          learn: `### Python is a calculator
+          learn: `### Does the push beat the pull?
+
+A rocket rises only if its engines push up harder than gravity pulls down. Two numbers decide it:
+
+- **Thrust**: the engines' push, measured here in **kilonewtons** (kN). A kilonewton is a unit of force; 1 kN is roughly the pull of gravity on a 100 kg object.
+- **Weight**: gravity's pull on the whole rocket. In kN it is the mass in tonnes times 9.81. A rocket with empty tanks has its **dry mass**; add the fuel and you get the total mass.
+
+Divide push by pull and you get a **ratio**, which says "how many times bigger". Engineers call this one the **thrust-to-weight ratio** (TWR). Above 1 the rocket rises; below 1 it just sits on the pad roaring.
+
+A worked example with a dry mass of 45 t, 80 t of fuel and 2400 kN of thrust:
+
+~~~python
+mass_t = 45.0 + 80.0            # 125.0 tonnes in total
+weight_kn = mass_t * 9.81       # 1226.25 kN of pull
+twr = 2400.0 / weight_kn        # 1.957... : the push is nearly twice the pull
+print(twr > 1)                  # True: it lifts off
+~~~
+
+Python as a calculator:
 
 ~~~python
 2 + 3      # 5
 10 - 4     # 6
-6 * 7      # 42
-9 / 2      # 4.5   (division always gives a float)
-9 // 2     # 4     (floor division)
-9 % 2      # 1     (remainder)
-2 ** 3     # 8     (power)
-~~~
-
-Store results in variables and use them in later maths:
-
-~~~python
-fuel = 80.0
-tank_mass = 5.0
-total = fuel + tank_mass
+6 * 7      # 42     (* multiplies)
+9 / 2      # 4.5    (/ divides, and always gives a float)
+2 ** 3     # 8      (** is "to the power of")
 ~~~
 
 ### Comparisons give True or False
 
+You met \`<\` in the last lesson. \`>\` means "is bigger than" and \`==\` means "is equal to" (two equals signs; one \`=\` stores a value). Python answers with \`True\` or \`False\`.
+
 ~~~python
-total > 50       # True
-total == 10      # False
+total = 85.0
+print(total > 50)       # True
+print(total == 10)      # False
 ~~~
 
 ### f-strings mix values into text
 
-Put an \`f\` before the quote and wrap names in braces. \`round(x, 2)\` keeps 2 decimal places.
+Put an \`f\` before the quote and wrap names or calculations in braces \`{}\`. \`round(x, 2)\` keeps 2 decimal places.
 
 ~~~python
+total = 85.0
 print(f"Total mass: {round(total, 1)} t")
-~~~`,
+~~~
+
+This prints:
+
+~~~text
+Total mass: 85.0 t
+~~~
+
+### Going further (optional)
+
+Two more calculator symbols you may meet later: \`9 // 2\` is \`4\` (division that drops the leftover) and \`9 % 2\` is \`1\` (the leftover, called the remainder).`,
           mission: `A rocket only lifts off if the engines push **harder than gravity pulls it down**. Engineers call the ratio the **thrust-to-weight ratio** (TWR). Above 1.0 it rises. Below 1.0 it just sits there roaring.
 
-Weight in kilonewtons is mass in tonnes times 9.81. Work out your TWR, and when it is above 1 the engines ignite, the gantry swings away and your rocket really lifts off.`,
+Weight in kilonewtons is mass in tonnes times 9.81. Work out your TWR, and when it is above 1 the engines ignite, the gantry swings away and your rocket really lifts off.
+
+Heads up: the total mass includes the \`fuel_tons\` you chose in lesson 2. The suggested 2400 kN is strong enough for up to about 190 tonnes of fuel. If you chose more, your TWR will come out below 1: raise \`thrust_kn\` (6000.0 handles even 400 tonnes) or lower \`fuel_tons\`.`,
           tasks: [
-            "thrust_kn: choose an engine power (try 2400.0)",
+            "thrust_kn: choose an engine power in kilonewtons (try 2400.0)",
             "mass_t = dry_mass_t + fuel_tons",
             "weight_kn = mass_t * 9.81",
             "twr = thrust_kn / weight_kn, and liftoff = twr > 1",
@@ -401,8 +447,9 @@ Weight in kilonewtons is mass in tonnes times 9.81. Work out your TWR, and when 
           ],
           starterAdd: py`# ─── ✏️ YOUR TURN ───────────────────────────
 # Lesson 4: will it fly? Do the thrust-to-weight maths.
-dry_mass_t = 45.0        # empty rocket + capsule, in tonnes
+dry_mass_t = 45.0        # dry mass: the rocket with empty tanks, in tonnes
 thrust_kn = ...          # engine power in kilonewtons, try 2400.0
+                         # (if your TWR ends up below 1, raise this: see the hints)
 
 mass_t = ...             # total mass at liftoff: dry_mass_t + fuel_tons
 weight_kn = ...          # mass_t * 9.81  (tonnes x gravity = kilonewtons)
@@ -427,6 +474,7 @@ print(f"TWR {round(twr, 2)}")`,
             { id: "h2", title: "Weight and ratio", content: "weight_kn = mass_t * 9.81 and twr = thrust_kn / weight_kn" },
             { id: "h3", title: "The comparison", content: "liftoff = twr > 1  (this stores True or False)" },
             { id: "h4", title: "The report", content: 'print(f"TWR {round(twr, 2)}")' },
+            { id: "h5", title: "TWR below 1?", content: "Test 5 fails when the push is too weak for the mass. The fuel you chose in lesson 2 makes the rocket heavier: 2400 kN only works up to about 190 tonnes of fuel. Raise thrust_kn (for example 6000.0) until the printed TWR is above 1." },
           ],
           tests: [
             { id: "t1", description: "thrust_kn is a positive number", assertionCode: `assert isinstance(thrust_kn, (int, float)) and not isinstance(thrust_kn, bool), "thrust_kn must be a number, like 2400.0"
@@ -470,10 +518,27 @@ min(1.4, 1.0)    # 1.0   (never above 1)
 max(-3, 0)       # 0     (never below 0)
 ~~~
 
+You can put a calculation inside \`min\`. Python works out the calculation first, then picks the smaller:
+
+~~~python
+t = 20
+print(min(1.0, 0.7 + t * 0.03))    # 0.7 + 0.6 = 1.3, so min gives 1.0
+~~~
+
+Percent as a decimal: 70% is \`0.7\` and 3% is \`0.03\` (divide the percent by 100). What \`min(1.0, 0.7 + t * 0.03)\` gives as the seconds go by:
+
+| t (seconds) | 0.7 + t * 0.03 | min with 1.0 |
+| --- | --- | --- |
+| 0 | 0.7 | 0.7 |
+| 5 | 0.85 | 0.85 |
+| 10 | 1.0 | 1.0 |
+| 20 | 1.3 | 1.0 |
+
 Important: the scene will **call your function for you**, again and again while the rocket flies. You write it once and the rocket uses it.`,
           mission: `Slamming the throttle to 100% on the pad shakes a rocket apart. Real launches **ease the engines up**.
 
-Write \`throttle_program(t)\`. The scene gives it \`t\`, the seconds since the engines lit, and uses the number you return (0.0 is off, 1.0 is full power) as engine power at that moment. Start gently at 70% and add 3% every second, but never go above 100%.`,
+Write \`throttle_program(t)\`. The scene gives it \`t\`, the seconds since the engines lit, and uses the number you return (0.0 is off, 1.0 is full power) as engine power at that moment. Start gently at 70% and add 3% every second, but never go above 100%. As decimals that is 0.7, plus 0.03 for every second.
+`,
           tasks: [
             "Define throttle_program with one parameter, t",
             "At t = 0 return 0.7",
@@ -515,25 +580,32 @@ assert throttle_program(60) == 1.0, "throttle_program(60) must stay at 1.0: cap 
           minutes: 25,
           xp: 110,
           concepts: ["if / elif / else", "comparisons", "and / or / not"],
-          learn: `### Making decisions
+          learn: `### Why decisions?
 
-\`if\` runs code only when a condition is true.
+Mission control makes choices all the time: if the tank is nearly empty, do one thing; otherwise carry on. A program makes choices with \`if\`. It runs the indented lines under it **only when** a yes/no question is true.
 
-### Why a condition? What does it give back?
+### A condition is a yes/no question
 
-A flight computer must answer questions: *is the tank below 20%? are we too fast this low?* A **condition** is such a question, written so the only answers are yes or no. Python evaluates it to one value, \`True\` or \`False\`, and \`if\` just asks: "did I get True?"
+A **condition** is a question whose only answers are \`True\` (yes) and \`False\` (no). You build one with a comparison symbol:
+
+| Symbol | Asks |
+| --- | --- |
+| \`<\` | smaller than? |
+| \`>\` | bigger than? |
+| \`<=\` | smaller than or equal to? |
+| \`>=\` | bigger than or equal to? |
+| \`==\` | equal to? (two equals signs; one \`=\` stores a value) |
+| \`!=\` | not equal to? |
 
 ~~~python
 fuel = 15
 print(fuel < 20)       # True
 print(fuel == 100)     # False
-low = fuel < 20        # keep the answer in a variable
-print(type(low))       # <class 'bool'>
-if low:
-    print("Tank low")
 ~~~
 
-\`==\` asks "equal?", while a single \`=\` stores a value. Print a condition whenever you want to see what it answers.
+\`print\` a condition whenever you want to see what it answers.
+
+### if, elif and else
 
 ~~~python
 if fuel < 10:
@@ -544,35 +616,56 @@ else:
     print("Plenty")
 ~~~
 
-Python checks the branches top to bottom and runs the **first** one that is true.
+Python checks top to bottom and runs only the **first** branch whose question is true. \`elif\` means "otherwise, if ..."; \`else\` catches everything left. With \`fuel = 15\` the first question is false, the second is true, so it prints \`Getting low\`. With \`fuel = 5\` it prints \`Low fuel!\`, and with \`fuel = 50\` it prints \`Plenty\`.
 
-### Comparisons and logic
+### Joining questions: and, or, not
 
-Comparisons: \`==\` equal, \`!=\` not equal, \`<\` \`>\` \`<=\` \`>=\`. Combine them with \`and\`, \`or\` and \`not\`:
+- \`and\`: **both** must be true.
+- \`or\`: **at least one** must be true.
+- \`not\`: flips the answer.
 
 ~~~python
-if altitude < 25 and speed > 900:
-    ...            # BOTH must be true
+altitude_km = 8
+speed = 1000
+print(altitude_km < 25 and speed > 900)    # True  (both are true)
+print(altitude_km < 25 and speed > 1500)   # False (the second is false)
+print(altitude_km > 25 or speed > 900)     # True  (the second is true)
+print(not altitude_km > 25)                # True  (flips False)
 ~~~
 
-### Kinds of conditions you can write
+These numbers are different from the mission's on purpose, so you have to think about the mission's own limits.
+
+### Giving back True or False
+
+A function can \`return\` as soon as it knows the answer. The first \`return\` it reaches ends the function. This is exactly the shape your abort system needs:
+
+~~~python
+def is_low(fuel):
+    if fuel < 20:
+        return True
+    return False
+
+print(is_low(15))     # True
+print(is_low(50))     # False
+~~~
+
+### Going further (optional)
+
+**More kinds of conditions.**
 
 | Kind | Example | What it asks |
 | --- | --- | --- |
-| Comparison | \`fuel_pct < 2\` | Is this number smaller, larger, at most, at least? |
-| Equal / not equal | \`stage == 2\`, \`status != "hold"\` | Same value? Works on text too. |
-| Between two limits | \`25 <= altitude_km < 70\` | Is it inside a band? (one chained check) |
-| Membership | \`"abort" in log\`, \`"x" not in code\` | Is it inside this list or string? |
-| Text tests | \`code.isdigit()\`, \`cmd.startswith("go")\` | A function that answers yes or no. |
-| Identity | \`pilot is None\` | Is it the very same object? Use it for \`None\`. |
+| Between two limits | \`25 <= altitude_km < 70\` | Is it inside a band? |
+| Membership | \`"abort" in log\` | Is it inside this list or string? |
+| Text tests | \`code.isdigit()\` | A function that answers yes or no. |
+| Identity | \`pilot is None\` | Is it the very same object? (\`None\` means "nothing here".) |
 | Truthiness | \`if alarms:\` | Is the list non-empty? |
-| Combined | \`a and b\`, \`a or b\`, \`not a\` | Several questions, joined together. |
 
-**Truthiness.** These count as false: \`False\`, \`None\`, \`0\`, \`0.0\`, \`""\`, \`[]\`, \`{}\`. Nearly everything else counts as true, so \`if alarms:\` means "if the list has something in it".
+**Truthiness.** These count as false: \`False\`, \`None\`, \`0\`, \`0.0\`, \`""\` (empty text), \`[]\` (empty list) and \`{}\` (an empty dictionary, which a later lesson teaches). Nearly everything else counts as true, so \`if alarms:\` means "if the list has something in it".
 
 **\`==\` versus \`is\`.** \`==\` asks "equal values?"; \`is\` asks "the same object?". Use \`==\` for numbers and text, and \`is\` mainly for \`None\`.
 
-Conditions can work **together** (\`and\` needs both, \`or\` needs either), be tried **in order** (an \`if\` / \`elif\` / \`else\` chain runs only the first true branch), or be **independent** (separate \`if\`s are each checked). Compare them with \`fuel_pct = 1\` and \`altitude_km = 40\`:
+**In order or independent.** An \`if\` / \`elif\` / \`else\` chain runs only the first true branch, while separate \`if\`s are each checked. Compare them with \`fuel_pct = 1\` and \`altitude_km = 40\`:
 
 ~~~python
 # separate ifs: both are true, both run
@@ -593,27 +686,12 @@ elif altitude_km < 70:
 # Fuel critical
 ~~~
 
-Python also has \`match\` for many fixed choices, but \`elif\` chains cover this course.
+**Check the edge.** If the limit is 25, does exactly 25 count? \`< 25\` says no, \`<= 25\` says yes.
 
-### How to pick the condition
-
-1. Say the question in plain words: "Is it too fast in thick air?"
-2. Turn it into a yes/no test: \`altitude_km < 25 and speed > 1200\`.
-3. Check the edge value. If the limit is 25, does exactly 25 count? \`< 25\` says no, \`<= 25\` says yes.
-
-### Returning True or False
-
-A function can \`return\` as soon as it knows the answer. The first \`return\` it reaches ends the function:
-
-~~~python
-def is_even(n):
-    if n % 2 == 0:
-        return True
-    return False
-~~~`,
+**Shorter returns.** \`return fuel < 20\` gives back the True or False directly. Python also has \`match\` for many fixed choices, but \`elif\` chains cover this course.`,
           mission: `Every launch has a way out. If something goes wrong, the **escape tower** blasts the crew capsule away from the rocket.
 
-The scene calls your \`abort_check(altitude_km, speed, fuel_pct)\` many times per second. Return \`True\` to abort and \`False\` to keep flying. Abort when the rocket is **too fast in thick air** (below 25 km and faster than 1200 m/s), or when it is **running dry too low** (under 2% fuel below 70 km). A good abort is not a failure: the tower fires, the crew floats down on a parachute, and the mission relaunches by itself.`,
+The scene calls your \`abort_check(altitude_km, speed, fuel_pct)\` many times per second. Return \`True\` to abort and \`False\` to keep flying. (The \`speed\` input is in metres per second, m/s.) Abort when the rocket is **too fast in thick air** (below 25 km and faster than 1200 m/s), or when it is **running dry too low** (under 2% fuel below 70 km). A good abort is not a failure: the tower fires, the crew floats down on a parachute, and the mission relaunches by itself.`,
           tasks: [
             "Define abort_check(altitude_km, speed, fuel_pct)",
             "Return True if altitude_km < 25 and speed > 1200",
@@ -676,6 +754,8 @@ print(engine["name"])         # Merlin
 engine["burn_seconds"] = 160  # add a new pair
 ~~~
 
+Each pair is a **key** (the label, like \`"name"\`) and the **value** stored under it (like \`"Merlin"\`).
+
 ### A list of dictionaries
 
 Put dictionaries in a list to describe many similar things:
@@ -685,7 +765,7 @@ engines = [
     {"name": "A", "thrust_kn": 100},
     {"name": "B", "thrust_kn": 250},
 ]
-print(engines[0]["name"])     # A
+print(engines[0]["name"])     # A   ([0] is the first item; counting starts at 0)
 ~~~
 
 ### Adding up with a loop
@@ -697,7 +777,7 @@ for engine in engines:
 ~~~`,
           mission: `One giant tank is wasteful: you keep hauling empty metal to orbit. Real rockets use **stages**: the big booster burns first, then drops away, and a smaller upper stage carries on.
 
-Describe each stage as a dictionary with its \`name\`, \`thrust_kn\`, \`burn_seconds\` and \`dry_t\` (empty weight in tonnes), and put them in a \`stages\` list, booster first. The scene works out each stage's fuel for you (thrust x burn time / 3139 tonnes) and flies your stages one after another, dropping each empty one with a flash. The capsule on top weighs \`payload_t\` tonnes.`,
+Describe each stage as a dictionary with its \`name\`, \`thrust_kn\`, \`burn_seconds\` and \`dry_t\` (empty weight in tonnes), and put them in a \`stages\` list, booster first. The scene works out each stage's fuel for you (thrust x burn time / 3139 tonnes; 3139 is how fast the exhaust leaves the engine in metres per second, and you do not need to calculate it) and flies your stages one after another, dropping each empty one with a flash. The capsule on top weighs \`payload_t\` tonnes.`,
           tasks: [
             "payload_t: the capsule weight in tonnes (try 14.0)",
             "booster = a dictionary: name, thrust_kn, burn_seconds, dry_t",
@@ -770,7 +850,7 @@ assert stages[0]["thrust_kn"] > _mass * 9.81, f"The stack weighs about {round(_m
           concepts: ["classes", "__init__", "self", "methods"],
           learn: `### Classes bundle data and behaviour
 
-A **class** is a blueprint. An **instance** is one thing built from it.
+You have used values like lists that come with their own tools (\`.append\`). A **class** lets you design your own: a blueprint that keeps some data together with the functions that use it. An **instance** is one thing built from the blueprint.
 
 ~~~python
 class Dog:
@@ -784,21 +864,51 @@ rex = Dog("Rex")
 print(rex.speak())
 ~~~
 
+This prints:
+
+~~~text
+Rex says woof
+~~~
+
 - \`__init__\` runs when you create an instance.
 - \`self\` is the instance itself; \`self.name\` is its data.
 - Methods are functions inside the class. Call them with a dot: \`rex.speak()\`.
 
+### Keyword arguments
+
+When you call a function you can write the parameter's name next to each value, with \`=\`. These are **keyword arguments**. The next two lines do the same thing; the second says what each value means:
+
+~~~python
+rex = Dog("Rex")
+rex = Dog(name="Rex")
+~~~
+
+The name must match the parameter in \`__init__\`. The mission asks you to build your guidance computer this way.
+
 ### Pitch: tilting the rocket
 
-Straight up never reaches orbit: you need to go **sideways** fast enough that you keep missing the ground. So after clearing the thick air the rocket tilts over. The angle is measured from vertical: **0 degrees is straight up, 90 degrees is flat toward the horizon**.`,
+Straight up never reaches orbit: you need to go **sideways** fast enough that you keep missing the ground. So after clearing the thick air the rocket tilts over. The angle is measured from vertical: **0 degrees is straight up, 90 degrees is flat toward the horizon**.
+
+The rule your \`pitch\` method will follow, shown with plain numbers. Say the turn starts at 5 km and the rocket tilts 3 degrees for every kilometre above that:
+
+~~~python
+start = 5
+per_km = 3
+
+# at 3 km: not above the start yet, so 0 (straight up)
+# at 8 km:
+print((8 - start) * per_km)             # 9 degrees
+# at 100 km: (100 - 5) * 3 = 285, but 90 is the most
+print(min((100 - start) * per_km, 90))  # 90
+~~~`,
           mission: `The final system: a guidance computer. Build a \`Guidance\` class that remembers where to start tilting (\`turn_start_km\`) and how fast to tilt (\`degrees_per_km\`). Its \`pitch(altitude_km)\` method returns the angle for the current height: straight up until the turn starts, then more tilt for every kilometre climbed, never past 90.
 
-The scene calls \`guidance.pitch(...)\` as the rocket climbs. It also helps a little: it cuts the engines once the apogee is high enough, coasts up to it and relights to build orbital speed. Reach a stable orbit with more than 800 m/s of fuel left and the rocket fires for the Moon.`,
+The scene calls \`guidance.pitch(...)\` as the rocket climbs. It also helps a little. The highest point of the climb is called the **apogee**. Once the rocket is on course for a high enough apogee, the computer cuts the engines, coasts up to that point and relights them to build the sideways speed an orbit needs. If you reach a stable orbit with plenty of fuel left, the rocket fires for the Moon. (The scene measures leftover fuel as the extra speed it could still add: the Moon needs about 800 m/s.)`,
           tasks: [
             "Class Guidance with __init__(self, turn_start_km, degrees_per_km) storing both on self",
             "Method pitch(self, altitude_km): 0 until turn_start_km, then (altitude - start) * degrees_per_km",
             "Never return more than 90",
-            "Create the instance: guidance = Guidance(turn_start_km=1, degrees_per_km=2)",
+            "Create the instance with keyword arguments: guidance = Guidance(turn_start_km=1, degrees_per_km=2)",
           ],
           starterAdd: py`# ─── ✏️ YOUR TURN ───────────────────────────
 # Lesson 8: build the guidance computer.

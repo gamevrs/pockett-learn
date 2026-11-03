@@ -42,18 +42,18 @@ export const chapter1: Chapter = {
       concepts: ["Console.WriteLine", "Console.Write", "strings", "escape sequences", "interpolation", "comments", "compiler errors"],
       learn: md`### A program is a list of instructions
 
-Since C# 9 a program can be nothing but a list of **statements** in one file. You write the instructions top to bottom and they run in that order. (Older tutorials wrap everything in \`class Program\` and \`static void Main\`. That still works, and by lesson 11 you will know exactly what that wrapper is.)
+Think of a recipe: "crack two eggs, stir, pour into the pan." A computer follows instructions the same way, one after another, from the top down. A C# program is a list of **statements** (one complete instruction each) written in that order, and the computer carries them out in that order.
 
 ~~~csharp
 Console.WriteLine("Hello, depot!");
 ~~~
 
-- \`Console\` is a ready-made toolbox for talking to the terminal.
-- \`WriteLine\` is a **method**: a named action. The parentheses hold what it should work on, its **argument**.
-- \`"Hello, depot!"\` is a **string literal**: text between double quotes.
-- The \`;\` ends the statement. Nearly every C# statement ends with one.
+Press **Run** and the text appears on the stage on the right. That is the whole program: one statement.
 
-You do not need \`using System;\` at the top. Modern projects switch on *implicit usings*, which quietly add the common namespaces (\`System\`, \`System.Linq\`, \`System.Collections.Generic\`...) for you.
+- \`Console\` is a ready-made toolbox for talking to the output area (the text window a program prints into, often called the terminal).
+- \`WriteLine\` is a **method**: a named action. The parentheses hold what it should work on, its **argument**.
+- \`"Hello, depot!"\` is a **string literal**: text between double quotes, written exactly as it should appear.
+- The \`;\` ends the statement. Nearly every C# statement ends with one.
 
 ### Write or WriteLine?
 
@@ -68,13 +68,13 @@ Console.WriteLine("Next line");
 
 You can print numbers directly too: \`Console.WriteLine(3);\`. C# turns the number into text for you.
 
-### Escape sequences
+### Quote marks inside text: escape sequences
 
-Some characters cannot sit inside a string as they are, so you write a backslash and a letter. This is called an **escape sequence**.
+How do you print a double quote, when a double quote is what ends the string? You write a backslash and a character. This is called an **escape sequence**: the backslash says "the next character is special".
 
+- \`\"\` is a double quote that belongs to the text (the string does not end there)
 - \`\n\` starts a new line
 - \`\t\` is a tab
-- \`\"\` is a double quote that belongs to the text (the string does not end there)
 - \`\\\` is one backslash
 
 ~~~csharp
@@ -85,11 +85,10 @@ Console.WriteLine("C:\\depot\\logs");       // C:\depot\logs
 
 ### Interpolated strings: \`$"..."\`
 
-Put a \`$\` in front of the opening quote and anything inside \`{ }\` is **evaluated** and pasted into the text. The braces can hold a calculation, not only a name.
+Often you want to mix a calculation or a stored value into a sentence. Put a \`$\` in front of the opening quote, and anything inside \`{ }\` is **worked out** and pasted into the text. The braces can hold a calculation, not only a name.
 
 ~~~csharp
 Console.WriteLine($"2 + 3 = {2 + 3}");     // 2 + 3 = 5
-Console.WriteLine($"Braces: {{ and }}");     // Braces: { and }
 ~~~
 
 Without the \`$\`, the braces are just characters and print literally. Interpolation is the everyday way to build messages in modern C#, and you will use it in every lesson from now on.
@@ -100,7 +99,7 @@ Anything after \`//\` on a line is ignored by the computer and is there for peop
 
 ### When it will not compile
 
-C# is a **compiled** language. pockett hands your whole file to the compiler first, and if any line is wrong *nothing runs*. You get a message such as:
+C# is a **compiled** language. pockett hands your whole file to the compiler (the program that checks and translates your code) first, and if any line is wrong *nothing runs*. You get a message such as:
 
 ~~~text
 Program.cs(3,31): error CS1002: ; expected
@@ -108,16 +107,26 @@ Program.cs(3,31): error CS1002: ; expected
 
 Read it left to right: the file, then **(line, column)**, then an error code, then a plain-language reason. The real mistake is often at the end of the line above, because the compiler only notices when it reaches the next statement. The stage on the right shows the same message with the line number.
 
-### The \`Depot\` class at the bottom of the file
+### The \`Depot\` helper at the bottom of the file
 
-Under the line that says *type declarations go below this line* you will find a small helper called \`Depot\`. In C# with top-level statements, all your statements must come first and type declarations such as classes go after them. The helper is how your program sends values to the live board. From lesson 2 you will call \`Depot.Show("name", value)\`; for now just leave it alone.
+Under the line that says *type declarations go below this line* you will find a small helper called \`Depot\`. It is how your program sends values to the live board, starting in lesson 2. You can safely ignore what is inside it. Write your own statements above that line.
 
 ### Common mistakes
 
 - Forgetting the \`;\` at the end of a statement.
 - Using single quotes for text. \`'ready'\` is a compile error; single quotes are for one **character**, like \`'A'\`.
 - Wrong capitalisation. C# is case-sensitive: \`Console.Writeline\` and \`console.WriteLine\` do not exist.
-- Forgetting the \`$\`, so the output shows \`{2 + 3}\` instead of \`5\`.`,
+- Forgetting the \`$\`, so the output shows \`{2 + 3}\` instead of \`5\`.
+
+### Going further (optional)
+
+To print a real curly brace inside a \`$"..."\` string, double it:
+
+~~~csharp
+Console.WriteLine($"Braces: {{ and }}");     // Braces: { and }
+~~~
+
+You do not need \`using System;\` at the top. Modern projects switch on *implicit usings*, which quietly add the common namespaces (named groups of ready-made tools such as \`System\`) for you. Older tutorials wrap everything in \`class Program\` and \`static void Main\`; a program can be just a list of statements, and by lesson 11 you will know exactly what that wrapper is.`,
       mission: md`Welcome to **Cinder Street Depot**, a warehouse where small robots carry parcels from the dock to the shelves. The depot has a control room but no software yet. You are going to write all of it, one lesson at a time, in a single growing C# program.
 
 Every control room starts with a console. Make the depot print its name, a status line and a parcel count. When you pass this lesson the **Console** powers on: everything your program prints appears on the stage, in the same order.`,
@@ -236,15 +245,17 @@ The pattern is \`type name = value;\`. Reading it aloud: *"an int called battery
 
 ### The types you will use every day
 
+This lesson's mission uses these types:
+
 - \`int\`: whole numbers from about -2.1 billion to +2.1 billion. \`int parcels = 47;\`
-- \`long\`: whole numbers when \`int\` is too small. \`long views = 5_000_000_000;\` (underscores are only for readability)
 - \`double\`: numbers with a fractional part, about 15 digits of precision. \`double speed = 1.5;\`
-- \`decimal\`: exact base-10 numbers, the right choice for money. The literal needs an \`m\`: \`decimal fee = 2.50m;\`
 - \`bool\`: \`true\` or \`false\`, in lower case. It prints as \`True\` and \`False\`.
 - \`char\`: exactly one character in **single quotes**: \`char grade = 'A';\`
 - \`string\`: text in **double quotes**: \`string robotName = "Rex";\`
 
-How the literal is written decides its type: \`3\` is an \`int\`, \`3.0\` is a \`double\`, \`3.0m\` is a \`decimal\`, \`3.0f\` is a \`float\` (a smaller, less precise cousin of \`double\`), \`'3'\` is a \`char\` and \`"3"\` is a \`string\`.
+Meet later: \`long\` is for whole numbers too big for \`int\` (\`long views = 5_000_000_000;\`, where underscores are only for readability). \`decimal\` is for exact base-10 numbers such as money, and its values end in an \`m\`: \`decimal fee = 2.50m;\` (lesson 3 shows why). \`float\` is a smaller, less precise cousin of \`double\`.
+
+A **literal** is a value written directly in the code. How it is written decides its type: \`3\` is an \`int\`, \`3.0\` is a \`double\`, \`3.0m\` is a \`decimal\`, \`3.0f\` is a \`float\`, \`'3'\` is a \`char\` and \`"3"\` is a \`string\`.
 
 ### Static typing: the compiler is your first tester
 
@@ -256,11 +267,11 @@ level = "high";     // error CS0029: Cannot implicitly convert type 'string' to 
 int whole = 3.9;    // error CS0266: Cannot implicitly convert type 'double' to 'int'
 ~~~
 
-C# refuses to quietly throw away the \`.9\`. If you really want to drop the fraction you must say so with a cast, which lesson 3 covers.
+C# refuses to quietly throw away the \`.9\`. If you really want to drop the fraction you must say so with a cast, which lesson 3 covers. (The \`CS0029\`-style code is just an ID; if you ever meet an unfamiliar one, you can search it online.)
 
 ### \`var\`: let the compiler infer the type
 
-\`var\` means "work out the type from the value on the right". It is **not** a "no type" variable. The type is decided once and stays fixed.
+\`var\` means "work out the type from the value on the right" (the compiler *infers* it). It is **not** a "no type" variable. The type is decided once and stays fixed.
 
 ~~~csharp
 var chargeCycles = 12;       // an int, exactly as if you had written int
@@ -295,13 +306,13 @@ A variable must be given a value before you read it. \`int total; Console.WriteL
 - Using double quotes for a \`char\` or single quotes for a \`string\`.
 - Writing \`decimal fee = 2.50;\`. The literal is a \`double\`, so you need \`2.50m\`.
 - Expecting \`var\` to let a variable change type.
-- Declaring the same name twice in one scope. Assign to the existing variable instead: write \`battery = 70;\`, not \`int battery = 70;\` a second time.`,
+- Declaring the same name twice in the same block of code. Assign to the existing variable instead: write \`battery = 70;\`, not \`int battery = 70;\` a second time.`,
       mission: md`Rex is the depot's first robot and he needs a spec sheet. A robot's name, battery, speed, online status and grade are five different kinds of data, and each one deserves the right type.
 
 You will store them, print a status line, and send them to the board with \`Depot.Show(...)\`. When this lesson passes, the **Robot card** lights up with Rex's battery bar, speed and status.`,
       tasks: [
-        "Declare const int MaxBattery = 100; and these variables: string robotName (any name), int battery = 80, double speed = 1.5, bool online = true, char grade = 'A'",
-        "Declare var chargeCycles = 12; (let the compiler infer the type)",
+        "Declare const int MaxBattery = 100; and these variables: string robotName (any name), int battery = 80",
+        "Declare double speed = 1.5, bool online = true, char grade = 'A', and var chargeCycles = 12; (let the compiler infer the type)",
         "Print: <name> | battery 80/100 | speed 1.5 m/s | online: True | grade A, built with ONE interpolated string",
         "Send every value to the board with Depot.Show using the keys robotName, battery, maxBattery, speed, online, grade and chargeCycles",
       ],
@@ -427,7 +438,7 @@ Console.WriteLine(17 % 5);        // 2   (17 = 3 * 5 + 2)
 
 ### Trap 1: integer division
 
-When **both** sides are whole numbers, \`/\` gives a whole number: the fraction is thrown away (truncated toward zero), not rounded.
+When **both** sides are whole numbers, \`/\` gives a whole number: the fraction is thrown away (cut off, not rounded; so -7 / 2 gives -3, not -4).
 
 ~~~csharp
 Console.WriteLine(7 / 2);       // 3
@@ -440,7 +451,7 @@ The remainder operator is surprisingly useful: \`n % 2 == 0\` tests for even num
 
 ### Casting: changing a value's type on purpose
 
-A **cast** puts a type in parentheses in front of a value. Going from a wide type to a narrow one can lose information, so C# makes you ask for it.
+A **cast** puts a type in parentheses in front of a value. Going from a type that holds more (like \`double\`) to one that holds less (like \`int\`) can lose information, so C# makes you ask for it.
 
 ~~~csharp
 int totalKg = 156;
@@ -461,9 +472,11 @@ int trips = (47 + 6 - 1) / 6;   // 8
 int leftover = 47 % 6;          // 5 parcels in the last, partly empty crate
 ~~~
 
+Why it works, step by step: 47 + 6 - 1 is 52. 52 / 6 is 8 with the fraction thrown away. And 8 crates is right: 7 full crates hold 42 parcels, leaving 5 that need an 8th. If the parcels already fit exactly (say 48), then 48 + 5 = 53, and 53 / 6 is still 8, so the trick never adds a crate it does not need.
+
 ### The Math class
 
-\`Math.Abs\`, \`Math.Max\`, \`Math.Min\`, \`Math.Pow\`, \`Math.Sqrt\`, \`Math.Floor\` and \`Math.Ceiling\` do what their names say. \`Math.Round(x, digits)\` rounds to a number of decimal places. By default .NET uses *banker's rounding* on exact halves: \`Math.Round(2.5)\` is **2** and \`Math.Round(3.5)\` is **4**, so the halves go to the nearest even number.
+\`Math\` is a toolbox of ready-made calculations: \`Math.Abs\`, \`Math.Max\`, \`Math.Min\`, \`Math.Pow\`, \`Math.Sqrt\`, \`Math.Floor\` and \`Math.Ceiling\` do what their names say. \`Math.Round(x, digits)\` rounds to a number of decimal places: \`Math.Round(3.3191, 2)\` is \`3.32\`.
 
 ### Trap 2: double is not exact
 
@@ -486,7 +499,7 @@ big++;                      // -2147483648   no error, no warning
 long safe = (long)int.MaxValue + 1;   // 2147483648   a long has room
 ~~~
 
-If the compiler can see the overflow while compiling (\`int.MaxValue + 1\` written directly), it refuses with error CS0220. A \`checked(...)\` expression or block turns *runtime* overflow into an exception instead of a wrong answer. When numbers can get large, such as byte sizes or totals, pick \`long\`.
+When numbers can get large, such as byte sizes or totals, pick \`long\`.
 
 ### Dividing by zero
 
@@ -497,7 +510,13 @@ If the compiler can see the overflow while compiling (\`int.MaxValue + 1\` writt
 - Dividing two ints and expecting a fraction.
 - Casting after the division instead of before.
 - Using \`double\` for money.
-- Forgetting that \`(int)\` truncates, so \`(int)-2.9\` is \`-2\`.`,
+- Forgetting that \`(int)\` truncates, so \`(int)-2.9\` is \`-2\`.
+
+### Going further (optional)
+
+By default .NET uses *banker's rounding* on exact halves: \`Math.Round(2.5)\` is **2** and \`Math.Round(3.5)\` is **4**, so a half goes to the nearest even number.
+
+If the compiler can see an overflow while compiling (\`int.MaxValue + 1\` written directly), it refuses with error CS0220. A \`checked(...)\` expression or block turns overflow that happens *while running* into an exception instead of a silently wrong answer.`,
       mission: md`The depot has to plan deliveries: 47 parcels weighing 156 kg in total, and each crate carries 6. How many trips? How many parcels are left in the last crate? What is the average weight, and what does it cost?
 
 Real arithmetic is full of traps, so you will walk into each one on purpose and avoid it. When this lesson passes, the **Dispatch calculator** lights up with your numbers.`,

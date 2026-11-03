@@ -124,6 +124,16 @@ if (!only || only === "foundations") {
     }
   }
   const ids = new Set();
+  // every module belongs to a declared part, and parts appear in order without interleaving
+  const partIds = FOUNDATIONS.parts.map((p) => p.id);
+  let lastPart = -1;
+  for (const mod of FOUNDATIONS.modules) {
+    const pi = partIds.indexOf(mod.part);
+    if (pi < 0) problems.push(`foundations/${mod.id}: unknown part "${mod.part}"`);
+    else if (pi < lastPart) problems.push(`foundations/${mod.id}: module order interleaves parts (part "${mod.part}" comes after a later part)`);
+    else lastPart = pi;
+  }
+  for (const p of partIds) if (!FOUNDATIONS.modules.some((m) => m.part === p)) problems.push(`foundations: part "${p}" has no modules`);
   for (const mod of FOUNDATIONS.modules) {
     for (const lesson of mod.lessons) {
       const tag = `foundations/${lesson.id}`;

@@ -184,7 +184,7 @@ export default function HomePage() {
           <SectionHeader
             eyebrow="New to code?"
             title="Start with how code really works"
-            body="Foundations takes you from a single bit to CPUs, networks, data structures, OOP and design patterns, then on to how production systems stay up: caching, databases, security, observability and AI. Short steps, and every one asks you to try something."
+            body="Foundations takes you from a single bit to your first programs, then under the hood to assembly, C, the OS and the network, then data structures, OOP and design patterns, then on to how production systems stay up: caching, databases, security, observability and AI. Short steps, and every one asks you to try something."
           />
           <Link href="/learn" className="btn btn-primary">
             Start Foundations <ArrowRight className="h-4 w-4" />

@@ -7,7 +7,7 @@ import type { Module } from "../../learn/types.ts";
  */
 export const cModule: Module = {
   id: "c",
-  part: "machine",
+  part: "hood",
   title: "C and memory",
   blurb: "Addresses, pointers, arrays and strings as raw bytes, the stack and the heap, and how code is compiled.",
   icon: "memory",
@@ -23,12 +23,12 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "A thin layer over the machine",
-          body: "You've seen the CPU run machine code and step through assembly. Writing raw assembly by hand is slow and tied to one chip. **C** sits one thin layer above it: you write readable statements, and a **compiler** turns them into machine code for whatever CPU you target.\n\nC gives you almost nothing you didn't ask for. There's no hidden bookkeeping: when you ask for memory, you get bytes at an address, and it's yours to manage. That's why operating systems, databases and the runtimes of newer languages are written in C.",
+          body: "Assembly is like giving someone directions turn by turn: \"left, left, right, stop\". It works, but it is slow to write and only fits one kind of chip. **C** is like giving an address and letting a GPS work out the turns. You write readable lines, and a **compiler** (a program that translates your text into machine code) produces the turn-by-turn instructions for whatever CPU you target.\n\nC gives you almost nothing you didn't ask for. There's no hidden bookkeeping: when you ask for memory, you get bytes at an address, and it's yours to manage. That's why operating systems, databases and the runtimes of newer languages are written in C.\n\nIn this module you read and poke at C visually; you won't need a compiler. You have already met Python, so words like *variable*, *function* and *loop* are familiar. C just spells them a little differently, and makes you say more about memory.",
         },
         {
           kind: "explain",
           title: "Every C program starts at main",
-          body: "When the operating system runs your program, it calls one function: **`main`**. Whatever `main` returns is the program's **exit code** (0 means success).\n\n`printf` writes text to the screen. The `\\n` is a newline, and `%d` is a slot that the next value fills in.\n\n```c\n#include <stdio.h>\n\nint main(void) {\n    printf(\"%d bottles\\n\", 99);\n    return 0;\n}\n```",
+          body: "When the operating system runs your program, it calls one function: **`main`**. Whatever `main` returns is the program's **exit code** (a number the program hands back to say how it went; 0 means success).\n\nHere is a whole C program. Don't worry about writing it yet, just read the breakdown:\n\n```c\n#include <stdio.h>\n\nint main(void) {\n    printf(\"%d bottles\\n\", 99);\n    return 0;\n}\n```\n\nLine by line:\n\n- `#include <stdio.h>` means \"bring in the ready-made tools for input and output\". Without it, C wouldn't know what `printf` is.\n- `int main(void) {` starts the function called `main`. `int` says it hands back a whole number when it finishes (the exit code). `void` says it takes nothing in. The `{` opens its body.\n- `printf(\"%d bottles\\n\", 99);` is one **statement** (one instruction). `printf` is a ready-made function that writes text to the screen. Inside the quotes, `%d` is a slot that the next value (`99`) fills in as a whole number, and `\\n` is a newline. Every statement ends with a `;`.\n- `return 0;` finishes `main` and hands back the exit code 0.\n- `}` closes the body.\n\nIt prints:\n\n~~~text\n99 bottles\n~~~",
         },
         {
           kind: "question",
@@ -40,13 +40,13 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "Types have fixed sizes",
-          body: "In C you declare the **type** of every variable, and each type takes a fixed number of bytes. On a typical 64-bit computer:\n\n- `char` — 1 byte (a single character or small number)\n- `int` — 4 bytes (a whole number)\n- `double` — 8 bytes (a number with a fractional part)\n- a **pointer** — 8 bytes (an address, whatever it points to)\n\nThe operator `sizeof` reports these sizes. `sizeof(int)` is `4`.",
+          body: "In C you declare the **type** of every variable, and each type takes a fixed number of bytes. On a typical 64-bit computer:\n\n- `char` — 1 byte (a single character or small number)\n- `int` — 4 bytes (a whole number)\n- `double` — 8 bytes (a number with a fractional part)\n- a **pointer** — 8 bytes (an address, whatever it points to; lesson 3 explains)\n\nThe operator `sizeof` (an operator is a symbol or keyword that computes something, like `+`) reports these sizes. `sizeof(int)` is `4`.",
           widget: { type: "cmem-memory", props: { start: 0x1000, length: 16, mode: "explore", vars: [{ name: "c", type: "char", addr: 0x1000, value: "A" }, { name: "n", type: "int", addr: 0x1004, value: 1000 }, { name: "d", type: "double", addr: 0x1008, value: 1.5 }] } },
         },
         {
           kind: "question",
           title: "Count the bytes",
-          body: "A struct holds one `char`, one `int` and one `double`, laid out end to end with no gaps. How many bytes is that in total?",
+          body: "A **struct** is a bundle of several variables stored together as one block. This struct holds one `char`, one `int` and one `double`, laid out end to end with no gaps. How many bytes is that in total?",
           question: { type: "number", hint: "A char is 1 byte, an int is 4 and a double is 8. Add them up.", answer: 13, unit: "bytes" },
           explanation: "1 (char) + 4 (int) + 8 (double) = **13** bytes. Real compilers often add *padding* so each field starts at a convenient address, but the raw data is 13 bytes.",
         },
@@ -80,13 +80,13 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "Memory is one long row of bytes",
-          body: "Think of memory as billions of **bytes** in a row, each with its own number: its **address**. A variable is just a name for some of those bytes. An `int` named `n` is really 4 bytes sitting at some address, say `0x1004`.\n\nTap a byte below to see which variable it belongs to.",
+          body: "Remember the numbered boxes from the computer module? Memory is billions of **bytes** in a row, like houses on a very long street, each with its own number: its **address**. A variable is just a name for some of those bytes. An `int` named `n` is really 4 bytes sitting at some address, say `0x1004`.\n\nTap a byte below to see which variable it belongs to.",
           widget: { type: "cmem-memory", props: { start: 0x1000, length: 16, mode: "explore", vars: [{ name: "x", type: "int", addr: 0x1000, value: 5 }, { name: "y", type: "int", addr: 0x1004, value: 42 }, { name: "ch", type: "char", addr: 0x1008, value: "Q" }] } },
         },
         {
           kind: "explain",
           title: "The & operator: 'address of'",
-          body: "Put **`&`** in front of a variable and you get its address instead of its value.\n\n```c\nint x = 5;\nprintf(\"%d\\n\", x);    // 5     the value\nprintf(\"%p\\n\", &x);   // 0x1000  where it lives\n```\n\nThe value is what's stored; the address is where it's stored. They are two different things about the same variable.",
+          body: "Put **`&`** in front of a variable and you get its address instead of its value.\n\n```c\nint x = 5;\nprintf(\"%d\\n\", x);    // 5     the value\nprintf(\"%p\\n\", &x);   // 0x1000  where it lives\n```\n\n(`%p` is the printf slot for an address.) The value is what's stored; the address is where it's stored. They are two different things about the same variable.",
         },
         {
           kind: "question",
@@ -105,7 +105,7 @@ export const cModule: Module = {
         },
         {
           kind: "explain",
-          title: "Little-endian: bytes stored backwards",
+          title: "Little-endian: bytes stored backwards (optional detail)",
           body: "`int y = 42` stores the number across 4 bytes. Most computers are **little-endian**: the *lowest* byte goes first (at the smallest address). So 42 is stored as `2A 00 00 00`, not `00 00 00 2A`.\n\nYou rarely need to care, but it explains the byte order you'll see in a memory map or a debugger.",
           widget: { type: "cmem-memory", props: { start: 0x1004, length: 8, mode: "explore", vars: [{ name: "y", type: "int", addr: 0x1004, value: 42 }, { name: "z", type: "int", addr: 0x1008, value: 256 }] } },
         },
@@ -140,13 +140,13 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "A variable that holds an address",
-          body: "An address is just a number, so you can store it in a variable. A variable that holds an address is a **pointer**.\n\n```c\nint x = 3;\nint *p = &x;   // p holds the address of x\n```\n\nThe `*` in the declaration says 'this is a pointer to an int'. Now `p` points at `x`. Tap the statements and watch `p`.",
+          body: "Picture a house. The house itself is the **value**; its street address, written on a small card, is the **address**. Someone holding the card can drive over and repaint the house, even though they don't own the card's house or carry it around. Why bother with the card? Because it is tiny to hand to a friend, while the house can't be handed over at all.\n\nIn C the same trick exists. An address is just a number, so you can store it in a variable. A variable that holds an address is a **pointer**: the card, not the house.\n\n```c\nint x = 3, y = 7;\nint *p = &x;   // p holds the address of x\n```\n\nThe `*` in the declaration says 'this is a pointer to an int'. Now `p` points at `x` (and `y` is a second variable we can aim at later). Tap the statements and watch `p`.",
           widget: { type: "cmem-pointer", props: { ptr: { target: null }, actions: ["p=&x", "p=&y", "p=NULL"] } },
         },
         {
           kind: "explain",
           title: "Dereference with *",
-          body: "Putting **`*`** in front of a pointer means 'the thing it points at'. This is called **dereferencing**.\n\n- `p` is the address it holds.\n- `*p` is the value at that address.\n- `*p = 5` changes that value, reaching through the pointer.\n\nSo if `p` points at `x`, then `*p = 5` is another way of writing `x = 5`.",
+          body: "Putting **`*`** in front of a pointer means 'the thing it points at'. This is called **dereferencing**.\n\n- `p` is the address it holds.\n- `*p` is the value at that address.\n- `*p = 5` changes that value, reaching through the pointer.\n\nSo if `p` points at `x`, then `*p = 5` is another way of writing `x = 5`. That's the card letting you repaint the house.\n\nThe `*` symbol is reused: in a declaration (`int *p`) it means 'pointer to', and in front of an existing pointer (`*p`) it means 'follow it'. Same symbol, two jobs, told apart by where it appears.",
           widget: { type: "cmem-pointer", props: { ptr: { target: "x" }, actions: ["*p=5", "*p+=1", "p=&y"] } },
         },
         {
@@ -170,8 +170,13 @@ export const cModule: Module = {
         },
         {
           kind: "explain",
+          title: "Why pointers exist",
+          body: "When you call a C function, it receives **copies** of the values you pass. So a function can't change your variable, only its own copy:\n\n```c\nvoid add_one_broken(int n) {\n    n = n + 1;       // changes only the copy\n}\n\nvoid add_one(int *n) {\n    *n = *n + 1;     // follows the address, changes the original\n}\n```\n\nWith `int x = 3;`, calling `add_one_broken(x)` leaves `x` at 3. Calling `add_one(&x)` hands over the *address* of `x` (the card), the function follows it with `*n`, and afterwards `x` is 4.\n\nThe second reason is size: passing a big block of data by address means passing one small number instead of copying the whole block.",
+        },
+        {
+          kind: "explain",
           title: "NULL: a pointer to nothing",
-          body: "Sometimes a pointer doesn't point at anything yet. By convention that's **`NULL`**, which is address 0. It's a clear 'no target' marker.\n\nThe danger: dereferencing NULL (`*p` when `p` is NULL) tries to read address 0, which your program doesn't own. The operating system stops the program with a **segmentation fault**. Always check a pointer isn't NULL before following it.",
+          body: "Sometimes a pointer doesn't point at anything yet. By convention that's **`NULL`**, which is address 0. It's a clear 'no target' marker.\n\nThe danger: dereferencing NULL (`*p` when `p` is NULL) tries to read address 0, which your program doesn't own. The operating system stops the program with a **segmentation fault** (more in 'When it goes wrong'). Always check a pointer isn't NULL before following it.",
           widget: { type: "cmem-pointer", props: { ptr: { target: null }, actions: ["p=&x", "*p=5", "p=NULL"] } },
         },
         {
@@ -185,7 +190,7 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "Pointers to pointers (a peek)",
-          body: "A pointer is a variable with an address of its own, so you can point at *it* too. `int **pp = &p;` is a pointer to a pointer: `pp` holds `p`'s address, `*pp` is `p` (an address), and `**pp` follows two hops to the value.\n\nYou'll meet this when a function needs to change a pointer the caller holds. Don't worry about using it yet; just notice the pattern: each `*` is one hop.",
+          body: "### Going further (optional)\n\nA pointer is a variable with an address of its own, so you can point at *it* too. `int **pp = &p;` is a pointer to a pointer: `pp` holds `p`'s address, `*pp` is `p` (an address), and `**pp` follows two hops to the value.\n\nYou'll meet this when a function needs to change a pointer the caller holds. Don't worry about using it yet; just notice the pattern: each `*` is one hop.",
           widget: { type: "cmem-pointer", props: { ptr: { target: "x" }, pp: true, actions: ["*p=5", "p=&y"] } },
         },
         {
@@ -195,7 +200,8 @@ export const cModule: Module = {
             "`*p` dereferences: it reads or writes the value at that address, so `*p = 5` changes `x`.",
             "`p` is the address, `*p` is the value: keep them straight.",
             "`NULL` (address 0) means 'points at nothing'; dereferencing it is a segmentation fault.",
-            "Each extra `*` is one more hop: `**pp` follows two pointers.",
+            "Passing a pointer lets a function change the caller's variable, or share big data without copying it.",
+            "Optional: each extra `*` is one more hop, so `**pp` follows two pointers.",
           ],
         },
       ],
@@ -212,7 +218,7 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "Elements side by side",
-          body: "An **array** is a run of same-type values stored back to back. `int nums[4] = {7, 9, 4, 2};` is 4 ints, 16 bytes, one after another. The name `nums` stands for the address of the first element.\n\nStep through the indexes and watch the address climb.",
+          body: "An **array** is a run of same-type values stored back to back. `int nums[4] = {7, 9, 4, 2};` is 4 ints, 16 bytes, one after another (like Python's list, but every item is the same type and sits right beside the last). The braces `{7, 9, 4, 2}` give the starting values. In most expressions the name `nums` stands for the address of the first element.\n\nStep through the indexes and watch the address climb.",
           widget: { type: "cmem-array", props: { name: "nums", type: "int", base: 0x2000, values: [7, 9, 4, 2] } },
         },
         {
@@ -253,7 +259,7 @@ export const cModule: Module = {
         {
           kind: "question",
           title: "Why loops stop at length − 1",
-          body: "You loop over `int a[5]` with `for (int i = 0; i < 5; i++)`. Why is the test `i < 5` and not `i <= 5`?",
+          body: "You loop over `int a[5]` with `for (int i = 0; i < 5; i++)`. (Read it as: start `i` at 0; keep going while `i < 5`; add 1 to `i` after each pass.) Why is the test `i < 5` and not `i <= 5`?",
           question: {
             type: "choice",
             options: ["Style; either works", "`i <= 5` would read `a[5]`, one element past the end", "C counts arrays from 1", "`<=` is slower than `<`"],
@@ -285,7 +291,7 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "Text is a char array, plus a marker",
-          body: "C has no separate string type. A **string** is just a `char` array whose characters are followed by a special **null terminator**: a byte with value 0, written `'\\0'`.\n\nSo `\"hi\"` takes **three** bytes: `h`, `i`, `\\0`. The `\\0` isn't printed; it's the signal that says 'the text stops here'.",
+          body: "C has no separate string type. A **string** is just a `char` array whose characters are followed by a special **null terminator**: a byte with value 0, written `'\\0'`.\n\nSo `\"hi\"` takes **three** bytes: `h`, `i`, `\\0`. The `\\0` isn't printed; it's the signal that says 'the text stops here'.\n\nTwo look-alikes to keep apart. Single quotes make **one character**: `'a'` is just the byte 97. Double quotes make a **string**: `\"a\"` is two bytes, `a` and `\\0`. And `'\\0'` (the terminator, code 0) is not the digit character `'0'` (code 48).",
           widget: { type: "cmem-memory", props: { start: 0x3000, length: 8, showChars: true, mode: "explore", vars: [{ name: "s", type: "char[]", addr: 0x3000, value: "hi" }] } },
         },
         {
@@ -298,7 +304,7 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "strlen walks to the '\\0'",
-          body: "How long is a string? C doesn't store the length anywhere. `strlen` **walks** from the start, counting bytes, and stops when it hits the `'\\0'`. The terminator itself isn't counted.\n\nStep through `strlen` below, one byte at a time.",
+          body: "How long is a string? C doesn't store the length anywhere. `strlen` (a ready-made function that returns a string's length) **walks** from the start, counting bytes, and stops when it hits the `'\\0'`. The terminator itself isn't counted.\n\nStep through `strlen` below, one byte at a time.",
           widget: { type: "cmem-string", props: { text: "code", base: 0x3000 } },
         },
         {
@@ -362,7 +368,12 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "Two places memory comes from",
-          body: "A running program keeps its data in two main regions:\n\n- The **stack**: automatic storage for each function call. A function's local variables live in its **frame**, which appears when the function is called and disappears when it returns. Fast and tidy.\n- The **heap**: a big pool you borrow from explicitly when you need memory that outlives a single call, or whose size you only learn at runtime.\n\nYou met the stack and frames in assembly. Let's watch locals come and go.",
+          body: "A running program keeps its data in two main regions:\n\n- The **stack** is like a pile of trays: each function call puts a tray on top, and trays come off in reverse order. It is automatic and tidy.\n- The **heap** is like renting a storage unit: you ask for space when you need it, it stays yours as long as you like, and you must hand the key back when you're done. If you forget, that's a leak.\n\nUse the stack for small things that only matter during one call. Use the heap when memory must outlive a call, or when you only learn the size while the program is running (for example, how many photos the user opens).",
+        },
+        {
+          kind: "explain",
+          title: "Frames: each call's tray",
+          body: "In the assembly module the stack held return addresses (where to jump back to). The same stack also holds each call's **local variables** (variables declared inside a function), grouped together as a **frame**: one tray per call. A frame appears when the function is called and disappears when it returns.\n\nHere is the code we'll trace. Read `square` as: \"take a number `n`, multiply it by itself into a local `r`, and hand `r` back\". In `main`, `y = square(x)` stores that answer in `y`. Watch the frames come and go.",
           widget: {
             type: "cmem-trace",
             props: {
@@ -395,7 +406,7 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "The dangling-pointer trap",
-          body: "So what if a function returns the **address** of a local? The address is still a number, but the frame it pointed into is gone. The pointer now dangles, aimed at memory that's been reclaimed.\n\n```c\nint *bad(void) {\n    int r = 25;\n    return &r;   // r dies when bad() returns!\n}\n```\n\nUsing the returned pointer is **undefined behaviour**: it might read a stale value, or whatever the next call overwrote.",
+          body: "So what if a function returns the **address** of a local? The address is still a number, but the frame it pointed into is gone. The pointer now dangles, aimed at memory that's been reclaimed.\n\n```c\nint *bad(void) {\n    int r = 25;\n    return &r;   // r dies when bad() returns!\n}\n```\n\nUsing the returned pointer is **undefined behaviour** (C makes no promise at all about what happens; next lesson explains): it might read a stale value, or whatever the next call overwrote.",
         },
         {
           kind: "question",
@@ -416,7 +427,7 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "malloc and free",
-          body: "**`malloc(n)`** borrows `n` bytes from the heap and returns their address (or `NULL` if it can't). That memory stays yours, across any number of returns, until you hand it back with **`free`**.\n\n```c\nint *a = malloc(3 * sizeof(int));  // room for 3 ints\na[0] = 10;\n// ... use a ...\nfree(a);   // give it back\n```\n\nStep through and watch a block appear on the heap and then be freed.",
+          body: "**`malloc(n)`** borrows `n` bytes from the heap and returns their address (or `NULL` if it can't). That memory stays yours, across any number of returns, until you hand it back with **`free`**.\n\n```c\n#include <stdlib.h>   // where malloc and free come from\n\nint *a = malloc(3 * sizeof(int));  // room for 3 ints\na[0] = 10;\n// ... use a ...\nfree(a);   // give it back\n```\n\n(`malloc` returns the address, so you keep it in a pointer.) Step through and watch a block appear on the heap and then be freed.",
           widget: {
             type: "cmem-trace",
             props: {
@@ -504,7 +515,7 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "Buffer overflow",
-          body: "A **buffer overflow** is writing more into an array than it can hold, so the extra bytes spill into whatever sits next in memory. We saw this with arrays; it matters most with input.\n\n`strcpy(dst, src)` copies bytes until the source's `'\\0'`, with no idea how big `dst` is. If `src` is longer than `dst`, it writes straight past the end. Type a long name below and watch it overwrite the variable next door.",
+          body: "A **buffer overflow** is writing more into an array than it can hold, so the extra bytes spill into whatever sits next in memory. We saw this with arrays; it matters most with input.\n\n`strcpy(dst, src)` is a ready-made function that copies a string from `src` (the source) into `dst` (the destination). It copies bytes until the source's `'\\0'`, with no idea how big `dst` is. If `src` is longer than `dst`, it writes straight past the end. Type a long name below and watch it overwrite the variable next door. (In this picture the neighbour sits right after the buffer; real layouts vary, which is part of why the damage is unpredictable.)",
           widget: { type: "cmem-overflow", props: { size: 8, name: "name", neighbour: "is_admin" } },
         },
         {
@@ -523,7 +534,7 @@ export const cModule: Module = {
             type: "choice",
             options: [
               "Make `name` a little bigger, say `char name[16]`",
-              "Use a length-limited copy that never writes more than `name` can hold (e.g. `snprintf(name, sizeof name, ...)`)",
+              "Use a length-limited copy that never writes more than `name` can hold (e.g. `snprintf(name, sizeof(name), \"%s\", input)`, which writes at most `sizeof(name)` bytes into `name`)",
               "Put `is_admin` before `name` instead",
               "Set `is_admin = 0` again after the copy",
             ],
@@ -534,7 +545,7 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "Undefined behaviour",
-          body: "Some mistakes aren't guaranteed to crash *or* work. The C standard calls them **undefined behaviour** (UB): reading uninitialised memory, signed integer overflow, using a freed pointer, going out of bounds. The compiler is allowed to assume you never do these, so the result can be anything, and it can differ between compilers, optimisation levels, even runs.\n\nThe trap: UB often *seems* to work in testing, then breaks in production. 'It ran fine on my machine' is not evidence that code is correct.",
+          body: "Some mistakes aren't guaranteed to crash *or* work. The C standard calls them **undefined behaviour** (UB): reading uninitialised memory (a variable you never gave a value), signed integer overflow, using a freed pointer, going out of bounds. The compiler is allowed to assume you never do these, so the result can be anything, and it can differ between compilers, optimisation settings (how hard the compiler tries to speed code up), even runs.\n\nA note on overflow: unsigned numbers (no negatives) wrap around exactly as you saw in the bits module, which is well defined. Signed ones (which can be negative) are different, and C promises nothing.\n\nThe trap: UB often *seems* to work in testing, then breaks in production. 'It ran fine on my machine' is not evidence that code is correct.",
         },
         {
           kind: "question",
@@ -576,7 +587,7 @@ export const cModule: Module = {
         {
           kind: "explain",
           title: "Readable text becomes machine code",
-          body: "Your `.c` file is text the CPU can't run. Turning it into an executable is a **pipeline** of four tools, each handing its output to the next:\n\n**source → preprocessor → compiler → assembler → linker → executable**\n\nOne command, `gcc hello.c -o hello`, runs them all for you. Open each stage below to see what it produces.",
+          body: "Your `.c` file is text the CPU can't run. Turning it into an executable is a **pipeline** of four tools, each handing its output to the next:\n\n**source → preprocessor → compiler → assembler → linker → executable**\n\nOne command, `gcc hello.c -o hello`, runs them all for you. (That is a terminal command; the next module teaches the terminal, so just read it for now.) Open each stage below to see what it produces.\n\nFour words you'll meet:\n\n- A **header** is a file (like `stdio.h`) that lists what ready-made functions exist and how to call them.\n- A **library** is a collection of already-compiled functions, such as the one holding `printf`.\n- A **macro** is a name the preprocessor swaps for other text, like `TIMES` becoming `3`.\n- An **object file** is your code translated to machine code but not yet joined to the libraries.",
           widget: { type: "cmem-pipeline", props: { variant: "ok", mode: "explore" } },
         },
         {

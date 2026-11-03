@@ -49,11 +49,21 @@ export const garage: Project = {
           concepts: ["print()", "strings", "comments"],
           learn: `### Talking to the dashboard
 
-\`print()\` sends text to the screen. Text in quotes is called a **string**.
+A program is a list of instructions for the computer, written one per line. The first useful thing you can tell a computer to do is *speak*, so you can see what it is up to. In Python, \`print\` is how it speaks.
+
+\`print()\` sends text to the screen. Text in quotes is called a **string**. The brackets and both quote marks are required.
 
 ~~~python
 print("Hello, garage!")
 ~~~
+
+The screen shows:
+
+~~~text
+Hello, garage!
+~~~
+
+The screen shows exactly what is inside the quotes, capital letters and spaces included. The quote marks themselves are not shown.
 
 Each \`print()\` makes a new line. Lines that start with \`#\` are **comments**: notes for humans that Python skips.
 
@@ -62,7 +72,15 @@ Each \`print()\` makes a new line. Lines that start with \`#\` are **comments**:
 print("This one runs")
 ~~~
 
-Strings can use double quotes \`"like this"\` or single quotes \`'like this'\`. Just close the quote you opened.`,
+Strings can use double quotes \`"like this"\` or single quotes \`'like this'\`. Close the quote you opened.
+
+### How this screen works
+
+- Type your code in the editor.
+- Press **Run**. Python reads your code from the top, one line at a time, and everything you \`print\` shows up on the car's dashboard. Run as often as you like; nothing is lost.
+- Press **Submit** when you think it is right. Submit checks your work against the tests list and unlocks the next lesson.
+- Sometimes you will see red text. That is an **error**, and it is a hint, not a punishment. Read the last line: it says what went wrong and which line number. For example, forgetting the closing quote in \`print("Hi)\` ends with a message about a string that was never finished. Fix the line and Run again. Everyone sees these, every day.
+- Lines that say \`...\` in the starter code mean "fill this in". Delete the dots and write your own code there.`,
           mission: `Your car is a ghostly blueprint in a dark garage. Nothing works yet, not even the computer.
 
 Boot the on-board computer by printing three startup lines. The moment they run, the headlights come on and the lines appear on the dashboard.`,
@@ -125,7 +143,7 @@ print("SYSTEMS GO")`,
           concepts: ["variables", "str / int / float / bool"],
           learn: `### Variables are labelled boxes
 
-A **variable** gives a name to a value so you can use it later.
+A **variable** gives a name to a value so you can use it later. Picture a box with a sticky label on it: the label is \`top_speed\`, and \`top_speed = 180\` puts 180 in the box. Later you can look in the box just by saying its label.
 
 ~~~python
 driver = "Ada"      # str   (text)
@@ -134,11 +152,17 @@ fuel = 41.5         # float (decimal number)
 is_ready = True     # bool  (True or False)
 ~~~
 
-Use \`=\` to store a value. Names are lowercase with underscores, like \`top_speed\`.
+Use \`=\` to store a value. Here it means "put this in the box", not "is equal to". Names are lowercase with underscores, like \`top_speed\`. You can put a new value in the box any time (\`laps = 4\`) and the old one is replaced.
 
-You can check a type with \`type(laps)\`. Python figures it out from the value.
+You can check a type by printing it. Python figures the type out from the value.
 
-Colours on the web are often **hex codes**: a string like \`"#ff3b6b"\` (red, green, blue in base 16).`,
+~~~python
+print(type(laps))     # <class 'int'>
+~~~
+
+Colours on the web are often **hex codes**: a \`#\` followed by six letters or digits, like \`"#ff3b6b"\`. The first two set how red, the next two how green, the last two how blue. You can copy a code like that without understanding it.
+
+In the starter code, \`...\` means "fill this in". Delete it and write your own value.`,
           mission: `The car is awake but anonymous. Give it an identity: a name, a paint job, a top speed and a turbo flag.
 
 The scene reads these exact variable names, so spelling matters. The moment you Run, the car repaints itself and the name plate changes.`,
@@ -200,14 +224,13 @@ assert 100 <= top_speed <= 300, "top_speed should be between 100 and 300"` },
           concepts: ["arithmetic", "f-strings", "round()"],
           learn: `### Python is a calculator
 
+An engine is all numbers: power, weight, speed, time. A computer is a very fast calculator, so you can let it do the sums. Here is how you write them (\`*\` means times and \`/\` means divided by):
+
 ~~~python
-2 + 3      # 5
-10 - 4     # 6
-6 * 7      # 42
-9 / 2      # 4.5   (division always gives a float)
-9 // 2     # 4     (floor division)
-9 % 2      # 1     (remainder)
-2 ** 3     # 8     (power)
+print(2 + 3)      # 5
+print(10 - 4)     # 6
+print(6 * 7)      # 42
+print(9 / 2)      # 4.5   (division always gives a number with a decimal point)
 ~~~
 
 Store results in variables, and use them in later maths:
@@ -215,20 +238,51 @@ Store results in variables, and use them in later maths:
 ~~~python
 speed = 80
 double = speed * 2
+print(double)     # 160
 ~~~
 
 ### f-strings mix values into text
 
-Put an \`f\` before the quote and wrap names in braces:
+Put an \`f\` before the opening quote and wrap a variable name in curly braces. Python swaps the name for its value:
 
 ~~~python
 print(f"Top speed: {speed} km/h")
 ~~~
 
-\`round(x, 1)\` rounds to 1 decimal place.`,
+The screen shows:
+
+~~~text
+Top speed: 80 km/h
+~~~
+
+### Rounding
+
+Division often gives long decimals. \`round(number, places)\` trims a number to that many decimal places:
+
+~~~python
+print(round(3.14159, 1))    # 3.1
+~~~
+
+### Worked example for the mission
+
+You will work out how long a car takes to go from 0 to 100 km/h (the "0-100 time", a classic way to compare cars). With 220 horsepower and 1100 kg:
+
+- \`220 / 1100\` is \`0.2\` power per kilogram.
+- Times 100 gives \`20\`: the car gains 20 km/h every second.
+- To reach 100 km/h it needs \`100 / 20\`, which is \`5.0\` seconds (time = distance to cover divided by speed gained per second).
+
+### Going further (optional)
+
+Three more operators you may meet later:
+
+~~~python
+print(9 // 2)     # 4   how many whole 2s fit in 9
+print(9 % 2)      # 1   what is left over after taking those whole 2s out
+print(2 ** 3)     # 8   2 times itself 3 times (a power)
+~~~`,
           mission: `Real engines are about power-to-weight. More horsepower and less weight means faster acceleration.
 
-Compute your car's acceleration from its specs and report its 0-100 time. The scene uses your \`acceleration\` number: hold **W** and feel the difference.`,
+Compute your car's acceleration from its specs and report its 0-100 time: how many seconds the car takes to go from standing still to 100 km/h. The scene uses your \`acceleration\` number: hold **W** and feel the difference.`,
           tasks: [
             "power_to_weight = horsepower / weight_kg",
             "acceleration = power_to_weight * 100  (km/h gained per second)",
@@ -284,7 +338,7 @@ print(f"0-100 km/h in {zero_to_100}s")`,
           concepts: ["def", "parameters", "return"],
           learn: `### Functions are reusable recipes
 
-A **function** takes inputs (parameters), does work, and gives back a result with \`return\`.
+Your car will need the same calculation again and again, every moment it drives. Instead of copying the same lines everywhere, you give the steps a name once and reuse them. A **function** is a recipe with a name: it takes an input, does some work, and gives back a result.
 
 ~~~python
 def double(n):
@@ -293,14 +347,31 @@ def double(n):
 print(double(21))   # 42
 ~~~
 
-- \`def\` starts the definition, then the name and parameters in brackets.
-- The **indented** lines are the body. Indentation is how Python groups code.
-- \`return\` hands the answer back to whoever called the function.
+- \`def\` starts the definition (it means "define a function"). Then comes the name, then brackets with the input's name inside, then a colon.
+- The input name inside the brackets (\`n\`) is a **parameter**: a stand-in for whatever value is handed in later.
+- The lines indented underneath are the **body**, the steps of the recipe. Indent with 4 spaces (or press Tab). Indentation is how Python knows which lines belong to the function.
+- \`return\` hands the answer back to whoever asked for it.
 
-Important: the scene will **call your function for you** many times a second. You write it once, and the car uses it.`,
+To use the function, **call** it: write its name and brackets with a real value inside. \`double(21)\` runs the recipe with \`n\` set to 21, and the call is replaced by the answer, \`42\`.
+
+### return is not print
+
+\`print\` shows something on the screen for a human. \`return\` gives a value back to the code that called the function, so it can be used in more maths.
+
+~~~python
+def double(n):
+    return n * 2
+
+result = double(5) + 1
+print(result)       # 11
+~~~
+
+If \`double\` had used \`print\` instead of \`return\`, nothing would come back to add 1 to. A function the scene calls needs to \`return\`, because the scene wants the answer, not a message.
+
+In this lesson the scene will **call your function for you** many times a second. You write it once, and the car uses it. To check it yourself, print a call: \`print(double(21))\` shows \`42\`.`,
           mission: `A pedal that goes straight from 0% to 100% power makes a twitchy car. Racing cars use a **throttle curve**: half-pressing the pedal gives *less than* half the power, so it is smooth and controllable.
 
-Write \`throttle_curve(pedal)\`: it receives the pedal position from 0.0 to 1.0 and returns the power to use. Squaring the pedal is a classic progressive curve.`,
+Write \`throttle_curve(pedal)\`: it receives the pedal position from 0.0 to 1.0 and returns the power to use. Squaring the pedal (multiplying it by itself) is a classic smooth curve: 0.5 becomes 0.5 * 0.5 = 0.25, but 1.0 stays 1.0. Use \`return\`, not \`print\`.`,
           tasks: [
             "Define a function named throttle_curve with one parameter, pedal",
             "It should return pedal squared (pedal * pedal)",
@@ -337,25 +408,36 @@ def throttle_curve(pedal):
           concepts: ["if / elif / else", "comparisons", "booleans"],
           learn: `### Making decisions
 
-\`if\` runs code only when a condition is true.
+A driver makes choices all day: *if the light is red, stop; otherwise, go.* Your code needs the same power: run some lines only when something is true. Python's word for it is \`if\`.
+
+~~~python
+fuel = 8
+if fuel < 10:
+    print("Low fuel!")
+~~~
+
+The screen shows \`Low fuel!\`. The indented line only runs when \`fuel < 10\` is true. If \`fuel\` were 50, nothing would print.
 
 #### Why a condition? What does it give back?
 
 A car answers questions all day: *is the fuel under 10%? is the left key down?* A **condition** is one of those questions, written so that the only possible answers are yes or no. Python works the question out and hands back a single value: \`True\` or \`False\`. The \`if\` then asks one thing: "did I get True?"
 
+You can print a condition any time to see exactly what it answers:
+
 ~~~python
 fuel = 8
 print(fuel < 10)       # True
 print(fuel == 50)      # False
-low = fuel < 10        # store the answer in a variable
-print(type(low))       # <class 'bool'>
-if low:
-    print("Low fuel!")
 ~~~
 
-Notice \`==\` asks "are these equal?" while a single \`=\` stores a value. You can print a condition any time to see exactly what it answers.
+Notice \`==\` asks "are these equal?" while a single \`=\` stores a value. The other comparisons are \`!=\` (not equal), \`<\` (less than), \`>\` (greater than), \`<=\` (less than or equal) and \`>=\` (greater than or equal).
+
+### Several choices: if, elif, else
+
+\`elif\` means "otherwise, if". \`else\` means "none of the above". Python checks top to bottom and runs only the **first** branch whose condition is true.
 
 ~~~python
+fuel = 20
 if fuel < 10:
     print("Low fuel!")
 elif fuel < 30:
@@ -364,33 +446,35 @@ else:
     print("Plenty")
 ~~~
 
-Conditions use comparisons: \`==\` equal, \`!=\` not equal, \`<\` \`>\` \`<=\` \`>=\`. Combine them with \`and\`, \`or\`, \`not\`.
+With \`fuel = 20\` the screen shows \`Getting low\`: the first condition is False, the second is True, so the \`else\` is skipped.
+
+### Combining questions: and, or, not
+
+- \`a and b\` is True only when **both** are True.
+- \`a or b\` is True when **at least one** is True.
+- \`not a\` flips the answer: True becomes False and False becomes True.
 
 ~~~python
-if left and not right:
-    ...
+print(not True)            # False
+print(not False)           # True
+print(True and False)      # False
+print(True or False)       # True
 ~~~
 
-Python checks the branches top to bottom and runs the **first** one that is true.
+Put it together. If the left key is held and the right key is not:
 
-#### Kinds of conditions you can write
+~~~python
+left = True
+right = False
+print(left and not right)  # True   (left is held AND right is NOT held)
 
-| Kind | Example | What it asks |
-| --- | --- | --- |
-| Comparison | \`fuel <= 10\` | Is this number smaller, larger, at most, at least? |
-| Equal / not equal | \`gear == 3\`, \`mode != "pit"\` | Same value? Works on text too. |
-| Between two limits | \`0 <= speed < 120\` | Is it inside a range? (one chained check) |
-| Membership | \`"turbo" in upgrades\`, \`"x" not in name\` | Is it inside this list or string? |
-| Text tests | \`code.isdigit()\`, \`name.startswith("GT")\` | A function that answers yes or no. |
-| Identity | \`driver is None\` | Is it the very same object? Use it for \`None\`. |
-| Truthiness | \`if upgrades:\` | Is the list non-empty? |
-| Combined | \`left and not right\`, \`a or b\` | Several questions, joined together. |
+right = True
+print(left and not right)  # False  (both held)
+~~~
 
-**Truthiness.** Any value can sit in an \`if\`. These count as false: \`False\`, \`None\`, \`0\`, \`0.0\`, \`""\` (empty text), \`[]\`, \`{}\`. Nearly everything else counts as true. So \`if upgrades:\` means "if the list has something in it".
+### Separate ifs versus one chain
 
-**\`==\` versus \`is\`.** \`==\` asks "do these have equal values?". \`is\` asks "are these the same object in memory?". For numbers and text use \`==\`; use \`is\` mainly for \`None\`.
-
-Conditions can work **together** (\`and\` needs both, \`or\` needs either), be tried **in order** (an \`if\` / \`elif\` / \`else\` chain runs only the first true branch), or be **independent** (separate \`if\`s are each checked on their own). That last difference trips people up, so compare them with \`fuel = 8\`:
+Separate \`if\` statements are each checked on their own. A chain (\`if\` / \`elif\` / \`else\`) stops at the first true branch. Compare them with \`fuel = 8\`:
 
 ~~~python
 # two separate ifs: both are true, both run
@@ -411,16 +495,50 @@ elif fuel < 30:
 # Low fuel!
 ~~~
 
-If you have many fixed choices, Python also has \`match\`, but an \`elif\` chain handles everything in this course.
+### Deciding inside a function
 
-#### How to pick the condition
+Your mission is a function that picks an answer with \`if\` and sends it back with \`return\`. As soon as a \`return\` runs, the function is finished, so the lines below it are skipped.
+
+~~~python
+def sign(n):
+    if n < 0:
+        return "negative"
+    elif n > 0:
+        return "positive"
+    else:
+        return "zero"
+
+print(sign(-5))    # negative
+print(sign(7))     # positive
+print(sign(0))     # zero
+~~~
+
+### How to pick the condition
 
 1. Say the question in plain words: "Should the car turn left?"
 2. Turn it into a yes/no test: \`left and not right\`.
-3. Check the edge value. If the limit is 10, should exactly 10 count? \`fuel < 10\` says no, \`fuel <= 10\` says yes. Try the edge in your head before you run it.`,
+3. Check the edge value. If the limit is 10, should exactly 10 count? \`fuel < 10\` says no, \`fuel <= 10\` says yes. Try the edge in your head before you run it.
+
+### Going further (optional)
+
+More kinds of conditions you will meet once you know lists, text methods and \`None\` (a special value meaning "nothing here"):
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Between two limits | \`0 <= speed < 120\` | Is it inside a range? (one chained check) |
+| Membership | \`"turbo" in upgrades\`, \`"x" not in name\` | Is it inside this list or string? |
+| Text tests | \`code.isdigit()\`, \`name.startswith("GT")\` | A built-in text check that answers yes or no. |
+| Identity | \`driver is None\` | Is it the very same thing as \`None\`? |
+| Truthiness | \`if upgrades:\` | Is the list non-empty? |
+
+**Truthiness.** Any value can sit in an \`if\`. These count as false: \`False\`, \`None\`, \`0\`, \`0.0\`, \`""\` (empty text), \`[]\` (empty list), \`{}\` (empty dictionary). Nearly everything else counts as true.
+
+**\`==\` versus \`is\`.** \`==\` asks "do these have equal values?". \`is\` asks "are these the exact same object in memory?". For numbers and text use \`==\`; use \`is\` mainly for \`None\`.
+
+Printing a condition's type shows what it is: \`print(type(fuel < 10))\` gives \`<class 'bool'>\`, short for boolean, a True or False value.`,
           mission: `Time to steer. The scene calls your \`steer(left, right)\` function on every frame. \`left\` and \`right\` are True while the matching key is held.
 
-Return a wheel angle in degrees: **negative turns left, positive turns right, 0 is straight**. The moment this works, the track lights up and you can actually drive.`,
+Return a wheel angle in degrees: **negative turns left, positive turns right, 0 is straight**. The wheels can turn at most 35 degrees either way. The moment this works, the track lights up and you can actually drive.`,
           tasks: [
             "Define steer(left, right)",
             "Only left held: return a negative angle (e.g. -30)",
@@ -472,39 +590,63 @@ def steer(left, right):
           concepts: ["for loops", "range()", "lists", "append()"],
           learn: `### Repeat with loops
 
-A **list** holds many values in order:
+To place 4 gates on the track you could write 4 lines. For 400 gates, you would not want to. A **loop** repeats a block of code for you.
+
+First you need somewhere to keep many values. A **list** holds several values in order, written in square brackets:
 
 ~~~python
 gears = [1, 2, 3, 4, 5]
-gears.append(6)       # add to the end
-print(len(gears))     # 6
+gears.append(6)       # add one more to the end
+print(len(gears))     # 6   (len = how many items)
+print(gears)          # [1, 2, 3, 4, 5, 6]
 ~~~
 
-A **for loop** repeats code once per item. \`range(a, b)\` counts from \`a\` up to (but not including) \`b\`.
+A **for loop** repeats its indented block once for every value it is given. \`range(a, b)\` produces the whole numbers from \`a\` up to, but **not including**, \`b\`. The loop name (\`n\` below) is called the **loop variable**: on each repeat it holds the next value.
 
 ~~~python
 for n in range(1, 4):
-    print(n)          # 1, 2, 3
+    print(n)
 ~~~
 
-Build a list inside a loop:
+The screen shows:
+
+~~~text
+1
+2
+3
+~~~
+
+Here is what happens on each repeat of \`for n in range(1, 4): print(n * 20)\`:
+
+| Repeat | n | Another number left? | Output |
+| --- | --- | --- | --- |
+| 1 | 1 | yes | 20 |
+| 2 | 2 | yes | 40 |
+| 3 | 3 | yes | 60 |
+| end | | no, so the loop stops | |
+
+Now build a list inside a loop. Start with an empty list \`[]\` and add to it on every repeat:
 
 ~~~python
 squares = []
 for n in range(1, 4):
-    squares.append(n * n)   # [1, 4, 9]
+    squares.append(n * n)
+print(squares)        # [1, 4, 9]
 ~~~
 
-#### Which loop, and what is range?
+That is exactly the shape of your mission: an empty list, a loop, and an \`append\` that does a little maths with the loop variable.
 
-A loop repeats a block. There are two reasons to repeat. A \`for\` loop says "do this once for every item, or a set number of times". A \`while\` loop says "keep doing this until something changes". Its condition is the same yes/no question as in an \`if\`, asked again before every lap.
+### Going further (optional)
 
-| Situation | Use |
-| --- | --- |
-| I have a list, or I know how many laps | \`for\` |
-| I am waiting for a state to change | \`while\` |
+**Counting from zero.** Every item in a list has a position number, and the first position is \`0\`, not 1. Square brackets with a position pick one item:
 
-\`range\` makes a run of numbers, and the stop value is never included. \`range(n)\` gives exactly \`n\` numbers starting at 0, so the numbers line up with list positions.
+~~~python
+tires = ["soft", "medium", "hard"]
+print(tires[0])       # soft
+print(tires[2])       # hard
+~~~
+
+**More about range.** \`range(n)\` gives exactly \`n\` numbers starting at 0, so they match list positions. A third number sets the step size. \`list(...)\` turns the run of numbers into a list so you can print it:
 
 ~~~python
 print(list(range(5)))          # [0, 1, 2, 3, 4]
@@ -513,55 +655,44 @@ print(list(range(0, 10, 3)))   # [0, 3, 6, 9]
 print(list(range(5, 0, -1)))   # [5, 4, 3, 2, 1]
 ~~~
 
-The same job three ways, over a list of tires:
+**Three ways to loop over a list.** \`print(i, tires[i])\` prints two things on one line, separated by a space. \`enumerate\` hands you a position and an item together, and \`i, tire\` catches both:
 
 ~~~python
-tires = ["soft", "medium", "hard"]
-
 for i in range(len(tires)):          # by position
     print(i, tires[i])
 for tire in tires:                   # the items directly
     print(tire)
-for i, tire in enumerate(tires):     # items plus a counter
+for i, tire in enumerate(tires):     # position and item
     print(i, tire)
 ~~~
 
-The first loop prints \`0 soft\`, \`1 medium\`, \`2 hard\`. The second prints \`soft\`, \`medium\`, \`hard\`. The third prints the same as the first. Prefer looping over the items directly. Reach for \`enumerate\` when you also need the position, and use \`range\` when you need numbers themselves, like these gates.
+The first loop prints \`0 soft\`, \`1 medium\`, \`2 hard\`. The second prints \`soft\`, \`medium\`, \`hard\`. The third prints the same as the first. Looping over the items directly is usually simplest.
 
-What happens each lap of \`for n in range(1, 4): print(n * 20)\`:
-
-| Lap | n | Another number left? | Output |
-| --- | --- | --- | --- |
-| 1 | 1 | yes | 20 |
-| 2 | 2 | yes | 40 |
-| 3 | 3 | yes | 60 |
-| end | | no, so the loop stops | |
-
-A \`while\` loop must change what its condition looks at, or it never stops:
+**while loops.** A \`for\` loop says "do this once per item, or a set number of times". A \`while\` loop says "keep going until something changes". It asks its condition (the same yes/no question as in an \`if\`) before every repeat. \`fuel -= 8\` means "take 8 off fuel" and \`laps += 1\` means "add 1 to laps". A \`while\` loop must change what its condition looks at, or it never stops:
 
 ~~~python
 fuel = 30
 laps = 0
-while fuel > 10:      # asked again every lap
+while fuel > 10:
     fuel -= 8
     laps += 1
 print(laps, fuel)     # 3 6
 ~~~
 
-\`break\` leaves the loop at once; \`continue\` skips to the next lap. A loop can also hold an \`if\`, which is how you filter or count:
+Trace: fuel 30 (repeat, 22), 22 (repeat, 14), 14 (repeat, 6), 6 is not above 10 (stop).
+
+**break and continue.** \`break\` leaves the loop at once. \`continue\` skips straight to the next repeat.
 
 ~~~python
-gates = [20, 40, 60, 80]
-past_half = 0
-for g in gates:
+for g in [20, 40, 60, 80]:
     if g == 40:
-        continue          # skip this one
+        continue      # skip 40
     if g > 70:
-        break             # stop everything
-    if g > 50:
-        past_half += 1
-print(past_half)          # 1 (only 60)
-~~~`,
+        break         # stop completely at 80
+    print(g)
+~~~
+
+This prints \`20\` and then \`60\`.`,
           mission: `A lap needs gates. Rather than typing each one, let a loop place them. The scene reads your \`checkpoints\` list: each number is a percentage of the way around the lap.
 
 Place a gate every 20%: 20, 40, 60, 80. Drive through them for a split-time flash.`,
@@ -609,23 +740,42 @@ print(f"{total_gates} gates armed")`,
           concepts: ["dictionaries", "min / sum / len", "lookup"],
           learn: `### Dictionaries look things up by name
 
-A **dictionary** maps keys to values.
+A real dictionary lets you look up a word to find its meaning. A Python **dictionary** lets you look up a name to find a value. The name you look up with is the **key**; what you get back is the **value**. Each key-and-value together is a **pair**.
 
 ~~~python
 prices = {"coffee": 3, "tea": 2}
 print(prices["tea"])      # 2
-prices["cake"] = 5        # add a new pair
 ~~~
+
+In the pair \`"tea": 2\`, the key is \`"tea"\` and the value is \`2\`. Curly braces wrap the dictionary, a colon joins each key to its value, and commas separate pairs. Square brackets with a key look the value up. Add a new pair by assigning to a new key:
+
+~~~python
+prices["cake"] = 5        # add a new pair
+print(prices)             # {'coffee': 3, 'tea': 2, 'cake': 5}
+~~~
+
+The key can also be held in a variable. Python looks inside the variable first, then uses what it finds as the key:
+
+~~~python
+item = "tea"
+print(prices[item])       # 2
+~~~
+
+That is how your mission picks a tire's grip: \`tire\` holds a name, and the dictionary turns the name into a number. If you ask for a key that is not in the dictionary, Python stops with a red \`KeyError\` naming the missing key, so check your spelling.
 
 ### Handy list helpers
 
+Your lap times live in a list. Python has built-in helpers to summarise it:
+
 ~~~python
 times = [31.2, 29.8, 30.5]
-min(times)                # 29.8   (smallest)
-sum(times)                # 91.5
-len(times)                # 3
-round(sum(times) / len(times), 2)   # the average
-~~~`,
+print(min(times))                      # 29.8   (smallest)
+print(sum(times))                      # 91.5   (all added up)
+print(len(times))                      # 3      (how many)
+print(round(sum(times) / len(times), 2))   # 30.5
+~~~
+
+The last line is the **average**, also called the **mean**: add everything up, then divide by how many there are.`,
           mission: `Soft tires grip better but wear out. Hard tires grip less but last. Store the compounds in a dictionary, choose one, and the scene applies its grip: more grip means the car holds corners at higher speed.
 
 Then crunch your lap times for the pit board.`,
@@ -676,36 +826,68 @@ average_lap = round(sum(lap_times) / len(lap_times), 2)`,
           concepts: ["classes", "__init__", "self", "methods"],
           learn: `### Classes bundle data and behaviour
 
-A **class** is a blueprint. An **instance** is one thing built from it.
+Your autopilot has facts about itself (how strongly it turns, called its *gain*) and skills (it can decide how to steer). A **class** keeps the facts and the skills together in one package. Think of a class as a blueprint for a kind of thing, and an **instance** as one real thing built from the blueprint. Here is a different example, a lamp:
 
 ~~~python
-class Dog:
-    def __init__(self, name):
-        self.name = name          # data stored on the instance
+class Lamp:
+    def __init__(self, brightness):
+        self.brightness = brightness       # a fact the lamp remembers
 
-    def speak(self):
-        return f"{self.name} says woof"
+    def describe(self):
+        return f"A lamp at brightness {self.brightness}"
 
-rex = Dog("Rex")
-print(rex.speak())
+desk = Lamp(70)                  # build one lamp from the blueprint
+print(desk.brightness)           # 70
+print(desk.describe())           # A lamp at brightness 70
 ~~~
 
-- \`__init__\` runs when you create an instance.
-- \`self\` is the instance itself; \`self.name\` is its data.
-- Methods are functions inside the class. Call them with a dot: \`rex.speak()\`.
+The screen shows:
+
+~~~text
+70
+A lamp at brightness 70
+~~~
+
+- \`class Lamp:\` starts the blueprint.
+- \`__init__\` is a special method that runs once, automatically, the moment you build a lamp. It sets the new thing up. Here it stores the brightness you passed in.
+- A **method** is a function that lives inside a class.
+- \`self\` means "this particular lamp". Inside the class, \`self.brightness\` is the brightness belonging to this lamp. Different lamps keep different values.
+
+### Why does describe(self) have self, but desk.describe() has nothing in the brackets?
+
+When you write \`desk.describe()\`, Python quietly hands \`desk\` to the method as its first input. That input is the \`self\` you see in \`def describe(self)\`. So you never type \`self\` when you call a method; Python fills it in with whatever is before the dot. You do write \`self\` in the \`def\` line, so the method knows which lamp it is working on.
+
+The same goes for \`__init__\`: \`Lamp(70)\` has one value in brackets, and \`def __init__(self, brightness)\` has two names, because Python supplies \`self\` for you.
+
+### Keyword arguments
+
+When you call a function or build an instance, you can name the input you are filling, writing \`name=value\`. That is a **keyword argument**:
+
+~~~python
+desk = Lamp(70)                   # by position
+desk = Lamp(brightness=70)        # by name: same result
+~~~
+
+Your mission uses this form: \`Autopilot(gain=60)\`. The name before \`=\` must match the parameter name in \`__init__\`.
 
 ### Sensors
 
-The car has three distance sensors. They give a **dictionary** with values from 0 (wall right here) to 1 (clear road):
+The car has three distance sensors. They give a **dictionary** (lesson 7) with values from 0 (wall right here) to 1 (clear road). You read a value by its key:
 
 ~~~python
-{"left": 0.4, "front": 1.0, "right": 0.9}
-~~~`,
+sensors = {"left": 0.4, "front": 1.0, "right": 0.9}
+print(sensors["left"])      # 0.4
+print(sensors["right"])     # 0.9
+~~~
+
+### A worked step
+
+With those readings, there is more room on the right (0.9) than on the left (0.4). The difference is \`0.9 - 0.4\`, about \`0.5\`. Multiply by the gain: the bigger the gain, the harder the car turns. With a gain of 60, the wheel angle is about \`30\`, a right turn.`,
           mission: `Final build: a car that drives itself. Create an \`Autopilot\` class whose \`steer(sensors)\` method looks at the left and right sensors and steers toward the side with more room.
 
-Steering = (right − left) × gain. Press **P** in the scene to hand the wheel to your class.
+Steering = (right - left) * gain. Press **P** in the scene to hand the wheel to your class.
 
-Bonus: add a \`throttle(self, sensors)\` method returning 0 to 1 and the car will use it to brake for corners.`,
+Optional bonus: add a \`throttle(self, sensors)\` method that returns a number from 0 to 1. For example, \`return sensors["front"]\` eases off when a wall is close ahead, and the car uses it to brake for corners.`,
           tasks: [
             "Class Autopilot with __init__(self, gain) storing self.gain",
             "Method steer(self, sensors) returning (right - left) * gain",

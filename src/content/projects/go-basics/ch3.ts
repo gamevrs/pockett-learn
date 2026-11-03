@@ -38,7 +38,7 @@ func gramsToKg(g int) float64 {
 
 - \`func\` starts the declaration, then the **name**, then the **parameters** in parentheses, then the **result type**, then the body in braces.
 - In Go the type comes **after** the name: \`g int\`, not \`int g\`. Several parameters of one type can share it: \`func add(a, b int) int\`.
-- \`return\` hands a value back to the caller. A function with no result type has nothing after \`return\` (or no \`return\` at all).
+- \`return\` hands a value back to the caller (the code that called the function). A function with no result type has nothing after \`return\` (or no \`return\` at all).
 - Call it by name: \`kg := gramsToKg(2400)\`.
 
 Package-level functions can be written **in any order**. \`main\` may call a function that appears further down the file. (Local variables are different: they must be declared before use.) In this course your new functions are placed above \`func main\` so you read helpers first, but Go does not care.
@@ -55,7 +55,7 @@ double(x)
 fmt.Println(x) // 4
 ~~~
 
-A slice or a map is a small descriptor that points at shared data, so the *descriptor* is copied but both copies see the same elements. Lesson 7 showed how slices share memory; this is the same effect. Lesson 11 shows how to hand a function a pointer when you really want it to change your value.
+A slice or a map shares its elements with the original, so a function that changes an element of a slice you gave it changes your slice too. Lesson 7 showed how slices share memory; this is the same effect. Lesson 11 shows how to hand a function a *pointer* (a way to point at your variable) when you really want it to change your value.
 
 ### Functions only see their own world
 
@@ -102,7 +102,7 @@ func parseRow(row string) (id, region string, grams int, ok bool) {
 }
 ~~~
 
-Naming results is great documentation (you can see which \`string\` is the id and which is the region) and gives you free "failure" defaults. Use the bare \`return\` only in short functions. In a long one the reader cannot tell what is being returned, so write the values out.
+Naming results is great documentation (you can see which \`string\` is the id and which is the region) and gives you free "failure" defaults. The bare \`return\` is an optional style: a plain \`return id, region, grams, true\` always works. Use the bare \`return\` only in short functions. In a long one the reader cannot tell what is being returned, so write the values out.
 
 ### Variadic functions
 
@@ -153,7 +153,7 @@ When this lesson passes, the **Weigh station** lights up on the sorting floor: t
         "Write gramsToKg(g int) float64 (kilograms rounded to 2 decimals with math.Round) and classify(g int) string with the lesson 5 classes: Invalid (0 or less), Envelope (under 500), Small (under 2000), Standard (up to 10000), Freight (up to maxGrams), Overweight (above)",
         "Write parseRow(row string) (id, region string, grams int, ok bool) with NAMED results: split with strings.Fields, require 3 fields, lower-case the region, ok is false when the row is wrong or the weight is not a number",
         "Write the variadic summarize(weights ...int) (count, total, heaviest int)",
-        "In main build classCounts (class name -> how many of weights), call summarize(weights...), compute batchKg from the total and call parseRow on rows[0] and rows[7]",
+        "In main build classCounts (class name -> how many of weights), call summarize(weights...), compute batchKg from the total and call parseRow on rows[0] and rows[7] (the 8th row, PK-2008 south abc, is the one whose weight is not a number)",
         "Print: PK-2001 2400 true false  (first row's id, grams, ok, then the ok of rows[7]) and then: 11 parcels, 70.06 kg, heaviest 31000 g. Send classCounts, batchCount, batchTotal, batchHeaviest, batchKg, firstOK and badOK with scene",
       ],
       starterAdd: go`// ─── ✏️ YOUR TURN: new declarations ───
@@ -336,7 +336,7 @@ assert(lines.includes("11 parcels, 70.06 kg, heaviest 31000 g"), 'No line is exa
       concepts: ["error", "errors.New", "fmt.Errorf", "%w wrapping", "errors.Is", "guard clauses"],
       learn: md`### Why Go has no exceptions
 
-In many languages a failing operation throws an exception that flies up the call stack until something catches it. The function signature gives no hint that it can happen. Go's designers chose the opposite: **a failure is an ordinary value that a function returns**. If \`strconv.Atoi\` can fail, its signature says so:
+Think of a parcel the scanner cannot read. The scanner does not explode: it puts a note on the parcel saying what was wrong, and the next worker decides what to do. In many languages a failing operation instead throws an **exception** that flies up through the chain of function calls that led to it (the *call stack*) until something catches it. The function signature gives no hint that this can happen. Go's designers chose the opposite: **a failure is an ordinary value that a function returns**. If \`strconv.Atoi\` can fail, its signature says so:
 
 ~~~go
 func Atoi(s string) (int, error)
@@ -346,15 +346,7 @@ You cannot forget that failure exists, because the compiler makes you decide wha
 
 ### What an error is
 
-\`error\` is a tiny built-in interface:
-
-~~~go
-type error interface {
-	Error() string
-}
-~~~
-
-Anything with an \`Error() string\` method is an error. The zero value of an interface is \`nil\`, and by convention **\`nil\` means success**.
+\`error\` is a built-in type for "a value that can describe what went wrong as text". Printing an error prints that description. The "nothing here" value \`nil\` (which you met in lesson 4) means **no error**: by convention, \`nil\` means success. (Lesson 12 explains how Go lets any type act as an error.)
 
 ~~~go
 n, err := strconv.Atoi("24kg")
@@ -387,10 +379,14 @@ Deeply nested \`if\` blocks are hard to read. Go style is to deal with each prob
 func screen(row string) (id, region string, grams int, err error) {
 	fields := strings.Fields(row)
 	if len(fields) != 3 {
-		return id, "", 0, fmt.Errorf("%s: %w", id, ErrMalformed)
+		return "", "", 0, ErrMalformed            // guard 1: the row is the wrong shape
 	}
-	// ... more guards ...
-	return id, region, n, nil     // the happy path, last
+	id, region = fields[0], strings.ToLower(fields[1])
+	n, convErr := strconv.Atoi(fields[2])
+	if convErr != nil {
+		return id, region, 0, ErrBadWeight        // guard 2: the weight is not a number
+	}
+	return id, region, n, nil                     // the happy path, last
 }
 ~~~
 
@@ -406,6 +402,17 @@ fmt.Println(err)    // PK-2007: 31000 g, parcel is over the weight limit
 ~~~
 
 Use \`%v\` instead and you get the same text but the original error is gone: it has been flattened to a string. Go 1.20 and later allow more than one \`%w\` in a format.
+
+Often you want to keep the sentinel **and** show the original reason from another function. Use \`%w\` for the sentinel and \`%v\` for the other error, so both appear in the text but only the sentinel stays recognisable:
+
+~~~go
+_, convErr := strconv.Atoi("abc")
+err := fmt.Errorf("%s: %w (%v)", "PK-2008", ErrBadWeight, convErr)
+fmt.Println(err)
+// PK-2008: weight is not a whole number (strconv.Atoi: parsing "abc": invalid syntax)
+~~~
+
+And \`%q\` puts a string in double quotes, which is handy for a region name: \`fmt.Errorf("%s: %q: %w", id, region, ErrUnknownRegion)\` gives \`PK-2006: "moon": no chute for that region\`.
 
 ### errors.Is: recognise an error inside a wrapped one
 
@@ -430,10 +437,9 @@ By convention error messages are lower case, with no final full stop, because th
 	have (number)
 	want (int, error)
 ./main.go:39:17: cannot use "boom" (constant of type string) as error value in variable declaration: string does not implement error (missing method Error)
-./main.go:37:12: cannot convert "x" (untyped string constant) to type interface{Error() string}
 ~~~
 
-The last one is what you get from \`if err == "x"\`: an error is not a string. Compare with \`errors.Is\` or look at \`err.Error()\`.
+The error text is not a plain string: you cannot write \`if err == "x"\`. Compare with \`errors.Is\` or look at \`err.Error()\`, which returns the description as a string.
 
 ### Common mistakes
 
@@ -669,20 +675,84 @@ fmt.Println(p.Kg())   // 2.4
 
 Go has no classes. You declare a type, then declare methods for it anywhere in the same package. This keeps data and the behaviour that goes with it together without any inheritance.
 
-### Pointers in one minute
+### A second type: the Van
 
-A variable lives at an address in memory. \`&x\` gives that address, a **pointer**, and \`*p\` follows a pointer back to the value. The type "pointer to Van" is written \`*Van\`. A pointer that points at nothing is \`nil\`.
+The mission also needs a van that carries parcels. It is another struct, and it has a method that tells you how much room is left:
+
+~~~go
+type Van struct {
+	Name    string
+	Region  string
+	Limit   int      // the most grams it may carry
+	Loaded  int      // grams loaded so far
+	Parcels []string // ids of the parcels on board
+}
+
+func (v Van) Free() int {
+	return v.Limit - v.Loaded
+}
+~~~
+
+Before the van can *learn* to load itself, you need one more idea.
+
+### Pointers: the address, not the thing
+
+Imagine a van parked in bay 7. There are two very different things you could hand a colleague:
+
+- A **photocopy** of the van's paperwork. They can scribble on it all day; the real van is untouched.
+- A **slip of paper saying "bay 7"**. They can walk to bay 7 and change the real van.
+
+In Go, handing something over normally gives a photocopy: a **copy** of the value (you saw this in lesson 9: "arguments are copies"). A **pointer** is the slip of paper: it holds the *address* in memory where a value lives. Two symbols do all the work:
+
+- \`&x\` means "the address of \`x\`" (make the slip for \`x\`).
+- \`*p\` means "go to the address in \`p\`" (read or change the value there).
+
+Follow this with a plain number first:
+
+~~~go
+n := 10
+p := &n            // p holds the address of n. Its type is *int ("pointer to int")
+fmt.Println(*p)    // 10   follow the address, read the value
+*p = 25            // follow the address, write 25 there
+fmt.Println(n)     // 25   n itself changed, because p pointed at n
+~~~
+
+Compare that with a copy:
+
+~~~go
+a := 10
+b := a             // b is a separate copy
+b = 99
+fmt.Println(a, b)  // 10 99   a did not change
+~~~
+
+The difference matters most for functions:
+
+~~~go
+func addFive(n int)    { n += 5 }    // works on a copy
+func addFivePtr(n *int) { *n += 5 }  // works on the real value
+
+x := 10
+addFive(x)
+fmt.Println(x)     // 10   the copy changed, not x
+addFivePtr(&x)
+fmt.Println(x)     // 15   the real x changed
+~~~
+
+A pointer that points at nothing is \`nil\` (Go's "nothing here"). Following a \`nil\` pointer crashes the program, so a pointer is only safe to use once it points at something.
+
+With structs it works the same way, and Go is kind: for a pointer to a struct you can write \`pv.Loaded\` and Go follows the pointer for you (the long form is \`(*pv).Loaded\`):
 
 ~~~go
 v := Van{Name: "Van 1"}
-pv := &v          // pv is a *Van
-pv.Loaded = 500   // Go follows the pointer for you; (*pv).Loaded is the long form
+pv := &v              // pv is a *Van
+pv.Loaded = 500       // change the real van through the pointer
 fmt.Println(v.Loaded) // 500: same Van
 ~~~
 
 ### Value or pointer receiver?
 
-This is the big decision when you write a method, and it comes from the copy rule you met in lesson 9:
+This is the big decision when you write a method, and it is exactly the photocopy-or-address-slip choice from above. A method may receive a copy of the van, or the address of the real van:
 
 ~~~go
 // Value receiver: the method gets a COPY of the van.
@@ -692,7 +762,7 @@ func (v Van) LoadByValue(p Parcel) bool {
 	return true
 }
 
-// Pointer receiver: the method gets the address of the real van.
+// Pointer receiver (note the *): the method gets the address of the real van.
 func (v *Van) Load(p Parcel) bool {
 	if p.Grams > v.Free() { return false }
 	v.Loaded += p.Grams          // changes the real van
@@ -702,6 +772,8 @@ func (v *Van) Load(p Parcel) bool {
 ~~~
 
 \`LoadByValue\` happily returns \`true\`, but the van it was called on never gains any weight: the change vanished with the copy. This is one of the most common beginner bugs and the compiler cannot warn you, because it is perfectly legal code.
+
+Trace it for a van with a limit of 5000 and a parcel of 2400 g: \`trial.LoadByValue(parcel)\` adds 2400 to the copy's \`Loaded\`, so \`trial.Loaded\` is still \`0\`. Then \`trial.Load(parcel)\` adds 2400 to the real van, so \`trial.Loaded\` becomes \`2400\`. That difference (0, then 2400) is what the mission's trial van shows.
 
 Rules of thumb: use a **pointer receiver** when the method changes the struct (or the struct is large); use a **value receiver** for small read-only types. Pick one style per type and stick to it. When you call \`vans[i].Load(p)\` on an addressable value Go takes the address for you.
 
@@ -960,7 +1032,7 @@ type Router interface {
 }
 ~~~
 
-Any value whose type has a \`Route(Parcel) string\` method *is* a \`Router\`.
+Any value whose type has a \`Route(Parcel) string\` method *is* a \`Router\`. Think of a power socket: it does not care whether a lamp or a kettle is plugged in, only that the plug has the right shape. The interface is the shape of the socket; types with the right methods are the plugs. A type that actually holds data and methods, like \`RegionRouter\` below, is called a **concrete type**, to tell it apart from an interface.
 
 ### Implicit satisfaction
 
@@ -999,7 +1071,7 @@ byRegion.Route(p)   // "A"
 byWeight.Route(p)   // "standard"
 ~~~
 
-The call is resolved when the program runs, based on the real type inside. That is **polymorphism** without inheritance. Because satisfaction is implicit, the code that *uses* an interface is usually the code that defines it, which keeps interfaces small and tied to a real need. A well-known Go saying is: *accept interfaces, return structs*.
+The call is resolved when the program runs, based on the real type inside. That is **polymorphism** ("many shapes, one call") without inheritance. Because satisfaction is implicit, the code that *uses* an interface is usually the code that defines it, which keeps interfaces small and tied to a real need. A well-known Go saying is: *accept interfaces, return structs*.
 
 ### Keep interfaces small
 
@@ -1032,6 +1104,8 @@ func (r Region) String() string {
 fmt.Println(North, West)           // North West
 fmt.Printf("%v %d %s\n", South, South, South) // South 1 South
 ~~~
+
+Here \`strconv.Itoa(n)\` ("integer to ASCII") is the opposite of the \`Atoi\` you met in lesson 4: it turns the whole number \`n\` into text, so \`strconv.Itoa(7)\` is \`"7"\`. The \`int(r)\` converts the \`Region\` to a plain \`int\` first.
 
 \`%d\` still shows the number: the verb decides whether \`String\` is consulted. Your lesson 2 and lesson 6 output (the "West is 3" line) now says "West" too.
 
@@ -1066,7 +1140,17 @@ It creates no usable variable. It costs nothing at runtime and fails the build t
 
 The second is the subtle one. A method with a **pointer receiver** belongs only to the pointer type. A \`Van\` value does not satisfy the interface, but a \`*Van\` does: write \`var l Loader = &Van{}\`.
 
-### Looking inside an interface
+### Common mistakes
+
+- Making huge interfaces "just in case".
+- Looking for an \`implements\` keyword.
+- Pointer receivers and value receivers: a method with a pointer receiver belongs only to the pointer type, as the compiler message above shows.
+- Calling \`fmt.Sprintf("%v", r)\` inside \`r.String()\` and recursing forever.
+- Returning an interface when a plain struct would do. Return concrete types, accept interfaces.
+
+### Going further (optional)
+
+**Looking inside an interface.**
 
 An interface value remembers the concrete type it holds. \`%T\` prints it and a **type assertion** lets you ask:
 
@@ -1079,14 +1163,7 @@ if s, ok := byRegion.(fmt.Stringer); ok {   // does it also have String()?
 
 \`any\` (an alias for \`interface{}\`) is the interface with no methods, so every value fits. Reach for it rarely: you lose the compiler's help. The \`scene\` helper you were given takes an \`any\` because it must send every kind of value.
 
-### Common mistakes
-
-- Making huge interfaces "just in case".
-- Looking for an \`implements\` keyword.
-- Pointer receivers and value receivers: remember the method set rule above.
-- Calling \`fmt.Sprintf("%v", r)\` inside \`r.String()\` and recursing forever.
-- Returning an interface when a plain struct would do. Return concrete types, accept interfaces.
-- Forgetting that a nil pointer stored in an interface is *not* a nil interface. The interface still has a type, so \`x != nil\` is true. Return a plain \`nil\` when you mean "nothing".`,
+**A nil trap.** A nil pointer stored in an interface is *not* a nil interface. The interface still has a type, so \`x != nil\` is true. Return a plain \`nil\` when you mean "nothing".`,
       mission: md`The hub manager wants two sorting strategies on the same floor: send each parcel to the chute of its **region**, and also tag it with a **lane** by weight (express, standard or freight) for the conveyor that carries it. Next quarter there will be a third strategy, and you do not want to rewrite the loop each time.
 
 You will define a \`Router\` interface with two implementations, make \`Region\` and \`Parcel\` print nicely with \`String\`, and build a routing table. When this lesson passes the **Routing board** lights up with every parcel's chute and lane.`,

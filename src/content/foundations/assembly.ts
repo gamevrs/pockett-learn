@@ -64,7 +64,7 @@ const SUM_MAP = [1, 2, 0, 3, 3, 4, 5, 3, 0, 6, 0];
 
 export const assemblyModule: Module = {
   id: "assembly",
-  part: "machine",
+  part: "hood",
   title: "Assembly: talking to the CPU",
   blurb: "Registers, instructions, jumps and loops on a toy CPU you program and step through.",
   icon: "microchip",
@@ -80,7 +80,7 @@ export const assemblyModule: Module = {
         {
           kind: "explain",
           title: "What the CPU actually reads",
-          body: "You've seen the CPU fetch an instruction, decode it and execute it, over and over. But what *is* an instruction? Just **numbers**.\n\nBelow is a complete program for a small practice CPU, exactly as the CPU sees it: one instruction per row, three numbers each. Press **Step** a few times and watch the registers and the output. Can you guess what each row does?",
+          body: "You've seen the CPU fetch an instruction, decode it and execute it, over and over. But what *is* an instruction? Just **numbers**.\n\nBelow is a complete program for a small practice CPU, exactly as the CPU sees it: one instruction per row, three numbers each. (The CPU keeps the numbers it is working on in a few tiny scratch boxes called **registers**, named R0, R1 and so on. You met the idea with the toy CPU's A box; the next lesson looks at registers properly. An **operand** is just something an instruction works on.) Press **Step** a few times and watch the registers and the output. Can you guess what each row does?",
           widget: { type: "asm-cpu", props: { program: FIRST, locked: true, machineCode: "only", allow: ["MOV", "ADD", "OUT", "HLT"] } },
         },
         {
@@ -140,7 +140,7 @@ export const assemblyModule: Module = {
           title: "Count the instructions",
           body: "An assembly file has 6 instructions, 2 blank lines and 3 comment lines (comments start with `;` and are notes for people). How many instructions end up in the machine code?",
           question: { type: "number", hint: "Blank lines and comments are for people; only instructions become machine code.", answer: 6 },
-          explanation: "Blank lines and comments are for humans, and the assembler skips them. Each instruction becomes exactly one machine instruction, so **6**. Later you'll see one line of Python turn into *several* instructions. That's a big difference between assembly and a high-level language.",
+          explanation: "Blank lines and comments are for humans, and the assembler skips them. Each instruction becomes exactly one machine instruction, so **6**. At the end of this module you'll see one line of Python turn into *several* instructions. That's a big difference between assembly and a high-level language.",
         },
         {
           kind: "recap",
@@ -279,7 +279,7 @@ export const assemblyModule: Module = {
           body: "What does this program output?",
           widget: { type: "asm-cpu", props: { program: "MOV R0, #5\nMOV R1, #2\nSUB R1, R0\nOUT R1\nHLT", locked: true, predict: true, allow: MATHS } },
           question: { type: "choice", options: ["3", "−3", "2", "5"], answer: 1 },
-          explanation: "`SUB R1, R0` means R1 = R1 − R0 = 2 − 5 = **−3**. Swapping the operands of a subtraction changes the answer, and registers are happy to hold negative numbers.",
+          explanation: "`SUB R1, R0` means R1 = R1 − R0 = 2 − 5 = **−3**. Swapping the operands of a subtraction changes the answer.\n\nHow does a register hold −3? With the trick from the bits module (**two's complement**): the leftmost bit counts as a negative place value. In 8 bits, −3 is `11111101` (−128 + 64 + 32 + 16 + 8 + 4 + 1 = −3). The CPU does not need a separate minus sign; it just reads the same bit pattern as a negative number when asked. (This toy CPU may use more than 8 bits, but the idea is the same.)",
         },
         {
           kind: "question",
@@ -350,7 +350,7 @@ export const assemblyModule: Module = {
         {
           kind: "explain",
           title: "Many more boxes",
-          body: "Four registers aren't enough for most programs. The rest of the data lives in **memory**: a long row of cells, each with a number called its **address**. Ours has 16 cells, addresses 0 to 15. (Real memory has billions.)\n\nThe CPU can't do maths on memory directly. It **loads** a number into a register, works on it there, and **stores** the result back:\n\n- `LOAD R0, [0]` copies the number at address 0 into R0\n- `STORE R0, [0]` copies R0 into address 0\n\nThe square brackets mean *the cell at this address*. Step through and watch address 0.",
+          body: "Four registers aren't enough for most programs. The rest of the data lives in **memory**: a long row of cells, each with a number called its **address**. Ours has 16 cells, addresses 0 to 15. (Real memory has billions.)\n\nOn this CPU (and on many real ones) maths happens in registers, not in memory. It **loads** a number into a register, works on it there, and **stores** the result back:\n\n- `LOAD R0, [0]` copies the number at address 0 into R0\n- `STORE R0, [0]` copies R0 into address 0\n\nThe square brackets mean *the cell at this address*. Step through and watch address 0.",
           widget: { type: "asm-cpu", props: { program: "LOAD R0, [0]\nADD R0, #1\nSTORE R0, [0]\nHLT", locked: true, mem: { "0": 41 }, allow: MEMORY } },
         },
         {
@@ -387,7 +387,7 @@ export const assemblyModule: Module = {
         {
           kind: "explain",
           title: "Variables are addresses",
-          body: "In Python you write `total = x + y` and never think about where the numbers live. When the program runs, each variable is really a place in memory: something decides an address for every variable, and the names disappear.\n\nHere `x` is address 0, `y` is address 1 and `total` is address 2. This is `total = x + y`, by hand.",
+          body: "Remember \"Variables are labelled boxes\" from the programs module: in Python you write `total = x + y` and never think about where the numbers live. When the program runs, each variable is really a place in memory: something decides an address for every variable, and the names disappear.\n\nHere `x` is address 0, `y` is address 1 and `total` is address 2. This is `total = x + y`, by hand.",
           widget: {
             type: "asm-cpu",
             props: { program: "LOAD R0, [0]    ; R0 = x\nLOAD R1, [1]    ; R1 = y\nADD R0, R1\nSTORE R0, [2]   ; total = R0\nHLT", locked: true, mem: { "0": 12, "1": 30 }, names: { "0": "x", "1": "y", "2": "total" }, allow: MEMORY },
@@ -440,7 +440,7 @@ export const assemblyModule: Module = {
         {
           kind: "question",
           title: "An address in a register",
-          body: "The address can come from a register: `LOAD R1, [R0]` reads the cell whose address is the number **in R0**. Add 1 to R0 and the same instruction reads the next cell. This is how programs walk through a list. (In C, an address kept in a variable is called a **pointer**.)\n\nWhat ends up in R2?",
+          body: "The address can come from a register: `LOAD R1, [R0]` reads the cell whose address is the number **in R0**. Add 1 to R0 and the same instruction reads the next cell. This is how programs walk through a list. (When you meet the C language later, you will see that an address kept in a variable has a name: a **pointer**.)\n\nWhat ends up in R2?",
           widget: { type: "asm-cpu", props: { program: "MOV R0, #2\nLOAD R1, [R0]\nADD R0, #1\nLOAD R2, [R0]\nHLT", locked: true, predict: true, mem: { "2": 70, "3": 15 }, allow: MEMORY } },
           question: { type: "number", hint: "R0 holds an address, so LOAD reads that cell. Add 1 to R0 and it reads the next cell.", answer: 15 },
           explanation: "R0 starts at 2, so `LOAD R1, [R0]` reads address 2 (70). Then R0 becomes 3, and `LOAD R2, [R0]` reads address 3: **15**. The same kind of instruction reaches a different cell because the address came from a register.",
@@ -537,7 +537,7 @@ export const assemblyModule: Module = {
             live: true,
           },
           question: { type: "choice", options: ["About the same: it's the same program", "About 63, twice as many", "About 130, four times as many", "Exactly 20"], answer: 1 },
-          explanation: "The three loop instructions run once per number, so the work grows in step with n: 3 × 20 + 3 = **63**. The program is the same size, but how long it *runs* depends on the data. Later this idea gets a name: **time complexity**.",
+          explanation: "The three loop instructions run once per number, so the work grows in step with n: 3 × 20 + 3 = **63**. The program is the same size, but how long it *runs* depends on the data. Programmers care about this a lot: if the work grows with the data, big data makes a program slow.",
         },
         {
           kind: "question",
@@ -588,7 +588,7 @@ export const assemblyModule: Module = {
         {
           kind: "explain",
           title: "CMP: subtract and forget",
-          body: "To decide anything, a CPU compares. `CMP R0, R1` works out R0 − R1, throws the answer away, and keeps only the flags:\n\n- **Z = 1** when the result is 0: the numbers are **equal**\n- **N = 1** when the result is negative: **R0 is less** than R1\n- both 0: R0 is **greater**\n\nA conditional jump then reads the flags. Change R0 and R1 and see which jumps would fire.",
+          body: "Think of a traffic light at a fork: you look at the colour, then turn left or right. A CPU decides the same way: first it compares, then it jumps (or not) depending on the result. `CMP R0, R1` works out R0 − R1, throws the answer away, and keeps only the flags:\n\n- **Z = 1** when the result is 0: the numbers are **equal**\n- **N = 1** when the result is negative: **R0 is less** than R1\n- both 0: R0 is **greater**\n\nA **conditional jump** then reads the flags, and jumps only if its condition holds:\n\n- `JZ label` jumps if Z = 1 (equal)\n- `JNZ label` jumps if Z = 0 (not equal)\n- `JLT label` jumps if N = 1 (R0 is less than R1)\n- `JGT label` jumps if both Z and N are 0 (R0 is greater than R1)\n\nChange R0 and R1 and see which jumps would fire.",
           widget: { type: "asm-flags", props: { a: 5, b: 8 } },
         },
         {
@@ -609,7 +609,7 @@ export const assemblyModule: Module = {
         {
           kind: "explain",
           title: "if / else",
-          body: "Here's an if/else in Python and the same decision in assembly, with x in R0. The assembly compares, then **jumps over** the part that shouldn't run. Notice `JMP end`: after the *if* part, it skips the *else* part.\n\nStep through and watch which Python line is running. Then press Reset, set R0 to something other than 0, and run it again.",
+          body: "You wrote this kind of decision in the \"Decisions\" lesson of the programs module. Here is an if/else in Python (read it as: *if x is 0, show 1; otherwise show 2*) and the same decision in assembly, with x in R0. The assembly compares, then **jumps over** the part that shouldn't run. Notice `JMP end`: after the *if* part, it skips the *else* part.\n\nStep through and watch which Python line is running. Then press Reset, set R0 to something other than 0, and run it again.",
           widget: {
             type: "asm-cpu",
             props: { program: IF_ELSE, python: "if x == 0:\n    print(1)\nelse:\n    print(2)", pyLines: [1, 1, 2, 2, 2, 3, 4, 4, 0, 0], locked: true, regs: { R0: 0 }, inputs: ["R0"], allow: BRANCH },
@@ -674,7 +674,7 @@ export const assemblyModule: Module = {
             },
           },
           question: {
-            type: "widget", hint: "Output the counter, add 1, compare it with n, and stop when you have passed n.",
+            type: "widget", hint: "Compare the counter with n first. If it has passed n, jump to the end; otherwise output it, add 1 and jump back to the comparison.",
             goal: {
               cases: [
                 { regs: { R0: 4 }, out: [1, 2, 3, 4] },
@@ -729,7 +729,7 @@ export const assemblyModule: Module = {
             props: { program: "; swap R0 and R1 with PUSH and POP\n\nHLT", regs: { R0: 3, R1: 8 }, inputs: ["R0", "R1"], allow: ["PUSH", "POP", "OUT", "HLT"], solution: "PUSH R0\nPUSH R1\nPOP R0     ; gets R1's value\nPOP R1     ; gets R0's value\nHLT" },
           },
           question: {
-            type: "widget", hint: "PUSH both values, then POP them back in the opposite order.",
+            type: "widget", hint: "After PUSH R0 and PUSH R1, the top of the stack holds R1's value. So POP into R0 first, then POP into R1.",
             goal: {
               cases: [
                 { regs: { R0: 3, R1: 8 }, expectRegs: { R0: 8, R1: 3 } },
@@ -737,7 +737,7 @@ export const assemblyModule: Module = {
               ],
             },
           },
-          explanation: "Push both, then pop in the same order you pushed. The first `POP` gets the last value pushed (R1's), so R0 ends up with R1's value and R1 with R0's. The stack did the job of the spare register.",
+          explanation: "Push R0, push R1, then pop into R0 and then into R1 (the same register order you pushed in). The first `POP` gets the last value pushed (R1's), so R0 ends up with R1's value and R1 with R0's. The stack did the job of the spare register. (Popping into R1 first and R0 second would just put every value back where it came from.)",
         },
         {
           kind: "explain",
@@ -782,12 +782,32 @@ export const assemblyModule: Module = {
             ],
             answer: 2,
           },
-          explanation: "There's only one set of registers, shared by all the code. A function that borrows a register should save it on the stack first and restore it before returning. Compilers follow agreed rules, called a **calling convention**, about which registers a function must leave as it found them.",
+          explanation: "There's only one set of registers, shared by all the code. A function that borrows a register should save it on the stack first and restore it before returning. Compilers follow agreed rules, called a **calling convention** (an agreement about who saves which registers), about which registers a function must leave as it found them.",
+        },
+        {
+          kind: "explain",
+          title: "Frames: local variables live on the stack",
+          body: "You saw in \"References and the call stack\" that every function call gets its own **frame** holding that call's local variables. Here is what a frame really is: a slice of this same stack. When a function is called, the return address goes on the stack; when the function needs a **local** (a variable that exists only during this call), it also lives on the stack, just above the return address. When the function returns, its whole slice is popped off and gone. That slice is the frame.\n\nTrace of the program below (the stack grows downward from address 16):\n\n```text\nCALL      return address 2 is pushed   SP = 15  (cell 15 = 2)\nPUSH R0   the local n = 4 is pushed    SP = 14  (cell 14 = 4)\nPOP R1    the local is read back       SP = 15\nRET       return address popped        SP = 16  (frame gone)\n```\n\nBecause each call gets a fresh slice, two calls (or a function calling itself) never overwrite each other's locals. Step through and watch cells 15 and 14.",
+          widget: {
+            type: "asm-cpu",
+            props: {
+              program: "    MOV R0, #4\n    CALL triple\n    OUT R0\n    HLT\ntriple:\n    PUSH R0         ; local n = 4, kept in this call's frame\n    ADD R0, R0\n    POP R1          ; read the local back\n    ADD R0, R1      ; 4 + 4 + 4\n    RET",
+              locked: true,
+              allow: STACK,
+            },
+          },
+        },
+        {
+          kind: "question",
+          title: "How deep is the frame?",
+          body: "In the program above, what is **SP** right after `PUSH R0` runs inside `triple` (the stack starts empty at 16 and grows down by one cell per push)?",
+          question: { type: "number", hint: "CALL already pushed the return address, so SP is 15. One more push moves it down by one.", answer: 14 },
+          explanation: "SP is **14**: cell 15 holds the return address and cell 14 holds the local. Those two cells are the frame of this call. After `POP R1` and `RET`, SP is back at 16, as if the call had never happened.",
         },
         {
           kind: "explain",
           title: "Stack overflow",
-          body: "Every `CALL` uses one more stack slot until its `RET` gives it back. A function that calls itself with no way to stop keeps pushing return addresses until the stack runs out of room: a **stack overflow**. Press **Run** and watch the stack fill the memory.\n\nPython guards against this: very deep recursion stops with a `RecursionError` before the real stack runs out.",
+          body: "Every `CALL` uses one more stack slot until its `RET` gives it back. A function that calls itself (**recursion**, from the \"References and the call stack\" lesson) with no way to stop keeps pushing return addresses until the stack runs out of room: a **stack overflow**. Press **Run** and watch the stack fill the memory.\n\nPython guards against this: very deep recursion stops with a `RecursionError` before the real stack runs out.",
           widget: { type: "asm-cpu", props: { program: "    CALL forever\n    HLT\nforever:\n    CALL forever", locked: true, allow: STACK } },
         },
         {
@@ -797,6 +817,7 @@ export const assemblyModule: Module = {
             "SP holds the address of the top of the stack; ours grows down from the end of memory.",
             "`CALL` pushes the return address and jumps; `RET` pops it back into the PC.",
             "Functions share the registers, so they save the ones they borrow with `PUSH` and `POP`.",
+            "A call's **frame** is its slice of the stack: the return address plus the call's local variables, gone again at `RET`.",
             "Recursion that never stops fills the stack: a stack overflow.",
           ],
         },
@@ -814,7 +835,7 @@ export const assemblyModule: Module = {
         {
           kind: "explain",
           title: "One line, many instructions",
-          body: "Here's a short Python loop, and assembly that a compiler could produce for it, with `total` in R0 and `i` in R1. Step through and watch which Python line each instruction belongs to.",
+          body: "You have written loops in Python (the \"Loops\" lesson), with variables (\"Variables are labelled boxes\") and expressions (\"Expressions and operators\"). Now see what one looks like underneath.\n\nRead the Python in plain words: *total starts at 0 and i starts at 1. While i is at most 5: add i to total, then add 1 to i. When the loop is over, show total.* It adds 1 + 2 + 3 + 4 + 5 and shows 15.\n\nBelow it is, next to assembly that a compiler could produce for it, with `total` in R0 and `i` in R1. Step through and watch which Python line each instruction belongs to.",
           widget: { type: "asm-cpu", props: { program: SUM_ASM, python: SUM_PY, pyLines: SUM_MAP, locked: true, allow: BRANCH } },
         },
         {
@@ -844,7 +865,7 @@ export const assemblyModule: Module = {
         {
           kind: "explain",
           title: "Compilers and interpreters",
-          body: "A **compiler** translates a whole program into machine code before it runs. C, C++, Rust and Go work this way: you compile once, and then the CPU runs the machine code directly.\n\nPython (the usual version, called CPython) works differently. It first turns your code into **bytecode**: simple instructions for an imaginary machine. Then a program called the **interpreter**, which is itself compiled machine code, reads the bytecode one instruction at a time and carries each one out. That extra layer is a big reason a Python loop runs many times slower than the same loop in C.",
+          body: "A **compiler** translates a whole program into machine code before it runs. C, C++, Rust and Go work this way: you compile once, and then the CPU runs the machine code directly.\n\nPython (the usual version, called CPython) works differently. It first turns your code into **bytecode**: simple instructions for an imaginary machine. Then a program called the **interpreter**, which is itself compiled machine code, reads the bytecode one instruction at a time and carries each one out. That extra layer is a big reason a Python loop runs many times slower than the same loop in a compiled language like C (which is the next module).",
         },
         {
           kind: "question",
@@ -872,7 +893,7 @@ export const assemblyModule: Module = {
         {
           kind: "question",
           title: "Be the compiler",
-          body: "Translate this Python into assembly. `n` is already in R0.\n```python\nwhile n > 0:\n    print(n + n)\n    n = n - 1\n```\nFor n = 4 it prints 8, 6, 4, 2. For n = 0 it prints nothing.",
+          body: "Translate this Python into assembly. `n` is already in R0.\n```python\nwhile n > 0:\n    print(n + n)\n    n = n - 1\n```\nIn plain words: *while n is more than 0: show n + n, then take 1 off n.* Test at the top, run the body, jump back (you did this in \"Count up to n\"). For n = 4 it prints 8, 6, 4, 2. For n = 0 it prints nothing.",
           widget: {
             type: "asm-cpu",
             props: {

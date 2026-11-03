@@ -22,9 +22,16 @@ export const chapter4: Chapter = {
       concepts: ["class", "object", "fields & properties", "constructor", "methods", "encapsulation", "static vs instance", "ToString"],
       learn: md`### Data and behaviour, together
 
-So far Rex has been a handful of loose variables (\`robotName\`, \`battery\`...). With three robots that would be nine variables and a lot of copy-paste. A **class** is a blueprint that bundles the data a thing has with the things it can do. An **object** is one thing built from that blueprint with \`new\`.
+So far Rex has been a handful of loose variables (\`robotName\`, \`battery\`...). With three robots that would be nine variables and a lot of copy-paste. Think of a cookie cutter and the cookies. The cutter is drawn once; you can press out as many cookies as you like, and each cookie is its own. A **class** is the cutter: a blueprint that bundles the data a thing has with the things it can do. An **object** is one cookie: one thing built from that blueprint with \`new\`.
+
+In this file the statements that *use* your classes come first, and the class itself goes below the divider line (the compiler reads the whole file first, so the statements can already use it). Here they are in the order they appear in your file:
 
 ~~~csharp
+Robot rex = new Robot("Rex", 80);    // or:  Robot rex = new("Rex", 80);
+rex.Charge();
+Console.WriteLine(rex.Battery);      // 100
+
+// ───── type declarations go below this line ─────
 class Robot
 {
     public string Name { get; }                 // readable from outside, set once
@@ -38,13 +45,13 @@ class Robot
 
     public void Charge() => Battery = 100;
 }
-
-Robot rex = new Robot("Rex", 80);    // or:  Robot rex = new("Rex", 80);
-rex.Charge();
-Console.WriteLine(rex.Battery);      // 100
 ~~~
 
+\`Math.Clamp(battery, 0, 100)\` forces a number into a range: if \`battery\` is below 0 it gives 0, above 100 it gives 100, otherwise the number itself.
+
 ### The parts of a class
+
+Everything inside a class (properties, fields, methods) is called a **member**.
 
 - **Properties** such as \`Name\` and \`Battery\` are the object's data. \`{ get; }\` means "read-only after construction", \`{ get; private set; }\` means "anyone may read it, only code inside the class may change it". They look like fields from outside but can run code, and can be changed later without breaking callers. (A plain *field*, \`private int _battery;\`, is the raw storage; keep fields private.)
 - A **constructor** runs when you write \`new\`. Use it to put every object in a valid starting state.
@@ -54,6 +61,8 @@ Console.WriteLine(rex.Battery);      // 100
 
 ### Encapsulation: protect the rules
 
+*Encapsulation* means keeping a thing's data behind its own methods so the rules cannot be bypassed.
+
 Because \`Battery\` has a \`private set\`, the only way to change it is through the class's own methods, which can enforce rules (never below 0, never above 100). If \`Battery\` were a public field, any line of code anywhere could set it to \`-500\`. Fewer ways to break the rules means fewer bugs.
 
 ### Static or instance?
@@ -62,7 +71,7 @@ An **instance** member belongs to one object: \`rex.Battery\`. A **static** memb
 
 ### Printing an object
 
-By default an object prints as its type name. Override \`ToString()\` and \`Console.WriteLine(rex)\` and interpolation will use yours:
+By default an object prints as its type name. Every object has a \`ToString()\` method that gives its text form. To **override** it means to write your own version in place of the default one (the word \`override\` says so). Then \`Console.WriteLine(rex)\` and interpolation will use yours:
 
 ~~~csharp
 public override string ToString() => $"{Name}: {Battery}%";
@@ -74,7 +83,7 @@ Like arrays and lists, two variables can refer to the same robot. \`Robot a = re
 
 ### Where the class goes
 
-A class is a type, so in this file it lives under the divider, below your statements. You can create and use it from the statements above because the compiler reads the whole file first.
+A class is a type, so in this file it lives under the divider, below your statements, exactly as in the first example. You can create and use it from the statements above because the compiler reads the whole file first.
 
 ### Common mistakes
 
@@ -255,6 +264,8 @@ for (const line of ["Rex: 65% after 30 m", "Pip: 15% after 40 m (needs charge)",
       concepts: ["enum", "record", "positional records", "value equality", "with expressions", "immutability", "Enum.GetNames"],
       learn: md`### Enums: a closed list of names
 
+This lesson covers two tools that both describe plain data: **enums** (a fixed list of named choices) and **records** (a bundle of values). Parcels need both.
+
 When a value can only be one of a few named options, an **enum** says so. The compiler then rejects typos and invites you to handle every case.
 
 ~~~csharp
@@ -268,7 +279,7 @@ Console.WriteLine((int)status);             // 0   enums are numbered from 0 und
 Compare that with using the strings \`"waiting"\`, \`"Waiting"\` and \`"waitng"\`: nothing stops the last one. Useful helpers:
 
 ~~~csharp
-Enum.TryParse<ParcelStatus>("Lost", out var parsed);   // text to enum, safely
+Enum.TryParse<ParcelStatus>("Lost", out var parsed);   // text to enum, safely (var lets the compiler work out the enum type)
 string[] names = Enum.GetNames<ParcelStatus>();         // "Waiting", "Loaded", "Delivered", "Lost"
 ~~~
 
@@ -302,7 +313,7 @@ Console.WriteLine(a == b);   // True   (two different objects, same values)
 
 ### Immutable by default, changed by copying
 
-A positional record's properties can be read but not assigned, so a parcel never changes behind your back. To "change" it, make a modified **copy** with \`with\`:
+A positional record's properties can be read but not assigned, so a parcel never changes behind your back. (That is what **immutable** means: it cannot be changed after it is made.) To "change" it, make a modified **copy** with \`with\`:
 
 ~~~csharp
 Parcel delivered = a with { Status = ParcelStatus.Delivered };
@@ -312,6 +323,16 @@ Parcel delivered = a with { Status = ParcelStatus.Delivered };
 To update a list you replace the item: \`list[0] = list[0] with { Status = ParcelStatus.Delivered };\`. Immutable data is easier to reason about, because if you hold a parcel, nobody else can alter it.
 
 You can also take a record apart: \`var (id, destination, kg, status) = p;\`.
+
+### Counting with a dictionary: \`++\` on a key
+
+The mission counts parcels per status. Besides \`+= 4\`, you can add one to a dictionary entry with \`++\`, as long as the key already exists:
+
+~~~csharp
+Dictionary<ParcelStatus, int> counts = new() { [ParcelStatus.Waiting] = 0, [ParcelStatus.Loaded] = 0 };
+counts[ParcelStatus.Loaded]++;                      // 0 becomes 1
+counts[ParcelStatus.Loaded] = counts.GetValueOrDefault(ParcelStatus.Loaded) + 1;   // 2 (the safe form for keys that may be missing)
+~~~
 
 ### Class or record?
 
@@ -534,6 +555,31 @@ Exceptions are for the **exceptional**. Do not use them for ordinary decisions:
 
 Catch where you can actually **do something useful**: skip one bad parcel and carry on, show a message, retry. A \`try\` around a whole loop abandons the rest of the loop after the first failure; a \`try\` *inside* the loop handles each item separately.
 
+~~~csharp
+string[] texts = { "5", "x", "9" };
+int total = 0;
+try                                   // outer: always say goodbye
+{
+    foreach (string text in texts)
+    {
+        try                           // inner: one bad item must not stop the rest
+        {
+            total += int.Parse(text);
+        }
+        catch (FormatException)
+        {
+            Console.WriteLine($"Skipping {text}");
+        }
+    }
+}
+finally
+{
+    Console.WriteLine($"Total: {total}");
+}
+// Skipping x
+// Total: 14
+~~~
+
 ### Common mistakes
 
 - Catching \`Exception\` everywhere "to be safe".
@@ -544,7 +590,7 @@ Catch where you can actually **do something useful**: skip one bad parcel and ca
 
 When this lesson passes, the **Safety log** shows each incident with its kind and message, and the number of parcels loaded safely.`,
       tasks: [
-        "Under the divider declare record Incident(string Kind, string Message). Create List<Incident> incidents. Write a local function int ReadWeight(string text): try int.Parse, and in catch (FormatException) add Incident(\"Bad input\", \"\\\"12kg\\\" is not a whole number\") for the text you were given and return -1. Print ReadWeight(\"12\") and ReadWeight(\"12kg\") as ReadWeight(12) = 12 style lines",
+        "Under the divider declare record Incident(string Kind, string Message). Create List<Incident> incidents. Write a local function int ReadWeight(string text): try int.Parse, and in catch (FormatException) add Incident(\"Bad input\", \"\\\"12kg\\\" is not a whole number\") for the text you were given and return -1. Print the lines exactly ReadWeight(12) = 12 and ReadWeight(12kg) = -1 (the printed text has no quote marks, even though the code calls ReadWeight(\"12\"))",
         "Write a local function void Load(Parcel parcel, int limitKg) that throws InvalidOperationException(\"P-103 is 26.5 kg, over the 25 kg limit\") (built from the parcel) when it is too heavy, and otherwise prints P-101 loaded",
         "Loop over parcelList; for each Waiting parcel call Load(parcel, 25) inside a try. In the catch add Incident(\"Overweight\", ex.Message); on success count it in int loaded. Wrap the whole loop in an outer try / finally that prints Loading dock closed",
         "Show incidents and loaded",
@@ -721,7 +767,7 @@ assert(lines.indexOf("Loading dock closed") > lines.indexOf("P-102 loaded"), "Th
       concepts: ["decomposition", "composing methods", "records", "dictionaries", "exceptions", "switch expressions", "reading a stack trace"],
       learn: md`### You now have all the pieces
 
-Everything in this last lesson already exists in your file: you can read and clean text (4), decide (5), repeat (6), hold collections (7, 8), call and design methods (9), cope with missing values (10), model things as objects (11) and records (12), and survive bad input (13). The skill left is **composition**: combining small, correct pieces into a bigger behaviour.
+Everything in this last lesson already exists in your file: you can read and clean text (4), decide (5), repeat (6), hold collections (7, 8), call and design methods (9), cope with missing values (10), model things as objects (11) and records (12), and survive bad input (13). The skill left is **composition**: putting small, correct pieces together into a bigger behaviour.
 
 ### A way to approach a small program
 
@@ -731,6 +777,10 @@ Everything in this last lesson already exists in your file: you can read and cle
 4. **Write the loop, then the summary.** Totals are filled in during the loop; the answer is built after it.
 5. **Put the result in a type.** A record such as \`ShiftReport\` documents the answer's shape and is easy to print, compare and test.
 6. **Test with the awkward cases first**: the bad number, the over-limit weight, the exact boundary (a 5 kg parcel is *not* "under 5").
+
+### One order, traced
+
+Follow \`P-202,Harbour,31\` through the pipeline: \`Split(',')\` gives the parts \`P-202\`, \`Harbour\` and \`31\`. \`ReadWeight("31")\` returns 31, which is not negative, so the line is readable. A \`Parcel\` is built and \`Load(parcel, 25)\` is called inside a \`try\`. 31 is over 25, so \`Load\` throws, the \`catch\` records an \`Overweight\` incident, and the order is counted as rejected. The loop moves on to the next line.
 
 ### Money and rules
 
@@ -772,7 +822,7 @@ If your shift code throws and nothing catches it, the stage shows the exception 
 
 ### Where next
 
-You have the foundations of C#: values, types, control flow, collections, methods, classes, records and exceptions. The next steps on the path are interfaces and generics, delegates and events, LINQ queries, async code and, eventually, web APIs. They all build directly on what is in your file now.`,
+You have the foundations of C#: values, types, control flow, collections, methods, classes, records and exceptions. The next steps on the path are interfaces, writing your own generic types (you have already *used* generics such as \`List<T>\`), delegates and events, LINQ queries, async code and, eventually, web APIs. They all build directly on what is in your file now.`,
       mission: md`It is the end of the shift. Six order lines arrive in the old comma-separated format, and the owner wants one report: how many parcels were delivered, how many were turned away, the day's revenue and the busiest stop.
 
 This is the lesson where your code runs the depot. When it passes, the **Shift report** lights up, the board shows every system online, and the depot score reflects your work.`,

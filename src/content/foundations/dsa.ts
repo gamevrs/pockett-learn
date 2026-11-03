@@ -131,7 +131,7 @@ def largest(cards):
       {
         kind: "code",
         title: "Find the bug",
-        body: "This `largest` passes a quick test: `largest([3, 9, 2])` gives 9. But it isn't correct for **every** input. Work out which input it gets wrong, then fix it. (No built-in `max`: write the steps yourself.)",
+        body: "This `largest` passes a quick test: `largest([3, 9, 2])` gives 9. But it isn't correct for **every** input. Work out which input it gets wrong, then fix it. (Don't use a ready-made function to find the biggest: write the steps yourself.)",
         language: "python",
         starter: `def largest(nums):
     best = 0
@@ -192,7 +192,7 @@ def largest(cards):
       {
         kind: "explain",
         title: "Growth families",
-        body: "Most algorithms fall into a few growth families, written in **Big-O** notation:\n\n- **O(1)** constant: the same work whatever n is.\n- **O(log n)** logarithmic: doubling n adds just one step.\n- **O(n)** linear: twice the items, twice the work.\n- **O(n log n)**: a little more than linear (good sorting).\n- **O(n²)** quadratic: twice the items, four times the work.\n\nDrag n and watch them pull apart, then try a really big n.",
+        body: "Most algorithms fall into a few growth families, written in **Big-O** notation:\n\n- **O(1)** constant: the same work whatever n is.\n- **O(log n)** logarithmic: doubling n adds just one step. (log₂ n is how many times you can halve n before you reach 1: log₂ 8 = 3, because 8 → 4 → 2 → 1.)\n- **O(n)** linear: twice the items, twice the work.\n- **O(n log n)**: a little more than linear (good sorting).\n- **O(n²)** quadratic: twice the items, four times the work.\n\nDrag n and watch them pull apart, then try a really big n.",
         widget: { type: "dsa-growth", props: { max: 64, initial: 16, showTime: true, presets: [1000, 1000000] } },
       },
       {
@@ -283,7 +283,7 @@ def has_duplicate(items):
       {
         kind: "explain",
         title: "Side by side",
-        body: "A **data structure** is a way of arranging data in memory so that certain jobs are fast. The simplest is the **array**: items in neighbouring memory cells. (Python's `list` is an array underneath.)\n\nBecause the cells are evenly spaced, the computer finds any item with one sum: *start + index × size*. Read the front, middle and end: always one step.",
+        body: "A **data structure** is a way of arranging data in memory so that certain jobs are fast. The simplest is the **array**: items in neighbouring memory cells. (Memory is a long row of numbered boxes, called cells. A cell's number is its **address**. A 4-byte number takes up 4 cells in a row.) Python's `list` is an array underneath.\n\nBecause the cells are evenly spaced, the computer finds any item with one sum: *start + index × size*. Read the front, middle and end: always one step.",
         widget: { type: "dsa-arraylist", props: { show: "array", ops: ["read"], items: [3, 8, 5, 1, 6], initialAt: "middle" } },
       },
       {
@@ -398,7 +398,7 @@ to_list(a)   # [3, 8, 5]
       {
         kind: "explain",
         title: "A stack of plates",
-        body: "A **stack** only lets you add or remove at one end, the **top**. The last thing on is the first thing off: **LIFO**, last in, first out.\n\nA Python list makes a fine stack: `append` pushes onto the top and `pop()` takes the top off, both O(1). Push a few and pop them.",
+        body: "A **stack** only lets you add or remove at one end, the **top**. The last thing on is the first thing off: **LIFO**, last in, first out.\n\nA Python list makes a fine stack: `append` pushes onto the top, and `pop()` removes the last item and gives it back to you, both O(1). Push a few and pop them.",
         widget: { type: "dsa-stackqueue", props: { kind: "stack", incoming: ["A", "B", "C", "D", "E"] } },
       },
       {
@@ -468,7 +468,7 @@ to_list(a)   # [3, 8, 5]
       {
         kind: "code",
         title: "Do the brackets match?",
-        body: "Write `balanced(text)`: True when every `(` and `[` is closed by the right bracket in the right order. Push each opener; on each closer, the top of the stack must be its partner.\n\n- `\"([])\"` → True\n- `\"([)]\"` → False (closed in the wrong order)\n- `\"((\"` → False (never closed)",
+        body: "Write `balanced(text)`: True when every `(` and `[` is closed by the right bracket in the right order. Push each opener; on each closer, the top of the stack must be its partner. (`ch in \"([\"` asks whether the character `ch` is one of the characters in that text.)\n\nTrace of `\"([)]\"`:\n\n| Character | Action | Stack after |\n| --- | --- | --- |\n| ( | opener, push | ( |\n| [ | opener, push | ( [ |\n| ) | closer, but the top is [, not ( | mismatch: return False |\n\nMore examples:\n\n- `\"([])\"` → True\n- `\"([)]\"` → False (closed in the wrong order)\n- `\"((\"` → False (never closed)",
         language: "python",
         starter: `def balanced(text):
     partner = {")": "(", "]": "["}
@@ -526,7 +526,7 @@ to_list(a)   # [3, 8, 5]
       {
         kind: "explain",
         title: "Jump straight there",
-        body: "Finding one contact in an unsorted list of a million could take a million looks. A **hash map** (Python's `dict`) does it in about one.\n\nThe trick: a **hash function** turns the key into a number, and that number picks a **bucket**. Ours is simple: add up the letter codes, then take the remainder when dividing by the number of buckets (`%`). Add some keys and see where they land.",
+        body: "Finding one contact in an unsorted list of a million could take a million looks. A **hash map** (Python's `dict`) does it in about one.\n\nThe trick: a **hash function** turns the key into a number, and that number picks a **bucket**. Ours is simple: add up the letter codes (every letter has a number: a is 97, b is 98, c is 99, and so on), then take the remainder when dividing by the number of buckets (`%`). Add some keys and see where they land.",
         widget: { type: "dsa-hashmap", props: { keys: ["cat", "dog", "cow", "hen", "bee", "fox"], allowCustom: true } },
       },
       {
@@ -575,7 +575,7 @@ to_list(a)   # [3, 8, 5]
           options: ["`\"ada\" in names` when names is a list", "`\"ada\" in names` when names is a set", "Both are equally fast", "Neither: `in` always checks every item"],
           answer: 1,
         },
-        explanation: "A **set** is a hash map with keys and no values: `in` hashes \"ada\" and checks one bucket, about O(1). On a **list**, `in` compares item by item: O(n), up to a million comparisons.",
+        explanation: "A **set** is a hash map with keys and no values (create one with `set()`, add with `.add(x)`): `in` hashes \"ada\" and checks one bucket, about O(1). On a **list**, `in` compares item by item: O(n), up to a million comparisons.",
       },
       {
         kind: "question",
@@ -591,12 +591,12 @@ to_list(a)   # [3, 8, 5]
           ],
           answer: 1,
         },
-        explanation: "The bucket is picked from the key's hash when it's stored. If the key could change later, its hash would point somewhere else and the entry would be lost. So keys must be **immutable**: strings, numbers, tuples. (Values can be anything.)",
+        explanation: "The bucket is picked from the key's hash when it's stored. If the key could change later, its hash would point somewhere else and the entry would be lost. So keys must be **immutable**, which means \"can't be changed after it's made\": strings, numbers and tuples (fixed groups like `(3, 4)`) qualify; a list can be changed, so it doesn't. Values can be anything.",
       },
       {
         kind: "code",
         title: "Count the words",
-        body: "Counting is a perfect job for a dict: the word is the key, its count is the value. Finish `count_words(text)` so it returns how many times each word appears.\n\n" + py(`count_words("the cat saw the hat")\n# {"the": 2, "cat": 1, "saw": 1, "hat": 1}`),
+        body: "Counting is a perfect job for a dict: the word is the key, its count is the value. Finish `count_words(text)` so it returns how many times each word appears. The tool you need is `counts.get(word, 0)`: it looks `word` up in the dict and gives back its count, or **0** if the word isn't there yet. So `counts[word] = counts.get(word, 0) + 1` adds one to the count, starting from 0.\n\n" + py(`count_words("the cat saw the hat")\n# {"the": 2, "cat": 1, "saw": 1, "hat": 1}`),
         language: "python",
         starter: `def count_words(text):
     counts = {}
@@ -642,7 +642,7 @@ to_list(a)   # [3, 8, 5]
       {
         kind: "question",
         title: "Linear search",
-        body: "The simplest search checks items one after another until it finds the target: **linear search**. It works on any list. Find **61**.",
+        body: "How do you find a name in a phone book? You do not read every page from the start. But if the names were in no order at all, you would have no choice. The simplest search checks items one after another until it finds the target: **linear search**. It works on any list. Find **61**.",
         widget: { type: "dsa-cards", props: { values: [17, 42, 8, 33, 75, 5, 29, 61, 12, 50], mode: "find", target: 61 } },
         question: { type: "widget", hint: "Turn the cards over one by one from the left until you find 61.", goal: { found: true }, prompt: "Turn cards over until you find 61." },
         explanation: "With the cards in no particular order, each look tells you nothing about the others. So you check them one by one: about half of them on average, and **all** of them if the target is last or missing.",
@@ -689,6 +689,11 @@ to_list(a)   # [3, 8, 5]
         body: "Someone runs binary search for **2** on the *unsorted* list [7, 9, 5, 2, 1]. It looks at the middle item, 5, and since 2 is smaller it searches only the left part, [7, 9]. What does it report?",
         question: { type: "choice", options: ["Found, at index 3", "Not found, even though 2 is in the list", "It crashes with an error", "It sorts the list first, then finds it"], answer: 1 },
         explanation: "Binary search **trusts** the order: seeing 5, it assumes everything smaller is on the left. Here 2 sits on the right, so it's never looked at. Binary search needs **sorted** data. Sorting first costs O(n log n), which pays off when you search the same data many times.",
+      },
+      {
+        kind: "explain",
+        title: "Binary search, step by step",
+        body: "Here is the idea as a recipe. Two markers, `lo` and `hi` (low and high), are the first and last positions that could still hold the target. Repeat:\n\n- Pick the middle position: `mid = (lo + hi) // 2`. (`//` divides and drops the leftover part, so 15 // 2 is 7.)\n- If the item at `mid` is the target, you are done: return `mid`.\n- If the item is **too small**, everything up to `mid` is ruled out, so move `lo` to `mid + 1`.\n- If the item is **too big**, move `hi` to `mid - 1`.\n- If `lo` ends up past `hi`, nothing is left to check: the target is missing, return -1.\n\nLet's find **61** in this list of 15 items (positions 0 to 14):\n\n~~~text\n[3, 8, 12, 17, 21, 29, 33, 42, 50, 56, 61, 68, 74, 81, 95]\n~~~\n\n| Round | lo | hi | mid | item at mid | Decision |\n| --- | --- | --- | --- | --- | --- |\n| 1 | 0 | 14 | 7 | 42 | too small, so lo = 8 |\n| 2 | 8 | 14 | 11 | 68 | too big, so hi = 10 |\n| 3 | 8 | 10 | 9 | 56 | too small, so lo = 10 |\n| 4 | 10 | 10 | 10 | 61 | found! return 10 |\n\nFour rounds, just like your four looks with the cards. `while lo <= hi:` is the loop that keeps going as long as something is left to check.",
       },
       {
         kind: "code",
@@ -828,7 +833,7 @@ assert _Counting.reads <= 40, f"Your search read {_Counting.reads} items. Binary
       {
         kind: "code",
         title: "Merge two sorted lists",
-        body: "Write the heart of merge sort: `merge(a, b)` takes two **sorted** lists and returns one sorted list with every item from both. Compare the front items, take the smaller, repeat; when one list runs out, add the rest of the other. (Don't call `sorted`: the point is that merging is O(n).)",
+        body: "Write the heart of merge sort: `merge(a, b)` takes two **sorted** lists and returns one sorted list with every item from both. Compare the front items, take the smaller, repeat; when one list runs out, add the rest of the other. `a[i:]` means \"the rest of `a`, from position `i` to the end\", and `result.extend(rest)` adds all of those items to the end of `result`. `i += 1` is short for `i = i + 1`. (Don't call `sorted`: the point is that merging is O(n).)",
         language: "python",
         starter: `def merge(a, b):
     result = []
@@ -884,7 +889,7 @@ assert _Counting.reads <= 40, f"Your search read {_Counting.reads} items. Binary
       {
         kind: "explain",
         title: "Trees",
-        body: "A **tree** stores items in a hierarchy. The top item is the **root**. Each item can have **children** below it, and items with no children are **leaves**. Your files and folders form a tree:\n\n" +
+        body: "A **tree** stores items in a hierarchy. The top item is the **root**. Each item can have **children** below it (the item above a child is its **parent**), and items with no children are **leaves**. A **level** is one row of the tree, counted from the root down, and a **subtree** is any node together with everything below it. Your files and folders form a tree:\n\n" +
           txt(`
 Documents
 ├── school
@@ -1098,12 +1103,12 @@ graph = {
         body: "This room is open: S to G takes 11 moves. Tap cells to add walls so the shortest path is **at least 15 moves**, but G can still be reached.",
         widget: { type: "dsa-grid", props: { map: ["S......", ".......", ".......", ".......", ".......", "......G"], editable: true } },
         question: { type: "widget", hint: "Add walls that block the short way but leave a longer way round open.", goal: { distanceMin: 15 }, prompt: "Make the shortest path 15 moves or longer." },
-        explanation: "A wall that blocks the direct way forces a detour, and BFS finds the shortest detour around it. Wall G off completely and the frontier empties before reaching it: BFS can also prove there's **no** route.",
+        explanation: "A wall that blocks the direct way forces a detour, and BFS finds the shortest detour around it. Wall G off completely and the frontier (the cells waiting to be explored) empties before reaching it: BFS can also prove there's **no** route.",
       },
       {
         kind: "code",
         title: "BFS in Python",
-        body: "Finish `distance(graph, start, goal)`: the fewest edges from start to goal, or -1 if there's no route. The queue and the `dist` dict are set up; when you take a node off the queue, give each **unseen** neighbour a distance one more than the node's, and queue it.",
+        body: "Finish `distance(graph, start, goal)`: the fewest edges from start to goal, or -1 if there's no route. `while queue:` means \"keep going while the queue isn't empty\". The queue and the `dist` dict are set up; when you take a node off the queue, give each **unseen** neighbour a distance one more than the node's, and queue it.",
         language: "python",
         starter: `from collections import deque
 
@@ -1304,7 +1309,7 @@ graph + BFS   fewest steps between nodes  (a model, not a box)
 
 export const dsaModule: Module = {
   id: "dsa",
-  part: "program",
+  part: "building",
   title: "Data structures and algorithms",
   blurb: "Big-O, arrays and linked lists, stacks and queues, hash maps, trees, searching and sorting.",
   icon: "tree",

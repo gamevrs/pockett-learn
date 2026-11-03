@@ -12,6 +12,7 @@ idea per step, and every step asks the learner to *do* something.
 | Widgets, one folder + registry per module | `src/learn/widgets/<module>/` (`index.ts` exports the registry) |
 | Lesson content, one file per module | `src/content/foundations/<module>.ts` |
 | Player (renders steps, checks answers, feedback, completion) | `src/components/learn/LessonPlayer.tsx` |
+| Module order and which part each module sits in | `src/content/foundations/index.ts` (the `part` is set there, not in the module file; `validate-content` checks parts stay contiguous) |
 | Reference lesson and widget | `content/foundations/bits.ts` (lesson 1), `learn/widgets/bits/Bits.tsx` |
 
 ## Steps

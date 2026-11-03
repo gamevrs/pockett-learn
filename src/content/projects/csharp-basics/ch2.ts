@@ -21,13 +21,9 @@ export const chapter2: Chapter = {
       concepts: ["Console.ReadLine", "int.Parse", "int.TryParse", "out", "string methods", "indexing", "format specifiers"],
       learn: md`### Reading input
 
-\`Console.ReadLine()\` waits for a line of text and hands it back. When there is nothing left to read it returns \`null\`, which is why its type is \`string?\` (the \`?\` means "might be null"; lesson 10 explains null properly). For now, give it a fallback with \`??\`: *"use the left side, or this when it is null"*.
+A depot clerk reads what is written on a parcel label, then types it in. A program does the same: it needs a way to read what it has been given. \`Console.ReadLine()\` waits for one line of text and hands it back. Each call reads the **next** line.
 
-~~~csharp
-string name = Console.ReadLine() ?? "";
-~~~
-
-In a real console app a person types the line. On pockett the course gives your program its input for you, always the same four lines, so your results are repeatable:
+In a real console app a person types the line. On pockett the course gives your program its input for you, always the same four lines, so your results are repeatable. You do not type them anywhere:
 
 ~~~text
 ··Mika Okafor··       (two spaces before and after the name)
@@ -36,9 +32,21 @@ harbour library
 7x
 ~~~
 
+### A tiny word: null
+
+What if there is nothing left to read? C# has a special value for "nothing here": \`null\`. A type with a \`?\` after it, like \`string?\`, means "a string, or null". \`Console.ReadLine()\` returns a \`string?\` because the input might have run out.
+
+You get rid of the "or null" with \`??\`, which reads as *"use the left side; if it is null, use the right side instead"*:
+
+~~~csharp
+string name = Console.ReadLine() ?? "";
+~~~
+
+So \`name\` is the line, or empty text if there was no line. That is all you need for now; lesson 10 explains null properly.
+
 ### From text to numbers
 
-Everything you read arrives as text, and \`"12" + 1\` is \`"121"\`. To calculate you must **parse** it.
+Everything you read arrives as text, and \`"12" + 1\` is \`"121"\` (joining text, not adding). To calculate you must **parse** it, which means turning text into a number.
 
 ~~~csharp
 int weight = int.Parse("12");           // 12
@@ -46,54 +54,101 @@ int broken = int.Parse("12kg");         // throws FormatException and stops the 
 bool ok = int.TryParse("12kg", out int value);   // ok is false, value is 0
 ~~~
 
-\`TryParse\` is the safe form for input you do not control. It returns a \`bool\` (did it work?) and delivers the number through an **\`out\` parameter**: a variable that the method fills in for you. \`out int value\` declares that variable on the spot. If you do not need the number, write \`out _\`. Use \`Parse\` when bad text would be a bug, \`TryParse\` when bad text is something you expect. Also available: \`double.TryParse\`, \`decimal.TryParse\`, \`bool.TryParse\`.
+\`TryParse\` is the safe form for input you do not control. It returns a \`bool\` (did it work?) and delivers the number through an **\`out\` parameter**: a variable that the method fills in for you. \`out int value\` declares that variable on the spot. Use \`Parse\` when bad text would be a bug, \`TryParse\` when bad text is something you expect.
 
-### The string toolbox
+### Putting it together: read, clean, parse
 
-A string is a sequence of characters, counted from **0**. Strings are **immutable**: every method returns a *new* string and leaves the original alone.
+Here is the whole routine for the first two input lines:
+
+~~~csharp
+string rawName = Console.ReadLine() ?? "";      // "  Mika Okafor  "
+string name = rawName.Trim();                    // "Mika Okafor"  (spaces at both ends removed)
+int kg = int.Parse(Console.ReadLine() ?? "0");   // 12
+Console.WriteLine($"{name} sends {kg} kg");      // Mika Okafor sends 12 kg
+~~~
+
+### Looking inside a string
+
+A string is a sequence of characters, counted from **0**. Square brackets pick one character by its position, and it comes back as a \`char\` (a single character, written in single quotes). Strings are **immutable**: they cannot be changed after they are made, so every method returns a *new* string and leaves the original alone.
+
+~~~csharp
+string who = "Mika Okafor";
+who[0]                           // 'M'  the first character
+int space = who.IndexOf(' ');    // 4    position of the first space (-1 if there is none)
+who[space + 1]                   // 'O'  the character right after the space
+~~~
+
+The number inside \`[ ]\` can be a calculation like \`space + 1\`. Here are the other everyday tools:
 
 ~~~csharp
 string s = "  Rex the Robot  ";
-s.Length                  // 17
-s.Trim()                  // "Rex the Robot"   (TrimStart / TrimEnd for one side)
+s.Length                  // 17   how many characters
+s.Trim()                  // "Rex the Robot"
 s.ToUpper()               // "  REX THE ROBOT  "
-s.Trim()[0]               // 'R'      the first character, as a char
-s.Contains("the")         // true
-s.StartsWith("  Rex")     // true
-s.IndexOf('R')            // 2        position of the first match, or -1 if there is none
-s.Trim().Substring(4, 3)  // "the"    start at 4, take 3 characters
-s.Replace("Rex", "Pip")   // "  Pip the Robot  "
-"a,b,c".Split(',')        // an array: "a", "b", "c"
-string.Join(" / ", new[] { "a", "b" })   // "a / b"
-string.IsNullOrWhiteSpace("   ")         // true
 ~~~
 
 Because strings never change, \`s.Trim();\` on its own line does nothing useful. Keep the result: \`s = s.Trim();\`.
 
-\`==\` compares strings by their **content** and is case-sensitive. For a case-insensitive comparison use \`string.Equals(a, b, StringComparison.OrdinalIgnoreCase)\`.
+### Joining strings, and padding numbers
 
-### Formatting numbers inside \`{ }\`
-
-After a colon you can add a **format specifier**, and after a comma a width for alignment.
+The \`+\` sign joins strings together. If one side is a number, it is turned into text first.
 
 ~~~csharp
-int n = 7;  double d = 3.14159;  int big = 1234567;
-$"{n:D3}"        // 007       at least 3 digits
-$"{d:F2}"        // 3.14      2 decimals
-$"{big:N0}"      // 1,234,567 thousands separators
-$"{0.256:P0}"    // 26%       percent
-$"[{n,5}]"       // [    7]   right-aligned in 5 characters
-$"[{"ab",-5}]"   // [ab   ]   left-aligned in 5 characters
+string initials = "MO";
+string code = initials + "-" + "012";   // "MO-012"
+string tag = "MO-" + 7;                 // "MO-7"
 ~~~
 
-One caution: number formats depend on the computer's *culture* (some languages write \`3,14\`). Here the program uses the neutral "invariant" culture, so output is predictable. That is also why \`:C\` (currency) prints a generic ¤ sign here. Use \`F2\` when you want a price.
+You can also build text inside \`$"..."\` with \`{ }\` holes. After a colon in a hole you can add a **format specifier**, which says how to show the value:
+
+~~~csharp
+int n = 7;  double d = 3.14159;
+$"{n:D3}"        // 007    at least 3 digits, padded with zeros
+$"{d:F2}"        // 3.14   2 decimals
+~~~
+
+So \`$"{initials}-{n:D3}"\` gives \`MO-007\`.
 
 ### Common mistakes
 
 - Doing maths on text you forgot to parse.
 - Calling \`int.Parse\` on user input that might be wrong. Prefer \`TryParse\` and handle \`false\`.
 - Writing \`name.Trim();\` and expecting \`name\` to change.
-- Off-by-one in \`Substring\`: the second argument is a **length**, not an end position.`,
+
+### Going further (optional)
+
+More string tools:
+
+~~~csharp
+string s = "  Rex the Robot  ";
+s.Contains("the")         // true
+s.StartsWith("  Rex")     // true
+s.IndexOf('R')            // 2
+s.Trim().Substring(4, 3)  // "the"    start at 4, take 3 characters
+s.Replace("Rex", "Pip")   // "  Pip the Robot  "
+string.IsNullOrWhiteSpace("   ")   // true
+~~~
+
+\`Substring\`'s second argument is a **length**, not an end position. \`Split\` cuts text into pieces and \`string.Join\` glues pieces together; both use a numbered list of values (an *array*) that lesson 7 teaches:
+
+~~~csharp
+"a,b,c".Split(',')                        // the pieces "a", "b", "c"
+string.Join(" / ", new[] { "a", "b" })    // "a / b"
+~~~
+
+\`==\` compares strings by their **content** and is case-sensitive. For a case-insensitive comparison use \`string.Equals(a, b, StringComparison.OrdinalIgnoreCase)\`.
+
+More format specifiers, plus a width for alignment after a comma:
+
+~~~csharp
+int big = 1234567;
+$"{big:N0}"      // 1,234,567 thousands separators
+$"{0.256:P0}"    // 26%       percent
+$"[{n,5}]"       // [    7]   right-aligned in 5 characters
+$"[{"ab",-5}]"   // [ab   ]   left-aligned in 5 characters
+~~~
+
+Number formats depend on the computer's *culture* (some languages write \`3,14\`). Here the program uses the neutral "invariant" culture, so output is predictable. That is also why \`:C\` (currency) prints a generic currency sign here. Use \`F2\` when you want a price.`,
       mission: md`A customer's parcel arrives at the dock with details typed in a hurry: stray spaces, lower-case text, and an extra weight that is not even a number. The depot prints a shipping label for every parcel.
 
 You will read the input, clean it, parse the numbers safely and build a label code. When this lesson passes, the **Shipping label** card prints your label on the stage.`,
@@ -210,7 +265,7 @@ assertEqual(scene.extraOk, false, "extraOk (int.TryParse of \"7x\" returns false
       concepts: ["if / else if / else", "comparison", "&& || !", "ternary", "switch statement", "switch expression", "patterns", "conditions are bools"],
       learn: md`### Questions with yes/no answers
 
-A comparison produces a \`bool\`: \`==\` equal, \`!=\` not equal, \`<\`, \`>\`, \`<=\`, \`>=\`. Remember that **one** \`=\` stores a value and **two** \`==\` ask a question.
+A depot robot must decide constantly: "Is my battery low? Is this parcel heavy?" Every decision starts with a question that has a yes or no answer. In C#, a comparison asks such a question and produces a \`bool\` (a value that is either \`true\` or \`false\`): \`==\` equal, \`!=\` not equal, \`<\`, \`>\`, \`<=\`, \`>=\`. Remember that **one** \`=\` stores a value and **two** \`==\` ask a question.
 
 ~~~csharp
 int battery = 18;
@@ -230,22 +285,33 @@ Console.WriteLine(battery == 18);    // True
 Console.WriteLine(battery > 50);     // False
 ~~~
 
-(C# prints a \`bool\` with a capital letter, \`True\` or \`False\`.) Anything that produces a \`bool\` can sit inside the parentheses of an \`if\`: a comparison, a variable that already holds a \`bool\`, or a method call that returns one. Nothing else is allowed. Unlike some languages, C# has **no truthiness**: a number or a string is never silently treated as yes or no, so \`if (battery)\` and \`if (name)\` are compile errors.
+(C# prints a \`bool\` with a capital letter, \`True\` or \`False\`.) Anything that produces a \`bool\` can sit inside the parentheses of an \`if\`: a comparison, or a variable that already holds a \`bool\`. Nothing else is allowed. Unlike some languages, C# never silently treats a number or a string as yes or no, so \`if (battery)\` is a compile error.
 
-### Kinds of conditions you can write
+### \`if\`, \`else if\`, \`else\`
 
-| Kind | Example | What it asks |
-| --- | --- | --- |
-| Comparison | \`battery <= 20\` | Is this number below or equal to that one? (\`<\` \`>\` \`<=\` \`>=\` \`==\` \`!=\`) |
-| Text equality | \`robot == "Rex"\` | Are these two strings identical? Case matters. |
-| Contains | \`note.Contains("jam")\` | Is this piece of text somewhere inside? |
-| Empty text | \`string.IsNullOrEmpty(note)\` | Is it \`null\` or \`""\`? (\`string.IsNullOrWhiteSpace\` also treats spaces as empty.) |
-| Method returning bool | \`char.IsDigit(c)\`, \`int.TryParse(s, out int n)\` | Ask a ready-made yes/no question. |
-| Pattern with \`is\` | \`battery is >= 20 and < 50\`, \`note is null\` | Does the value fit this shape or range? |
-| Range check | \`battery >= 20 && battery < 50\` | Is it between two limits? Spell out both sides. |
-| Combined | \`online && !charging\` | Several questions at once: \`&&\` needs all yes, \`!\` flips an answer (and \`or\` is written with two vertical bars). |
+An \`if\` runs its block only when its condition is \`true\`. Add \`else if\` for a second question and \`else\` for "none of the above":
 
-Two notes. First, prefer \`&&\` and \`||\` over the single \`&\` and \`|\`: on bools the single forms also work, but they always evaluate **both** sides, so they lose the short-circuit safety. Second, the table shows what is *available*. Conditions combine freely, so \`online && (battery >= 30 || charging)\` is one condition built from three smaller ones.
+~~~csharp
+int battery = 18;
+string status;
+if (battery < 20)
+{
+    status = "Charge now";
+}
+else if (battery < 50)
+{
+    status = "Low";
+}
+else
+{
+    status = "Ready";
+}
+// battery is 18: 18 < 20 is true, so status is "Charge now" and the other branches are skipped
+~~~
+
+The branches are tried **top to bottom** and only the first one whose condition is true runs. Because of that, order matters: put the most specific test first. The condition must be a real \`bool\`; \`if (battery = 50)\` is a compile error in C#, which protects you from a famous class of bugs.
+
+Braces are optional for a single statement, but always writing them avoids mistakes when you add a second line later.
 
 ### Separate \`if\`s versus an \`else if\` chain
 
@@ -268,33 +334,6 @@ else if (battery < 50) Console.WriteLine("Low");
 
 Use separate \`if\`s when the checks are unrelated (several warnings may fire together). Use a chain when the answers exclude each other (one status out of several).
 
-### How to pick the condition
-
-1. Say the question in plain words: "Does this robot need charging?"
-2. Turn it into one yes/no test: \`battery < 20\`.
-3. Check the **edge value**. What should happen at exactly 20? If a robot with 20% still needs charging, you want \`<=\`, not \`<\`.
-
-### \`if\`, \`else if\`, \`else\`
-
-~~~csharp
-if (battery < 20)
-{
-    status = "Charge now";
-}
-else if (battery < 50)
-{
-    status = "Low";
-}
-else
-{
-    status = "Ready";
-}
-~~~
-
-The branches are tried **top to bottom** and only the first one whose condition is true runs. Because of that, order matters: put the most specific test first. The condition must be a real \`bool\`; \`if (battery = 50)\` is a compile error in C#, which protects you from a famous class of bugs.
-
-Braces are optional for a single statement, but always writing them avoids mistakes when you add a second line later.
-
 ### Combining conditions
 
 - \`&&\` **and**: both sides must be true.
@@ -305,7 +344,7 @@ Braces are optional for a single statement, but always writing them avoids mista
 bool canDeliver = online && battery >= 30 && weightKg <= 25;
 ~~~
 
-Both \`&&\` and \`||\` are **short-circuit**: the right side is only evaluated when it can still change the answer. That is why \`name != null && name.Length > 3\` is safe. \`&&\` binds tighter than \`||\`, so add parentheses whenever you mix them. Write each comparison in full: \`x > 5 && x < 10\`, never \`x > 5 && < 10\`.
+Both \`&&\` and \`||\` are **short-circuit**: the right side is only evaluated when it can still change the answer. That is why \`parcels > 0 && totalKg / parcels > 3\` is safe: when \`parcels\` is 0 the division is never attempted. \`&&\` binds tighter than \`||\`, so add parentheses whenever you mix them. Write each comparison in full: \`x > 5 && x < 10\`, never \`x > 5 && < 10\`.
 
 ### The conditional (ternary) operator
 
@@ -362,10 +401,29 @@ Arms are checked top to bottom, so \`< 20\` only sees weights of 5 or more. The 
 - Branches in the wrong order: \`if (w < 20) ... else if (w < 5)\` can never reach the second branch.
 - A stray semicolon, \`if (x > 3);\`, which ends the \`if\` with an empty statement.
 - Comparing text with the wrong case: \`"sat" == "Sat"\` is \`false\`.
-- Comparing doubles with \`==\` after calculations. Use a tolerance instead.`,
+- Comparing doubles with \`==\` after calculations. Use a tolerance instead.
+
+### Going further (optional)
+
+**Kinds of conditions.** Anything that gives back a \`bool\` can be a condition:
+
+- A comparison: \`battery <= 20\`.
+- Text equality: \`robot == "Rex"\` (case matters).
+- A question a text can answer: \`note.Contains("jam")\` (is this piece of text inside?).
+- A ready-made yes/no method, such as \`char.IsDigit(c)\`.
+- A range, spelled out on both sides: \`battery >= 20 && battery < 50\`.
+- A combination: \`online && (battery >= 30 || charging)\` is one condition built from three smaller ones.
+
+Prefer \`&&\` and \`||\` over the single \`&\` and \`|\`: on bools the single forms also work, but they always work out **both** sides, so they lose the short-circuit safety.
+
+**How to pick the condition.**
+
+1. Say the question in plain words: "Does this robot need charging?"
+2. Turn it into one yes/no test: \`battery < 20\`.
+3. Check the **edge value**. What should happen at exactly 20? If a robot with 20% still needs charging, you want \`<=\`, not \`<\`.`,
       mission: md`The depot needs rules. Heavy parcels go to the loading bay, a low robot must charge before it carries anything, weekends run shorter shifts, and the board should say whether a delivery is cleared or on hold.
 
-Today's facts: the parcel weighs \`weightKg\`, Rex has \`battery\` and \`online\` from lesson 2, and the shift starts at hour 14 on a Saturday. When this lesson passes, the **Service rules** panel shows every decision your code makes.`,
+Today's facts: the parcel weighs \`weightKg\` (from lesson 4), Rex has \`battery\` and \`online\` (from lesson 2), and the shift starts at hour 14 on a Saturday. When this lesson passes, the **Service rules** panel shows every decision your code makes.`,
       tasks: [
         "Make a switch expression for tier from weightKg: under 5 is \"Light\", under 20 is \"Standard\", otherwise \"Heavy\". Then a second one for shiftName from shiftHour: before 6 or from 22 on is \"Night\", before 14 is \"Morning\", otherwise \"Evening\"",
         "Use an if / else if / else chain to set chargeState from battery: under 20 \"Charge now\", under 50 \"Low\", otherwise \"Ready\"",
@@ -517,7 +575,20 @@ assert(!lines.includes("Hold at the dock"), 'Only one of the two messages should
       concepts: ["while", "for", "do-while", "break", "continue", "nested loops", "off-by-one", "Enumerable.Range"],
       learn: md`### Repeat without copy-paste
 
-A loop runs a block of code again and again. Every loop answers three questions: where does it **start**, how long does it **keep going**, and how does each pass **move forward**?
+Imagine writing "Patrol stop 1" to "Patrol stop 8" by hand, eight nearly identical lines. Now imagine a thousand. A loop says "do this again and again" once. A loop runs a block of code repeatedly, and every loop answers three questions: where does it **start**, how long does it **keep going**, and how does each pass **move forward**?
+
+### Which loop?
+
+There are two reasons to repeat. Either you want to go **through** something (every dock, "eight times"), or you want to keep going **until the world changes** (the battery is full, the scan is done). Use this table to choose:
+
+| Situation | Loop |
+| --- | --- |
+| I know how many laps, or I need the position number | \`for\` |
+| I wait for something to happen | \`while\` |
+| It must run once before I can even ask | \`do\` / \`while\` |
+| I want every item in a collection | \`foreach\` (a later lesson) |
+
+A \`while\` loop's condition is the same yes/no question as in an \`if\`, simply asked again before every lap. Something inside the body has to change the answer, otherwise the loop never stops.
 
 ### \`while\`: keep going as long as a condition holds
 
@@ -531,6 +602,8 @@ while (charge > 20)
 }
 ~~~
 
+Trace: charge 100 is above 20, so it drops to 85. Then 70, 55, 40, 25 (each time the test is still true). At 25 the test passes once more and charge becomes 10. Now 10 > 20 is false and the loop ends. That is six passes in all.
+
 If nothing changes the condition you get an **infinite loop**. Here, a program that runs for more than a few seconds is stopped with a time-out message, which is also what would hang a real program.
 
 ### \`for\`: counting loops
@@ -538,17 +611,29 @@ If nothing changes the condition you get an **infinite loop**. Here, a program t
 \`for (start; condition; step)\` packs all three questions into one line.
 
 ~~~csharp
-for (int stop = 1; stop <= 8; stop++)
+for (int stop = 1; stop <= 3; stop++)
 {
     Console.WriteLine($"Patrol stop {stop}");
 }
+// Patrol stop 1
+// Patrol stop 2
+// Patrol stop 3
 ~~~
 
 1. \`int stop = 1\` runs once, before the loop.
-2. \`stop <= 8\` is checked before every pass.
-3. \`stop++\` runs after every pass.
+2. \`stop <= 3\` is checked before every pass.
+3. \`stop++\` (add one) runs after every pass.
 
-The counter exists only inside the loop. Counting down works too: \`for (int n = 5; n >= 1; n--)\`. To count from 0 up to *but not including* the end, use \`<\`; this is the usual shape for walking an array of length \`n\`: \`for (int i = 0; i < n; i++)\`.
+Lap by lap:
+
+| Lap | \`stop\` | \`stop <= 3\` | Output |
+| --- | --- | --- | --- |
+| 1 | 1 | true | Patrol stop 1 |
+| 2 | 2 | true | Patrol stop 2 |
+| 3 | 3 | true | Patrol stop 3 |
+| (end) | 4 | false | the loop is over |
+
+The counter exists only inside the loop. Counting down works too: \`for (int n = 5; n >= 1; n--)\`. The start is included and the stop value is **excluded** when you use \`<\`, so \`i < n\` gives exactly \`n\` laps.
 
 ### \`do\` / \`while\`: body first
 
@@ -559,7 +644,7 @@ do
 } while (!scanDone);   // checked AFTER the body, so it always runs at least once
 ~~~
 
-It is the right shape for "try, then decide whether to try again".
+(\`!scanDone\` means "scanDone is not true", as in the last lesson.) It is the right shape for "try, then decide whether to try again".
 
 ### \`break\` and \`continue\`
 
@@ -573,11 +658,27 @@ for (int dock = 1; dock <= 10; dock++)
     if (dock > 8) break;          // nothing beyond dock 8
     Console.WriteLine($"Dock {dock}");
 }
+// prints docks 1, 2, 3, 5, 6, 7 and 8
+~~~
+
+In words: \`continue\` means "not this one", \`break\` means "I found it, stop". And the forever-loop trap: \`while (true)\` has no way out except a \`break\` (or a \`return\`) in its body, so always point at the line that ends it.
+
+### Loops need conditions too
+
+A loop visits everything, an \`if\` decides what to do with each visit. Together they count things:
+
+~~~csharp
+int multiples = 0;
+for (int dock = 1; dock <= 10; dock++)
+{
+    if (dock % 3 == 0) multiples++;   // % is the remainder: 3, 6 and 9 leave 0
+}
+Console.WriteLine(multiples);     // 3
 ~~~
 
 ### Nested loops
 
-A loop inside a loop runs the inner loop completely for **each** pass of the outer one: 5 rows of 8 columns is 40 passes. This is how you walk a grid or draw a pattern.
+A loop inside a loop runs the inner loop completely for **each** pass of the outer one: 5 rows of 8 columns is 40 passes. This is how you walk a grid or draw a pattern. A tiny version, 3 rows of 4 characters:
 
 ~~~csharp
 string rows = "";
@@ -589,28 +690,29 @@ for (int y = 0; y < 3; y++)
     }
     rows += "\n";          // finish the row
 }
-Console.Write(rows);       // ####  ####  ####  (three lines)
+Console.Write(rows);
+// ####
+// ####
+// ####
 ~~~
 
-### Which loop?
+Inside the inner loop you know the cell's column \`x\` and row \`y\`, so a condition can pick which character to draw. A cell on the edge of a grid that is 4 wide and 3 tall is one where \`x\` is the first or last column, or \`y\` is the first or last row. Store the yes/no answer in a \`bool\` and use it with the ternary operator from the last lesson:
 
-- You know how many times: \`for\`.
-- You repeat until something happens: \`while\`.
-- You must do it at least once: \`do\` / \`while\`.
-- You are visiting every item of a collection: \`foreach\` (next lesson).
+~~~csharp
+bool edge = x == 0 || x == 3 || y == 0 || y == 2;
+rows += edge ? "#" : ".";
+~~~
 
-### Which loop, and what is a range of numbers?
+### Common mistakes
 
-There are two reasons to repeat. Either you want to go **through** something (every dock, every robot, "eight times"), or you want to keep going **until the world changes** (the battery is full, the scan is done). The first is a \`for\` or \`foreach\`. The second is a \`while\`, whose condition is the same yes/no question as in an \`if\`, simply asked again before every lap. Something inside the body has to change the answer, otherwise the loop never stops.
+- **Off by one**: \`<=\` versus \`<\`. \`for (i = 1; i <= 8; ...)\` runs 8 times; \`for (i = 0; i <= 8; ...)\` runs 9.
+- Forgetting to update the thing the condition checks, which gives an infinite loop.
+- Changing the loop counter inside the body, which makes the loop hard to follow.
+- Declaring the counter name twice in nested loops. Use different names for the outer and inner counters.
 
-| Situation | Loop |
-| --- | --- |
-| I know how many laps, or need the position number | \`for\` |
-| I just want every item in a collection | \`foreach\` |
-| I wait for something to happen | \`while\` |
-| It must run once before I can even ask | \`do\` / \`while\` |
+### Going further (optional)
 
-**Which numbers does a counting loop produce?** The start is included and the stop is **excluded**, so \`i < n\` gives exactly \`n\` laps and the counter lines up with the positions of an array of length \`n\` (0 up to \`n - 1\`).
+More counting patterns (the start is included, the stop is excluded):
 
 ~~~csharp
 for (int i = 0; i < 5; i++)        // 0 1 2 3 4
@@ -619,82 +721,27 @@ for (int i = 0; i < 10; i += 3)    // 0 3 6 9
 for (int n = 10; n > 0; n -= 4)    // 10 6 2   (counting down)
 ~~~
 
-C# also has a ready-made sequence of numbers, \`Enumerable.Range\`, which lives in \`System.Linq\` (add \`using System.Linq;\` unless your project already includes it). Careful: its second argument is a **count**, not a stop value.
+**Walking a collection.** An *array* is a row of values stored under one name; lesson 7 teaches it properly. For now, here is a first look. \`foreach\` visits every item without a counter. \`string[] docks = { "North", "East", "South" };\` makes an array of three words, and \`docks.Length\` is how many it holds (3).
 
 ~~~csharp
-foreach (int i in Enumerable.Range(0, 5)) { }   // 0 1 2 3 4   (5 numbers)
-foreach (int i in Enumerable.Range(2, 4)) { }   // 2 3 4 5     (start 2, 4 numbers)
-foreach (int i in Enumerable.Range(1, 3).Reverse()) { }   // 3 2 1
-~~~
+string[] docks = { "North", "East", "South" };
 
-It has no step, so \`for\` is still the tool for "every third dock". It is handy when you want a \`foreach\` over plain numbers, or a list of numbers to feed into other code.
-
-### The same task three ways
-
-Printing every dock name, with \`string[] docks = { "North", "East", "South" };\`:
-
-~~~csharp
-// 1. By position: you get the index, so you can also use it
+// By position: you get the index, so you can also use it
 for (int i = 0; i < docks.Length; i++)
 {
     Console.WriteLine($"{i}: {docks[i]}");     // 0: North, 1: East, 2: South
 }
 
-// 2. Straight over the items: shortest and hardest to get wrong
+// Straight over the items: shortest and hardest to get wrong
 foreach (string dock in docks)
 {
     Console.WriteLine(dock);                   // North, East, South
-}
-
-// 3. Items plus your own counter
-int number = 1;
-foreach (string dock in docks)
-{
-    Console.WriteLine($"Dock {number}: {dock}");   // Dock 1: North, Dock 2: East, Dock 3: South
-    number++;
 }
 ~~~
 
 Prefer \`foreach\` when you only need the items. Reach for \`for\` when the position matters (changing items in place, comparing neighbours, skipping every other one).
 
-### What happens each lap
-
-~~~csharp
-for (int stop = 1; stop <= 3; stop++)
-{
-    Console.WriteLine($"Stop {stop}");
-}
-~~~
-
-| Lap | \`stop\` | \`stop <= 3\` | Output |
-| --- | --- | --- | --- |
-| 1 | 1 | true | Stop 1 |
-| 2 | 2 | true | Stop 2 |
-| 3 | 3 | true | Stop 3 |
-| (end) | 4 | false | the loop is over |
-
-### Loops need conditions too
-
-A loop visits everything, an \`if\` decides what to do with each visit. Together they filter and count:
-
-~~~csharp
-int[] charges = { 80, 15, 42, 9, 66 };
-int lowCount = 0;
-foreach (int c in charges)
-{
-    if (c < 20) lowCount++;
-}
-Console.WriteLine(lowCount);     // 2  (the robots at 15 and 9)
-~~~
-
-\`break\` and \`continue\` (see above) are those same two ideas inside a loop: \`continue\` means "not this one", \`break\` means "I found it, stop". And the forever-loop trap: \`while (true)\` has no way out except a \`break\` (or a \`return\`) in its body, so always point at the line that ends it.
-
-### Common mistakes
-
-- **Off by one**: \`<=\` versus \`<\`. \`for (i = 1; i <= 8; ...)\` runs 8 times; \`for (i = 0; i <= 8; ...)\` runs 9.
-- Forgetting to update the thing the condition checks, which gives an infinite loop.
-- Changing the loop counter inside the body, which makes the loop hard to follow.
-- Declaring the counter name twice in nested scopes. Use different names for the outer and inner counters.`,
+C# also has a ready-made sequence of numbers, \`Enumerable.Range(start, count)\`. Careful: its second argument is a **count**, not a stop value. \`foreach (int i in Enumerable.Range(2, 4)) { }\` visits 2 3 4 5. These tools are already available in this project, so you do not need to add anything at the top. It has no step, so \`for\` is still the tool for "every third dock".`,
       mission: md`The patrol robot walks the lane around the warehouse floor. Its charge drains a little on every lap, the docks along the wall must be checked in order, and the floor map itself is a grid you can draw with two loops.
 
 When this lesson passes, the **Patrol route** panel draws your floor map and sends a robot around the lane you built. Press *Replay* on the stage to watch it again.`,

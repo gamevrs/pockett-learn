@@ -22,13 +22,33 @@ import { aiSystemsModule } from "./ai-systems.ts";
 export const FOUNDATIONS: Track = {
   slug: "foundations",
   title: "Foundations",
-  tagline: "How code really works, from a single bit to design patterns.",
+  tagline: "How code really works, from a single bit to the systems behind the apps you use.",
   parts: [
-    { id: "machine", title: "How computers work", blurb: "From a single bit up through the CPU, assembly, C, the operating system and the network." },
-    { id: "program", title: "How to program", blurb: "From your first instruction to data structures, the four pillars of OOP and design patterns." },
+    { id: "start", title: "Start here: bits, the computer and your first programs", blurb: "Begin with a single bit, meet the computer that runs everything, then write your first programs in Python." },
+    { id: "hood", title: "Under the hood: assembly, C, the OS and the network", blurb: "Go below Python: the machine's own language, a small and speedy language called C, the operating system, and how computers talk to each other." },
+    { id: "building", title: "Building well: data structures, OOP and patterns", blurb: "Learn how to organise data, shape code into objects, and reuse ideas that good programmers have trusted for years." },
     { id: "systems", title: "How production systems work", blurb: "Timeouts, retries, rate limits, caches, databases, deploys, observability, security and AI systems: what it takes for software to survive real traffic." },
   ],
-  modules: [bitsModule, computerModule, assemblyModule, cModule, unixModule, networkModule, programsModule, dsaModule, oopModule, patternsModule, reliabilityModule, trafficModule, cachingModule, dataModule, shippingModule, observabilityModule, securityModule, aiSystemsModule],
+  modules: [
+    bitsModule,
+    computerModule,
+    programsModule,
+    assemblyModule,
+    cModule,
+    unixModule,
+    networkModule,
+    dsaModule,
+    oopModule,
+    patternsModule,
+    reliabilityModule,
+    trafficModule,
+    cachingModule,
+    dataModule,
+    shippingModule,
+    observabilityModule,
+    securityModule,
+    aiSystemsModule,
+  ],
 };
 
 export interface ConceptContext {

@@ -69,9 +69,11 @@ export const chapter1: Chapter = {
       minutes: 20,
       xp: 70,
       concepts: ["package main", "import", "func main", "fmt.Println", "fmt.Printf", "format verbs", "compiler errors"],
-      learn: md`### Every Go program starts in \`package main\`
+      learn: md`### Making the hub talk
 
-A complete Go program can be this small:
+A sorting hub is full of machines, and a control room needs a screen where the machines report what they are doing. Your Go program has a screen too: it prints text, and the text appears on the sorting floor beside your editor. Printing is the first thing every program learns, because it is how a program tells you anything at all.
+
+Here is a complete Go program that prints one line:
 
 ~~~go
 package main
@@ -83,21 +85,14 @@ func main() {
 }
 ~~~
 
-Read it top to bottom:
+Press **Run** and the line appears on the sorting floor. **Submit** checks your work against the test list and saves your progress. Read the program top to bottom:
 
-- **\`package main\`**: Go code lives in *packages*. The package called \`main\` is special: it builds into a program you can run. Every other package name makes a library.
-- **\`import "fmt"\`**: you must say which standard-library packages you use. \`fmt\` (short for *format*) prints and formats text.
-- **\`func main()\`**: the entry point. The program starts here, runs the statements in order, and ends when \`main\` returns.
-- The **braces** are required and the opening \`{\` stays on the same line as \`func\`. Indent with a tab. Go ships one official formatter, \`gofmt\`, so there are no style arguments: every Go file in the world looks the same.
-- There are **no semicolons** to type. The compiler adds them at the end of a line for you, which is also why a stray line break in the wrong place is an error.
+- **\`package main\`**: Go code is grouped into *packages*. The package called \`main\` is the one that builds into a program you can run.
+- **\`import "fmt"\`**: Go ships with a *standard library*, a set of ready-made packages. You say which ones you use. \`fmt\` (short for *format*) prints and formats text.
+- **\`func main()\`**: the **entry point**, the place where the program starts. It runs the statements between the braces in order and ends when they are done.
+- \`fmt.Println("...")\` is one **call**: you ask \`fmt\` to print a line. The text in double quotes is a **string**.
 
-### The file you start with
-
-The editor opens with a longer file than the little example above, because the whole course is *one growing program*. Look at the top of it:
-
-- The **import block** lists every package this course will use. Packages you do not use yet are kept "in use" by the **scaffold** (\`var ( _ = bufio.NewScanner ... )\`). Go treats an unused import as an error, on purpose: it keeps builds fast and dead dependencies out. The \`_\` is the *blank identifier*, a name that means "I am ignoring this value". You never edit the scaffold, and each package gets a real job in a later lesson.
-- The **\`scene\` function** is provided by pockett. From lesson 2 on you call \`scene("name", value)\` and the value appears on the live sorting floor next to your editor. It prints one special line that the floor understands, built with \`encoding/json\`. Leave it alone for now: you will understand every line of it by lesson 15.
-- **\`func main()\`** is where you work. Your code goes inside the braces, at the bottom.
+You write your own lines between the braces \`{ }\` of \`func main\`. There are no semicolons to type: Go adds them for you at the end of each line, which is also why the opening \`{\` must stay on the same line as \`func main()\`.
 
 ### Println, Print and Printf
 
@@ -105,48 +100,80 @@ The editor opens with a longer file than the little example above, because the w
 
 ~~~go
 fmt.Println("Belts online:", 4)    // Belts online: 4   (spaces between values, newline at the end)
-fmt.Print("Belts online: ")        // no newline, no spaces added around strings
-fmt.Print(4, 5, "\n")              // 4 5               (a space goes between two non-strings)
+fmt.Print("Belts online: ")        // no newline at the end
 fmt.Printf("Parcels today: %d\n", 40+2)   // Parcels today: 42
 ~~~
 
-\`Println\` is the everyday one. \`Print\` adds a space between two operands only when neither is a string, which is a rule you will forget and then be surprised by, so prefer \`Println\` or \`Printf\`. \`Printf\` takes a **format string** with *verbs* (a \`%\` and a letter) that are replaced by the following arguments, in order. It never adds a newline by itself: write \`\n\` yourself.
+- \`Println\` prints its values with a space between them and then moves to a **new line**. It is the everyday one.
+- \`Print\` prints and stays on the same line, so the next print continues it. \`fmt.Print("Belts online: ")\` followed by \`fmt.Println(4)\` gives the single line \`Belts online: 4\`.
+- \`Printf\` takes a **format string** with *verbs*: a \`%\` and a letter that stand for a value. The arguments after the string fill the verbs in order. \`%d\` means "a whole number goes here". \`Printf\` never adds a newline by itself, so you write \`\n\` (the new-line character) at the end.
 
-### The verbs you will use every day
+Go can calculate inside the call: \`40+2\` is worked out first, so \`%d\` receives \`42\`.
 
-- \`%d\`: a whole number. \`%s\`: a string. \`%t\`: a bool. \`%f\`: a decimal number (\`%.2f\` keeps two decimals).
-- \`%v\`: "the default format for any value". \`%+v\` also shows field names of a struct. \`%T\`: the *type* of the value.
-- \`%q\`: a string in double quotes with escapes, perfect for spotting hidden spaces. \`%c\`: a character. \`%x\`: hexadecimal.
-- \`%%\`: a literal percent sign.
+### The verbs you need now
 
-A number between the \`%\` and the letter sets a minimum **width**; a minus sign makes it left-aligned; a dot sets the **precision**:
+- \`%d\`: a whole number. \`%s\`: a string. \`%f\`: a decimal number (\`%.2f\` keeps two decimals).
+- \`%q\`: a string wrapped in double quotes, perfect for spotting hidden spaces. \`%T\`: the *type* of a value, such as \`string\`.
+- \`%%\`: a literal percent sign (a lone \`%\` would start a verb).
+
+A number between the \`%\` and the letter sets a minimum **width**, so columns line up; a minus sign makes it left-aligned; a dot sets how many digits come after the decimal point:
 
 ~~~go
 fmt.Printf("%-8s|%5d|%6.1f%%\n", "North", 12, 87.5)
 // North   |   12|  87.5%
 ~~~
 
-\`%-8s\` pads the string to 8 characters on the right, \`%5d\` pads the number to 5 on the left, \`%6.1f\` is a decimal in 6 characters with one digit after the dot. This is how you line up columns in reports.
+Take it one verb at a time. \`%-8s\` prints "North" and pads it with spaces on the right to 8 characters. \`%5d\` prints 12 padded on the left to 5 characters. \`%6.1f\` prints 87.5 with one digit after the dot, padded to 6 characters. \`%%\` prints the percent sign. And here is \`%q\` and \`%T\`:
 
-### Strings and comments
-
-A string in double quotes understands escapes: \`\n\` (new line), \`\t\` (tab), \`\"\` (a quote that belongs to the text) and \`\\\` (one backslash). Single quotes are a different thing in Go: they hold one *character* (a rune), like \`'G'\`, never text. Everything after \`//\` on a line is a comment.
+~~~go
+fmt.Printf("%q is a %T\n", "hub", "hub")
+// "hub" is a string
+~~~
 
 ### When it will not build
 
-Go compiles your whole file first, and if anything is wrong, *nothing runs*. Messages have a fixed shape, *file:line:column: message*:
+Go checks your whole file before running it, and if anything is wrong, *nothing runs*. You get a message in the shape *file:line:column: message*:
 
 ~~~text
-./main.go:5:2: "os" imported and not used
 ./main.go:9:6: undefined: fmt.println (but have Println)
-./main.go:6:2: undefined: Println
-./main.go:4:2: undefined: fmt
 ./main.go:11:17: syntax error: unexpected newline in argument list; possibly missing comma or )
 ~~~
 
-The sorting floor shows the same message with its line number. Read the first one first: later errors are often just fallout. The compiler stops listing after ten errors.
+Read it left to right: the file, the line, the column, then the reason. Read the first message first: later ones are often just fallout. The sorting floor shows the same message with its line number.
 
-Not every mistake is caught while building. A wrong verb compiles and prints a visible marker instead:
+### The file you start with
+
+The editor opens with a longer file than the little example above, because the whole course is *one growing program*. You do not need to understand the extra parts yet. Briefly:
+
+- The **import block** lists every package this course will use. Go treats an unused import as an error, so a **scaffold** (\`var ( _ = bufio.NewScanner ... )\`) keeps the not-yet-used ones "in use" until the lesson that needs them. The \`_\` is the *blank identifier*, a name that means "I am ignoring this value". You never edit the scaffold.
+- The **\`scene\` function** is provided by pockett. From lesson 2 on you call \`scene("name", value)\` and the value appears on the live sorting floor. Leave it alone for now: you will understand every line of it by lesson 15.
+- **\`func main()\`** is where you work. Your code goes inside the braces, at the bottom.
+
+### Common mistakes
+
+- Writing \`fmt.println\`. In Go a name that starts with a capital letter is *exported* (usable from other packages); lower case is private, so \`println\` is not reachable from \`fmt\`.
+- Forgetting the \`fmt.\` in front of \`Println\`, or forgetting the import.
+- Using single quotes for text: \`'hi'\` is an error. Single quotes hold one character, not text.
+- Forgetting \`\n\` at the end of a \`Printf\` format.
+- Putting the opening brace on its own line.
+
+### Going further (optional)
+
+More verbs: \`%v\` is the default format for any value, \`%+v\` also shows field names of a struct (lesson 11), \`%c\` prints a character and \`%x\` prints hexadecimal.
+
+Strings understand escapes: \`\n\` (new line), \`\t\` (tab), \`\"\` (a quote that belongs to the text) and \`\\\` (one backslash). Single quotes hold one *character* (called a rune), like \`'G'\`. Everything after \`//\` on a line is a comment. Go ships one official formatter, \`gofmt\`, so every Go file in the world is laid out the same way.
+
+More build errors you may meet:
+
+~~~text
+./main.go:5:2: "os" imported and not used
+./main.go:6:2: undefined: Println
+./main.go:4:2: undefined: fmt
+~~~
+
+\`Print\` adds a space between two values only when neither is a string, a rule you will forget and then be surprised by: \`fmt.Print(4, 5, "\n")\` prints \`4 5\`, while \`fmt.Print("a", "b")\` prints \`ab\`. Prefer \`Println\` or \`Printf\`.
+
+A wrong verb compiles and prints a visible marker instead of failing:
 
 ~~~go
 fmt.Printf("%d\n", "hi")          // %!d(string=hi)
@@ -154,15 +181,7 @@ fmt.Printf("%d %d\n", 1)          // 1 %!d(MISSING)
 fmt.Printf("%d\n", 1, 2)          // 1  then  %!(EXTRA int=2)
 ~~~
 
-If you ever see \`%!\` in your output, a verb and an argument do not match.
-
-### Common mistakes
-
-- Writing \`fmt.println\`. In Go a name that starts with a capital letter is *exported* (usable from other packages); lower case is private, so \`println\` is not reachable from \`fmt\`.
-- Forgetting the \`fmt.\` in front of \`Println\`, or forgetting the import.
-- Using single quotes for text: \`'hi'\` is an error (*more than one character in rune literal*).
-- Forgetting \`\n\` at the end of a \`Printf\` format.
-- Putting the opening brace on its own line: *unexpected semicolon or newline before {*.`,
+If you ever see \`%!\` in your output, a verb and an argument do not match. The compiler stops listing build errors after ten.`,
       mission: md`Welcome to **Gopher Post**, the parcel company that never sleeps. Its newest sorting hub, **Central Hub**, has belts, chutes, vans and a very quiet control room: it has no software yet. You are going to write all of it, lesson by lesson, in one growing Go program.
 
 Every control room starts with a console. Make the hub announce itself, report its belts and its parcel count, and print a tidy status row. When this lesson passes, the **Control console** powers on: everything your program prints appears on the sorting floor, in order.`,
@@ -280,7 +299,7 @@ assert(at.every((v, i) => i === 0 || v > at[i - 1]), "The five lines are all the
       concepts: ["var", ":=", "basic types", "zero values", "const", "iota", "named types", "unused variables"],
       learn: md`### A variable is a named box with a type
 
-A **variable** stores a value under a name, and in Go every variable has a **type** that never changes. There are three ways to declare one:
+Think of a labelled box on a shelf in the hub: the label says what is inside ("hub name"), and the box only holds one kind of thing. A **variable** is that box in your program. It stores a value under a name, so you can use the value again without retyping it. In Go every variable has a **type** that never changes. There are three ways to declare one:
 
 ~~~go
 var hubName string = "Gopher Post Central Hub"   // the full form: var name type = value
@@ -298,11 +317,11 @@ To change a variable later, assign with plain \`=\`: \`shift = 2\`. Declaring th
 
 ### The basic types
 
-- **Whole numbers**: \`int\` (the one to reach for; it is 64 bits wide on today's machines), plus sized types such as \`int8\`, \`int32\`, \`int64\` and the unsigned \`uint\`, \`uint8\` (also called \`byte\`).
+- **Whole numbers**: \`int\` (the one to reach for; it is usually 64 bits wide on today's machines, which means room for numbers up to about nine quintillion), plus sized types such as \`int8\`, \`int32\`, \`int64\` and the unsigned \`uint\`, \`uint8\` (also called \`byte\`).
 - **Decimal numbers**: \`float64\` (the default for a literal like \`1.5\`) and \`float32\`.
 - **bool**: \`true\` or \`false\`, in lower case.
-- **string**: text in double quotes. It is *immutable* UTF-8.
-- **rune**: one character, written in single quotes (\`'G'\`). It is an alias for \`int32\`.
+- **string**: text in double quotes. It cannot be changed in place after it is made.
+- **rune**: one character, written in single quotes (\`'G'\`). Under the hood it is a number, and it is another name (an *alias*) for \`int32\`.
 
 The type is fixed. The compiler checks every assignment before the program ever runs:
 
@@ -319,7 +338,7 @@ var small int8 = 300
 
 ### Zero values: nothing is ever uninitialised
 
-If you declare a variable without a value, Go gives it the **zero value** of its type: \`0\` for numbers, \`0.0\` for floats, \`false\` for bools, \`""\` for strings and \`nil\` for pointers, slices, maps and a few more. There is no "garbage" memory to trip over.
+If you declare a variable without a value, Go gives it the **zero value** of its type: \`0\` for numbers, \`0.0\` for floats, \`false\` for bools, \`""\` for strings. (Some types you meet in later lessons, such as lists and lookup tables, start as \`nil\`, Go's word for "nothing here yet".) There is no "garbage" memory to trip over.
 
 ~~~go
 var processed, rejected int   // both are 0
@@ -341,13 +360,13 @@ This is a feature, not a nuisance: it finds typos and leftovers. Assigning to a 
 
 ### Constants and iota
 
-A **constant** is fixed at compile time and cannot be reassigned:
+A **constant** is fixed before the program even starts running (Go works it out when it builds the file, called *compile time*) and cannot be reassigned:
 
 ~~~go
 const maxGrams = 25000    // untyped: it fits any numeric type that can hold it
 ~~~
 
-A constant without a type is *untyped*, so \`maxGrams\` can be added to an \`int\`, a \`float64\` or an \`int64\` without any conversion. That flexibility is why constants are not variables.
+A constant without a type is called *untyped*, which means it has no fixed type of its own yet, so \`maxGrams\` can be added to an \`int\`, a \`float64\` or an \`int64\` without any conversion. That flexibility is why constants are not variables.
 
 For a family of related constants Go has **\`iota\`**: inside a \`const ( ... )\` block it starts at 0 and goes up by one for every line, and a line with no expression repeats the previous one.
 
@@ -364,6 +383,18 @@ const (
 ~~~
 
 \`type Region int\` creates a **new type** whose underlying type is \`int\`. A \`Region\` and an \`int\` are different types, so mixing them without a conversion is an error: *cannot use r (variable of int type Region) as int value*. That small wall stops you from passing a chute number where a weight was expected. This pattern, a named integer type plus \`iota\` constants, is how Go does enums. Printing a \`Region\` shows its number for now; lesson 12 teaches it to print its name.
+
+### Above main and inside main
+
+A Go file has two kinds of places for code. Inside \`func main\` you write steps the program carries out, such as \`shift := 1\`. Above \`func main\`, at the top level of the file, you can only *declare* things: \`var\`, \`const\`, \`type\` and \`func\`. The editor has a divider line for this: declarations like \`type Region int\` and \`const (...)\` go in the part above the divider, and your steps go in the part below it.
+
+### Three things the mission borrows
+
+The mission sends a few extra values to the floor. You will learn these properly later, but here is enough to type them correctly:
+
+- \`fmt.Sprintf("%T", hubName)\` works like \`Printf\` but, instead of printing, hands the text back as a string. Here it gives \`"string"\`.
+- \`int(regionCount)\` is a **conversion**: it turns a value into another type so the floor receives a plain number (lesson 3 explains conversions).
+- \`map[string]int{"North": 0, "South": 1}\` is a **map**: a lookup table from names to values (lesson 8). For now, copy the shape from the starter comment.
 
 ### Names
 
@@ -594,7 +625,17 @@ lastLoad := 47 % 6               // 5 parcels in the last van
 
 ### The math package
 
-\`math.Round\`, \`math.Floor\`, \`math.Ceil\`, \`math.Sqrt\`, \`math.Pow\`, \`math.Abs\`, \`math.MaxInt64\`... all work on \`float64\`. To round to two decimals: \`math.Round(x*100) / 100\`. (This is what the scaffold's \`_ = math.Round\` line was waiting for.)
+\`math.Round\`, \`math.Floor\`, \`math.Ceil\`, \`math.Sqrt\`, \`math.Pow\`, \`math.Abs\`, \`math.MaxInt64\`... all work on \`float64\`. To round to two decimals: \`math.Round(x*100) / 100\` (shift the dot two places right, round to a whole number, shift it back). This is what the scaffold's \`_ = math.Round\` line was waiting for.
+
+**A worked example: average grams to kilograms.** The bay holds 156000 g in 47 parcels, and you want the average in kilograms with two decimals.
+
+~~~go
+avgGrams := float64(156000) / float64(47)   // 3319.14... grams per parcel (both sides converted first)
+avgKg := avgGrams / 1000                    // 3.31914... kilograms
+rounded := math.Round(avgKg*100) / 100      // 3.32
+~~~
+
+You can fold the last two steps into one. Dividing by 1000 and then multiplying by 100 is the same as dividing by 10, so \`math.Round(avgGrams/10) / 100\` gives the same \`3.32\`: 3319.14 divided by 10 is 331.914, which rounds to 332, and 332 divided by 100 is 3.32.
 
 ### Floats are not exact
 
@@ -624,7 +665,7 @@ tiny++
 fmt.Println(tiny)   // -128
 ~~~
 
-If the compiler can see the overflow in a constant expression it refuses: *cannot use 300 (untyped int constant) as int8 value in variable declaration (overflows)*. Default \`int\` is 64-bit, so everyday counts will not overflow, but sized types (\`int8\`, \`uint8\`, \`int32\`) and unsigned numbers (\`uint\` minus one wraps to a huge number) deserve respect.
+If the compiler can see the overflow in a constant expression it refuses: *cannot use 300 (untyped int constant) as int8 value in variable declaration (overflows)*. A plain \`int\` is usually 64-bit, so everyday counts will not overflow, but sized types (\`int8\`, \`uint8\`, \`int32\`) and unsigned numbers (\`uint\` minus one wraps to a huge number) deserve respect.
 
 ### Dividing by zero
 
@@ -773,9 +814,11 @@ assert(lines.includes("0.30000000000000004 -128"), 'Print fmt.Println(floatSum, 
       concepts: ["bufio.Scanner", "os.Stdin", "strings.TrimSpace", "strings.ToLower", "strconv.Atoi", "error values", "multiple return values"],
       learn: md`### Input is a stream of text
 
+Picture a clerk at the end of a belt reading labels off parcels, one at a time, and writing down what each says. A program can do the same with text that is handed to it. That handed-over text is called **input**, and it arrives as a **stream**: lines in a row, to be read one after another.
+
 When a program reads input it does not receive "a number" or "a name". It receives **text**, one line at a time, and your job is to clean it and convert it. Hand-typed data is messy: stray spaces, odd capital letters, "24kg" where a number was expected. Reading and validating input is where most real programs spend their effort.
 
-On Gopher Post the scanner at the start of the belt produces a text label for each parcel. Here are the first four lines it sends your program:
+On Gopher Post the scanner at the start of the belt produces a text label for each parcel. Here are the first four lines it sends your program. You do not type them anywhere: the course sends this text to your program for you, and it is always the same, so your results are repeatable.
 
 ~~~text
   PK-1001
@@ -788,7 +831,7 @@ Spaces around the ID, a capital N with spaces, a good weight, and a bad one.
 
 ### \`bufio.Scanner\`: read line by line
 
-\`os.Stdin\` is the program's standard input. A **scanner** from the \`bufio\` package wraps it and hands you one line at a time:
+\`os.Stdin\` is the program's **standard input**, the stream of text that is handed to it. A **scanner** from the \`bufio\` package wraps it and hands you one line at a time:
 
 ~~~go
 scanner := bufio.NewScanner(os.Stdin)
@@ -812,7 +855,7 @@ Calling \`strings.TrimSpace(line)\` and ignoring the result does nothing useful.
 
 ### Converting text to a number: \`strconv.Atoi\`
 
-\`strconv.Atoi\` ("ASCII to integer") turns \`"2400"\` into the number \`2400\`. But what if the text is \`"24kg"\`? Many languages throw an exception. Go's answer is simpler: a function that can fail returns **two values**, the result and an **error**:
+\`strconv.Atoi\` (the name is short for "ASCII to integer"; it converts text to a whole number) turns \`"2400"\` into the number \`2400\`. But what if the text is \`"24kg"\`? Many languages throw an exception. Go's answer is simpler: a function that can fail returns **two values**, the result and an **error**:
 
 ~~~go
 grams, err := strconv.Atoi("2400")
@@ -823,7 +866,11 @@ grams, err = strconv.Atoi("24kg")
 // err prints as: strconv.Atoi: parsing "24kg": invalid syntax
 ~~~
 
-The standard handling is so common that you will write it hundreds of times:
+The standard handling is so common that you will write it hundreds of times. It uses an \`if\`, which the next lesson teaches in full. Here is all you need now:
+
+- \`if\` asks a yes/no question and runs the block between its braces \`{ }\` **only when the answer is yes**.
+- \`!=\` means "is not equal to".
+- \`nil\` is Go's word for "nothing here". An error that is \`nil\` means no error happened.
 
 ~~~go
 if err != nil {
@@ -831,13 +878,15 @@ if err != nil {
 }
 ~~~
 
-An \`error\` is an ordinary value you can print, store, compare and pass around. Lesson 10 is entirely about that idea. For now, remember three rules: the error is the *last* return value, \`nil\` means success, and you check it **immediately**.
+Read it aloud: "if err is not nothing, print a complaint". If \`err\` is \`nil\`, the block is skipped.
+
+An \`error\` is an ordinary value that describes what went wrong; you can print it, store it, compare it and pass it around. Lesson 10 is entirely about that idea. For now, remember three rules: the error is the *last* return value, \`nil\` means success, and you check it **immediately**.
 
 Atoi is strict. All of these fail with *invalid syntax*: \`""\`, \`" 12"\`, \`"12 "\`, \`"3.5"\`, \`"1_000"\`, \`"0x10"\`. That is why you trim first. A number too big for an \`int\` fails with *value out of range*. On failure the number is \`0\` (or the largest value, for out of range), so never use it without checking the error.
 
 ### Two names on the left, and \`_\`
 
-\`grams, err := ...\` declares both names. If you want only the error, throw the number away with the blank identifier: \`_, badErr := strconv.Atoi(text)\`. If you do the opposite and ignore the error, the compiler cannot stop you, but the next person to read the code will be right to worry.
+\`grams, err := ...\` declares both names. If you want only the error, throw the number away with the **blank identifier** \`_\` (a name that means "I am ignoring this value"): \`_, badErr := strconv.Atoi(text)\`. If you do the opposite and ignore the error, the compiler cannot stop you, but the next person to read the code will be right to worry.
 
 You cannot squeeze two return values into one variable: \`g := strconv.Atoi("24")\` is *assignment mismatch: 1 variable but strconv.Atoi returns 2 values*. And declaring \`err\` without ever reading it is *declared and not used: err*, so make sure your \`if err != nil\` really looks at it.
 
