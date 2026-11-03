@@ -82,4 +82,28 @@ check("audio: newest explicit choice wins, volume clamped", () => {
   assert.deepEqual(olderCloud, local.audio);
 });
 
+{
+  // Same lookup sync.ts builds: Foundations lessons registered with their own xp.
+  const { FOUNDATIONS } = await import("../src/content/foundations/index.ts");
+  const { trackLessons } = await import("../src/learn/types.ts");
+  const fnd = trackLessons(FOUNDATIONS);
+  assert.ok(fnd.length > 0 && fnd.every((l) => l.id.startsWith("fnd-") && l.xp > 0));
+  const lookup = new Map([...Object.entries(XP).map(([id, xp]) => [id, xp]), ...fnd.map((l) => [l.id, l.xp])]);
+  const fxp = (id) => lookup.get(id) ?? 0;
+  const [f1, f2] = fnd;
+  check("fnd- cloud completions come down with their xp (new device)", () => {
+    const m = mergeProgress(base, { xp: f1.xp, streak: 1, best_streak: 1, last_active_date: "2026-10-20" },
+      [{ lesson_id: f1.id, project_slug: "foundations", code: "", attempts: 1, completed_at: "2026-10-20T10:00:00Z" }], [], fxp);
+    assert.ok(m.completed[f1.id]);
+    assert.equal(m.xp, f1.xp);
+  });
+  check("fnd- local completion is kept and xp includes it when merging with a cloud that has other lessons", () => {
+    const local = { ...base, xp: f2.xp, completed: { [f2.id]: done("2026-10-24T09:00:00Z", "") } };
+    const m = mergeProgress(local, { xp: 50, streak: 0, best_streak: 0, last_active_date: null },
+      [{ lesson_id: "a", project_slug: "garage", code: "A", attempts: 1, completed_at: "2026-10-19T10:00:00Z" }], [], fxp);
+    assert.ok(m.completed[f2.id]);
+    assert.equal(m.xp, 50 + f2.xp);
+  });
+}
+
 console.log(`\n${n} merge checks passed`);

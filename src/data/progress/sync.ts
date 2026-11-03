@@ -47,6 +47,23 @@ export function useSyncStatus(): SyncState {
 const LESSONS = new Map<string, { slug: string; xp: number }>();
 for (const p of PROJECTS) for (const l of flattenLessons(p)) LESSONS.set(l.id, { slug: p.slug, xp: l.xp });
 
+/**
+ * Foundations (concept course, "fnd-" ids) lessons must sync too. Its content is large and this
+ * module loads on every page, so it is imported lazily, once, the first time a sync actually runs.
+ */
+let foundationsLoaded: Promise<void> | null = null;
+function loadFoundations(): Promise<void> {
+  foundationsLoaded ??= Promise.all([import("@/content/foundations"), import("@/learn/types")])
+    .then(([{ FOUNDATIONS }, { trackLessons }]) => {
+      for (const l of trackLessons(FOUNDATIONS)) LESSONS.set(l.id, { slug: FOUNDATIONS.slug, xp: l.xp });
+    })
+    .catch((err) => {
+      foundationsLoaded = null; // retry on the next sync instead of silently dropping fnd- progress
+      throw err;
+    });
+  return foundationsLoaded;
+}
+
 // ───────── engine ─────────
 
 let userId: string | null = null;
@@ -59,6 +76,7 @@ let audioColumns = true;
 
 async function pull(sb: SupabaseClient, uid: string) {
   setSync({ status: "syncing", error: null });
+  await loadFoundations();
   const [p, c, d, a] = await Promise.all([
     sb.from("profiles").select("xp, streak, best_streak, last_active_date").eq("id", uid).maybeSingle(),
     sb.from("lesson_completions").select("lesson_id, project_slug, code, attempts, completed_at, updated_at").eq("user_id", uid),
@@ -78,6 +96,7 @@ async function pull(sb: SupabaseClient, uid: string) {
 }
 
 async function push(sb: SupabaseClient, uid: string) {
+  await loadFoundations(); // before reading state, so `now`/`before` are not stale after the await
   const now = getProgress();
   const before = synced;
   setSync({ status: "syncing", error: null });
