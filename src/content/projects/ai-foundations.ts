@@ -5,7 +5,7 @@ import { chapter3 } from "./ai-foundations/ch3.ts";
 import { chapter4 } from "./ai-foundations/ch4.ts";
 
 /**
- * Orchard Vision: the first project of the AI & Machine Learning track. The learner builds the
+ * Orchard Vision: the Intermediate project of the AI & Machine Learning track (after Pebble Beach). The learner builds the
  * brain of a fruit-sorting machine in one growing Python file (with NumPy): data, statistics,
  * scaling, k-nearest neighbours, honest evaluation, linear and logistic models trained by gradient
  * descent, and a finished sorting pipeline.
@@ -30,10 +30,10 @@ export const aiFoundations: Project = {
   pitch:
     "Build the brain of a smart fruit-sorting machine. Sensors measure every apple, pear and plum that rolls past: weight, size, colour, sugar. Lesson by lesson you turn those numbers into a working learner: you clean and scale the data, teach it to recognise fruit by its nearest neighbours, test it honestly, fit a price line with gradient descent, and predict ripeness with logistic regression. A live lab shows decision regions, loss curves and a confusion matrix redrawing themselves from your code.",
   emoji: "🍐",
-  difficulty: "Beginner",
+  difficulty: "Intermediate",
   hours: 6,
   sceneId: "ai-foundations",
-  prerequisites: ["garage"],
+  prerequisites: ["ai-first-steps"],
   accent: { from: "#ff6b9d", to: "#8b5cf6" },
   controls: ["Switch the plot axes", "Drag the decision threshold", "Replay the training run", "Watch the belt sort each fruit"],
   skills: [

@@ -214,6 +214,32 @@ export function ProjectArt({ slug }: { slug: string }) {
           ))}
         </g>
       )}
+      {slug === "art-studio" && (
+        <g>
+          {/* a poster of rings: cells nearest the middle carry the accent, the rest fade out */}
+          {Array.from({ length: 5 }).flatMap((_, r) =>
+            Array.from({ length: 9 }).map((__, c) => {
+              const d = Math.floor(Math.hypot(r - 2, c - 4));
+              return (
+                <rect
+                  key={`${r}:${c}`}
+                  x={60 + c * 31}
+                  y={26 + r * 31}
+                  width="26"
+                  height="26"
+                  rx="4"
+                  fill={d % 3 === 0 ? "url(#g-art-studio)" : "#ffffff"}
+                  opacity={d % 3 === 0 ? 1 - d * 0.1 : d % 3 === 1 ? 0.2 : 0.09}
+                />
+              );
+            }),
+          )}
+          {/* the ink strip */}
+          {[0, 1, 2, 3, 4].map((i) => (
+            <rect key={i} x={118 + i * 34} y="190" width="24" height="10" rx="3" fill={i === 1 ? "url(#g-art-studio)" : "#ffffff"} opacity={i === 1 ? 1 : 0.18 + i * 0.04} />
+          ))}
+        </g>
+      )}
       {slug === "beatlab" && (
         <g>
           {Array.from({ length: 16 }).map((_, i) => {
@@ -377,6 +403,33 @@ export function ProjectArt({ slug }: { slug: string }) {
           <path d="M300 43 H340 V76" fill="none" stroke="#ffffff" strokeOpacity=".22" strokeDasharray="4 5" />
         </g>
       )}
+      {slug === "go-pipeline" && (
+        <g>
+          {/* a line of six buoys whose readings funnel through a pool of three workers into one report */}
+          <path d="M16 192 q20 -12 40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0 t40 0" fill="none" stroke="#ffffff" strokeOpacity=".16" strokeWidth="3" strokeLinecap="round" />
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <g key={i}>
+              <circle cx="40" cy={34 + i * 25} r="8" fill="#101010" stroke="url(#g-go-pipeline)" strokeWidth="2" />
+              <circle cx="40" cy={34 + i * 25} r="2.5" fill={i === 3 ? "#f87171" : "url(#g-go-pipeline)"} />
+              <path d={`M50 ${34 + i * 25} C 90 ${34 + i * 25} 100 100 140 100`} fill="none" stroke="url(#g-go-pipeline)" strokeWidth="2" strokeLinecap="round" strokeDasharray={i === 3 ? "3 6" : "none"} opacity={i === 3 ? 0.45 : 0.85 - (i % 3) * 0.12} />
+            </g>
+          ))}
+          <rect x="140" y="72" width="34" height="56" rx="8" fill="#101010" stroke="#ffffff" strokeOpacity=".4" strokeWidth="1.5" />
+          <path d="M148 90 H166 M148 100 H166 M148 110 H166" stroke="#ffffff" strokeOpacity=".35" strokeWidth="2" strokeLinecap="round" />
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              <path d={`M174 100 C 196 100 196 ${52 + i * 48} 218 ${52 + i * 48}`} fill="none" stroke="url(#g-go-pipeline)" strokeWidth="2.5" strokeLinecap="round" opacity={0.95 - i * 0.18} />
+              <rect x="218" y={38 + i * 48} width="92" height="28" rx="8" fill="#101010" stroke="url(#g-go-pipeline)" strokeWidth="1.5" />
+              <rect x="226" y={48 + i * 48} width={[62, 40, 52][i]} height="8" rx="4" fill="url(#g-go-pipeline)" opacity=".85" />
+              <path d={`M310 ${52 + i * 48} C 330 ${52 + i * 48} 330 100 344 100`} fill="none" stroke="url(#g-go-pipeline)" strokeWidth="2.5" strokeLinecap="round" opacity={0.95 - i * 0.18} />
+            </g>
+          ))}
+          <rect x="344" y="66" width="40" height="68" rx="9" fill="none" stroke="#ffffff" strokeOpacity=".3" strokeDasharray="5 4" />
+          {[0, 1, 2].map((i) => (
+            <rect key={i} x="351" y={76 + i * 17} width={[26, 20, 24][i]} height="8" rx="4" fill="url(#g-go-pipeline)" opacity={0.9 - i * 0.2} />
+          ))}
+        </g>
+      )}
       {slug === "go-inventory" && (
         <g>
           {/* a rescue depot: a rack of numbered bins with stock bars, a coiled rope, a handler lane that fans out to concrete types, and a rejected-records tray */}
@@ -509,6 +562,32 @@ export function ProjectArt({ slug }: { slug: string }) {
           </g>
         </g>
       )}
+      {slug === "cpp-engine" && (
+        <g>
+          {/* a lighthouse sweeping a beam over water, a cookie-cutter template stamping three shapes, and an owner graph */}
+          <path d="M0 176 C 60 164, 110 188, 170 176 S 300 164, 400 178 V220 H0 Z" fill="#ffffff" opacity=".05" />
+          <path d="M86 158 L98 62 H122 L134 158 Z" fill="none" stroke="url(#g-cpp-engine)" strokeWidth="2.5" strokeLinejoin="round" />
+          <rect x="94" y="46" width="32" height="16" rx="3" fill="none" stroke="url(#g-cpp-engine)" strokeWidth="2.5" />
+          <path d="M126 54 L250 22 V86 Z" fill="url(#g-cpp-engine)" opacity=".28" />
+          <path d="M94 54 L28 36 V72 Z" fill="url(#g-cpp-engine)" opacity=".16" />
+          <circle cx="110" cy="54" r="4.5" fill="#ffffff" opacity=".85" />
+          <path d="M92 110 H128 M89 134 H131" stroke="#ffffff" strokeOpacity=".22" strokeWidth="2" />
+          {[0, 1, 2].map((i) => (
+            <g key={i}>
+              <rect x={226 + i * 50} y="108" width="38" height="28" rx="6" fill="none" stroke="#ffffff" strokeOpacity=".28" strokeDasharray="4 3" />
+              <circle cx={238 + i * 50} cy="122" r="5" fill="url(#g-cpp-engine)" opacity={0.95 - i * 0.2} />
+              <path d={`M${248 + i * 50} 122 h10`} stroke="url(#g-cpp-engine)" strokeWidth="2" strokeLinecap="round" opacity={0.9 - i * 0.15} />
+            </g>
+          ))}
+          <circle cx="300" cy="188" r="9" fill="none" stroke="url(#g-cpp-engine)" strokeWidth="2" />
+          {[250, 350].map((x) => (
+            <g key={x}>
+              <circle cx={x} cy="188" r="6" fill="url(#g-cpp-engine)" opacity=".85" />
+              <path d={`M${x + (x < 300 ? 6 : -6)} 188 H${x < 300 ? 291 : 309}`} stroke="url(#g-cpp-engine)" strokeWidth="1.6" />
+            </g>
+          ))}
+        </g>
+      )}
       {slug === "csharp-linq" && (
         <g>
           {/* a departures board of manifest rows, a bar chart of categories and a vessel docked at its pier */}
@@ -631,6 +710,46 @@ export function ProjectArt({ slug }: { slug: string }) {
             <rect x="-6" y="-3" width="12" height="5" rx="2.5" fill="#0c0d0b" />
             <path d="M-15 -10 H-6 M6 -10 H15" stroke="#ffffff" strokeOpacity=".7" strokeWidth="2" strokeLinecap="round" />
           </g>
+        </g>
+      )}
+      {slug === "rust-traits" && (
+        <g>
+          {/* a harbour grid: the depot, a dashed route to two islands, and three kinds of drone sharing one trait */}
+          {[60, 120, 180, 240, 300, 360].map((x) => (
+            <path key={x} d={`M${x} 22 V198`} stroke="#ffffff" strokeOpacity=".06" />
+          ))}
+          {[52, 100, 148, 196].map((y) => (
+            <path key={y} d={`M24 ${y} H376`} stroke="#ffffff" strokeOpacity=".06" />
+          ))}
+          <path d="M70 168 L150 104 L246 128 L330 60" fill="none" stroke="url(#g-rust-traits)" strokeWidth="2" strokeDasharray="6 6" opacity=".8" />
+          <rect x="58" y="156" width="24" height="24" rx="5" fill="url(#g-rust-traits)" />
+          {[
+            [150, 104, 9],
+            [330, 60, 12],
+          ].map(([cx, cy, r], i) => (
+            <g key={i}>
+              <circle cx={cx} cy={cy} r={(r as number) * 2.3} fill="url(#glow-rust-traits)" opacity=".5" />
+              <circle cx={cx} cy={cy} r={r} fill="#151515" stroke="url(#g-rust-traits)" strokeWidth="2" />
+            </g>
+          ))}
+          {/* Sparrow: a quad */}
+          <g transform="translate(112 132)" stroke="url(#g-rust-traits)" strokeWidth="2" fill="none" strokeLinecap="round">
+            <path d="M-9 -9 L9 9 M9 -9 L-9 9" />
+            {[[-9, -9], [9, -9], [-9, 9], [9, 9]].map(([x, y], i) => (
+              <circle key={i} cx={x} cy={y} r="4.5" opacity=".75" />
+            ))}
+          </g>
+          {/* Heron: a lifter with a crate */}
+          <g transform="translate(206 100)" stroke="url(#g-rust-traits)" strokeWidth="2" fill="none" strokeLinecap="round">
+            <path d="M-16 -6 H16 M-16 6 H16" />
+            <rect x="-6" y="-6" width="12" height="12" rx="2" fill="url(#g-rust-traits)" opacity=".5" />
+          </g>
+          {/* Glider: a wing */}
+          <g transform="translate(290 98)" stroke="url(#g-rust-traits)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M-18 5 L0 -5 L18 5 L0 2 Z" fill="url(#g-rust-traits)" opacity=".5" />
+            <path d="M0 -5 V12" />
+          </g>
+          <path d="M24 204 H376" stroke="#ffffff" strokeOpacity=".14" strokeDasharray="3 6" />
         </g>
       )}
       {slug === "rust-inventory" && (
@@ -895,6 +1014,56 @@ export function ProjectArt({ slug }: { slug: string }) {
           <path d="M198 178 C 190 176, 188 164, 194 158 C 198 152, 208 152, 210 160 C 214 168, 210 176, 198 178 Z" fill="url(#g-ai-foundations)" />
           <circle cx="318" cy="171" r="7" fill="#ffffff" opacity=".62" />
           <path d="M254 156 V196" stroke="url(#g-ai-foundations)" strokeWidth="1.5" strokeDasharray="3 3" opacity=".8" />
+        </g>
+      )}
+      {slug === "ai-first-steps" && (
+        <g>
+          {/* a beach map of three pebble shapes, a new pebble with its three nearest neighbours, and a score bar */}
+          <rect x="28" y="26" width="236" height="140" rx="10" fill="#151515" stroke="#ffffff" strokeOpacity=".08" />
+          {[1, 2, 3, 4].map((i) => (
+            <g key={i} stroke="#ffffff" strokeOpacity=".06">
+              <path d={`M${28 + i * 47} 26 V166`} />
+              <path d={`M28 ${26 + i * 28} H264`} />
+            </g>
+          ))}
+          {/* rollers: round, low left */}
+          {[[56, 138], [74, 148], [90, 132], [64, 120], [100, 150], [82, 112]].map(([x, y], i) => (
+            <circle key={`r${i}`} cx={x} cy={y} r="5.5" fill="#ffffff" opacity=".34" />
+          ))}
+          {/* skippers: flat pills, low right */}
+          {[[190, 140], [212, 150], [232, 134], [202, 122], [246, 148], [222, 116]].map(([x, y], i) => (
+            <rect key={`s${i}`} x={x - 8} y={y - 4} width="16" height="8" rx="4" fill="#ffffff" opacity=".6" />
+          ))}
+          {/* sparklers: diamonds, high */}
+          {[[96, 56], [128, 44], [160, 62], [206, 48], [236, 66], [146, 84]].map(([x, y], i) => (
+            <rect key={`p${i}`} x={x - 5} y={y - 5} width="10" height="10" transform={`rotate(45 ${x} ${y})`} fill="url(#g-ai-first-steps)" opacity={i === 5 ? 0.5 : 1} />
+          ))}
+          <g stroke="url(#g-ai-first-steps)" strokeWidth="1.3" strokeLinecap="round" strokeDasharray="3 3" opacity=".9">
+            <path d="M172 78 L160 62" />
+            <path d="M172 78 L146 84" />
+            <path d="M172 78 L206 48" />
+          </g>
+          <circle cx="172" cy="78" r="8" fill="#151515" stroke="url(#g-ai-first-steps)" strokeWidth="2.4" />
+          <circle cx="172" cy="78" r="18" fill="url(#glow-ai-first-steps)" opacity=".5" />
+
+          {/* train and test: two score bars */}
+          <rect x="280" y="26" width="92" height="64" rx="8" fill="#151515" stroke="#ffffff" strokeOpacity=".08" />
+          <rect x="290" y="40" width="72" height="7" rx="3.5" fill="#ffffff" opacity=".1" />
+          <rect x="290" y="40" width="72" height="7" rx="3.5" fill="#ffffff" opacity=".34" />
+          <rect x="290" y="62" width="72" height="7" rx="3.5" fill="#ffffff" opacity=".1" />
+          <rect x="290" y="62" width="62" height="7" rx="3.5" fill="url(#g-ai-first-steps)" />
+          <rect x="280" y="102" width="92" height="64" rx="8" fill="#151515" stroke="#ffffff" strokeOpacity=".08" />
+          {[0, 1, 2].map((r) =>
+            [0, 1, 2].map((c) => (
+              <rect key={`${r}${c}`} x={292 + c * 26} y={112 + r * 16} width="22" height="12" rx="3" fill={r === c ? "url(#g-ai-first-steps)" : "#ffffff"} opacity={r === c ? 1 : c === 0 && r === 1 ? 0.45 : 0.1} />
+            )),
+          )}
+
+          {/* Pip on the sand */}
+          <rect x="28" y="180" width="344" height="14" rx="7" fill="#1d1d1d" stroke="#ffffff" strokeOpacity=".08" />
+          <rect x="132" y="168" width="34" height="16" rx="5" fill="#151515" stroke="url(#g-ai-first-steps)" strokeWidth="2" />
+          <circle cx="142" cy="176" r="2.4" fill="url(#g-ai-first-steps)" />
+          <circle cx="156" cy="176" r="2.4" fill="url(#g-ai-first-steps)" />
         </g>
       )}
       {slug === "ai-neural" && (

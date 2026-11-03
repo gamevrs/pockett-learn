@@ -9,7 +9,7 @@ type Row = (string | number | null)[];
 
 const TABLES = [
   { name: "car_status", rowCount: 11, columns: [{ name: "driver_id", type: "INTEGER" }, { name: "position", type: "INTEGER" }, { name: "gap_s", type: "REAL" }, { name: "compound", type: "TEXT" }, { name: "tyre_age", type: "INTEGER" }, { name: "fuel_kg", type: "REAL" }] },
-  { name: "drivers", rowCount: 12, columns: [{ name: "driver_id", type: "INTEGER" }, { name: "number", type: "INTEGER" }, { name: "code", type: "TEXT" }, { name: "name", type: "TEXT" }, { name: "country", type: "TEXT" }, { name: "team_id", type: "INTEGER" }] },
+  { name: "drivers", rowCount: 12, columns: [{ name: "driver_id", type: "INTEGER" }, { name: "number", type: "INTEGER" }, { name: "code", type: "TEXT" }, { name: "name", type: "TEXT" }, { name: "country", type: "TEXT" }, { name: "team_id", type: "INTEGER" }, { name: "retired_lap", type: "INTEGER" }] },
   { name: "laps", rowCount: 273, columns: [{ name: "lap_id", type: "INTEGER" }, { name: "driver_id", type: "INTEGER" }, { name: "lap", type: "INTEGER" }, { name: "lap_ms", type: "INTEGER" }, { name: "compound", type: "TEXT" }, { name: "tyre_age", type: "INTEGER" }, { name: "pit_lap", type: "INTEGER" }] },
   { name: "pit_stops", rowCount: 9, columns: [{ name: "stop_id", type: "INTEGER" }, { name: "driver_id", type: "INTEGER" }, { name: "lap", type: "INTEGER" }, { name: "duration_ms", type: "INTEGER" }, { name: "new_compound", type: "TEXT" }] },
   { name: "teams", rowCount: 6, columns: [{ name: "team_id", type: "INTEGER" }, { name: "name", type: "TEXT" }, { name: "country", type: "TEXT" }, { name: "founded", type: "INTEGER" }] },

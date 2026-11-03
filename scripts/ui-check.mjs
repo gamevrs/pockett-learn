@@ -644,7 +644,8 @@ async function acceptSuggestion(c, attempts = 1) {
   await sleep(500);
   const after = await editorState();
   const beforeCursor = after.line.slice(0, after.col - 1);
-  const inserted = beforeCursor.endsWith(c.expect);
+  // a function or method also gets its call parentheses (the caret lands inside or just after them); anything else must insert the bare name
+  const inserted = c.call ? after.line.includes(c.expect + "(") && after.line.indexOf(c.expect + "(") + c.expect.length < after.col : beforeCursor.endsWith(c.expect);
   const sameLines = after.text.split("\n").length === before.text.split("\n").length;
   return { ok: inserted && !after.widget && sameLines, detail: `after ${c.accept}: line ${JSON.stringify(after.line)}, cursor col ${after.col}, list open ${after.widget}, lines ${before.text.split("\n").length} -> ${after.text.split("\n").length}` };
 }
@@ -673,18 +674,18 @@ const SUGGEST_CASES = [
   { lang: "python", code: "horsepower = 220\n", type: 'print(f"{hor', expect: "horsepower", accept: "tab" },
   { lang: "python", code: "horsepower = 220\n", type: "print(hor", expect: "horsepower", accept: "enter" },
   { lang: "python", code: "horsepower = 220\n", type: "total = 1 + hor", expect: "horsepower", accept: "enter" },
-  { lang: "python", code: 'name = "Ada"\n', type: "name.up", expect: "upper", accept: "enter" },
-  { lang: "python", code: "import math\n", type: "math.sq", expect: "sqrt", accept: "tab" },
+  { lang: "python", code: 'name = "Ada"\n', type: "name.up", expect: "upper", accept: "enter", call: true },
+  { lang: "python", code: "import math\n", type: "math.sq", expect: "sqrt", accept: "tab", call: true },
   { lang: "csharp", code: 'string carName = "Bolt";\nint horsepower = 220;\n', type: "hor", expect: "horsepower", accept: "enter" },
   { lang: "csharp", code: "int horsepower = 220;\n", type: 'Console.WriteLine($"in {hor', expect: "horsepower", accept: "enter" },
   { lang: "csharp", code: "int horsepower = 220;\n", type: "Console.WriteLine(hor", expect: "horsepower", accept: "tab" },
-  { lang: "csharp", code: "", type: "Console.WriteL", expect: "WriteLine", accept: "enter" },
+  { lang: "csharp", code: "", type: "Console.WriteL", expect: "WriteLine", accept: "enter", call: true },
   { lang: "go", code: "package main\nfunc main() {\n    horsepower := 220\n    ", type: "hor", expect: "horsepower", accept: "click" },
   { lang: "go", code: "package main\nfunc main() {\n    horsepower := 220\n    ", type: "fmt.Println(hor", expect: "horsepower", accept: "enter" },
-  { lang: "go", code: "package main\nfunc main() {\n    ", type: "fmt.Printl", expect: "Println", accept: "enter" },
+  { lang: "go", code: "package main\nfunc main() {\n    ", type: "fmt.Printl", expect: "Println", accept: "enter", call: true },
   { lang: "rust", code: "fn main() {\n    let horsepower = 220;\n    ", type: "hor", expect: "horsepower", accept: "enter" },
   { lang: "rust", code: "fn main() {\n    let horsepower = 220;\n    ", type: 'println!("in {hor', expect: "horsepower", accept: "enter" },
-  { lang: "rust", code: "fn main() {\n    let v = vec![1];\n    ", type: "v.pus", expect: "push", accept: "tab" },
+  { lang: "rust", code: "fn main() {\n    let v = vec![1];\n    ", type: "v.pus", expect: "push", accept: "tab", call: true },
   { lang: "cpp", code: "int main() {\n    int horsepower = 220;\n    ", type: "hor", expect: "horsepower", accept: "enter" },
   { lang: "cpp", code: "int main() {\n    int horsepower = 220;\n    ", type: "std::cout << hor", expect: "horsepower", accept: "enter" },
   { lang: "cpp", code: "int main() {\n    ", type: "std::cou", expect: "cout", accept: "enter" },

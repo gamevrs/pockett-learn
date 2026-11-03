@@ -21,6 +21,7 @@ const load = (loader: () => Promise<{ default: ComponentType<SceneProps> }>) =>
  */
 export const SCENES: Record<string, ComponentType<SceneProps>> = {
   garage: load(() => import("@/scenes/garage/GarageScene")),
+  "art-studio": load(() => import("@/scenes/art-studio/ArtStudioScene")),
   launch: load(() => import("@/scenes/launch/LaunchScene")),
   beatlab: load(() => import("@/scenes/beatlab/BeatLabScene")),
   sqldesk: load(() => import("@/scenes/sqldesk/SqlDeskScene")),
@@ -32,6 +33,7 @@ export const SCENES: Record<string, ComponentType<SceneProps>> = {
   "csharp-api": load(() => import("@/scenes/csharp-api/ApiConsoleScene")),
   "go-basics": load(() => import("@/scenes/go-basics/GoBasicsScene")),
   "go-inventory": load(() => import("@/scenes/go-inventory/GoInventoryScene")),
+  "go-pipeline": load(() => import("@/scenes/go-pipeline/GoPipelineScene")),
   "season-analytics": load(() => import("@/scenes/season-analytics/SeasonAnalyticsScene")),
   "schema-studio": load(() => import("@/scenes/schema-studio/SchemaStudioScene")),
   "counting-house": load(() => import("@/scenes/counting-house/CountingHouseScene")),
@@ -40,11 +42,14 @@ export const SCENES: Record<string, ComponentType<SceneProps>> = {
   "event-arena": load(() => import("@/scenes/event-arena/EventArenaScene")),
   "rust-basics": load(() => import("@/scenes/rust-basics/RustBasicsScene")),
   "rust-inventory": load(() => import("@/scenes/rust-inventory/CorvidPeakScene")),
+  "rust-traits": load(() => import("@/scenes/rust-traits/FleetBoardScene")),
   "cpp-basics": load(() => import("@/scenes/cpp-basics/ReactorCoreScene")),
   "cpp-memory": load(() => import("@/scenes/cpp-memory/ProvenanceScene")),
+  "cpp-engine": load(() => import("@/scenes/cpp-engine/LanternBayScene")),
   "csharp-linq": load(() => import("@/scenes/csharp-linq/CsharpLinqScene")),
   "csharp-delegates": load(() => import("@/scenes/csharp-delegates/FootlightScene")),
   "ai-foundations": load(() => import("@/scenes/ai-foundations/AiFoundationsScene")),
+  "ai-first-steps": load(() => import("@/scenes/ai-first-steps/AiFirstStepsScene")),
   "ai-neural": load(() => import("@/scenes/ai-neural/GlyphGreenhouseScene")),
   "js-api": load(() => import("@/scenes/js-api/JsApiScene")),
 };

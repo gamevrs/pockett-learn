@@ -28,7 +28,7 @@ import { chapter4 } from "../cargo-control/chapter4.ts";
 
 export const cargoControl: Project = {
   slug: "cargo-control",
-  prerequisites: ["signal-lab"],
+  prerequisites: ["signal-lab", "art-studio"],
   title: "Cargo Bay",
   tagline: "Keep a shipping depot running with exceptions, JSON and validation.",
   pitch:

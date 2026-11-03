@@ -195,7 +195,7 @@ export async function checkWorkspace(h) {
     await clickEl("[data-testid=run-button]");
     await waitNotice("offline");
     await shot("3-offline");
-    await check("offline: calm 'can't reach' notice with Retry", /Can't reach the code runner/.test((await text("[data-testid=service-notice]")) ?? "") && !!(await rectOf("[data-testid=service-retry]")), (await text("[data-testid=service-notice]")) ?? "no notice");
+    await check("offline: calm 'can't reach' notice with Retry", /seem to be offline/.test((await text("[data-testid=service-notice]")) ?? "") && !!(await rectOf("[data-testid=service-retry]")), (await text("[data-testid=service-notice]")) ?? "no notice");
     await check("offline: no 'Failed to fetch' anywhere", !/Failed to fetch|EngineError/.test(await inPage(() => document.body.innerText)));
 
     // a request that never answers: visible progress + Cancel, Run/Submit never stuck

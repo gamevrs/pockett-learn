@@ -93,11 +93,14 @@ import { Target as SaTarget, TrendingUp as SaTrend, Trophy as SaTrophy, ChartCol
 import { PencilRuler as SsRuler, BrickWall as SsWall, Link2 as SsLink, ArrowLeftRight as SsSwap, ScanSearch as SsScan, ListFilter as SsFilter, Eye as SsEye, Undo2 as SsUndo, DatabaseZap as SsBolt, Milestone as SsMilestone, CalendarCheck as SsCalendar } from "lucide-react";
 import { FileJson as FfFileJson, Puzzle as FfPuzzle, ScanLine as FfScanLine, ShoppingCart as FfShoppingCart, Sparkles as FfSparkles } from "lucide-react";
 import { Quote as ObQuote, Hourglass as ObHourglass, ScanLine as ObScanLine, FolderTree as ObTree, Layers as ObLayers, Funnel as ObFunnel, ListChecks as ObListChecks, Wrench as ObWrench, Telescope as ObTelescope, Orbit as ObOrbit, FileText as ObFileText, ArrowUpDown as ObSort, FlaskConical as ObFlask, Inbox as ObInbox, ScrollText as ObScroll, Terminal as ObTerminal, Binary as ObBinary } from "lucide-react";
+import { ClipboardList as DfList, Weight as DfWeight, Copy as DfCopy, Crosshair as DfAim, Container as DfBox, Scale as DfScale, Tag as DfTag, ArrowLeftRight as DfSwap, Map as DfMap, Medal as DfMedal, BatteryCharging as DfBattery, Workflow as DfFlow, Share2 as DfShare, BookOpen as DfLedger, Backpack as DfPack, Radar as DfRadar, Terminal as DfTerminal } from "lucide-react";
 import { Megaphone as EaMegaphone, Hash as EaHash, Timer as EaTimer, Star as EaStar, Trophy as EaTrophy, ChartColumn as EaChart, Radio as EaRadio, LifeBuoy as EaLifeBuoy, RotateCw as EaLoop, Globe as EaGlobe, Hand as EaHand, RefreshCw as EaRefresh, Rewind as EaRewind, Workflow as EaWorkflow } from "lucide-react";
 import { DoorOpen as RsDoor, Siren as RsSiren, Radar as RsRadar, NotebookText as RsNotebook, Vault as RsVault, Shell as RsShell, Inbox as RsInbox } from "lucide-react";
+import { Cookie as EnCookie, DoorClosed as EnDoor, Anchor as EnAnchor, BookOpenText as EnBook, Lightbulb as EnBulb, Network as EnNetwork, Unlink as EnUnlink, CloudSun as EnWeather, MoonStar as EnMoon, Landmark as EnLandmark, Table2 as EnTable, SquareFunction as EnFunction, Library as EnLibrary, Wrench as EnWrench, Calculator as EnCalc } from "lucide-react";
 import { Atom as RcAtom, MemoryStick as RcMemory, Blocks as RcBlocks, ChartCandlestick as RcCandles, UserRound as RcUser, Grid3x3 as RcGrid, Droplets as RcDroplets, Siren as RcSiren } from "lucide-react";
 import { IdCard as GoId, PackageOpen as GoParcel, ScanLine as GoScan, Signpost as GoSign, Ban as GoBan, Truck as GoTruck, Milestone as GoMilestone, ArrowDownUp as GoSort, Warehouse as GoWarehouse, Repeat as GoRepeat, Layers as GoLayers, ChartBar as GoBars, Scale as GoScale, ShieldCheck as GoShield, FileJson as GoJson, Flag as GoFlag, Terminal as GoTerminal, Split as GoSplit, ServerCog as GoServerCog } from "lucide-react";
 import { Boxes as GiBoxes, Route as GiRoute, Microscope as GiScope, Puzzle as GiPuzzle, Printer as GiPrinter, Inbox as GiInbox, ShieldAlert as GiAlert, FolderTree as GiTree, Sigma as GiSigma, Library as GiLibrary, FileInput as GiImport, ListChecks as GiChecks, Tag as GiTag, ScrollText as GiScroll, FlaskConical as GiFlask, Flag as GiFlag, Terminal as GiTerminal } from "lucide-react";
+import { LifeBuoy as GpBuoy, Mail as GpMail, SlidersHorizontal as GpSwitch, TriangleAlert as GpWarn, Lock as GpLock, Compass as GpCompass, Mountain as GpPeak, Factory as GpFactory, HardHat as GpHat, Merge as GpMerge, ChartGantt as GpGantt, OctagonX as GpStop, Timer as GpTimer, Anchor as GpAnchor } from "lucide-react";
 import { Ship as HpShip, Hourglass as HpHourglass, FileDiff as HpDiff, FileSignature as HpContract, Shapes as HpShapes, Plug as HpPlug } from "lucide-react";
 import { Landmark as ChLandmark, Scale as ChScale, BookOpenCheck as ChPosting, ShieldCheck as ChShield, Coins as ChCoins, Repeat1 as ChRepeat, Send as ChSend, ListTodo as ChQueue, Skull as ChSkull, FileSearch as ChAudit, ArchiveX as ChArchive, Building2 as ChBuilding, ScanSearch as ChPlan, Files as ChFiles, ReceiptText as ChReceipt, ChartNoAxesCombined as ChRollup, BadgeCheck as ChBadge, GitCompareArrows as ChMigrate, LockKeyhole as ChLock } from "lucide-react";
 import { Inbox as CaInbox, Plug as CaPlug, Network as CaNetwork, Repeat1 as CaRepeat, Archive as CaArchive, HeartPulse as CaHeart, Mailbox as CaMailbox, ToggleRight as CaToggle, Files as CaFiles } from "lucide-react";
@@ -110,6 +113,7 @@ import { SlidersVertical as FlFaders, CirclePlay as FlGo, Eye as FlEye, Funnel a
 
 import { LayoutGrid as GnGrid, Activity as GnActivity, Network as GnNetwork, Shuffle as GnShuffle, Link2 as GnLink, Waves as GnWaves, TrendingDown as GnDown, Layers as GnLayers, Binary as GnBinary, CloudSun as GnCloudSun, Timer as GnTimer, PenLine as GnPen } from "lucide-react";
 import { Rows3 as PvBench, Ruler as PvShelf, Layers3 as PvFrames, Archive as PvVault, BookText as PvLog, Tag as PvTag, Copy as PvCopy, PackageCheck as PvHand, ClipboardCheck as PvRules, Luggage as PvStore, Equal as PvOps, Lock as PvGlass, FileText as PvManifest, TriangleAlert as PvFaults, LibraryBig as PvRegistry, FileCheck2 as PvReport } from "lucide-react";
+import { Gem as PbGem, Ruler as PbRuler, Compass as PbCompass, Footprints as PbSteps, ListOrdered as PbList, Percent as PbPercent, NotebookPen as PbNotebook, Container as PbBucket, Table2 as PbTable, Workflow as PbFlow } from "lucide-react";
 import { Apple as OaApple, ChartColumn as OaStats, ChartScatter as OaScatter, FlaskConical as OaFlask, Grid3x3 as OaGrid, Headset as OaHeadset, Languages as OaLanguages, Mountain as OaMountain, DollarSign as OaDollar, Scale as OaScale, Scissors as OaScissors, Sprout as OaSprout, Target as OaTarget, Thermometer as OaThermo, TrendingUp as OaTrend, Vote as OaVote, Bot as OaBot, Puzzle as OaPuzzle, SlidersHorizontal as OaSliders } from "lucide-react";
 
 const PROJECT_ICONS: Record<string, LucideIcon> = {
@@ -136,6 +140,7 @@ const PROJECT_ICONS: Record<string, LucideIcon> = {
   "csharp-delegates": FlDrama,
   "csharp-api": Server,
   "ai-foundations": OaApple,
+  "ai-first-steps": PbGem,
   "ai-neural": OaSprout,
   "ai-language": OaLanguages,
   "ai-assistant": OaHeadset,
@@ -156,6 +161,41 @@ const PROJECT_ICONS: Record<string, LucideIcon> = {
 };
 
 const FEATURE_ICONS: Record<string, LucideIcon> = {
+  // Lantern Bay (cpp-engine)
+  "en-cutters": EnCookie,
+  "en-logbooks": EnBook,
+  "en-deduction": EnCalc,
+  "en-gatehouse": EnDoor,
+  "en-queue": EnAnchor,
+  "en-ledger": EnLibrary,
+  "en-algorithms": EnWrench,
+  "en-lambdas": EnFunction,
+  "en-strategy": EnBulb,
+  "en-bus": Radio,
+  "en-vtable": EnTable,
+  "en-hierarchy": EnLandmark,
+  "en-owners": EnNetwork,
+  "en-cycles": EnUnlink,
+  "en-variants": EnWeather,
+  "en-report": EnMoon,
+  // Art Studio
+  "as-swatch": Palette,
+  "as-tints": Layers,
+  "as-extremes": ArrowDownWideNarrow,
+  "as-hex": Hash,
+  "as-poster": Table2,
+  "as-patterns": Workflow,
+  "as-inks": CircleDot,
+  "as-legend": ListOrdered,
+  "as-slices": Highlighter,
+  "as-banner": MessageSquareText,
+  "as-palette": Braces,
+  "as-report": ScrollText,
+  "as-pastel": FfSparkles,
+  "as-ranking": Medal,
+  "as-seed": Orbit,
+  "as-proof": ShieldCheck,
+  "as-radial": Disc3,
   // Turbo Garage
   ignition: KeyRound,
   paint: Palette,
@@ -390,6 +430,25 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   "rs-intake": RsInbox,
   "rs-report": Flag,
   // Corvid Peak
+  // Drone Fleet
+  "df-console": DfTerminal,
+  "df-map": DfMap,
+  "df-roster": DfList,
+  "df-abilities": DfWeight,
+  "df-generics": DfCopy,
+  "df-bounds": DfAim,
+  "df-hangar": DfBox,
+  "df-choice": DfScale,
+  "df-derives": DfTag,
+  "df-convert": DfSwap,
+  "df-harbour": DfMap,
+  "df-ranking": DfMedal,
+  "df-charging": DfBattery,
+  "df-pipeline": DfFlow,
+  "df-depot": DfShare,
+  "df-ledger": DfLedger,
+  "df-rigs": DfPack,
+  "df-board": DfRadar,
   "ob-console": ObTerminal,
   "ob-buffer": ObQuote,
   "ob-lifetimes": ObHourglass,
@@ -476,6 +535,24 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   "gi-log": GiScroll,
   "gi-tests": GiFlask,
   "gi-close": GiFlag,
+  // Tidewatch (go-pipeline)
+  "gp-console": GiTerminal,
+  "gp-lanes": GpBuoy,
+  "gp-stream": GpMail,
+  "gp-queue": GiInbox,
+  "gp-select": GpSwitch,
+  "gp-race": GpWarn,
+  "gp-tally": GpLock,
+  "gp-once": GpCompass,
+  "gp-owner": GpPeak,
+  "gp-pipeline": GpFactory,
+  "gp-pool": GpHat,
+  "gp-fan": GpMerge,
+  "gp-gantt": GpGantt,
+  "gp-cancel": GpStop,
+  "gp-deadline": GpTimer,
+  "gp-group": GiAlert,
+  "gp-shutdown": GpAnchor,
   // Orchard Vision (AI & Machine Learning)
   "oa-belt": OaApple,
   "oa-stats": OaStats,
@@ -493,6 +570,22 @@ const FEATURE_ICONS: Record<string, LucideIcon> = {
   "oa-fit": OaPuzzle,
   "oa-features": OaFlask,
   "oa-sorter": OaBot,
+  // Pebble Beach (AI first steps)
+  "pb-rule": PbRuler,
+  "pb-beach": PbCompass,
+  "pb-distance": PbSteps,
+  "pb-nearest": OaTarget,
+  "pb-neighbours": PbList,
+  "pb-vote": OaVote,
+  "pb-accuracy": PbPercent,
+  "pb-split": OaScissors,
+  "pb-scores": OaScale,
+  "pb-memory": PbNotebook,
+  "pb-fit": OaSliders,
+  "pb-bias": PbBucket,
+  "pb-fair": GnShuffle,
+  "pb-table": PbTable,
+  "pb-pipeline": PbFlow,
   // Glyph Greenhouse (neural network)
   "gn-glyphs": GnGrid,
   "gn-neuron": OaSprout,

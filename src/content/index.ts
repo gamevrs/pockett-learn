@@ -1,5 +1,6 @@
 import { flattenLessons, languageOf, type Lesson, type Project, type UpcomingProject } from "@/engine/types";
 import { garage } from "./projects/garage";
+import { artStudio } from "./projects/art-studio";
 import { launch } from "./projects/launch";
 import { beatlab } from "./projects/beatlab";
 import { pitWall } from "./projects/pit-wall";
@@ -21,15 +22,19 @@ import { jsApi } from "./projects/js-api";
 import { graphqlGateway } from "./projects/graphql-gateway";
 import { rustBasics } from "./projects/rust-basics";
 import { rustInventory } from "./projects/rust-inventory";
+import { rustTraits } from "./projects/rust-traits";
 import { goBasics } from "./projects/go-basics";
 import { goInventory } from "./projects/go-inventory";
+import { goPipeline } from "./projects/go-pipeline";
 import { cppBasics } from "./projects/cpp-basics";
 import { cppMemory } from "./projects/cpp-memory";
+import { cppEngine } from "./projects/cpp-engine";
 import { aiFoundations } from "./projects/ai-foundations";
 import { aiNeural } from "./projects/ai-neural";
+import { aiFirstSteps } from "./projects/ai-first-steps";
 
 /** Every playable project, in the order shown in the picker. */
-export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs, signalLab, cargoControl, storeApi, smartHome, seasonAnalytics, schemaStudio, countingHouse, csharpBasics, csharpLinq, csharpDelegates, csharpApi, formForge, eventArena, jsApi, graphqlGateway, rustBasics, rustInventory, goBasics, goInventory, cppBasics, cppMemory, aiFoundations, aiNeural];
+export const PROJECTS: Project[] = [garage, artStudio, launch, beatlab, pitWall,garageJs, signalLab, cargoControl, storeApi, smartHome, seasonAnalytics, schemaStudio, countingHouse, csharpBasics, csharpLinq, csharpDelegates, csharpApi, formForge, eventArena, jsApi, graphqlGateway, rustBasics, rustInventory, rustTraits, goBasics, goInventory, goPipeline, cppBasics, cppMemory, cppEngine, aiFirstSteps, aiFoundations, aiNeural];
 
 /**
  * Planned (not yet built) projects. They fill out each language's path (Beginner → Intermediate →
@@ -37,16 +42,6 @@ export const PROJECTS: Project[] = [garage, launch, beatlab, pitWall,garageJs, s
  * slugs, so when a project is added to PROJECTS its planned entry disappears automatically.
  */
 const PLANNED: UpcomingProject[] = [
-  {
-    slug: "art-studio",
-    language: "python",
-    difficulty: "Beginner",
-    title: "Art Studio",
-    tagline: "Generative art with loops and randomness.",
-    emoji: "🎨",
-    accent: { from: "#ff5c9a", to: "#c5ee8a" },
-    skills: ["loops", "randomness", "functions"],
-  },
   {
     slug: "signal-lab",
     language: "python",
@@ -268,16 +263,6 @@ const PLANNED: UpcomingProject[] = [
     skills: ["pointers & references", "stack vs heap", "new / delete → RAII", "rule of three / five", "copy vs move", "std::unique_ptr", "operator overloading", "std::istringstream", "custom exceptions"],
   },
   {
-    slug: "cpp-engine",
-    language: "cpp",
-    difficulty: "Advanced",
-    title: "Templates & Patterns",
-    tagline: "Write generic code and wire parts together with templates, concepts, callbacks and virtual functions.",
-    emoji: "🧩",
-    accent: { from: "#2563eb", to: "#1e3a8a" },
-    skills: ["templates & concepts", "STL containers & iterators", "lambdas & std::function", "observer & strategy", "inheritance & virtual", "shared_ptr / weak_ptr", "std::optional & std::variant"],
-  },
-  {
     slug: "cpp-exchange",
     language: "cpp",
     difficulty: "Professional",
@@ -291,7 +276,7 @@ const PLANNED: UpcomingProject[] = [
     slug: "ai-neural",
     track: "ai",
     language: "python",
-    difficulty: "Intermediate",
+    difficulty: "Advanced",
     title: "Neural Garden",
     tagline: "Grow a neural network from scratch in NumPy and teach it to read handwritten digits.",
     emoji: "🌱",

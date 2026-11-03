@@ -39,12 +39,12 @@ type PanelId = "roster" | "timing" | "fastest" | "stats" | "pace" | "tower" | "s
 const PANELS: { id: PanelId; title: string; lesson: number; clause: string }[] = [
   { id: "roster", title: "Driver roster", lesson: 1, clause: "SELECT … FROM drivers" },
   { id: "timing", title: "Live timing", lesson: 2, clause: "WHERE lap = 24" },
-  { id: "fastest", title: "Fastest laps", lesson: 3, clause: "ORDER BY … LIMIT 10" },
-  { id: "stats", title: "Race stats", lesson: 4, clause: "COUNT · MIN · AVG" },
-  { id: "pace", title: "Pace chart", lesson: 5, clause: "GROUP BY … HAVING" },
-  { id: "tower", title: "Timing tower", lesson: 6, clause: "JOIN … ON" },
-  { id: "strategy", title: "Strategy calls", lesson: 7, clause: "CASE WHEN … END" },
-  { id: "pitlog", title: "Pit log", lesson: 8, clause: "INSERT · UPDATE" },
+  { id: "fastest", title: "Fastest laps", lesson: 5, clause: "ORDER BY … LIMIT 10" },
+  { id: "stats", title: "Race stats", lesson: 7, clause: "COUNT · MIN · AVG" },
+  { id: "pace", title: "Pace chart", lesson: 9, clause: "GROUP BY … HAVING" },
+  { id: "tower", title: "Timing tower", lesson: 10, clause: "JOIN … ON" },
+  { id: "strategy", title: "Strategy calls", lesson: 12, clause: "CASE WHEN … END" },
+  { id: "pitlog", title: "Pit log", lesson: 13, clause: "INSERT · UPDATE" },
 ];
 
 /** Tables the hidden setup creates; anything else on the schema list was made by the learner. */
@@ -100,6 +100,11 @@ function displaySql(sql: string): string {
     .trim();
 }
 
+/** Practice queries (LIKE, BETWEEN, DISTINCT, NULL tests, LEFT JOIN) that no panel shows. */
+function isPractice(sql: string): boolean {
+  return /\b(like|between|coalesce)\b|\bis\s+(not\s+)?null\b|\bleft\s+(outer\s+)?join\b|\bselect\s+distinct\b/.test(bareSql(sql));
+}
+
 /** Which panel a statement belongs to, by the most specific idea it uses. */
 function classify(sql: string): PanelId {
   const s = bareSql(sql);
@@ -114,7 +119,8 @@ function classify(sql: string): PanelId {
 }
 
 /** Latest matching result per panel; a panel with no match falls back to its lesson's position in the file. */
-function assignPanels(results: ResultSet[]): Record<PanelId, ResultSet | null> {
+function assignPanels(allResults: ResultSet[]): Record<PanelId, ResultSet | null> {
+  const results = allResults.filter((r) => !isPractice(r.sql));
   const out = {} as Record<PanelId, ResultSet | null>;
   const used = new Set<number>();
   for (const p of PANELS) {

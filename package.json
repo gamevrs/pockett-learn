@@ -11,7 +11,7 @@
     "brand": "node brand/build.mjs",
     "validate": "node scripts/validate-content.mjs",
     "tune:garage": "node scripts/tune-garage.mjs",
-    "test:sync": "node scripts/test-sync-merge.mjs",
+    "test:sync": "node scripts/test-sync-merge.mjs && node scripts/test-progress-ids.mjs",
     "test:runner": "node scripts/runner/test.mjs",
     "ui:check": "node scripts/ui-check.mjs"
   },

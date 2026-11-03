@@ -5,7 +5,7 @@ import { chapter3 } from "./ai-neural/ch3.ts";
 import { chapter4 } from "./ai-neural/ch4.ts";
 
 /**
- * Glyph Greenhouse: the Intermediate project of the AI & Machine Learning track. The learner grows a
+ * Glyph Greenhouse: the Advanced project of the AI & Machine Learning track. The learner grows a
  * neural network from scratch in NumPy, one idea per lesson, and teaches it to read hand-drawn
  * digits. The pictures come from an original, procedurally drawn glyph set (see ai-neural/util.ts),
  * so the data is reproducible from a seed.
@@ -27,7 +27,7 @@ export const aiNeural: Project = {
   pitch:
     "A greenhouse where numbers sprout. You start with a seed: ten hand-designed pen strokes that a generator wobbles into hundreds of handwritten-looking digits. Then you grow a brain for them, one NumPy function at a time: a single neuron, activations, layers as matrix multiplies, softmax and cross-entropy, careful seed weights, backpropagation by hand, a gradient check that catches your own bugs, mini-batch training, a confusion matrix, regularisation, learning-rate seasons and early stopping. A live stage draws the network with weight-coloured edges, the loss and accuracy curves, the digits it gets wrong, and a pad where you draw a digit and your own predict() reads it.",
   emoji: "🌱",
-  difficulty: "Intermediate",
+  difficulty: "Advanced",
   hours: 8,
   sceneId: "ai-neural",
   prerequisites: ["ai-foundations"],

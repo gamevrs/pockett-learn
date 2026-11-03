@@ -28,7 +28,7 @@ export const signalLab: Project = {
   difficulty: "Intermediate",
   hours: 7,
   sceneId: "signal-lab",
-  prerequisites: ["garage"],
+  prerequisites: ["garage", "art-studio"],
   accent: { from: "#38bdf8", to: "#6366f1" },
   controls: ["Pause or resume the stream", "Type a pattern in the search box", "Transmit your own line", "Drag the SNR slider on the sky map"],
   skills: ["slicing", "string methods", "f-strings", "regular expressions", "parsing", "comprehensions", "sorting", "Counter & defaultdict"],
