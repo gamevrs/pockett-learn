@@ -72,30 +72,35 @@ manta.dive(30);                                // . for methods
 println!("{}", manta.needs_charge());
 ~~~
 
-- **Associated functions** (no \`self\`) are called with \`Type::name(...)\`. \`new\` is the conventional constructor. It is just a normal function with that name, not special syntax.
+- **Associated functions** (no \`self\`) are called with \`Type::name(...)\`. \`new\` is the usual name for a **constructor**, a function that builds a fresh value of the type. It is just a normal function with that name, not special syntax.
 - **\`&self\`** borrows read-only, **\`&mut self\`** borrows exclusively (the variable must be \`mut\`), and plain **\`self\`** takes ownership and uses the value up. These are exactly the three kinds of access from the last two lessons.
 - Inside an \`impl\`, \`Self\` is a nickname for the type, so \`-> Self\` and \`-> Drone\` mean the same.
 - You may write several \`impl\` blocks for one type. Lesson 13 adds a second one.
 - Calling a method needs no \`&\` or \`*\`: \`manta.dive(30)\` borrows \`manta\` for you.
 
+In the mission, a dive costs battery: half the metres, taken away with \`saturating_sub\`. That is the subtraction twin of \`saturating_add\` from lesson 2: it stops at 0 instead of going below it, which a \`u32\` cannot do.
+
 Forgetting \`mut\` gives the usual error: error[E0596]: cannot borrow \`manta\` as mutable, as it is not declared as mutable. Forgetting \`self.\` before a field gives error[E0425]: cannot find value \`battery_pct\` in this scope.
 
-### \`#[derive(...)]\`: free capabilities
+### \`#[derive(...)]\`: free abilities
 
-A freshly made struct can't be printed with \`{:?}\` or copied with \`.clone()\`. You ask the compiler to write those for you with an attribute above the struct:
+A freshly made struct can't be printed with \`{:?}\` or copied with \`.clone()\`. You ask the compiler to write those abilities for you with a line above the struct, called an **attribute**:
 
 ~~~rust
 #[derive(Debug, Clone)]
 struct Drone { /* ... */ }
 
+let mut pip = Drone::new("Pip");
+pip.dive(170);
 println!("{:?}", pip);
-// Drone { name: "Pip", battery_pct: 15, depth_m: 170, active: true }
-println!("{:#?}", pip);       // the same, spread over several lines, easier for big values
-
-let mut spare = manta.clone(); // an independent copy of the whole drone, name and all
+let spare = pip.clone();       // an independent copy of the whole drone, name and all
 ~~~
 
-\`Debug\` and \`Clone\` are **traits**: named sets of abilities. \`derive\` writes the obvious implementation field by field. This only works when every field already has the trait, which \`String\`, numbers and bools do. Other common derives are \`PartialEq\` (so you can use \`==\`) and \`Copy\` (for small all-Copy structs).
+~~~text
+Drone { name: "Pip", battery_pct: 15, depth_m: 170, active: true }
+~~~
+
+\`Debug\` and \`Clone\` are **traits**: named abilities a type can have. \`derive\` writes the obvious version of the ability field by field, which works when every field already has it (\`String\`, numbers and bools do). \`{:#?}\` prints the same thing spread over several lines, easier to read for big values.
 
 ### Now you can read the helper
 
@@ -105,7 +110,7 @@ Scroll to the top of your file. The provided code makes a \`Json\` object like t
 Json::new().with("name", &self.name).with("battery", self.battery_pct)
 ~~~
 
-\`Json::new()\` is an associated function. \`with\` takes \`mut self\` (it owns the object), adds one key and **returns self**, so you can chain the next call. That is the **builder pattern**, and it is just a method that takes ownership and gives it back, like \`stamp\` in lesson 9. You will use it now in a \`card\` method that describes a drone to the station.
+\`Json::new()\` is an associated function. \`with\` takes \`mut self\` (it owns the object), adds one key and **returns self**, so you can chain the next call. It is just a method that takes ownership and gives it back, like \`stamp\` in lesson 9. You will use it now in a \`card\` method that describes a drone to the station.
 
 ### Common mistakes
 
@@ -292,7 +297,7 @@ let second = Command::Charge { minutes: 30 };
 let third = Command::Surface;
 ~~~
 
-Variants are namespaced under the enum (\`Command::Dive\`). Writing just \`Dive(40)\` is error[E0425]: cannot find function, tuple struct or tuple variant \`Dive\` in this scope.
+Each alternative is called a **variant**, and its name is written after the enum's name and \`::\`, as in \`Command::Dive\`. Writing just \`Dive(40)\` is error[E0425]: cannot find function, tuple struct or tuple variant \`Dive\` in this scope.
 
 An enum value is always **exactly one variant** at a time, and the compiler can see which. That is how you make **illegal states impossible**: a command cannot be both \`Surface\` and \`Dive(40)\` at once, and a \`Dive\` always has its metres, with no way to "forget" them.
 
@@ -309,7 +314,7 @@ fn describe(command: &Command) -> String {
 }
 ~~~
 
-Each arm's pattern names the variant and **binds** the data inside it to variables you can use in that arm. And the match must be **exhaustive**. This is where enums pay off: add a fifth variant tomorrow and every \`match\` that does not handle it stops compiling.
+Each arm's pattern names the variant and gives the data inside it a name (\`metres\`, \`minutes\`, \`site\`) that you can use in that arm. And the match must be **exhaustive**: it must cover every variant. This is where enums pay off: add a fifth variant tomorrow and every \`match\` that does not handle it stops compiling.
 
 ~~~text
 error[E0004]: non-exhaustive patterns: \`&Command::Recall\` not covered
@@ -320,11 +325,11 @@ error[E0004]: non-exhaustive patterns: \`&Command::Recall\` not covered
 help: ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern as shown
 ~~~
 
-In a language without this, the new case silently falls through some \`default:\` branch in code you forgot existed. Here the compiler gives you a to-do list of every place to update. Resist the urge to add a lazy \`_ =>\` arm to silence it. A wildcard turns that safety net off for future variants.
+In a language without this, the new case silently falls through some \`default:\` branch in code you forgot existed. Here the compiler gives you a to-do list of every place to update. Resist the urge to add a lazy \`_ =>\` arm to silence it. The wildcard \`_\` matches anything not listed above it, so a variant you add next month would quietly land in that arm, and the compiler would no longer remind you to think about it. A wildcard turns that safety net off for future variants.
 
-### References and bindings
+### Pointers in the arms
 
-Because \`describe\` receives a **reference** (\`&Command\`), the bindings are references to the data too: \`metres\` is a \`&i32\`. Printing needs no star, but to use the number itself you write \`*metres\`. (Rust calls the convenience that lets you write the pattern without \`&\` "match ergonomics".)
+Because \`describe\` receives a pointer to the command (\`&Command\`), the names inside the arms are pointers to the data too: \`metres\` points at the number. Printing needs no star, but to use the number itself you write \`*metres\`, as in lesson 8.
 
 ### Methods on enums
 
@@ -361,9 +366,7 @@ enum Health { Good, Low, Critical }
 if drone.health() == Health::Critical { /* ... */ }
 ~~~
 
-\`==\` on your own types requires \`#[derive(PartialEq)]\`. Without it: error[E0369]: binary operation \`==\` cannot be applied to type \`Health\`. And \`{:?}\` on a unit variant prints its name: \`Critical\`.
-
-When you only care about one variant, \`if let Command::Dive(m) = command { ... }\` is shorter than a full \`match\`. Use a full \`match\` when you want the compiler to check every case.
+\`==\` on your own types requires \`#[derive(PartialEq)]\` (the same kind of ability as \`Debug\` in lesson 12). Without it: error[E0369]: binary operation \`==\` cannot be applied to type \`Health\`. And \`{:?}\` on a variant without data prints its name: \`Critical\`.
 
 ### Common mistakes
 
@@ -553,20 +556,20 @@ assert(lines.includes("Pip must return to charge"), 'When pip.health() == Health
       minutes: 40,
       xp: 140,
       concepts: ["Option<T>", "Some", "None", "if let", "unwrap_or", "unwrap and expect", "Option<&T>", "? on Option"],
-      learn: md`### The billion-dollar mistake, avoided
+      learn: md`### Sometimes the honest answer is "nothing"
 
-Many languages have a value that means "nothing here": \`null\`, \`None\`, \`nil\`, \`undefined\`. Any variable might secretly hold it, and using it crashes the program. Its inventor later called it his billion-dollar mistake.
+Ask the dive log for dive number 8 when only five dives exist. What should the answer be? Zero? That looks like a real depth. Minus one? That looks like a real number too. A crash? That is harsh for a simple question. In lesson 8, \`get(7)\` gave the honest answer: \`None\`, "there is nothing there", while \`get(1)\` gave \`Some(25)\`, "here it is".
 
-Rust has no null. Instead, "a value that might be missing" is an ordinary enum from the standard library, available everywhere without an import:
+\`Some\` and \`None\` are the two shapes of **\`Option\`**: a box that either holds a value or is empty. It is an ordinary enum from the standard library, available everywhere without an import:
 
 ~~~rust
 enum Option<T> {
-    Some(T),     // there is a value
-    None,        // there is not
+    Some(T),     // the box holds a value
+    None,        // the box is empty
 }
 ~~~
 
-\`Option<u32>\` is a **different type** from \`u32\`. The compiler will not let you use it as a number until you have decided what to do about the \`None\` case, so you cannot forget:
+\`T\` stands for "whatever kind of value goes inside": \`Option<u32>\` is "maybe a \`u32\`". It is a **different type** from \`u32\`, and the compiler will not let you use it as a number until you have decided what to do about the empty case, so you cannot forget:
 
 ~~~rust
 let weight: Option<u32> = Some(420);
@@ -578,11 +581,22 @@ let weight: Option<u32> = 420;  // error[E0308]: mismatched types: expected \`Op
                                 // help: try wrapping the expression in \`Some\`
 ~~~
 
-Where an optional value means "not known yet", you store \`None\`. In the station's catalogue, a sample's weight is \`Option<u32>\`: unweighed samples have \`None\`.
+In this lesson's mission, each sample in the station's catalogue is described by a struct with a weight that might not be known yet:
 
-### Ways to look inside
+~~~rust
+struct Sample {
+    id: u32,
+    name: String,
+    depth_m: i32,
+    weight_g: Option<u32>,      // None means "not weighed yet"
+}
+~~~
 
-**\`match\`** is the universal tool and gives you exhaustiveness checking:
+"Not weighed yet" is not the same as "weighs 0 g", so the weight is an \`Option<u32>\` and unweighed samples hold \`None\`.
+
+### Ways to look inside the box
+
+**\`match\`** has one branch for each shape and the compiler checks you covered both:
 
 ~~~rust
 match sample.weight_g {
@@ -591,7 +605,7 @@ match sample.weight_g {
 }
 ~~~
 
-**\`if let\`** is the short form for when you only care about one case:
+**\`if let\`** is the short form for when you only care about one shape: "if the box holds something, call it \`sample\` and run this block; otherwise run the \`else\` block".
 
 ~~~rust
 if let Some(sample) = find_sample(&catalogue, 999) {
@@ -601,17 +615,17 @@ if let Some(sample) = find_sample(&catalogue, 999) {
 }
 ~~~
 
-**\`unwrap_or(default)\`** gives you the value, or a fallback if it is \`None\`:
+**\`unwrap_or(default)\`** gives you the value inside, or a fallback if the box is empty:
 
 ~~~rust
-let shown = weight.unwrap_or(0);        // 420, or 0 when None
+let weight: Option<u32> = None;
+let shown = weight.unwrap_or(0);
+println!("{shown}");            // 0
 ~~~
-
-**\`unwrap()\`** and **\`expect("message")\`** give you the value and **panic** if it is \`None\`: *called \`Option::unwrap()\` on a \`None\` value*. They are fine in quick experiments and for cases that truly cannot fail, but when a user's data is involved, prefer \`match\`, \`if let\` or \`unwrap_or\`. Others you will see: \`is_some()\`, \`is_none()\`, and \`.map(|w| w * 2)\` to transform the inside only when it exists (closures like \`|w| w * 2\` arrive in the last lesson).
 
 ### Where Options come from
 
-You have already met some: \`Vec::get\`, \`first()\`, \`last()\`, \`pop()\`, \`u8::checked_add\` and \`str::find\` all return an \`Option\`, because the honest answer is sometimes "nothing". Your own functions should do the same instead of returning a magic number such as \`-1\` or an empty string:
+You already met some: \`Vec::get\`, \`first()\`, \`last()\`, \`pop()\`, \`checked_add\` and \`find\` all return an \`Option\`, because the honest answer is sometimes "nothing". Your own functions should do the same instead of returning a made-up number such as \`-1\`:
 
 ~~~rust
 fn find_sample(catalogue: &[Sample], id: u32) -> Option<&Sample> {
@@ -624,11 +638,13 @@ fn find_sample(catalogue: &[Sample], id: u32) -> Option<&Sample> {
 }
 ~~~
 
-Look at the return type: \`Option<&Sample>\` is "maybe a *borrowed* sample". The reference points into the catalogue, so the compiler makes sure the catalogue is not changed or dropped while you hold it. Nothing was copied. (The parameter is \`&[Sample]\`, a slice, which accepts \`&catalogue\` when you have a Vec, as in the last lessons.)
+- The parameter \`&[Sample]\` means "a borrowed view of a list of samples". You can hand it \`&catalogue\` when you have a \`Vec\`.
+- \`Option<&Sample>\` is "maybe a *borrowed* sample": the real sample inside the catalogue, not a copy of it.
+- \`return Some(sample);\` leaves the function **right away** with that answer. If the loop finds nothing, the last line, \`None\`, is the answer.
 
 ### The \`?\` operator, a first look
 
-Inside a function that itself returns an \`Option\`, putting \`?\` after an \`Option\` means "if this is \`None\`, return \`None\` from my function right now; otherwise give me the inside":
+Inside a function that itself returns an \`Option\`, putting \`?\` after an \`Option\` means: "if this box is empty, return the empty box from my function right now; otherwise give me what is inside".
 
 ~~~rust
 fn weight_of(catalogue: &[Sample], id: u32) -> Option<u32> {
@@ -637,18 +653,30 @@ fn weight_of(catalogue: &[Sample], id: u32) -> Option<u32> {
 }
 ~~~
 
-Without \`?\` that is a six-line \`match\`. Lesson 15 uses the same operator for errors.
+Without \`?\` the first line would be a longer \`match\`:
 
-### \`Option\` and ownership
+~~~rust
+let sample = match find_sample(catalogue, id) {
+    Some(found) => found,
+    None => return None,
+};
+~~~
 
-\`Option<T>\` is \`Copy\` when \`T\` is, so an \`Option<u32>\` field can be read out of a borrowed struct freely (\`self.weight_g\`). An \`Option<String>\` is not Copy and moves like any String; to look without taking it use \`.as_ref()\` or match on a reference.
+For an id that does not exist, \`weight_of\` returns \`None\` straight away. For a sample that exists but has not been weighed, \`find_sample\` succeeds and the function ends with the sample's own \`None\`. Lesson 15 uses the same operator for errors.
 
 ### Common mistakes
 
-- Using \`unwrap()\` on data you do not control.
 - Treating \`None\` and "zero" as the same thing. "Not weighed" is not "weighs 0 g".
 - Forgetting \`Some(...)\` when you pass a value to something that wants an \`Option\`.
-- Using \`?\` in a function that does not return \`Option\` or \`Result\`: error[E0277]: the \`?\` operator can only be used in a function that returns \`Result\` or \`Option\`.`,
+- Using \`?\` in a function that does not return \`Option\` or \`Result\`: error[E0277]: the \`?\` operator can only be used in a function that returns \`Result\` or \`Option\`.
+- Using \`unwrap()\` on data you do not control (see below).
+
+### Going further (optional)
+
+- **Other helpers.** \`is_some()\` and \`is_none()\` ask yes or no. \`unwrap()\` and \`expect("message")\` give you the value and **panic** if the box is empty: *called \`Option::unwrap()\` on a \`None\` value*. They are fine in quick experiments and for cases that truly cannot fail, but when a user's data is involved, prefer \`match\`, \`if let\` or \`unwrap_or\`.
+- **\`map\` and closures.** \`weight.map(|w| w * 2)\` changes the value inside only when there is one: \`Some(420)\` becomes \`Some(840)\` and \`None\` stays \`None\`. The \`|w| w * 2\` part is a **closure**: a tiny function without a name, written on the spot and handed to another function. The name between the bars is its input, and what follows is its answer. Lesson 16 uses closures a lot.
+- **Where the idea comes from.** Many languages have a value like \`null\` or \`undefined\` that any variable might secretly hold, and using it crashes the program. Its inventor later called it his billion-dollar mistake. Rust has no such value: "might be missing" is part of the type.
+- **Options and ownership.** \`Option<T>\` is \`Copy\` when \`T\` is, so an \`Option<u32>\` field can be read out of a borrowed struct freely (\`self.weight_g\`). An \`Option<String>\` is not \`Copy\` and moves like any String; to look without taking it use \`.as_ref()\` or match on a reference.`,
       mission: md`The station keeps a catalogue of samples collected on the reef. A catalogue is only useful if you can look things up, and a lookup honestly might find nothing. Some samples have also not been weighed yet, so the weight itself is optional.
 
 You will define the \`Sample\` type, write lookups that return \`Option\`, and total the weights without ever pretending that a missing weight is zero. When this lesson passes, the **Sample catalogue** lights up.`,
@@ -911,9 +939,22 @@ let id = parse_unsigned(parts[0])?;       // on Ok, the number; on Err, return t
 So a function can read as a straight line of "do this, then this, then this", and the first failure leaves early with its error. Rules for \`?\`:
 
 - It only works inside a function whose return type is a \`Result\` (or an \`Option\`, as last time). In \`main\` with no return type you get error[E0277]: the \`?\` operator can only be used in a function that returns \`Result\` or \`Option\`. Use a \`match\` there, as the lesson's loop does.
-- The error type has to fit. The error in the \`Err\` is converted with the \`From\` trait when the types differ. That is how big programs combine many kinds of errors, and it is the heart of the next project.
+- The error type has to fit: \`?\` can only pass on an error of the same type that your own function declares. Here every function uses \`IntakeError\`, so they fit. (Combining different error types is a topic for the next project.)
 
 ### A parser built from small steps
+
+First, a function that turns text into a whole number that is never negative. Its \`Err\` is your own \`BadNumber\` carrying the offending text:
+
+~~~rust
+fn parse_unsigned(text: &str) -> Result<u32, IntakeError> {
+    match text.trim().parse::<u32>() {
+        Ok(number) => Ok(number),
+        Err(_) => Err(IntakeError::BadNumber(text.trim().to_string())),
+    }
+}
+~~~
+
+A depth may be negative as far as \`parse\` is concerned, so \`parse_depth\` needs one more check. Then \`parse_sample\` chains the small parsers:
 
 ~~~rust
 fn parse_depth(text: &str) -> Result<i32, IntakeError> {
@@ -936,7 +977,7 @@ fn parse_sample(line: &str) -> Result<Sample, IntakeError> {
 }
 ~~~
 
-Three things to notice. The **guard** (\`Ok(depth) if depth < 0\`) validates a parsed value: parsing success is not the same as a sensible number. The **early \`return Err(...)\`** is a plain return. And the success path ends with \`Ok(...)\`, with no semicolon, because it is the function's value.
+Three things to notice. The **guard** (an extra \`if\` after a pattern, here \`Ok(depth) if depth < 0\`) validates a parsed value: parsing success is not the same as a sensible number. The **early \`return Err(...)\`** is a plain return. And the success path ends with \`Ok(...)\`, with no semicolon, because it is the function's value.
 
 ### Using the results
 
@@ -953,7 +994,7 @@ Good practice: report every problem, keep going with the good records, and never
 
 ### \`unwrap\`, \`expect\` and friends
 
-\`result.unwrap()\` returns the \`Ok\` value or panics with the error: *called \`Result::unwrap()\` on an \`Err\` value: ...*. \`expect("what went wrong")\` is the same with your own message. Fine for tests, scripts and "this cannot happen" situations. For anything that handles outside data, use \`match\` or \`?\`. You can also convert a \`Result\` into an \`Option\` with \`.ok()\` when you do not care why it failed.
+\`result.unwrap()\` returns the \`Ok\` value or panics with the error: *called \`Result::unwrap()\` on an \`Err\` value: ...*. \`expect("what went wrong")\` is the same with your own message. Fine for tests, scripts and "this cannot happen" situations. For anything that handles outside data, use \`match\` or \`?\`.
 
 ### Common mistakes
 
@@ -964,7 +1005,7 @@ Good practice: report every problem, keep going with the good records, and never
 - Forgetting that parse succeeding does not mean the value is valid.`,
       mission: md`Samples arrive from the field as lines of text from a handheld logger: \`id,name,depth,weight\`. Some lines are good, some are damaged: a word where a number belongs, a missing field, a depth with a minus sign. The intake desk must keep every good record and write an exact explanation for every bad one.
 
-You will parse each line with small functions that return \`Result\`, chain them with \`?\`, and describe each failure with your own error enum. When this lesson passes, the **Intake desk** lights up.`,
+You will parse each line with small functions that return \`Result\`, chain them with \`?\`, and describe each failure with your own error enum. Remember that \`?\` is not allowed inside \`main\`, so the loop in \`main\` uses a \`match\` on the result of \`parse_sample\`. When this lesson passes, the **Intake desk** lights up.`,
       tasks: [
         "Above the divider define #[derive(Debug)] enum IntakeError { WrongFieldCount(usize), BadNumber(String), NegativeDepth(i32) } with a describe(&self) -> String method: \"expected 4 fields, found N\", \"\\\"text\\\" is not a valid number\" and \"depth N is negative\"",
         "Write parse_unsigned(text: &str) -> Result<u32, IntakeError> and parse_depth(text: &str) -> Result<i32, IntakeError> (BadNumber for text that does not parse; parse_depth also rejects negatives with NegativeDepth)",
@@ -1158,46 +1199,62 @@ assertEqual(scene.intake.map((s) => s.weightG), [90, 65], "intake weightG");`,
       minutes: 50,
       xp: 200,
       concepts: ["HashMap", "entry", "or_insert", "iterators", "closures", "filter", "map", "filter_map", "sum", "count", "collect", "use"],
-      learn: md`### \`HashMap\`: look things up by key
+      learn: md`### From many facts to one report
 
-A \`Vec\` is found by position. A **\`HashMap<K, V>\`** is found by *key*: give it a key and get the value, fast, however many entries there are. It lives in the standard library, so you bring it into scope with a \`use\` line (the type is not in the default prelude):
+At the end of a shift the commander does not read every log line. She wants totals: how many, how much, which ones. This lesson gives you two tools for that. A **HashMap** is a lookup table, like a coat check: hand over a ticket and get exactly your coat back. An **iterator pipeline** is an assembly line that filters and counts a list in a few steps.
+
+### \`HashMap\`: look things up by key
+
+A \`Vec\` is found by position: "the third item". A **\`HashMap<K, V>\`** is found by a **key** you choose: "the entry for \`deep\`". \`K\` is the kind of the keys and \`V\` the kind of the values. Rust keeps a few tools in a drawer you must open first, and \`HashMap\` is one of them. The line \`use std::collections::HashMap;\` opens the drawer. In this file it goes above the divider line, with the other items.
 
 ~~~rust
 use std::collections::HashMap;
 
 let mut zone_counts: HashMap<String, u32> = HashMap::new();
 zone_counts.insert(String::from("deep"), 1);
+println!("{:?}", zone_counts.get("deep"));
+println!("{:?}", zone_counts.get("shallow"));
 ~~~
 
-Forget the \`use\` and you get error[E0433]: failed to resolve: use of undeclared type \`HashMap\`, with the fix printed under it. In this file the \`use\` line goes above the divider, with the other items.
-
-~~~rust
-zone_counts.get("deep")            // Option<&u32>: Some(&1) or None
-zone_counts.contains_key("deep")   // bool
-zone_counts.remove("deep")         // Option<u32>
-zone_counts.len()
+~~~text
+Some(1)
+None
 ~~~
 
-\`get\` returns an \`Option\` for the same reason as everywhere else: the key might not be there. Indexing with \`zone_counts["deep"]\` skips the Option and **panics** on a missing key, so use it only when you are sure.
+\`HashMap<String, u32>\` means "keys are texts, values are numbers". \`get\` returns the same kind of box as in lesson 8: \`Some(value)\` when the key exists, \`None\` when it does not. Forget the \`use\` line and you get error[E0433]: failed to resolve: use of undeclared type \`HashMap\`, with the fix printed under it.
 
-**Ownership:** \`insert\` moves the key and the value *into* the map. The map owns them from then on. Keys must be hashable and comparable (strings, integers, chars, tuples of those; \`f64\` is not).
-
-### Counting: the \`entry\` API
+### Counting: the \`entry\` method
 
 "Add one to the count for this key, starting from zero if it is new" is so common that it has its own method:
 
 ~~~rust
-let count = zone_counts.entry(String::from("deep")).or_insert(0);
-*count += 1;
+let mut tally: HashMap<String, u32> = HashMap::new();
+for zone in ["deep", "shallow", "deep"] {
+    let count = tally.entry(zone.to_string()).or_insert(0);
+    *count += 1;
+}
+println!("{:?} {:?}", tally.get("deep"), tally.get("shallow"));
 ~~~
 
-\`entry(key)\` finds or reserves the slot; \`or_insert(0)\` puts 0 there if it was empty; the result is a \`&mut u32\` pointing into the map, which you change through the star. It is one lookup instead of three, and it avoids every "does the key exist yet?" branch.
+~~~text
+Some(2) Some(1)
+~~~
 
-**Order:** a HashMap has **no defined order**. Iterating twice, or on a different run, may give a different sequence. If the order matters for display, sort the keys, or walk a list of the keys in the order you want, as the report below does.
+- \`entry(key)\` finds the slot for that key.
+- \`.or_insert(0)\` puts a 0 in the slot if it was empty, and gives you a **pointer to the number in the map**, which \`count\` holds.
+- \`*count += 1\` follows the pointer (the star, as in lesson 8) and adds one to the number itself.
 
-### Iterators: pipelines over collections
+Lap by lap: \`deep\` is new, so it starts at 0 and becomes 1; \`shallow\` becomes 1; \`deep\` is found with 1 and becomes 2.
 
-You have been writing loops that look at every item and update some variables. An **iterator** pipeline says the same thing as a chain of steps. \`.iter()\` starts one; **adaptors** transform it; a **consumer** at the end produces the result.
+**Order:** a HashMap has **no defined order**. Looping over it may give a different sequence on a different run. When the order matters for display, walk a list of the keys in the order you want, as the report in the mission does.
+
+### Iterator pipelines
+
+You have written loops that look at every item and update some variables. An **iterator pipeline** says the same thing as a chain of steps. \`.iter()\` starts it, the middle steps (called **adaptors**) change or filter what flows through, and the last step (a **consumer**) collects the result. The middle steps are **lazy**: they do nothing until the last step asks for results.
+
+Many steps take a small piece of code written on the spot. That is called a **closure**: a tiny function without a name that you hand to another function. You saw one in lesson 14 (\`|w| w * 2\`). The part between the two bars is the input, and what follows is the answer. \`|s| s.depth_m >= 30\` reads: "given a sample \`s\`, answer yes when its depth is 30 or more".
+
+Here are three pipelines over the five samples of the report (depths 18, 25, 31, 12 and 22 metres):
 
 ~~~rust
 let weighed_g: u32 = all_samples.iter().filter_map(|s| s.weight_g).sum();
@@ -1205,21 +1262,28 @@ let deep_count = all_samples.iter().filter(|s| s.depth_m >= 30).count();
 let names: Vec<String> = all_samples.iter().map(|s| s.name.clone()).collect();
 ~~~
 
-- **Adaptors** (lazy, they do nothing by themselves): \`filter(keep?)\`, \`map(change)\`, \`filter_map(change or skip)\`, \`rev()\`, \`take(n)\`, \`enumerate()\`.
-- **Consumers** (they run the pipeline): \`sum()\`, \`count()\`, \`collect()\`, \`max()\`, \`min()\`, \`any(...)\`, \`all(...)\`, \`find(...)\`.
-- \`sum()\` and \`collect()\` have to know their result type, so annotate the variable (\`let total: u32 = ...\`) or use the turbofish (\`.sum::<u32>()\`). Without it: error[E0283]: type annotations needed.
+- \`filter(...)\` keeps only the samples for which the closure says yes. Only the sponge at 31 m does, and \`count()\` counts it: \`deep_count\` is 1.
+- \`map(...)\` changes every item into something else: here each sample into a copy of its name (\`clone\` from lesson 9). \`collect()\` gathers the results into a \`Vec\`. \`names.join(", ")\` then glues a list of texts into one text with that separator between them.
+- \`filter_map(...)\` is \`map\` plus a filter: the closure answers with a box, and items whose box is empty are dropped. Here \`s.weight_g\` is a weight in a box, so unweighed samples are skipped and \`sum()\` adds the rest.
+- \`sum()\` and \`collect()\` must know what to build, so the variable gets a type (\`let weighed_g: u32 = ...\`). Without it: error[E0283]: type annotations needed.
 
-Iterators are **lazy** and compile to the same machine code as a hand-written loop. There is no cost for writing them in this style. That is called a *zero-cost abstraction*, and it is a design goal of the language.
+Finding the biggest item works the same way:
 
-### Closures: tiny anonymous functions
+~~~rust
+let depths = vec![18, 25, 31];
+let deepest = *depths.iter().max().unwrap_or(&0);
+println!("{deepest}");
+~~~
 
-The \`|s| s.weight_g\` above is a **closure**: parameters between the bars, then the expression. \`|s| s.depth_m >= 30\` takes a sample and returns a bool. A closure can use variables from where it was written. Their types are inferred, so you rarely annotate them.
+~~~text
+31
+~~~
 
-Inside \`filter\` the closure receives a reference to what the iterator yields. With \`.iter()\` that is already a reference, so you get a reference to a reference (\`&&Sample\`), but field access and method calls dereference for you, so \`s.depth_m\` and \`drone.needs_charge()\` just work.
+\`max()\` answers with a box (an empty list has no biggest). \`.unwrap_or(&0)\` means "the biggest, or 0 if the box is empty". The \`&\` is there because the box holds a pointer to the number, and the star in front turns that pointer back into the number. The same trick, \`*zone_counts.get(name).unwrap_or(&0)\`, gives a count or 0 when a zone has no entry.
 
-### A string with a lifetime: \`&'static str\`
+### A text that lasts the whole run
 
-The helper below returns text chosen from literals:
+The mission's helper returns text chosen from quoted texts:
 
 ~~~rust
 fn zone_for(depth_m: i32) -> &'static str {
@@ -1227,23 +1291,30 @@ fn zone_for(depth_m: i32) -> &'static str {
 }
 ~~~
 
-A literal lives for the entire run of the program, which is what \`'static\` says. Writing plain \`-> &str\` here would be error[E0106]: missing lifetime specifier, because the function has no input reference for the result to borrow from. Returning an owned \`String\` would work too.
+\`&'static str\` is the type of "a quoted text typed into the program". The \`'static\` part means "it lasts for the whole run". Copy that type for functions that return quoted text; a later project explains the details.
 
-### Moves, once more
+### Moving two lists into one
 
-\`let mut all_samples = catalogue;\` **moves** the catalogue into a new name, and \`all_samples.extend(intake);\` moves every sample out of \`intake\`. After these lines the old names are gone and the compiler would tell you so (E0382). That is the plan: we are finished with them. The iterator chains afterwards only borrow \`all_samples\`.
+The mission starts with two lists, \`catalogue\` and \`intake\`. \`let mut all_samples = catalogue;\` hands the catalogue over under a new name (a move, lesson 9), and \`all_samples.extend(intake);\` pours every sample of \`intake\` into it. After those lines the old names are empty-handed, and the compiler would tell you so (E0382). That is the plan: you are finished with them. Likewise \`let fleet = vec![manta, pip, spare];\` moves the three drones into one list. The pipelines afterwards only borrow \`all_samples\`.
 
 ### Common mistakes
 
 - Forgetting the consumer. \`all_samples.iter().map(...)\` alone does nothing.
 - Missing type annotation for \`sum\` or \`collect\`.
-- Expecting HashMap iteration order to match insertion order.
-- Writing \`map[key]\` for a key that might be missing.
+- Expecting HashMap order to match the order you inserted in.
 - Turning every pipeline into one unreadable 200-character line. A loop is still the right choice when the body needs several steps.
 
 ### You made it
 
-This is the end of the Foundations path. Your station reads input, makes decisions, loops, owns and borrows its data, models drones, commands, samples and errors with its own types, and produces a report. You have met nearly every concept that makes Rust unusual (ownership, borrowing, enums, \`Option\`, \`Result\`), and you used the compiler as a collaborator throughout. The next projects of this path build on exactly these ideas: lifetimes and error types in a cargo manifest, traits and generics in a drone fleet, and threads and channels in a key-value server.`,
+This is the end of the Foundations path. Your station reads input, makes decisions, loops, owns and borrows its data, models drones, commands, samples and errors with its own types, and produces a report. You have met nearly every concept that makes Rust unusual (ownership, borrowing, enums, \`Option\`, \`Result\`), and you used the compiler as a collaborator throughout. The next projects of this path build on exactly these ideas: lifetimes and error types in a cargo manifest, traits and generics in a drone fleet, and threads and channels in a key-value server.
+
+### Going further (optional)
+
+- **More adaptors:** \`rev()\`, \`take(n)\`, \`enumerate()\`. **More consumers:** \`max()\`, \`min()\`, \`any(...)\`, \`all(...)\`, \`find(...)\`. The turbofish also names the result type: \`.sum::<u32>()\`.
+- **Zero cost.** Iterators compile to the same machine code as a hand-written loop, so writing in this style costs nothing. Rust calls that a *zero-cost abstraction*.
+- **HashMap details.** \`contains_key("deep")\` asks yes or no and \`remove("deep")\` takes an entry out. Indexing with \`zone_counts["deep"]\` skips the box and panics on a missing key, so use it only when you are sure. \`insert\` moves the key and the value into the map. Keys must be something Rust can hash and compare: texts, whole numbers, chars, tuples of those; \`f64\` is not.
+- **References to references.** Inside \`filter\`, the closure receives a pointer to what the iterator yields, and \`iter()\` already yields pointers, so a closure may see two layers of pointer (written \`**n\` when you need the number itself). Field access and method calls look through them for you, which is why \`s.depth_m\` just works.
+- **\`'static\` and errors.** Writing plain \`-> &str\` in \`zone_for\` would be error[E0106]: missing lifetime specifier, because the function has no input pointer for the result to borrow from. Returning an owned \`String\` would also work.`,
       mission: md`End of the shift. The commander wants one report: how many dives and how deep, how many samples are catalogued and how much they weigh, how the samples spread over depth zones, and which drones need charging.
 
 You will merge the catalogue and the intake into one list, use iterator pipelines to total and filter, count samples per zone with a \`HashMap\`, and print the final station report. When this lesson passes, the **Station report** lights up and every module of Halcyon is live.`,
@@ -1402,9 +1473,9 @@ assertEqual(r.needsCharge, 1, "report.needsCharge");`,
       unlocks: ["rs-report"],
       checks: [
         {
-          prompt: "What does this evaluate to?\n\n~~~rust\nlet total: u32 = [3, 5, 8].iter().filter(|n| **n > 4).sum();\n~~~",
-          question: { type: "number", answer: 13 },
-          explanation: "`filter` keeps 5 and 8 and `sum` adds them: 13. The consumer at the end (`sum`) is what runs the pipeline. The `**n` is because `iter()` yields references and `filter` passes a reference to that.",
+          prompt: "What does this evaluate to?\n\n~~~rust\nlet total: i32 = [3, 5, 8].iter().map(|n| n * 2).sum();\n~~~",
+          question: { type: "number", answer: 32 },
+          explanation: "The closure `|n| n * 2` doubles every item: 6, 10 and 16. `sum` adds them: 32. The consumer at the end (`sum`) is what runs the pipeline.",
         },
         {
           prompt: "You build `all_samples.iter().map(|s| s.name.clone());` and never call anything on it. What happens?",

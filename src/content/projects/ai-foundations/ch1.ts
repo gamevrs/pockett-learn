@@ -50,12 +50,24 @@ weight  diameter  hue  sugar  kind
   64.8      49.0  262   14.6  plum
 ~~~
 
+### The Python you need (a quick box)
+
+This course uses a few small Python tools over and over. Here they are in plain words, so nothing later is a surprise:
+
+- A **list** is an ordered row of values: \`sizes = [3, 5, 8]\`. \`sizes[0]\` is the first one (counting starts at 0), \`len(sizes)\` is how many, \`sizes.append(9)\` adds one at the end.
+- A **dict** is a set of labelled boxes: each *key* (a name) points to a *value*. \`row["weight"]\` opens the box named "weight". \`counts["apple"] = 3\` puts 3 into the box called "apple" (creating it if needed).
+- \`counts.get("apple", 0)\` also opens a box, but if there is no such box it hands back the second thing you gave (here \`0\`) instead of crashing. That is exactly what you want for counting.
+- A **list comprehension** builds a new list from an old one in a single line: \`[n * 2 for n in sizes]\` reads "n times 2, for every n in sizes" and gives \`[6, 10, 16]\`.
+- A function can hand back **two things at once**: \`return a, b\`. The caller catches them with \`first, second = my_function()\`.
+
 ### Features and labels
 
 The columns split into two groups:
 
-- **Features** are what the machine is allowed to look at: here the weight, diameter, hue and sugar. They are the *inputs*, usually written \`X\`.
-- The **label** (or *target*) is the answer we want it to predict: here the \`kind\`. It is the *output*, usually written \`y\`.
+- **Features** are what the machine is allowed to look at: here the weight, diameter, hue and sugar. They are the *inputs*, usually written \`X\` (a capital, because it is a whole table: many rows).
+- The **label** (or *target*) is the answer we want it to predict: here the \`kind\`. It is the *output*, usually written \`y\` (a small letter, because it is one column).
+
+A word of warning: \`weight\` here means **how heavy the fruit is**, measured in grams. Later you will meet *a model's weights*, which are something completely different: knobs inside the model. When we mean those, we will always say "the model's weight (a knob)".
 
 Learning from rows that already contain the right answer is called **supervised learning**: the labels are the supervisor. The recipe has three words you will meet all course long:
 
@@ -72,11 +84,39 @@ FEATURE_NAMES = ["weight", "diameter", "hue", "sugar"]
 [row[name] for name in FEATURE_NAMES]    # [182.4, 74.0, 38, 13.1]
 ~~~
 
+### Counting and splitting: the two jobs you will code
+
+Counting how many fruit of each kind there are, with a dict and \`.get\`:
+
+~~~python
+counts = {}
+for kind in ["apple", "pear", "apple"]:
+    counts[kind] = counts.get(kind, 0) + 1
+print(counts)    # {'apple': 2, 'pear': 1}
+~~~
+
+Trace: the first \`"apple"\` has no box yet, so \`.get\` gives 0 and the box becomes 0 + 1 = 1. The \`"pear"\` box becomes 1. The second \`"apple"\` finds 1 and makes it 2.
+
+Splitting a table into \`X\` (features) and \`y\` (labels): walk through the rows once and fill two lists.
+
+~~~python
+X = []
+y = []
+for row in rows:
+    X.append(features(row))   # a list of four numbers
+    y.append(label(row))      # one word, like "apple"
+# X looks like [[182.4, 74.0, 38, 13.1], [211.0, 66.5, 71, 10.9], ...]
+# y looks like ["apple", "pear", ...]
+# and then:  return X, y
+~~~
+
+Row number 5 in \`X\` and entry number 5 in \`y\` always belong to the same fruit.
+
 ### Common mistakes
 
 - **Putting the label in the features.** If \`kind\` is an input, the machine just reads the answer and learns nothing. This is called *leakage*, and it makes a model look brilliant right up to the day it meets real data.
 - **Changing the feature order** between rows or between training and prediction.
-- **Mutating the data** while looping over it. Build new lists instead.`,
+- **Mutating the data** while looping over it. *Mutating* means changing in place. For example, \`for row in rows: row["weight"] = row["weight"] / 1000\` silently rewrites your original table, and everything you compute afterwards uses the changed numbers. Build new lists instead.`,
       mission: md`The Orchard Vision sorting machine has a camera, a scale, a colour meter and a sugar probe, but no brain yet. For the next sixteen lessons you will build that brain, one idea at a time, using nothing but Python and, soon, NumPy.
 
 The sensors are already wired up: \`read_sensors()\` returns a batch of 240 measured fruit. Your job in this first lesson is to read it like a data scientist: pick the features, pick the label, count what you have and split the table into \`X\` and \`y\`. When this lesson passes, the **Sorting belt** switches on and your \`features()\` and \`label()\` read every fruit that rolls past.`,
@@ -301,7 +341,16 @@ value  deviation  squared
 
 The squares add up to 1000. Divide by 5 values to get a variance of 200, then take the square root: std ≈ **14.14 g**. Roughly, "a typical fruit sits about 14 g from the average".
 
-(There is a second version that divides by \`n - 1\` instead of \`n\`; it is for estimating a bigger population from a small sample. We describe the whole batch we have, so we divide by \`n\`. NumPy does the same by default.)
+In Python, those four steps are:
+
+~~~python
+values = [150, 160, 170, 180, 190]
+mean = sum(values) / len(values)                       # 170.0
+squares = [(v - mean) ** 2 for v in values]           # [400.0, 100.0, 0.0, 100.0, 400.0]
+std = (sum(squares) / len(values)) ** 0.5             # 14.142...  (** 0.5 is a square root)
+~~~
+
+(Skip this if you like: some books divide by \`n - 1\` instead of \`n\`. We describe the whole batch we have, so we divide by \`n\`, and NumPy does the same by default.)
 
 ### Why this matters for machine learning
 
@@ -533,7 +582,30 @@ X[y == "apple", 0].mean()
 
 ### Broadcasting, in one line
 
-\`X - X.mean(axis=0)\` subtracts a shape-\`(4,)\` row of means from every row of a \`(240, 4)\` table. NumPy stretches ("broadcasts") the small array across the big one. You will use this to normalise in the next lesson.
+\`X - X.mean(axis=0)\` subtracts a shape-\`(4,)\` row of means from every row of a \`(240, 4)\` table. NumPy stretches ("broadcasts") the small array across the big one: like pressing the same stamp on every line of a notebook. You will use this to normalise in the next lesson.
+
+A tiny picture, with 3 fruit and 2 features:
+
+~~~text
+X (3, 2)        means (2,)     X - means (3, 2)
+ 10  100         20  200       -10  -100
+ 20  200    -    (the same    =   0     0
+ 30  300          row used      10   100
+                  on every
+                  row)
+~~~
+
+The means are \`[20, 200]\` (\`axis=0\`: one per column). Each row of \`X\` has that same pair taken away, so the first row becomes \`[-10, -100]\`. This works because the last number of the shapes matches (both are 2). If the shapes cannot line up, NumPy stops with an error instead of guessing.
+
+### Four small tools the mission needs
+
+~~~python
+np.array([1, 2, 3], dtype=float)           # array([1., 2., 3.])  force decimals instead of whole numbers
+np.unique(["pear", "apple", "apple"])      # array(['apple', 'pear'])  each distinct value once, sorted
+for kind in np.unique(y):                   # the kinds, one after another
+    print(str(kind))                        # str(...) turns NumPy's text into a plain Python string
+np.array([1.5, 2.5]).tolist()               # [1.5, 2.5]  back to an ordinary Python list
+~~~
 
 ### Plain numbers out
 
@@ -709,7 +781,7 @@ apple       170        72   50     13
 pear        210        70   60     11
 ~~~
 
-The raw differences are 40 g, 2 mm, 10 degrees and 2 Brix. Any method that measures "how different are these two fruit?" by adding up those gaps would hear almost nothing except the weight, because weight is measured in big numbers. Yet a 2-degree-Brix sugar gap might matter more than 40 g.
+The raw differences are 40 g, 2 mm, 10 degrees and 2 Brix (a measure of how much sugar the juice holds: higher is sweeter). Any method that measures "how different are these two fruit?" by adding up those gaps would hear almost nothing except the weight, because weight is measured in big numbers. Yet a 2-degree-Brix sugar gap might matter more than 40 g.
 
 The size of a number depends on the **unit**, and units are arbitrary. Weigh in kilograms and the weight gap shrinks to 0.04. The fix is to put every feature on a common scale before comparing.
 
@@ -739,15 +811,15 @@ The other popular choice maps the smallest value to 0 and the largest to 1:
 scaled = (x - min) / (max - min)
 ~~~
 
-It keeps the shape of the data, but one extreme value squashes everything else into a thin band. Z-scores cope better with outliers, so we use them as our default.
+It keeps the shape of the data, but one extreme value (an *outlier*, a reading far from all the others) squashes everything else into a thin band. Z-scores are also pulled by an extreme value, but less violently, so we use them as our default.
 
 ### Fit once, apply anywhere
 
-Here is the rule that trips people up. The mean and std are **learned from data**: that is the *fit* step. Applying them to a table is the *apply* step. Later, when a brand-new fruit rolls in, you must scale it with the **same mean and std** you learned before, not with numbers computed from that one fruit (whose "std" would be zero!). That is why we split the work into two functions: \`fit_scaler\` returns the numbers, \`apply_scaler\` uses them anywhere.
+Here is the rule that trips people up. The mean and std are **learned from data**: that is the *fit* step. Applying them to a table is the *apply* step. Later, when a brand-new fruit rolls in, you must scale it with the **same mean and std** you learned before, not with numbers computed from that one fruit (whose "std" would be zero!). The wrong way: for a lone new fruit, its own mean is its own weight, so \`(x - mean) / std\` would be \`0 / 0\` and every new fruit would look the same. The right way: scale it with the batch's mean (170) and std (20) that you saved earlier. That is why we split the work into two functions: \`fit_scaler\` returns the numbers, \`apply_scaler\` uses them anywhere.
 
 ### A column that never changes
 
-If every value in a column is the same, its std is 0 and dividing by it gives \`nan\`. A tidy scaler swaps a zero spread for 1, which leaves that column at all zeros. NumPy has a handy helper: \`np.where(condition, if_true, if_false)\`.
+If every value in a column is the same, its std is 0 and dividing by it gives \`nan\` ("not a number", the result of something like 0 / 0). A tidy scaler swaps a zero spread for 1, which leaves that column at all zeros. NumPy has a handy helper: \`np.where(condition, if_true, if_false)\`.
 
 ### Common mistakes
 

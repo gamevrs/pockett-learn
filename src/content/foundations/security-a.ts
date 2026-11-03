@@ -17,8 +17,9 @@ export const securityLessonsA: ConceptLesson[] = [
     steps: [
       {
         kind: "explain",
-        title: "Security is a list of questions",
+        title: "Protecting a treehouse",
         body: P(
+          "Imagine you built a treehouse and want to keep it safe. You would ask: **Who might come? Which doors and windows exist? What do I lock first? What would I miss most if it were taken?** You would not just buy one magic lock. Security for software works the same way: it is a list of questions, not a product.",
           "Nobody makes software secure by sprinkling in a feature called “security”. What works is asking, early and often, **what could go wrong here, and who would make it go wrong on purpose?** Doing that on paper before you build is called **threat modelling**, and it needs a whiteboard, not a certificate.",
           "Our running example is the booking system of **Dovetail Clinic**: patients book appointments from a phone, receptionists manage them from a laptop, and reminders go out as text messages. Some of that machinery is ours, and some is not. Tap each box and read what is valuable there and who might come for it.",
         ),
@@ -48,20 +49,21 @@ export const securityLessonsA: ConceptLesson[] = [
                                find an open backup bucket
 4. How bad would that be?      one record? every record? the clinic's licence?
 `),
+          "Two words in question 3: to **phish** is to trick someone into typing their password on a fake page that looks real, and a **bucket** is a folder in online file storage that someone may have left open to the whole internet. Injection comes later in this module.",
           "Notice the fourth question. You will never close every door, so **impact** decides which doors get locked first. A flaw that exposes one appointment time is not in the same league as one that exposes the whole database.",
         ),
       },
       {
         kind: "question",
         title: "Believe the header?",
-        body: "A request reaches the Booking API carrying the header `X-Role: admin`. When may the API believe it?",
+        body: "Every web request carries small labelled notes called **headers** (you met them in the network module), and the sender chooses what they say. A request reaches the Booking API carrying the header `X-Role: admin`. When may the API believe it?",
         question: {
           type: "choice",
           options: [
             "Always: headers are part of the request, so they are trustworthy",
             "Never: the client wrote it, and clients can write anything",
             "Only if a component the API trusts set it after authenticating the caller, and ordinary clients cannot send that header themselves",
-            "Only when the request arrived over HTTPS",
+            "Only when the request arrived over HTTPS (the padlock version of the web, where the journey is scrambled so eavesdroppers cannot read it)",
           ],
           answer: 2,
         },
@@ -90,7 +92,7 @@ export const securityLessonsA: ConceptLesson[] = [
         title: "Assume something will get in",
         body: P(
           "Attackers are not only strangers. Think also of a **curious employee**, a **tired administrator who types the command into the wrong terminal**, a **stolen laptop**, and a **bot** that tries ten thousand passwords overnight. Each takes a different door.",
-          "Because you cannot close all of them, mature systems work in layers. **Prevent** what you can (authentication, validation), **limit the blast radius** of what you cannot (small permissions, separate credentials, encrypted backups), and **detect and recover** (logs, alerts, practised restores). This is called **defence in depth**: when one layer fails, the next is still standing.",
+          "Because you cannot close all of them, mature systems work in layers. **Prevent** what you can (authentication, validation), **limit the blast radius** (how much damage one break-in can do, like the circle of a firework) of what you cannot (small permissions, separate credentials, encrypted backups), and **detect and recover** (logs, alerts, practised restores). This is called **defence in depth**: when one layer fails, the next is still standing.",
         ),
       },
       {
@@ -158,6 +160,7 @@ export const securityLessonsA: ConceptLesson[] = [
         kind: "explain",
         title: "Two doors, two questions",
         body: P(
+          "Think of a cinema. At the entrance the usher looks at your face and your ticket: *who are you, and do you have a ticket?* Inside, a second person checks that your ticket is for *this* screen, not the one next door. Two different checks, and software needs both.",
           "Every protected request faces two checks, and mixing them up is the root of a surprising number of breaches.",
           "**Authentication** (*authn*): **who are you?** The server needs evidence of an identity: a password, a code from your phone, a signed token.",
           "**Authorization** (*authz*): **are you allowed to do this?** Once the server knows who you are, it must still decide whether *this person* may do *this action* to *this thing*.",
@@ -177,7 +180,8 @@ export const securityLessonsA: ConceptLesson[] = [
         title: "Proving who you are",
         body: P(
           "Evidence of identity comes in three families: **something you know** (a password), **something you have** (a phone, a hardware key), **something you are** (a fingerprint). Combining two different families is **multi-factor authentication**, and it is why a stolen password alone is no longer enough.",
-          "A server must never store passwords as they were typed. It keeps a **slow, salted hash** instead, and recomputes it at login. Pockett's *Pocket Store API* project builds exactly that, so this module does not repeat it; remember only that hashes turn a database leak from a catastrophe into a slog.",
+          "A server must never store passwords as they were typed. It keeps a **slow, salted hash** instead, and recomputes it at login.",
+          "What does that mean? A **hash** is a one-way scramble: a recipe that turns any text into a fixed-length jumble. The same input always gives the same jumble, but nobody can run the recipe backwards to get the text back. A **salt** is a random extra string added to each person's password before scrambling, so two people with the same password still get different jumbles and an attacker cannot prepare one table for everybody. *Slow* means the recipe is deliberately expensive, so guessing millions of passwords takes ages. At login the server scrambles what you typed and compares the jumbles. Pockett's *Pocket Store API* project builds this for real; remember here only that hashes turn a database leak from a catastrophe into a slog.",
           "How the server then *remembers* you after login is the topic of the next two lessons.",
         ),
       },
@@ -303,6 +307,7 @@ Attribute-based   "A doctor may open a chart only for a patient
         kind: "explain",
         title: "HTTP forgets you every time",
         body: P(
+          "At a cloakroom you hand over your coat and get a numbered ticket. Next time you just show the ticket and the attendant knows whose coat to fetch. A website has the same problem: it must recognise you again without asking for your password on every click.",
           "You met this in the networking module: HTTP is stateless, so after you log in the server needs a way to recognise you on the next request. It does that with a **credential** that your browser sends again and again. There are two classic designs.",
           "A **server-side session** is a random *ticket number*. The server keeps a table of valid tickets and looks yours up on every request. The ticket itself means nothing; the table holds the meaning.",
           "A **signed token** is a small *note* that carries its own facts (“user dana, valid until 14:15”) plus a signature only the server can produce. The server keeps nothing: it checks the signature and trusts the note.",
@@ -330,15 +335,34 @@ Attribute-based   "A doctor may open a chart only for a patient
       },
       {
         kind: "explain",
+        title: "Three words first: hash, key, base64",
+        body: P(
+          "A signed token is built from three small tools. Meet them one at a time.",
+          "A **hash** is a fingerprint of some data: a recipe that turns any text into a short, fixed-length jumble. The same text always gives the same jumble, a tiny change gives a completely different one, and you cannot run it backwards. The popular recipe is called SHA-256.",
+          txt(`
+SHA-256("dana")  starts with  2c9e0a2585dc7406...
+SHA-256("Dana")  starts with  09fb9ff32c5aa81b...    one letter changed, nothing alike
+`),
+          "A hash on its own is not a seal, because anybody can compute it. Mix a **secret key** into the recipe and you get a **keyed hash**, which only someone holding the key can produce. The standard way to do that is called **HMAC** (hash-based message authentication code), and the result is a **signature**: a seal that proves two things, that the data was not changed and that someone with the key made it. Think of a wax seal pressed with a ring only the server owns.",
+          "Finally, **base64** is just a way of writing bytes (the raw numbers inside data) as ordinary letters and digits, so they can travel in a web address or cookie. It is *not* a secret code: anybody can turn it back. For example, `hi` becomes `aGk`. The “url-safe” flavour used in tokens swaps two symbols that would clash inside web addresses and drops the `=` padding at the end.",
+        ),
+      },
+      {
+        kind: "explain",
         title: "How a signature works",
         body: P(
-          "A token is usually three parts joined by dots. The **payload** holds the claims, and the **signature** is a keyed hash of the payload, made with a secret that only the servers know:",
+          "Put the tools together. A signed token is usually **three parts joined by dots**. This standard shape is called a **JWT** (JSON Web Token, said “jot”), and it is the name you will meet in real projects. The **header** says how the token was signed, the **payload** holds the claims (the facts), and the **signature** is the keyed hash of the first two parts, made with a secret that only the servers know:",
           txt(`
-payload    {"sub":"dana","exp":1700000900}      (base64-encoded)
-signature  HMAC-SHA256( secret key, payload )
-token      <payload> . <signature>
+header     {"alg":"HS256","typ":"JWT"}          -> eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+payload    {"sub":"dana","exp":1700000900}      -> eyJzdWIiOiJkYW5hIiwiZXhwIjoxNzAwMDAwOTAwfQ
+signature  HMAC-SHA256( secret key, header + "." + payload )
+                                                -> TWo70-db7GUQcGg8PBy6RSdGBnPCJc7MYca14_2OBWE
+
+token      eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkYW5hIiwiZXhwIjoxNzAwMDAwOTAwfQ.TWo70-db7GUQcGg8PBy6RSdGBnPCJc7MYca14_2OBWE
 `),
+          "In the header, `alg` names the recipe (HS256 means HMAC with SHA-256) and `typ` says this is a JWT. In the payload, `sub` (subject) is who the token is about and `exp` is the expiry time as a number of seconds.",
           "To verify, the server recomputes the signature with its key and compares. If anyone changes a single character of the payload (“sub: admin”), the signatures no longer match. The payload is **encoded, not encrypted**: anyone holding the token can read it. A signature gives *tamper evidence*, never secrecy.",
+          "To keep the code short, the mission below uses a simplified token with **two** parts, `payload.signature`. The idea is identical; it just leaves out the header.",
         ),
       },
       {
@@ -346,7 +370,7 @@ token      <payload> . <signature>
         title: "Check a token",
         body: P(
           "`make_token` is given. Finish `read_token(token, secret, now)` so it returns the claims **only** if the token is genuine and not expired, and `None` otherwise (including for garbage that is not a token at all).",
-          "Compare signatures with `hmac.compare_digest`, which takes the same time however many characters match. A claim called `exp` holds the expiry as a number of seconds; the token has expired when `now >= exp`.",
+          "Compare signatures with `hmac.compare_digest`. An ordinary `==` stops at the first wrong character, so a guess with more correct leading characters answers a hair slower, and an attacker can time the replies to work out a signature one character at a time. `compare_digest` takes the same time however many characters match. A claim called `exp` holds the expiry as a number of seconds; the token has expired when `now >= exp`.",
         ),
         language: "python",
         starter: String.raw`import base64, hashlib, hmac, json
@@ -440,6 +464,14 @@ def read_token(token, secret, now):
     steps: [
       {
         kind: "explain",
+        title: "Three attacks, in one sentence each",
+        body: P(
+          "Picture the wristband you get at a water park. Staff wave you through because you wear it, and they do not check whose wrist it is. A session cookie is that wristband, so this lesson is about keeping it on the right wrist. Three attacks come up, and you will study them properly in the last lessons. For now, one sentence each:",
+          "- **XSS** (cross-site scripting): an attacker gets *their own script* to run inside *your* web page, for example through a comment box that does not clean what visitors type, so the script can do whatever the page can.\n- **CSRF** (cross-site request forgery): a *different* website tricks your browser into sending a request to your site, and the browser helpfully attaches your cookie, so it looks like you asked.\n- **Session fixation**: the attacker gives you a session id they already know (say, in a link), you log in with it, and now they hold a logged-in session without ever knowing your password.",
+        ),
+      },
+      {
+        kind: "explain",
         title: "The cookie is the key",
         body: P(
           "Whichever design you choose, the credential usually rides in a **cookie**, and the browser gives cookies special treatment: it attaches them automatically to every request to that site. That convenience is what makes them both useful and dangerous.",
@@ -459,14 +491,16 @@ def read_token(token, secret, now):
         kind: "explain",
         title: "What each setting means",
         body: P(
-          "- **HttpOnly**: JavaScript on the page cannot read the cookie. The browser still sends it with requests.\n- **Secure**: the cookie travels only over HTTPS.\n- **SameSite**: whether the cookie is sent on requests started from *another* site. `Lax` withholds it on cross-site form posts and background requests but allows a plain link click; `Strict` withholds it from every cross-site request; `None` sends it everywhere (and requires `Secure`).\n- **Expiry**: `Max-Age` or `Expires` bound how long the browser keeps it. A cookie with neither lives until the browser closes.\n- **Prefixes** like `__Host-` make the browser enforce Secure, a root path and no sharing with subdomains.",
-          "SameSite is the main defence against **CSRF** (cross-site request forgery), where another site makes your browser submit a request you never meant to send. Modern sites also add anti-CSRF tokens for state-changing requests; see the web vulnerabilities lesson.",
+          "- **HttpOnly**: JavaScript on the page cannot read the cookie. The browser still sends it with requests.\n- **Secure**: the cookie travels only over HTTPS.\n- **SameSite**: whether the cookie is sent on requests started from *another* site. `Lax` withholds it on cross-site form posts and background requests but allows a plain link click; `Strict` withholds it from every cross-site request; `None` sends it everywhere (and requires `Secure`).\n- **Expiry**: `Max-Age` (a number of seconds to live) or `Expires` (a calendar date) bound how long the browser keeps it. A cookie with neither lives until the browser closes.",
+          "SameSite is the main defence against **CSRF**, the forged-request attack from the first step. Modern sites also add anti-CSRF tokens for state-changing requests; see the web vulnerabilities lesson.",
+          "### Going further (optional)",
+          "**Prefixes** like `__Host-` at the start of a cookie's name make the browser enforce extra rules: the cookie must be Secure, must apply to the whole site, and cannot be shared with or overwritten by sibling sites such as `blog.clinic.example` (those are called *subdomains*, the extra word in front of the main address).",
         ),
       },
       {
         kind: "question",
         title: "Does HttpOnly stop XSS?",
-        body: "A comment box on the clinic site has a cross-site scripting (XSS) flaw, but the session cookie is **HttpOnly**. What can the attacker's injected script still do?",
+        body: "A comment box on the clinic site has an XSS flaw (attacker scripts can run in the page), but the session cookie is **HttpOnly**. What can the attacker's injected script still do?",
         question: {
           type: "choice",
           options: [
@@ -484,7 +518,7 @@ def read_token(token, secret, now):
         title: "Lifetimes, rotation, revocation",
         body: P(
           "A session should not live forever. Two clocks run: an **idle timeout** (no activity for 30 minutes ends it) and an **absolute lifetime** (even a busy session ends after, say, eight hours and asks for a login again). Sensitive actions can demand a recent login on top.",
-          "**Rotation** means issuing a **new** session id at moments that raise trust: at login, after a password change, when a second factor is completed, when a user's privileges increase. An id minted before those moments cannot then be reused by anyone who learned it earlier.",
+          "**Rotation** means issuing a **new** session id at moments that raise trust: at login, after a password change, when a second factor is completed, when a user's privileges increase. An id minted before those moments cannot then be reused by anyone who learned it earlier. This is exactly what defeats session fixation: the id the attacker planted stops working the moment you log in.",
           "**Revocation** is your emergency exit: log out everywhere, kill sessions when a password changes, disable a leaver's accounts. It must be fast, and the design from the last lesson decides how hard it is.",
         ),
       },

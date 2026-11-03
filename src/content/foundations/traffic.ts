@@ -22,7 +22,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "Rate × time = how many at once",
-          body: "Every system has a **capacity**: the work it can finish per second. **Load** is the work that arrives per second. While load stays under capacity, work flows through. Over it, something has to wait, be refused, or break.\n\nA surprisingly general rule links three numbers. If things arrive at a rate **λ** (lambda) and each one stays in the system for an average time **W**, then the average number inside at any moment is\n\n**L = λ × W** (Little's law).\n\nPicture a city bike-share. Riders start a trip λ times a minute, each keeps a bike for W minutes, so L bikes are out on the road. Move the sliders. The fleet is 40 bikes.",
+          body: "Think of a supermarket with a few checkouts. If shoppers reach the tills faster than the cashiers can serve them, a queue grows, and the longer it stays that way the worse it gets.\n\nEvery system has a **capacity**: the work it can finish per second. **Load** is the work that arrives per second. While load stays under capacity, work flows through. Over it, something has to wait, be refused, or break.\n\nStart with a city bike-share. Riders start a trip a few times a minute, each keeps a bike for some minutes, and the bikes out on the road at any moment are the ones in use. A surprisingly general rule says how many: if things arrive at a rate **λ** (lambda, e.g. 4 a minute) and each one stays for an average time **W** (e.g. 15 minutes), then the average number inside at any moment is\n\n**L = λ × W** (Little's law).\n\nMove the sliders. The fleet is 40 bikes.",
           widget: { type: "trf-littles", props: { scenario: "bikes" }, live: true },
         },
         {
@@ -43,7 +43,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "The same law for servers",
-          body: "Swap bikes for **requests in flight**, and trip length for **time to handle a request**: λ = 100 requests a second at 0.2 s each means about **20 requests are in flight** at any moment, so you need at least 20 workers (threads, connections, slots) just to keep up.\n\nTry it: slow the handler down and watch how fast the pool fills.",
+          body: "Swap bikes for **requests in flight**, and trip length for **time to handle a request**: λ = 100 requests a second at 0.2 s each means about **20 requests are in flight** at any moment, so you need at least 20 workers (threads, connections, slots: the helpers that each handle one request at a time) just to keep up.\n\nTry it: slow the handler down and watch how fast the pool fills.",
           widget: { type: "trf-littles", props: { scenario: "server" }, live: true },
         },
         {
@@ -56,7 +56,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "The last stretch is the expensive one",
-          body: "If requests arrive at random, even a server that isn't overloaded makes some of them wait for another. The average time a request spends in the system is roughly\n\n" + text("response time ≈ work time ÷ (1 − utilisation)") + "\nAt 50% busy that is 2× the work. At 80% it is 5×. At 95% it is 20×, and a few percent more traffic makes it far worse. The curve is flat, then suddenly vertical: a **hockey stick**.",
+          body: "**Utilisation** is the share of the time a machine is busy (50% busy means it is working half the time). If requests arrive at random, even a server that isn't overloaded makes some of them wait for another. The average time a request spends in the system is roughly\n\n" + text("response time ≈ work time ÷ (1 − utilisation)") + "\nAt 50% busy that is 2× the work. At 80% it is 5×. At 95% it is 20× (the work itself plus 19× of waiting), and a few percent more traffic makes it far worse. At 70% it is about 3.3×. The curve is flat, then suddenly vertical: a **hockey stick**.",
           widget: { type: "trf-util", props: { util: 50, workMs: 100 }, live: true },
         },
         {
@@ -81,12 +81,12 @@ export const trafficModule: Module = {
             ],
             answer: 1,
           },
-          explanation: "At 95% the average request already waits about 19× its work time, and any extra load drives that toward infinity. The mean hides bursts, too. “Efficient” in the sense of high utilisation and “healthy” are different things.",
+          explanation: "At 95% the average request takes about 20× its work time in total (19× of it just waiting), and any extra load drives that toward infinity. The mean hides bursts, too. “Efficient” in the sense of high utilisation and “healthy” are different things.",
         },
         {
           kind: "code",
           title: "How many workers?",
-          body: "Write `workers_needed(rate, seconds_each, target_util)`.\n\nBy Little's law, `rate × seconds_each` workers are busy on average. You don't want to run them flat out, so divide by the **target utilisation** (for example 0.5 for 50%), and **round up** to a whole worker.",
+          body: "Write `workers_needed(rate, seconds_each, target_util)`.\n\nBy Little's law, `rate × seconds_each` workers are busy on average. You don't want to run them flat out, so divide by the **target utilisation** (for example 0.5 for 50%), and **round up** to a whole worker with `math.ceil` (it turns 4.2 into 5; the starter already imports `math`).\n\nExample: 100 requests a second, 0.2 s each → 20 busy on average; at 80% target, 20 ÷ 0.8 = 25 workers.",
           language: "python",
           starter: "import math\n\n\ndef workers_needed(rate, seconds_each, target_util):\n    return rate * seconds_each\n",
           solution: "import math\n\n\ndef workers_needed(rate, seconds_each, target_util):\n    busy = rate * seconds_each\n    return math.ceil(busy / target_util - 1e-9)\n",
@@ -121,7 +121,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "A speed limit per caller",
-          body: "A **rate limit** is a promise a service makes: *each caller may make at most N requests per time window.* Past that, requests are refused quickly, with an HTTP **429 Too Many Requests**, ideally with a `Retry-After` header saying when to come back:\n\n" + text("HTTP/1.1 429 Too Many Requests\nRetry-After: 12\nX-RateLimit-Limit: 100\nX-RateLimit-Remaining: 0") + "\nThe caller is usually identified by an API key, a user id, or an IP address. The limit is applied *before* doing any expensive work.",
+          body: "Picture a bouncer at a club door who lets in 5 people every 10 minutes and tells the rest “come back later”. That keeps the dance floor from getting crushed, and keeps one big group from taking all the room.\n\nA **rate limit** is the same promise from a service: *each caller may make at most N requests per time window.* Past that, requests are refused quickly, with an HTTP **429 Too Many Requests** status, ideally with a `Retry-After` **header** (a labelled extra line in the response) saying how many seconds to wait:\n\n" + text("HTTP/1.1 429 Too Many Requests\nRetry-After: 12\nX-RateLimit-Limit: 100\nX-RateLimit-Remaining: 0") + "\nThe caller is usually identified by an **API key** (a secret password-like string that comes with each customer's account), a user id, or an **IP address** (the number that identifies a computer on the internet). The limit is applied *before* doing any expensive work.",
         },
         {
           kind: "question",
@@ -176,7 +176,7 @@ export const trafficModule: Module = {
         {
           kind: "code",
           title: "A fixed-window limiter",
-          body: "Complete `FixedWindowLimiter(limit, window)`.\n\n`allow(now)` takes the time in seconds. The window number is `int(now // window)`. Keep a count for the **current window**; when a new window number appears, start again at zero. Return `True` and count the request if the count is below `limit`; otherwise return `False`.",
+          body: "Complete `FixedWindowLimiter(limit, window)`.\n\n`allow(now)` takes the time in seconds. The window number is `int(now // window)`. (`//` divides and drops the remainder: `25 // 10` is `2`, so times 20 to 29.9 are all in window 2.) Keep a count for the **current window**; when a new window number appears, start again at zero. Return `True` and count the request if the count is below `limit`; otherwise return `False`.",
           language: "python",
           starter: "class FixedWindowLimiter:\n    def __init__(self, limit, window):\n        self.limit = limit\n        self.window = window\n        self.current = None   # number of the window we are counting\n        self.count = 0\n\n    def allow(self, now):\n        return True\n",
           solution: "class FixedWindowLimiter:\n    def __init__(self, limit, window):\n        self.limit = limit\n        self.window = window\n        self.current = None   # number of the window we are counting\n        self.count = 0\n\n    def allow(self, now):\n        number = int(now // self.window)\n        if number != self.current:\n            self.current = number\n            self.count = 0\n        if self.count < self.limit:\n            self.count += 1\n            return True\n        return False\n",
@@ -211,7 +211,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "Look back from now",
-          body: "The fixed window's flaw comes from where its boundaries sit. The fix: stop using clock blocks, and ask at every request *“how many were allowed in the last 10 seconds, counting back from this moment?”*\n\nThe direct way is the **sliding window log**: remember the **timestamp** of every allowed request. On a new request, forget timestamps older than 10 seconds, count what's left, and allow only if fewer than 5 remain.\n\nCompare it with the fixed window on the *Edge of a window* pattern.",
+          body: "Instead of a bouncer who resets his tally on the hour, imagine one who looks at his watch for every person and asks, “how many did I let in during the last 10 minutes?”\n\nThe fixed window's flaw comes from where its boundaries sit. The fix: stop using clock blocks, and ask at every request *“how many were allowed in the last 10 seconds, counting back from this moment?”*\n\nThe direct way is the **sliding window log**: remember the **timestamp** of every allowed request. On a new request, forget timestamps older than 10 seconds, count what's left, and allow only if fewer than 5 remain.\n\nCompare it with the fixed window on the *Edge of a window* pattern.",
           widget: { type: "trf-limiter", props: { algos: ["fixed", "slog"], algo: "fixed", pattern: "edge" }, live: true },
         },
         {
@@ -305,7 +305,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "Saving up credit",
-          body: "A **token bucket** has two numbers: a **size** (the most tokens it can hold) and a **refill rate** (tokens added per second). Every request must take one token; if there are none, it's refused.\n\nWhile a caller is quiet, the bucket fills up to its size. So a caller who has been idle can fire a **burst** as big as the bucket, and after that they're limited to the refill rate. Two knobs, two different promises: *burst size* and *sustained speed*.\n\nUse *One big burst* and see what each knob does. The top chart is the bucket's level.",
+          body: "Think of a piggy bank that gets one coin a second, and you must spend a coin to enter the cinema. If you wait, the coins pile up and you can bring a whole group in one go; but you can never be let in faster than coins arrive on average.\n\nA **token bucket** has two numbers: a **size** (the most tokens it can hold) and a **refill rate** (tokens added per second). Every request must take one token; if there are none, it's refused.\n\nWhile a caller is quiet, the bucket fills up to its size. So a caller who has been idle can fire a **burst** as big as the bucket, and after that they're limited to the refill rate. Two knobs, two different promises: *burst size* and *sustained speed*.\n\nUse *One big burst* and see what each knob does. The top chart is the bucket's level.",
           widget: { type: "trf-bucket", props: { kinds: ["token"], kind: "token", pattern: "burst" }, live: true },
         },
         {
@@ -357,7 +357,7 @@ export const trafficModule: Module = {
                 { id: "leaky", label: "Leaky bucket" },
               ],
               items: [
-                { id: "sms", text: "Sending SMS through a carrier that rejects anything faster than 1 message per second", bucket: "leaky", why: "The backend needs a steady rate, never a burst. Queue and release evenly." },
+                { id: "sms", text: "Sending text messages through a carrier that rejects anything faster than 1 message per second", bucket: "leaky", why: "The backend needs a steady rate, never a burst. Queue and release evenly." },
                 { id: "sync", text: "A phone app that has been offline and now syncs a pile of changes at once, but shouldn't sync non-stop", bucket: "token", why: "A burst is welcome after quiet, as long as the long-run rate stays bounded." },
                 { id: "api", text: "A public API allowing 600 calls a minute on average, but users may spike briefly", bucket: "token", why: "The size of the bucket is exactly how big a spike is tolerated." },
                 { id: "legacy", text: "Feeding an old mainframe that falls over under bursts", bucket: "leaky", why: "Smoothness is the whole point: the leak rate is what the mainframe can digest." },
@@ -405,7 +405,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "Which server counts?",
-          body: "So far one limiter saw every request. Real APIs run on **several servers** behind a load balancer, and a caller's requests land on any of them.\n\nThe easy answer is to give each server its **own** counter. Try it below: the limit is **4 requests per window, per user**. Send Maya's requests to different servers and watch what the limiter allows.",
+          body: "Imagine three ticket-checkers at three doors of a stadium, each counting how many tickets one family has used, and none of them talking to the others. The family just uses a different door each time.\n\nSo far one limiter saw every request. Real APIs run on **several servers** behind a **load balancer** (a traffic director that hands each incoming request to one of the servers), and a caller's requests land on any of them.\n\nThe easy answer is to give each server its **own** counter. Try it below: the limit is **4 requests per window, per user**. Send Maya's requests to different servers and watch what the limiter allows.",
           widget: { type: "trf-shared", props: { mode: "local", limit: 4, lockMode: true }, live: true },
         },
         {
@@ -419,7 +419,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "A shared counter",
-          body: "Put the counter in a fast shared store (an in-memory database such as Redis is the usual choice). Every server asks the store, so the count is one number for the whole fleet.\n\nBut *how* the server updates that number matters. A naive version does **read, check, write**: read the counter, if it's under the limit allow and write back `value + 1`. If several requests arrive at the same moment, they all *read the same old value* before any of them writes. Try the **Shared: read, then write** mode with the *3 at once* button.",
+          body: "Put the counter in a fast shared store (a database that keeps its data in memory, such as **Redis**, is the usual choice). Every server asks the store, so the count is one number for the whole fleet.\n\nBut *how* the server updates that number matters. A naive version does **read, check, write**: read the counter, if it's under the limit allow and write back `value + 1`. If several requests arrive at the same moment, they all *read the same old value* before any of them writes. Try the **Shared: read, then write** mode with the *3 at once* button.",
           widget: { type: "trf-shared", props: { mode: "racy", limit: 4 }, live: true },
         },
         {
@@ -441,12 +441,12 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "More ways it goes wrong",
-          body: "Distributed limiting has more traps:\n\n- **Clocks.** If each server decides window boundaries from its *own* clock, they disagree by milliseconds or more. Derive the window from the store's time, or put the window number into the key.\n- **Cleaning up.** Counters must **expire** on their own (a TTL) or the store fills with dead keys.\n- **Per-key limits.** Keys can be an API key, a user, an IP address, a route, or combinations (such as “per user, per endpoint”).\n- **Hot keys.** One huge customer sends a flood of traffic to a single counter. Splitting or caching it is its own project.\n- **Latency.** Asking the store on every request costs a network trip. Some systems allow a local, approximate check first and sync with the store in batches.",
+          body: "Distributed limiting has more traps:\n\n- **Clocks.** If each server decides window boundaries from its *own* clock, they disagree by milliseconds or more. Derive the window from the store's time, or put the window number into the key.\n- **Cleaning up.** Counters must **expire** on their own, using a **TTL** (time to live: the number of seconds before a stored item deletes itself), or the store fills with dead keys.\n- **Per-key limits.** Keys can be an API key, a user, an IP address, a route, or combinations (such as “per user, per endpoint”).\n- **Hot keys.** One huge customer sends a flood of traffic to a single counter. Splitting or caching it is its own project.\n- **Latency.** Asking the store on every request costs a network trip. Some systems allow a local, approximate check first and sync with the store in batches.",
         },
         {
           kind: "question",
           title: "When the limiter is down",
-          body: "The shared counter store becomes unreachable. What should your servers do about rate limiting?",
+          body: "The shared counter store becomes unreachable. What should your servers do about rate limiting?\n\nTwo terms: to **fail open** is to let everything through when the safety check breaks (like a door that unlocks in a power cut); to **fail closed** is to refuse everything (a door that locks).",
           question: {
             type: "choice",
             options: [
@@ -457,7 +457,7 @@ export const trafficModule: Module = {
             ],
             answer: 2,
           },
-          explanation: "A limiter shouldn't turn into a single point of failure for the whole site, so for fairness and capacity limits **failing open** is common. But for limits that guard against abuse (login attempts, SMS sending that costs money), letting everything through is the dangerous direction. Decide on purpose, per limit.",
+          explanation: "A limiter shouldn't turn into a **single point of failure** (one part whose breakdown stops everything) for the whole site, so for fairness and capacity limits **failing open** is common. But for limits that guard against abuse (login attempts, text-message sending that costs money), letting everything through is the dangerous direction. Decide on purpose, per limit.",
         },
         {
           kind: "code",
@@ -497,7 +497,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "A shock absorber, not a power plant",
-          body: "A **queue** sits between a **producer** (whoever creates work) and a **consumer** (whoever does it). The producer drops work in and moves on; the consumer takes it out when ready. That decouples them in time: a spike of arrivals doesn't have to be handled the instant it arrives.\n\nBut notice what a queue does *not* do: it never makes the consumer faster. It converts a **lack of capacity right now** into **waiting later**. Below, work arrives in a 5-second burst of 40 a second; the consumer handles 10 a second. The queue turns the spike into a delay. (The upper chart shows arrivals; the lower one the queue.)",
+          body: "At a supermarket, when twenty people reach the tills at once, they form a line instead of everyone being turned away. The line doesn't make the cashier faster; it just lets the crowd be served one after another.\n\nA **queue** sits between a **producer** (whoever creates work) and a **consumer** (whoever does it). The producer drops work in and moves on; the consumer takes it out when ready. That decouples them in time: a spike of arrivals doesn't have to be handled the instant it arrives.\n\nBut notice what a queue does *not* do: it never makes the consumer faster. It converts a **lack of capacity right now** into **waiting later**. Below, work arrives in a 5-second burst of 40 a second; the consumer handles 10 a second. The queue turns the spike into a delay. (The upper chart shows arrivals; the lower one the queue.)",
           widget: { type: "trf-queue", props: { traffic: "burst", policies: ["unbounded"], service: 10 }, live: true },
         },
         {
@@ -526,7 +526,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "Queues hide everywhere",
-          body: "Queues aren't just message brokers. There's one in front of every thread pool, in the operating system's network buffers, in routers, in a database's connection backlog. Each one will happily absorb overload and hand it back to you as **latency**.\n\nThat's useful for short bursts and dangerous for sustained load: an **oversized** buffer hides the fact that you are overloaded, until memory runs out or every request is far too late to matter. (Networking people call this *bufferbloat*.)",
+          body: "Queues aren't just message brokers (a **message broker** is a post office for programs: it holds messages until the receiver is ready). There's one in front of every thread pool, in the operating system's network buffers, in routers, in a database's connection backlog. Each one will happily absorb overload and hand it back to you as **latency**.\n\nThat's useful for short bursts and dangerous for sustained load: an **oversized** buffer hides the fact that you are overloaded, until memory runs out or every request is far too late to matter. (Networking people call this *bufferbloat*.)",
         },
         {
           kind: "question",
@@ -593,7 +593,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "Push back",
-          body: "An unbounded queue just stores trouble. A **bounded** queue is honest: it has room for N items, and when it's full, **something has to give**. The way the pain travels back to the source is called **backpressure**: the consumer's slowness becomes a signal the producer feels.\n\nIn the overload scenario below the producer sends **14 a second** to a consumer that handles **10**. Try the four policies in turn. The queue holds 30; watch the queue chart, the readouts, and the *held back at the producer* chart.",
+          body: "A restaurant with room for 20 people waiting at the door has to tell the 21st “we're full, try later”; otherwise the pavement fills up and blocks the street. That is the idea of a size limit.\n\nAn unbounded queue just stores trouble. A **bounded** queue is honest: it has room for N items, and when it's full, **something has to give**. The way the pain travels back to the source is called **backpressure**: the consumer's slowness becomes a signal the producer feels.\n\nIn the overload scenario below the producer sends **14 a second** to a consumer that handles **10**. Try the four policies in turn. The queue holds 30; watch the queue chart, the readouts, and the *held back at the producer* chart.",
           widget: { type: "trf-queue", props: { traffic: "overload", policy: "block", service: 10, bound: 30 }, live: true },
         },
         {
@@ -825,7 +825,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "The message that always fails",
-          body: "Most failures are temporary, and retrying is right. But some messages fail **every time**: a payload that can't be parsed, a reference to a customer who was deleted, a case the code never expected. These are **poison messages**.\n\nA queue is usually processed in order, so a poison message at the front blocks everything behind it. This worker takes messages from the front. Messages **#3 and #6** are poison. Under *Retry forever*, press **Run** and watch.",
+          body: "Imagine a mail slot where letters are taken from the front, in order. One letter has an address nobody can read. The postman keeps trying, and every letter behind it waits for ever.\n\nMost failures are temporary, and retrying is right. But some messages fail **every time**: a payload (the actual content of the message) that can't be parsed (read and understood), a reference to a customer who was deleted, a case the code never expected. These are **poison messages**.\n\nA queue is usually processed in order, so a poison message at the front blocks everything behind it. This worker takes messages from the front. Messages **#3 and #6** are poison. Under *Retry forever*, press **Run** and watch.",
           widget: { type: "trf-dlq", props: { policy: "forever" }, live: true },
         },
         {
@@ -855,7 +855,7 @@ export const trafficModule: Module = {
         {
           kind: "question",
           title: "Fix and replay",
-          body: "Finish the story: use the **Dead-letter queue**, drain the queue, **deploy the fix**, **redrive** the dead letters, and run again until **all 8 messages are done**.",
+          body: "To **redrive** means to move the set-aside messages back into the main queue so they are tried again. Finish the story: use the **Dead-letter queue**, drain the queue, **deploy the fix**, **redrive** the dead letters, and run again until **all 8 messages are done**.",
           widget: { type: "trf-dlq", props: { policy: "forever" } },
           question: { type: "widget", hint: "Drain the queue, deploy the fix, redrive the dead letters, then run again.", goal: { policy: "dead", redriven: true, done: 8, empty: true } },
           explanation: "That's the whole life cycle: fail, set aside, fix the bug, **redrive**. The messages come back to the main queue and now succeed. The data survived the bug.",
@@ -872,7 +872,7 @@ export const trafficModule: Module = {
           question: {
             type: "choice",
             options: [
-              "The message body isn't valid JSON",
+              "The message body isn't valid JSON (text shaped like {\"name\": \"Ana\"}, and this one is garbled)",
               "The database timed out",
               "The message refers to a product id that doesn't exist",
               "The downstream service answered 503",
@@ -931,7 +931,7 @@ export const trafficModule: Module = {
         {
           kind: "explain",
           title: "Two steps, one crash",
-          body: "A message broker hands a message to a consumer, which must do two things: **acknowledge** it (so the broker deletes it) and **do the work**. They can't happen in the same instant, and the consumer can crash between them.\n\n- **Acknowledge first**, then work: a crash in between loses the message. The broker thinks it's handled. This is **at-most-once** delivery.\n- **Work first**, then acknowledge: a crash in between leaves the message unacknowledged, so the broker delivers it **again**. This is **at-least-once** delivery.\n\nHere the work is *sending a receipt email* for five orders. With *Acknowledges, then works*, turn on **Crash next time** and deliver a message.",
+          body: "You have met parts of this idea in the idempotency lesson; here it is again with a queue. Picture a restaurant: a waiter hands the cook an order ticket (the message). The cook calls “got it!” (that is the **acknowledgement**, so the waiter stops holding the ticket) and cooks the dish (the work). If the cook faints between the two, what the waiter does next matters a lot.\n\nA **message broker** (the post office for programs) hands a message to a consumer, which must do two things: **acknowledge** it (so the broker deletes it) and **do the work**. They can't happen in the same instant, and the consumer can crash between them.\n\n- **Acknowledge first**, then work: a crash in between loses the message. The broker thinks it's handled. This is **at-most-once** delivery.\n- **Work first**, then acknowledge: a crash in between leaves the message unacknowledged, so the broker delivers it **again**. This is **at-least-once** delivery.\n\nHere the work is *sending a receipt email* for five orders. With *Acknowledges, then works*, turn on **Crash next time** and deliver a message.",
           widget: { type: "trf-delivery", props: { ack: "first", dedupe: false }, live: true },
         },
         {
@@ -977,7 +977,7 @@ export const trafficModule: Module = {
             ],
             answer: 1,
           },
-          explanation: "The very crash that causes duplicates also erases an in-memory list. The record of processed ids must be **durable** (a database), ideally written **in the same transaction** as the effect itself, so “did the work” and “remembers doing it” are always true or false together.",
+          explanation: "The very crash that causes duplicates also erases an in-memory list. The record of processed ids must be **durable** (a database), ideally written **in the same transaction** (a group of changes saved all-or-nothing) as the effect itself, so “did the work” and “remembers doing it” are always true or false together.",
         },
         {
           kind: "question",

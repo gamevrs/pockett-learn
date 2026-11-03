@@ -33,7 +33,7 @@ println!("{} dives", dive_log.len());        // 5
 
 \`vec![...]\` builds one from values. \`Vec::new()\` builds an empty one, and then the compiler has to learn the element type from somewhere: from the first \`push\`, or from an annotation, \`let mut v: Vec<i32> = Vec::new();\`. Otherwise you get error[E0282]: type annotations needed for \`Vec<_>\`.
 
-Changing a Vec requires \`mut\`, exactly like any variable. The items live in a block of memory on the **heap**, and the Vec itself (a pointer, a length and a capacity) is a small value on the stack. When the block is full, a push allocates a bigger one and moves the items across. You do not manage that, and you will see in lesson 10 that Rust makes sure nobody is still pointing at the old block.
+Changing a Vec requires \`mut\`, exactly like any variable.
 
 ### The everyday methods
 
@@ -52,6 +52,17 @@ dive_log.last()           // Option<&i32>
 dive_log.clear()          // remove everything
 ~~~
 
+Here is a short trace of what four of them do to a list:
+
+~~~rust
+let mut log = vec![18, 25, 31];
+log.push(12);          // [18, 25, 31, 12]
+log.insert(1, 99);     // [18, 99, 25, 31, 12]
+log.remove(0);         // [99, 25, 31, 12]   (and it returns the 18 it took out)
+log.sort();            // [12, 25, 31, 99]
+~~~
+
+You will use \`push\`, \`len\`, \`get\`, \`sort\` and a loop in the mission. The others are there for when you need them.
 ### Indexing, and the safe alternative
 
 \`dive_log[2]\` reads the third item. Like arrays, an index outside the list **panics**: *index out of bounds: the len is 5 but the index is 9*. That is correct behaviour for a bug, but not for a question such as "is there a dive number 8?", where the honest answer might be "no". For questions, use **\`get\`**. It returns an \`Option\`: either \`Some(value)\` or \`None\`.
@@ -66,7 +77,7 @@ match dive_log.get(7) {
 }
 ~~~
 
-\`Option\` is the subject of lesson 14. For now it is another enum for \`match\` to take apart: \`Some\` holds the answer, \`None\` means "nothing there". The big idea: where other languages would return a null or a magic number like -1, Rust's type says "this might be missing" and you must handle it.
+\`get\` hands back a box that is either holding the answer (\`Some(value)\`) or empty (\`None\`, "nothing there"). That box is called an **\`Option\`**, and lesson 14 is all about it. The \`match\` above opens the box and has one branch for each case, just like the result box in lesson 4. The big idea: instead of answering with a made-up number such as -1 for "not found", Rust's answer says honestly "this might be missing", and you must handle both cases.
 
 ### Looping over a Vec
 
@@ -79,7 +90,11 @@ for depth in dive_log.iter() {
 }
 ~~~
 
-\`.iter()\` visits the items **by reference**: each \`depth\` is a \`&i32\`, a *reference to* the number that stays inside the Vec. To compare or copy the number itself you **dereference** it with a leading \`*\`. Printing and many methods do this for you automatically, which is why \`println!("{depth}")\` prints the number without any star. (When you write \`for depth in dive_log\` with no \`.iter()\`, the loop takes the whole Vec away. Lesson 9 explains why that matters, and \`for depth in &dive_log\` is the borrowing form.)
+\`.iter()\` walks through the items without taking them out of the list. On each lap, \`depth\` is not the number itself but a **pointer to** the number, which stays inside the Vec (the type is written \`&i32\`). Think of it as a finger pointing at the item. To compare it with a number or copy the number out, write a star in front: \`*depth\` is "the number the finger points at". Printing does this for you automatically, which is why \`println!("{depth}")\` prints the number without any star.
+
+In the loop above, the first lap compares \`*depth\` (18) with \`deepest\` (the first item, 18): not bigger. The second lap compares 25: bigger, so \`deepest\` becomes 25, and so on to 35.
+
+(When you write \`for depth in dive_log\` with no \`.iter()\`, the loop takes the whole Vec away. Lesson 9 explains why that matters, and \`for depth in &dive_log\` is the borrowing form.)
 
 ### Common mistakes
 
@@ -208,21 +223,64 @@ assert(lines.includes("Log in depth order: [12, 18, 25, 31, 35] (shallowest 12 m
       minutes: 45,
       xp: 150,
       concepts: ["ownership", "move", "Copy", "clone", "drop", "scope", "stack and heap", "E0382"],
-      learn: md`### One jar, one name on the label
+      learn: md`### Part 1: functions in 3 minutes
+
+This lesson (and the rest of the course) uses **functions**, and you have not written one yet except \`main\`. So here is the quick version.
+
+Imagine a recipe card: "double the amount". You write it once, and whenever a dish needs it you say "use the doubling card on 21". A **function** is such a card. You describe the job once, give it a name, and then **call** it whenever you want the job done.
+
+~~~rust
+fn double(number: i32) -> i32 {
+    number * 2
+}
+
+let answer = double(21);
+println!("{answer}");
+~~~
+
+~~~text
+42
+~~~
+
+Read the first line piece by piece:
+
+- \`fn\` says "a function starts here", and \`double\` is its name.
+- \`(number: i32)\` is the **parameter list**: the inputs the function needs. Each input has a name and, after a colon, its type (types are always written here). With two inputs you separate them with a comma: \`fn add(a: i32, b: i32) -> i32\`.
+- \`-> i32\` says what kind of value comes **back**: the **return value**. If a function gives nothing back, you leave the \`-> ...\` part out.
+- The body between the braces does the work. Its **last line, without a semicolon**, is the value that comes back. Here that is \`number * 2\`.
+- \`double(21)\` is the **call**: you hand over 21 as the input (an **argument**), and the call is worth whatever comes back, 42.
+
+A function that only does something and gives nothing back:
+
+~~~rust
+fn announce(text: &str) {
+    println!("Attention: {text}");
+}
+
+announce("tank low");
+~~~
+
+~~~text
+Attention: tank low
+~~~
+
+(\`&str\` is the type of text in quotes; lesson 11 explains it.) In this course's files, functions go **above** the comment line that says *code inside main() goes below this line*, and the statements that run go below it.
+
+### Part 2: one jar, one name on the label
 
 Every jar in the station's sample vault carries a label card, and the card names exactly one crew member who answers for that jar. Nobody else may open it, top it up or throw it out. If the jar changes hands, the card is rewritten and the previous keeper is out of the picture. When the keeper's shift ends, the jar is emptied and washed, right then, with no one left wondering whether it is still needed.
 
-Rust treats memory the same way, and the compiler enforces it before the program ever runs. This system is called **ownership**, and it costs nothing at runtime. In plain terms:
+Rust treats memory the same way, and the compiler enforces it before the program ever runs. This system is called **ownership**. In plain terms:
 
 - A value always belongs to a single variable, its **owner**. Nobody else holds it at the same time.
-- The owner's scope decides the value's lifetime. When the closing brace arrives, the value is **dropped** and its memory is freed on the spot.
+- The owner's **scope** (the part of the code between the braces where it lives) decides how long the value lives. When the closing brace arrives, the value is **dropped**: cleaned up on the spot.
 - Giving a value away (assigning it, or passing it to a function) **hands over** the ownership. From then on the old name is off limits.
 
 ~~~rust
 {
     let label = String::from("coral core 7");   // label owns the text
     println!("{label}");
-}                                               // label goes out of scope: the text is freed here
+}                                               // label goes out of scope: the text is cleaned up here
 ~~~
 
 ### Moves
@@ -235,7 +293,7 @@ let vault = label;
 println!("{label}");
 ~~~
 
-In many languages both names would now point at the same text. In Rust, assigning a \`String\` to another variable **moves** it: ownership transfers to \`vault\`, and \`label\` is no longer usable.
+In many languages both names would now refer to the same text. In Rust, assigning a \`String\` to another variable **moves** it: ownership transfers to \`vault\`, and \`label\` can no longer be used.
 
 ~~~text
 error[E0382]: borrow of moved value: \`label\`
@@ -254,11 +312,13 @@ help: consider cloning the value if the performance cost is acceptable
   |                      ++++++++
 ~~~
 
-**Why?** A \`String\` is a small handle on the stack (a pointer, a length and a capacity) that points at the characters on the heap. Suppose the assignment copied just that handle: you would have two variables aiming at one block of heap memory, and when their scopes ended each would try to free it. That is a **double free**, a classic memory bug. So Rust does not allow it. After a move the old name is dead, which leaves one variable responsible for the cleanup. The error above is the compiler stopping you at that point, and it draws you a map: where the value was created, where it moved, and where you tried to use it afterwards.
+**Why?** A \`String\` is a small label that points at the characters stored elsewhere in memory. If the assignment copied only the label, two variables would point at one set of characters, and when both went out of scope each would try to clean them up. That is a classic bug (a "double free"). So Rust does not allow it: after a move the old name is dead, and exactly one variable is responsible for the cleanup.
 
-Read those messages as a conversation with a very careful colleague. They always tell you the three places that matter.
+The error is a map with three places: where the value was created, where it moved, and where you tried to use it afterwards.
 
 ### Passing to a function is a move too
+
+Calling a function with a \`String\` hands the value over, just like \`let vault = label;\`.
 
 ~~~rust
 fn seal_in_vault(label: String) -> usize {
@@ -268,24 +328,37 @@ fn seal_in_vault(label: String) -> usize {
 
 let core_label = String::from("coral core 7");
 let chars = seal_in_vault(core_label);      // ownership moves into the function
+println!("{chars}");
 // core_label is gone now
 ~~~
 
-A function that wants to give the value back can **return** it:
+~~~text
+Vault sealed: coral core 7
+12
+~~~
+
+(\`label.len()\` is how many bytes the text has. Lesson 11 explains more.) A function that wants to give the value back can **return** it:
 
 ~~~rust
-fn stamp(mut label: String) -> String {     // 'mut label' is the function's own variable
-    label.push_str(" [stamped]");
+fn stamp(mut label: String) -> String {     // 'mut' on a parameter works like mut on let:
+    label.push_str(" [stamped]");           // this function's own label may be changed
     label                                   // ownership goes back to the caller
 }
+
+let backup_label = String::from("coral core 7");
 let stamped = stamp(backup_label);          // moved in, and a new owner comes out
+println!("{stamped}");
+~~~
+
+~~~text
+coral core 7 [stamped]
 ~~~
 
 That works, but handing a value in and out of every function would be exhausting. Lesson 10 fixes it with borrowing.
 
 ### Copy types: some values are just copied
 
-Not everything moves. A plain number lives entirely on the stack and copying it is as cheap as a move, so Rust simply copies:
+Not everything moves. A plain number is so small that copying it is as cheap as handing it over, so Rust simply copies:
 
 ~~~rust
 let depth = 42;
@@ -293,44 +366,41 @@ let same = depth;       // a copy: both are usable
 println!("{depth} {same}");
 ~~~
 
-Types with this behaviour implement the **\`Copy\`** trait: all integers and floats, \`bool\`, \`char\`, shared references (\`&T\`), and tuples and arrays made only of Copy types. \`String\`, \`Vec\` and anything else that owns heap memory is **not** Copy, because copying it would mean a second owner.
+~~~text
+42 42
+~~~
 
-### Clone: an explicit deep copy
+Types that behave like this have the **\`Copy\`** ability (Rust calls an ability like this a **trait**): integers, floats, \`bool\`, \`char\`. \`String\` and \`Vec\` own memory elsewhere, so they are not \`Copy\`: copying them would mean a second owner.
 
-When you really do want two independent copies of heap data, ask for it with \`.clone()\`:
+### Clone: an explicit copy
+
+When you really do want two independent copies of a \`String\` or a \`Vec\`, ask for it with \`.clone()\`:
 
 ~~~rust
 let core_label = String::from("coral core 7");
-let backup_label = core_label.clone();      // new heap block, new owner
+let backup_label = core_label.clone();      // a second, independent String
 ~~~
 
-Now both are valid and independent. Cloning can be expensive (it copies everything), which is exactly why Rust makes you write it. You can see where the costs are by reading the code. A good habit: when the compiler says "value moved" and you are not sure what to do, first ask whether you need ownership at all (see next lesson) before you reach for \`clone\`.
+Now both are valid and independent. Cloning can be expensive for big data, which is exactly why Rust makes you write it. When the compiler says "value moved" and you are not sure what to do, first ask whether you need ownership at all (next lesson) before you reach for \`clone\`.
 
 ~~~rust
+let dive_log = vec![18, 25, 31, 12, 35];
 let mut extended_log = dive_log.clone();
-extended_log.push(50);           // changes only the copy
+extended_log.push(50);           // changes only the copy: dive_log still has 5 entries
 ~~~
-
-### Collections and moves
-
-\`for depth in dive_log { ... }\` takes the whole Vec: it is moved into the loop and gone afterwards. And you cannot move *one item out of the middle* of a Vec of Strings:
-
-~~~text
-error[E0507]: cannot move out of index of \`Vec<String>\`
-~~~
-
-Either borrow the item (\`&names[0]\`) or clone it (\`names[0].clone()\`).
 
 ### Common mistakes
 
 - Using a variable after it was moved into a function, a loop, or another variable (E0382). Ask: do I still need it? Borrow it (lesson 10), clone it, or restructure.
 - Cloning everywhere to make the error go away. It compiles, but you have paid for copies you did not need.
-- Believing numbers move. They do not, because they are Copy.
+- Believing numbers move. They do not, because they are \`Copy\`.
 - Forgetting that \`let b = a;\` for a \`String\` is a move even though no function is involved.
 
-### Why "the borrow checker is a friend"
+### Going further (optional)
 
-Every one of these errors is a bug you would otherwise find at 3 a.m.: a use-after-free, a double free, two parts of a program fighting over the same data. Rust asks you to tell the compiler about ownership, and in exchange it proves there are none of those. Programmers who stay with Rust for a month usually stop fighting the compiler and start asking it questions.`,
+- **Loops move too.** \`for depth in dive_log { ... }\` takes the whole Vec: it is moved into the loop and gone afterwards. And you cannot move one item out of the middle of a Vec of Strings (error[E0507]: cannot move out of index of \`Vec<String>\`); borrow it (\`&names[0]\`) or clone it (\`names[0].clone()\`).
+- **Where memory lives.** Small fixed-size values such as numbers live in a fast area called the **stack**. A \`String\` keeps its characters in a flexible area called the **heap** and only a small label on the stack. Moves copy just the label, which is why they are cheap.
+- Every one of these errors is a bug you would otherwise find late at night in a running program: a use after clean-up, a double clean-up, two parts of a program fighting over the same data. Rust asks you to say who owns what, and in exchange it proves none of those can happen.`,
       mission: md`The station's sample vault keeps one label per sample, and a label must have exactly one owner: the person who sealed it in. The crew has already had trouble when two people thought they owned the same jar.
 
 You will write two small functions that take ownership of a label, move values around on purpose, and clone only where a copy is really needed. When this lesson passes, the **Sample vault** lights up.`,
@@ -470,6 +540,8 @@ assert(lines.includes("42 and 42 are both usable"), 'Print the line "42 and 42 a
       concepts: ["references", "&T", "&mut T", "dereference", "borrow rules", "E0499", "E0502", "non-lexical lifetimes"],
       learn: md`### Lending instead of giving
 
+Go back to the sample jar from the last lesson. A colleague who only wants to look at it does not need to own it: you can lend it, and any number of people can look at the same jar at once. But if someone wants to change what is inside, only one person may hold it, and nobody else may look while it is being changed. Rust uses the same rule for data.
+
 Last lesson, every function that wanted to look at your data had to take it away and, if you were lucky, give it back. Nobody writes real programs that way. The answer is a **reference**: a way of using a value without owning it. Creating one is called **borrowing**. The owner stays the owner, and the borrow ends when the borrower is done.
 
 ~~~rust
@@ -502,7 +574,7 @@ fn record_dive(log: &mut Vec<i32>, depth: i32) {
 record_dive(&mut dive_log, 28);                   // lend it mutably (dive_log must be \`mut\`)
 ~~~
 
-**Why this rule?** Because every nasty bug of shared mutable data needs both at once. A reader that is halfway through a list while a writer changes it. Two threads writing the same number. A pointer into a buffer that was reallocated. Rust forbids the combination at compile time, with no runtime cost. The famous example:
+**Why this rule?** Because the nasty bugs all need both at once. A reader that is halfway through a list while a writer changes it. Two writers editing the same number at the same time. A pointer into a list that was moved to a bigger block of memory when it grew. Rust forbids the combination while it builds your program, so it costs nothing while the program runs. The famous example:
 
 ~~~rust
 let first = &dive_log[0];          // a shared borrow into the Vec's memory
@@ -528,7 +600,7 @@ Two writers conflict the same way: error[E0499]: cannot borrow \`log\` as mutabl
 
 ### Borrows last until their last use
 
-A borrow does not last to the end of the block. It lasts until **the last time the reference is used** (the compiler calls this non-lexical lifetimes). That is why code like this is fine:
+A borrow does not last to the end of the block. It lasts until **the last time the reference is used**. That is why code like this is fine:
 
 ~~~rust
 let r = &dive_log;
@@ -564,7 +636,7 @@ fn broken() -> &String {                 // error[E0106]: missing lifetime speci
 }
 ~~~
 
-The compiler would otherwise hand your caller a pointer into freed memory. Return the owned value instead (\`-> String\`). The ideas behind that error message, **lifetimes**, are what you learn in the next project of this path. For now, remember: you can borrow something that lives longer than you, never something that dies first.
+The compiler would otherwise hand your caller a pointer into memory that has already been cleaned up. (Its message talks about a "lifetime specifier": a **lifetime** is how long a value stays alive, and the compiler cannot tell how long this reference would be good for.) Return the owned value instead (\`-> String\`). Lifetimes are the topic of the next project of this path. For now, remember: you can borrow something that lives longer than you, never something that dies first.
 
 ### Which parameter type should I write?
 
@@ -572,6 +644,8 @@ The compiler would otherwise hand your caller a pointer into freed memory. Retur
 - A function that must **change** the caller's value takes \`&mut T\`.
 - A function that must **consume** the value (store it, destroy it, send it away) takes \`T\`.
 - Small \`Copy\` values (numbers, bools) are simply taken by value.
+
+(Lesson 11 shows that a function that only reads a list is even more flexible if it takes \`&[i32]\` instead of \`&Vec<i32>\`.)
 
 ### Common mistakes
 
@@ -707,92 +781,116 @@ assert(lines.includes("Oxygen topped up to 100.0%"), 'Print the line "Oxygen top
       minutes: 40,
       xp: 130,
       concepts: ["String", "&str", "slices", "UTF-8", "bytes vs chars", "push_str", "format!", "split", "collect", "first_word"],
-      learn: md`### Two string types, and why
+      learn: md`### Two kinds of text, and why
 
-Rust has two main types for text, and the difference is exactly the ownership idea from the last two lessons.
+Think of a notebook you own and a page you are only allowed to read. In your own notebook you can add lines, cross things out and tear pages out. On the borrowed page you can only look. Rust has the same two kinds of text, and the difference is exactly the ownership idea from the last two lessons.
 
-- **\`String\`** is **owned**, growable text. It lives on the heap, you can append to it, and when its owner goes out of scope it is freed. It is like a \`Vec\` of bytes that is guaranteed to be valid UTF-8.
-- **\`&str\`** (say "string slice") is a **borrowed view** of text that someone else owns: just a pointer and a length. It cannot grow. A string literal like \`"Halcyon"\` is a \`&str\` that points into the program itself (its full type is \`&'static str\`, which means "valid for the whole run").
+- **\`String\`** is text you **own**. It can grow, and when its owner goes out of scope it is cleaned up.
+- **\`&str\`** (say "string slice") is a **borrowed view** of text that someone else owns. You can look at it but not grow it. A quoted text typed straight into the program, like \`"Halcyon"\`, is a \`&str\`.
 
 ~~~rust
-let owned: String = String::from("coral");     // heap text we own
-let view: &str = &owned;                       // a borrowed view of all of it
-let literal: &str = "kelp";                    // a view of text inside the program
-let also_owned = "kelp".to_string();           // .to_string() makes an owned String from a &str
+let mut owned = String::from("coral");   // we own this text
+owned.push_str(" reef");                  // allowed: it is ours, so it can grow
+println!("{owned}");
+
+let view: &str = &owned;                  // a borrowed view of the same text
+println!("{view}");
+
+let literal: &str = "kelp";               // a view of text written inside the program
+let also_owned = "kelp".to_string();      // .to_string() makes an owned String from a &str
 ~~~
 
-Rule of thumb: **struct fields and return values that must keep the text use \`String\`; function parameters that only read it use \`&str\`.** A \`&str\` parameter accepts a literal, a \`&String\`, or a slice of either, so it is the most flexible choice:
+~~~text
+coral reef
+coral reef
+~~~
+
+Calling \`view.push_str(...)\` would be an error, because a view cannot grow.
+
+Rule of thumb: a **function parameter that only reads text** is a \`&str\`, because it then accepts a quoted text, a \`String\` (written \`&my_string\`), or part of either. A **struct field or a return value that must keep the text** is a \`String\`.
+
+### Taking a piece of text: \`first_word\`
 
 ~~~rust
 fn first_word(text: &str) -> &str {
     match text.find(' ') {
-        Some(end) => &text[..end],      // a slice: bytes 0 up to (not including) \`end\`
+        Some(end) => &text[..end],
         None => text,
     }
 }
 ~~~
 
-(The return type \`&str\` also borrows from \`text\`. The compiler infers that, because there is only one input reference. With two reference inputs it asks you to say which one with a **lifetime**: error[E0106]: missing lifetime specifier. The next project of this path teaches them.)
+- \`text.find(' ')\` looks for the first space. Like \`get\` in lesson 8, it answers with a box: \`Some(position)\` when it finds one, \`None\` when there is none. The \`match\` opens the box.
+- \`&text[..end]\` means "a view of \`text\` from the start up to position \`end\`".
+- With no space, the whole text is the first word.
 
-### UTF-8: bytes are not characters
-
-Rust strings are always valid UTF-8. Letters in English use one byte, but \`°\`, \`é\` and \`🐠\` use two to four. So you have to be specific about what you count:
-
-~~~rust
-let reading = String::from("18°C");
-reading.len()                // 5   bytes ('°' takes two)
-reading.chars().count()      // 4   characters
-~~~
-
-For this reason you cannot index a string by number: \`reading[0]\` is error[E0277]: the type \`str\` cannot be indexed by \`{integer}\`. What would "the third character" cost? You would have to scan from the start. You can **slice** by byte range, \`&reading[0..2]\`, and it works only if both ends fall on character boundaries. Cutting through the middle of the degree sign panics: *byte index 3 is not a char boundary*. For character-wise work use \`.chars()\`.
+\`first_word("SURFACE: weather clear")\` gives \`"SURFACE:"\`, and \`first_word("alone")\` gives \`"alone"\`. Nothing was copied: the answer is a view into the original text.
 
 ### Building and changing a \`String\`
 
 ~~~rust
 let mut summary = String::new();
-summary.push_str("SURFACE");                  // append a &str
-summary.push('!');                           // append one char
-summary += " says: ";                        // += works with a &str on the right
-summary += &format!("{} words", 6);          // format! builds a new String like println! but returns it
+summary.push_str("SURFACE");            // add some text at the end
+summary.push('!');                      // add one char
+summary += " says: ";                   // += adds text too
+summary += &format!("{} words", 6);     // format! builds a new String like println! prints it
+println!("{summary}");
 ~~~
 
-\`format!\` is \`println!\` that gives you the text instead of printing it. It is the cleanest way to put pieces together. There is also \`+\`, but it **moves** its left side: \`let c = a + &b;\` uses up \`a\`. You cannot add two \`&str\`: \`"a" + "b"\` is error[E0369]: cannot add \`&str\` to \`&str\`.
+~~~text
+SURFACE! says: 6 words
+~~~
 
-### The methods worth knowing
+\`format!\` is \`println!\` that gives you the text instead of printing it. It is the cleanest way to put pieces together.
+
+### The helpers you need for the mission
 
 ~~~rust
-text.trim()                  // &str without surrounding whitespace
-text.to_uppercase()          // a new String       (to_lowercase too)
-text.contains("clear")       // bool
-text.starts_with("SURF")     // bool               (ends_with too)
-text.find(':')               // Option<usize>: byte position of the first match
-text.replace("clear", "stormy")   // a new String
-text.split_whitespace()      // iterator over the words
-text.split(',')              // iterator over the pieces between commas
-text.lines()                 // iterator over lines
-text.len()  text.is_empty()
+let note = "  weather clear  ";
+note.trim()                          // "weather clear"      cut the spaces at both ends
+note.trim().to_uppercase()           // "WEATHER CLEAR"      a new String in capitals
+note.contains("clear")               // true                 does the text hold this piece?
+"SURFACE:".trim_end_matches(':')     // "SURFACE"            cut a trailing ':' off
 ~~~
 
-A method that returns an iterator is usually followed by \`.count()\` or \`.collect()\`. \`collect\` gathers the pieces into a collection and needs a type to build, here a \`Vec\` of string slices:
+To get the individual words, \`split_whitespace()\` hands them out one at a time, and \`collect()\` gathers them into a \`Vec\`. \`collect\` needs to be told what to build, so the variable gets a type:
 
 ~~~rust
-let words: Vec<&str> = message.split_whitespace().collect();
-println!("{}", words.len());
+let words: Vec<&str> = "sea state 2".split_whitespace().collect();
+println!("{:?} has {} words", words, words.len());
 ~~~
 
-Note that each word is a \`&str\` slice that points back into \`message\`. Nothing was copied, and the borrow checker makes sure \`message\` stays alive and unchanged while \`words\` exists.
+~~~text
+["sea", "state", "2"] has 3 words
+~~~
 
-### Slices of Vecs and arrays
+\`Vec<&str>\` reads "a list of text views". Each word still points into the original text; nothing was copied.
 
-The same idea works for lists. \`&dive_log[1..3]\` is a **slice** of type \`&[i32]\`: a borrowed view of part of a Vec or array. Functions that only read a list should take \`&[i32]\` rather than \`&Vec<i32>\`, for the same reason as \`&str\`: it accepts a Vec, an array, or a part of either.
+### Bytes and characters
+
+\`len()\` counts **bytes**, not characters. Plain English letters use one byte each, but a sign like \`°\` uses two. So the text \`18°C\` has four characters but five bytes:
+
+~~~rust
+let reading = String::from("18°C");
+println!("{}", reading.len());              // 5
+println!("{}", reading.chars().count());    // 4
+~~~
+
+Use \`chars().count()\` when you want to count what a person would call letters.
 
 ### Common mistakes
 
 - \`let name: String = "Mara";\`: error[E0308]: mismatched types, expected \`String\`, found \`&str\`. The compiler suggests \`.to_string()\`.
 - Passing a \`String\` where a \`&str\` is wanted without the \`&\`.
-- Using \`len()\` as a character count for non-English text.
-- Slicing at a byte position inside a multi-byte character.
-- Building text with \`+\` and being surprised that the left String was moved. Prefer \`format!\`.`,
+- Using \`len()\` as a character count for text with accents or symbols.
+
+### Going further (optional)
+
+- **Lifetimes.** The return type \`&str\` of \`first_word\` borrows from \`text\`. The compiler works that out because there is only one input reference. With two reference inputs it asks you to say which one with a **lifetime** (error[E0106]: missing lifetime specifier); the next project teaches them. A quoted text in the program has the full type \`&'static str\`, where \`'static\` means "valid for the whole run".
+- **Indexing and slicing.** You cannot write \`reading[0]\` to get "the first character" (error[E0277]), because a character can take several bytes. You can slice by byte range, \`&reading[0..2]\`, but both ends must fall between characters. Cutting through the middle of the degree sign panics with *byte index 3 is not a char boundary*. For character-wise work use \`.chars()\`.
+- **The \`+\` operator** joins texts too, but it **moves** its left side: \`let c = a + &b;\` uses up \`a\`. You cannot add two \`&str\`: \`"a" + "b"\` is error[E0369]. Prefer \`format!\`.
+- **More helpers:** \`starts_with\`, \`ends_with\`, \`replace("clear", "stormy")\`, \`to_lowercase\`, \`split(',')\` (pieces between commas), \`lines()\`, \`is_empty()\`.
+- **Slices of lists.** \`&dive_log[1..3]\` is a slice of type \`&[i32]\`: a borrowed view of part of a Vec or array. A function that only reads a list should take \`&[i32]\` rather than \`&Vec<i32>\`, for the same reason as \`&str\`: it accepts a Vec, an array, or part of either.`,
       mission: md`The surface sends radio messages in plain text, padded with stray spaces, and Halcyon keeps its own log lines. The radio mast must trim, search and split these messages, shout the important ones in capitals, and assemble a one-line summary.
 
 It also needs to be honest about degrees: the thermometer reports \`18°C\`, which is five bytes but four characters. When this lesson passes, the **Radio mast** lights up.`,

@@ -109,9 +109,11 @@ export const chapter1: Chapter = {
       minutes: 20,
       xp: 60,
       concepts: ["fn main", "println!", "print!", "format arguments", "{:?}", "{:.2}", "escapes", "compiler errors"],
-      learn: md`### A program starts at \`main\`
+      learn: md`### Where a program starts
 
-Every Rust program begins in a function called \`main\`. A **function** is a named block of code: the keyword \`fn\`, a name, parentheses for the inputs (none here), and a body between braces.
+A program is a list of instructions for the computer, like the steps on a recipe card. A recipe needs a first step, and so does a program. Rust always begins at a block of code called \`main\`.
+
+Type your code **inside the curly braces** of \`fn main() { ... }\` in the editor, then press **Run**. The text your program prints appears in the output panel, and the list of checks tells you which tasks already pass.
 
 ~~~rust
 fn main() {
@@ -119,34 +121,23 @@ fn main() {
 }
 ~~~
 
-- \`println!\` prints its text and then moves to a **new line**.
-- The \`!\` means \`println\` is a **macro**, not an ordinary function. Macros are expanded by the compiler before the program is built, which lets them do things a function cannot, such as checking your format string against the values you pass (more on that below). Whenever you see a name that ends in \`!\`, read it as "the compiler writes some code for me here".
-- \`"Hello, reef!"\` is a **string literal**: text between double quotes. Rust text is always UTF-8, so \`"café"\` and \`"🐠"\` are fine.
-- Each statement ends with \`;\`. The body of a function is just a list of statements, run from top to bottom.
-- The standard style is four spaces of indentation. The compiler does not care, but every Rust programmer you will ever read does.
+Output:
+
+~~~text
+Hello, reef!
+~~~
+
+- \`fn main() { ... }\` is a **function**: a named block of instructions. \`fn\` is the keyword that says "a function starts here", \`main\` is its name, and the instructions go between the braces.
+- \`println!\` prints its text and then moves to a **new line**. The \`!\` means "this is a built-in helper that the compiler expands for me", and it is part of the name, so always type it.
+- \`"Hello, reef!"\` is a **string literal**: text between double quotes.
+- Each instruction ends with \`;\`. The instructions run from top to bottom.
+- The usual style is four spaces of indentation. Rust does not care, but people reading your code do.
 
 ### Build first, run second
 
-Rust is a **compiled** language. When you press Run, your whole file is handed to the compiler (\`rustc\`) *before anything executes*. If the compiler finds a mistake, nothing runs at all and you get an explanation instead. That feels strict at first, and it is the central deal of Rust: the compiler is fussy before the program runs so that far fewer things go wrong while it runs. By lesson 9 you will see it catch whole families of bugs that other languages only find in production.
+Rust is a **compiled** language. When you press Run, the compiler (the program that translates your code into something the computer can run) reads your whole file *before anything executes*. If it finds a mistake, nothing runs and you get an explanation instead. That feels strict at first, and it is the deal that makes Rust reliable: the compiler is fussy now so that fewer things go wrong later.
 
-A compiler message always has the same shape. Read it top to bottom:
-
-~~~text
-error[E0423]: expected function, found macro \`println\`
- --> main.rs:2:5
-  |
-2 |     println("Hello");
-  |     ^^^^^^^ not a function
-  |
-help: use \`!\` to invoke the macro
-~~~
-
-1. **\`error[E0423]\`**: the severity and an **error code**. Every code has a page in the Rust error index, and the station on the right will explain the common ones for you.
-2. **\`--> main.rs:2:5\`**: file, line 2, column 5. The line number is yours: pockett never rewrites your file.
-3. **The code excerpt**: your own line, with \`^^^^\` carets under the exact spot and a short label.
-4. **\`help:\`**: very often the compiler tells you the fix. Read it before you reach for anything else.
-
-(The exact wording changes a little between compiler versions. The code and the idea stay the same.)
+If you see red text, do not panic. Read the **first line** and the line number it points at. Often a line starting with \`help:\` already tells you the fix.
 
 ### \`print!\` or \`println!\`?
 
@@ -155,63 +146,68 @@ help: use \`!\` to invoke the macro
 ~~~rust
 print!("Loading");
 print!("...");
-println!(" done");     // Loading... done
+println!(" done");
 println!("Next line");
 ~~~
 
-### Format arguments: \`{}\` and \`{:?}\`
+Output:
 
-The first argument of \`println!\` is a **format string**. Each \`{}\` is a hole that is filled by the next value you pass after it.
-
-~~~rust
-println!("Depth {} m, crew {}", 42, 6);   // Depth 42 m, crew 6
+~~~text
+Loading... done
+Next line
 ~~~
 
-There are two ways to turn a value into text, and you choose with what is inside the braces:
+### Holes in the text: \`{}\`
 
-- \`{}\` uses **Display**: the clean, human-facing text. Numbers, strings and chars have it.
-- \`{:?}\` uses **Debug**: a programmer-facing view that shows structure. A string prints *with* its quote marks, so you can see exactly what you have. Almost every type has Debug (you will derive it yourself in lesson 12), but many types have no Display because there is no single obvious "nice" text for them.
-
-~~~rust
-println!("{}", "B-7");     // B-7
-println!("{:?}", "B-7");   // "B-7"
-~~~
-
-Inside the braces you can also add instructions after the colon. The one you will use constantly is **precision** for decimals: \`{:.2}\` means "two digits after the point".
+The text of \`println!\` can have holes written as \`{}\`. Each hole is filled by the next value you pass after the text.
 
 ~~~rust
-println!("{:.2}", 87.5);    // 87.50
-println!("{:.0}", 87.6);    // 88   (rounded)
+println!("Depth {} m, crew {}", 42, 6);
 ~~~
 
-The compiler checks the holes against the values *at compile time*. Too few or too many is an error, not a crash at run time:
+~~~text
+Depth 42 m, crew 6
+~~~
+
+A hole can also carry an instruction after a colon. You need two of them in this lesson:
+
+- \`{:.2}\` means "show two digits after the decimal point": \`println!("{:.2}", 87.5);\` prints \`87.50\`.
+- \`{:?}\` means "show it the way a programmer would write it". For text that means **with the quote marks**: \`println!("{:?}", "B-7");\` prints \`"B-7"\`, while \`println!("{}", "B-7");\` prints \`B-7\`.
+
+If the number of holes and values do not match, the compiler refuses to build:
 
 ~~~text
 error: 1 positional argument in format string, but no arguments were given
- --> main.rs:2:15
-  |
-2 |     println!("Crew: {}");
-  |                     ^^
 ~~~
 
 ### Escapes and literal braces
 
-Inside a string literal, a backslash starts an **escape**: \`\n\` is a new line, \`\t\` a tab, \`\"\` a double quote that belongs to the text, and \`\\\` one backslash. Because \`{\` and \`}\` are special in a format string, write \`{{\` and \`}}\` when you want a real brace:
+Inside text, a backslash starts an **escape**: \`\n\` is a new line, \`\t\` a tab, \`\"\` a double quote that belongs to the text, and \`\\\` one backslash. Because \`{\` and \`}\` mean "hole", write \`{{\` and \`}}\` when you want a real brace:
 
 ~~~rust
-println!("Pump {{3}} is online");   // Pump {3} is online
+println!("Pump {{3}} is online");
+~~~
+
+~~~text
+Pump {3} is online
 ~~~
 
 ### The helper above \`main\`
 
-Look above \`fn main\` in your file. That block is **provided by pockett**: a tiny \`scene\` function (and a few helpers) that sends values to the live station beside your editor. From lesson 2 on you will call \`scene("name", value);\` and the matching module of the station lights up with your number. Nothing in the helper needs to be understood yet, so leave it alone. By lesson 12 you will know enough Rust to read all of it.
+Look above \`fn main\` in your file. That block is **provided by pockett**: a small \`scene\` function that sends values to the live station beside your editor. From lesson 2 on you call \`scene("name", value);\` and a part of the station lights up with your number. You never need to edit the helper, so leave it alone.
 
 ### Common mistakes
 
-- Forgetting the \`!\`: \`println("hi")\` fails with E0423, shown above.
-- Single quotes for text. \`'hi'\` is a **char** literal and holds exactly one character: *error: character literal may only contain one codepoint*.
-- Forgetting a \`;\`. The error ( *expected \`;\`, found ...* ) is often reported on the line *after* the one that needs it, because the compiler only notices when the next statement starts.
-- Putting \`{}\` in the text but no value after it, or the other way round.`,
+- Forgetting the \`!\`: \`println("hi")\` fails with *error[E0423]: expected function, found macro \`println\`*, and the \`help:\` line says "use \`!\` to invoke the macro".
+- Single quotes for text. \`'hi'\` holds exactly one character, so you get *character literal may only contain one codepoint*. Use double quotes for text.
+- Forgetting a \`;\`. The error (*expected \`;\`, found ...*) is often shown on the line *after* the one that needs it, because the compiler only notices when the next instruction starts.
+- Putting \`{}\` in the text but no value after it, or the other way round.
+
+### Going further (optional)
+
+- A compiler message always has the same shape: \`error[E0423]\` is the severity and an error code, \`--> main.rs:2:5\` is the file, line and column, then comes your own line with \`^^^\` under the exact spot, and often a \`help:\` line.
+- \`{}\` is called **Display** (the neat text for people) and \`{:?}\` is called **Debug** (the programmer's view). Almost every type has Debug; you will add it to your own types in lesson 12.
+- Rust text is always UTF-8, so \`"café"\` and \`"🐠"\` are fine.`,
       mission: md`Welcome to **Halcyon Reef Station**: a small research base bolted to a reef shelf 42 metres below the surface. Six people live and work there. The station has pumps, tanks, drones and a lot of hardware, but its control room has no software yet. You are going to write all of it, one lesson at a time, in a single growing Rust program.
 
 Every control room starts with a console. Make the station announce itself: its name, the crew, depth and pressure, an oxygen reading and a hatch label. When this lesson passes, the **Control room** console powers on and shows everything your program prints, in order.`,
@@ -348,20 +344,28 @@ assert(at.every((v, i) => i === 0 || v > at[i - 1]), "The six lines are all ther
       minutes: 30,
       xp: 90,
       concepts: ["let", "immutability", "mut", "shadowing", "i32", "u32", "f64", "bool", "char", "type inference", "overflow"],
-      learn: md`### \`let\` makes a variable, and it is read-only
+      learn: md`### A variable is a labelled box
+
+Think of a storage box with a label on the front. The label is the **name** (\`crew\`), and what is inside is the **value** (\`6\`). Whenever you write the name, the computer opens the box and uses what is inside. Programs need this because they must remember things: how many people are aboard, how deep the station is, whether the pump is on.
 
 ~~~rust
 let crew = 6;
 println!("{crew} people aboard");
 ~~~
 
-\`let name = value;\` creates a **binding**. Notice two things. First, you did not write a type: Rust **infers** it from the value (here, \`i32\`). Second, you can put a variable straight inside the braces of a format string: \`{crew}\`. Any plain name works there, and you can still add instructions: \`{oxygen:.1}\`.
+~~~text
+6 people aboard
+~~~
 
-By default a binding is **immutable**: once it has a value, it cannot be changed.
+\`let crew = 6;\` means "make a box, label it \`crew\`, put 6 in it". Two things to notice. First, you did not write what kind of thing the box holds. Rust **works it out** from the value: here, a whole number called \`i32\`. Second, you can put a variable's name straight inside the braces of a text: \`{crew}\`. You can still add instructions after a colon: \`{oxygen:.1}\` shows one decimal.
+
+### Boxes are sealed by default
+
+Once a value is in a Rust box, you cannot change it unless you said so when you made the box.
 
 ~~~rust
 let oxygen = 100.0;
-oxygen = 87.5;      // error[E0384]: cannot assign twice to immutable variable \`oxygen\`
+oxygen = 87.5;
 ~~~
 
 ~~~text
@@ -379,81 +383,100 @@ help: consider making this binding mutable
   |         +++
 ~~~
 
-This is deliberate. A value that cannot change is a value you can reason about: when you read a function six months from now, every \`let\` without \`mut\` is a promise that this name means the same thing from top to bottom. When you do need change, you say so, and the word \`mut\` becomes a signpost for readers: *this one moves*.
+"Immutable" just means "cannot change". It is on purpose: when you read a program later, every box that is not marked is a promise that the value stays the same. When you do need change, write the word \`mut\` (short for mutable, "can change"), which tells every reader: *this one moves*.
 
 ~~~rust
 let mut oxygen = 100.0;
-oxygen -= 12.5;         // fine now: 87.5
+oxygen -= 12.5;
+println!("{oxygen}");
 ~~~
 
-Use \`mut\` only when you need it: rustc even has a warning (\`unused_mut\`) for a \`mut\` that is never used.
+~~~text
+87.5
+~~~
 
-### Shadowing: a new variable with the old name
+\`oxygen -= 12.5\` is short for \`oxygen = oxygen - 12.5\`. Use \`mut\` only when a value really changes.
 
-You can declare a new \`let\` with the same name. The new binding **shadows** the old one from that point on.
+### Shadowing: a new box with the old label
+
+You can make a new box with the same name. From that line on, the new box hides ("shadows") the old one.
 
 ~~~rust
 let tanks = 4;
-let tanks = tanks * 2;      // a brand-new variable named tanks, equal to 8
+let tanks = tanks * 2;
+println!("{tanks}");
 ~~~
 
-This is not mutation. It is a second variable, and it may even have a different type, which is why shadowing is handy for "same data, new form" steps. An inner block \`{ ... }\` can shadow too, and the outer variable is back after the block ends.
+~~~text
+8
+~~~
 
-### Scalar types
+This is not changing the old box. It is a second box, built from the first one's value, and it does not need \`mut\`.
 
-Rust is **statically typed**: every variable has one type, known at compile time, and it never changes. The built-in single-value ("scalar") types:
+### What kinds of values?
 
-- **Signed integers** \`i8 i16 i32 i64 i128 isize\`: whole numbers that may be negative. \`i32\` is the default when you write a plain number like \`42\`.
-- **Unsigned integers** \`u8 u16 u32 u64 u128 usize\`: whole numbers from 0 up. The number is the bit width, so \`u8\` holds 0 to 255. \`usize\` is the size of a memory address and is what lengths and indexes use.
-- **Floats** \`f32\` and \`f64\`: numbers with a fractional part. \`f64\` is the default.
-- **\`bool\`**: \`true\` or \`false\`, lower case. It prints as \`true\` / \`false\`.
-- **\`char\`**: one Unicode character in **single quotes**: \`'B'\`, \`'é'\`, \`'🐠'\`. (Text in double quotes is a string, not a char.)
+Rust is **statically typed**: every box holds one kind of value (its **type**), fixed for as long as the box exists. You need five types for now:
 
-You can write the type yourself after a colon, or attach it to a literal as a suffix:
+- **\`i32\`**: a whole number that may be negative (\`-5\`, \`42\`). It is what you get from a plain number like \`42\`.
+- **\`u32\`**: a whole number from 0 up, never negative. Good for counts.
+- **\`f64\`**: a number with a decimal point (\`87.5\`).
+- **\`bool\`**: \`true\` or \`false\`, in lower case.
+- **\`char\`**: exactly one character in **single quotes**: \`'B'\`. (Text in double quotes is a different thing, a string.)
+
+There are other sizes of whole numbers too (\`i8\`, \`u8\`, \`i64\`, ...). The number is how many bits of room the box has, and you will meet \`u8\` in a moment.
+
+You may write the type yourself after a colon, or stick it onto the number as a suffix:
 
 ~~~rust
-let crew: u32 = 6;          // an annotation
+let crew: u32 = 6;          // an annotation: crew is a u32
 let depth = 42_i32;         // a suffix; the underscore is just for reading
-let ratio = 0.75_f64;
 let hatch = 'B';
 let pumps_online = true;
 ~~~
 
-Rust never converts between number types behind your back. \`let x: u32 = -5;\` is an error (an unsigned type cannot hold a negative), and so is \`let y: i32 = 4.5;\`. If you want a conversion, you will ask for it in lesson 3.
+Rust never converts between number types behind your back. \`let x: u32 = -5;\` is an error (a \`u32\` cannot hold a negative), and so is \`let y: i32 = 4.5;\`. Lesson 3 shows how to ask for a conversion.
 
-### Overflow: what happens past the edge
+### A number box has an edge: overflow
 
-A \`u8\` can hold 0 to 255. What is \`250 + 10\`? Many languages quietly wrap around to 4. Rust makes you decide:
-
-- With overflow checks on (which is how Rust builds while you are developing, called a **debug build**) a plain \`+\` that overflows **panics**: the program stops with *attempt to add with overflow*. A bug is a loud bug.
-- In an optimised **release build** the same \`+\` wraps silently. That is why you should never rely on either behaviour by accident.
-- If the compiler can see the overflow at compile time (\`let x: u8 = 255 + 1;\`), it refuses to build: *error: this arithmetic operation will overflow*.
-
-When you *mean* a particular behaviour, say it with a method on the integer. They all exist for every integer type:
+A \`u8\` is a small whole-number box with room for 0 to 255 only. What is \`250 + 10\`, which is 260, if the box stops at 255? Like a car odometer, the count can roll over to the start. Rust makes you choose what should happen, with three methods you call on the number:
 
 ~~~rust
 let level: u8 = 250;
-level.wrapping_add(10);      // 4        wraps around, on purpose
-level.saturating_add(10);    // 255      sticks at the maximum
-level.checked_add(10);       // None     "there is no valid answer" (an Option, see lesson 14)
+println!("{}", level.wrapping_add(10));     // rolls over past 255
+println!("{}", level.saturating_add(10));   // sticks at the biggest value
+println!("{:?}", level.checked_add(10));    // asks: is there a valid answer?
 ~~~
 
-\`{:?}\` prints that last one as \`None\`. For now, read it as "nothing".
+~~~text
+4
+255
+None
+~~~
+
+- \`wrapping_add\` goes around like the odometer: 250 + 10 is 260, minus the 256 numbers of the box, gives 4.
+- \`saturating_add\` stops at the biggest value the box can hold, 255.
+- \`checked_add\` does not give a number at all when the answer does not fit. It gives \`None\`, which means "no answer". (An answer that does fit comes wrapped as \`Some(...)\`. Lesson 14 explains both.) Use \`{:?}\` to print it.
 
 ### Naming
 
-Variables and functions are \`snake_case\` (\`oxygen_pct\`, \`depth_m\`). Types are \`CamelCase\` (you will meet them in lesson 12). The compiler has warnings for names that break the convention and for variables you create but never use. Put an underscore in front (\`_spare\`) to say "unused on purpose".
+Variable names use \`snake_case\`: lower-case words joined with underscores (\`oxygen_pct\`, \`depth_m\`). The compiler warns about a variable you create but never use. Put an underscore in front (\`_spare\`) to say "unused on purpose".
 
 ### Sending data to the station
 
-The helper from lesson 1 gives you \`scene("key", value)\`. It sends a number, a bool, a char, a text or a list to the board with the name you choose. Small values go straight in: \`scene("crew", crew);\`.
+The helper from lesson 1 gives you \`scene("key", value)\`. It sends a number, a bool, a char or a text to the station board under the name you choose. Small values go straight in: \`scene("crew", crew);\`.
 
 ### Common mistakes
 
 - Forgetting \`mut\`: E0384, shown above. The compiler even prints the fixed line.
 - Writing \`let crew: u32 = -1;\` or \`let n: i32 = 2.5;\`: error[E0308]: mismatched types.
 - Reading a variable before it has a value: \`let x: i32; println!("{x}");\` is error[E0381]: used binding \`x\` isn't initialized.
-- Using a name in a different scope: a variable made inside \`{ }\` does not exist after the closing brace (E0425).`,
+- Using a name outside the braces where it was made: a variable created inside \`{ }\` does not exist after the closing brace (E0425).
+
+### Going further (optional)
+
+- The whole family of whole-number types is \`i8 i16 i32 i64 i128 isize\` (can be negative) and \`u8 u16 u32 u64 u128 usize\` (never negative). \`usize\` is the type used for lengths and positions in lists. Floats come as \`f32\` and \`f64\`; \`f64\` is the default.
+- The plain \`+\` on a number that overflows behaves differently depending on how the program is built. While you develop (a **debug build**) it stops with a loud *attempt to add with overflow* message. In an optimised **release build** it silently wraps. If the compiler can see the overflow ahead of time (\`let x: u8 = 255 + 1;\`) it refuses to build. Choosing \`wrapping_add\`, \`saturating_add\` or \`checked_add\` removes the guessing.
+- An inner block \`{ ... }\` can shadow a name too; the outer name is back after the block ends.`,
       mission: md`Every crew member needs to know the station's vital signs, and the control room needs them as data, not as prose. Time to give Halcyon a spec sheet.
 
 You will store the name, crew size, depth, oxygen level, pump status and hatch label with the right types, let the oxygen level drop with \`mut\`, double the tanks with shadowing, and see all three ways to handle an overflowing byte. When this lesson passes, the **Oxygen plant** lights up with your numbers.`,
@@ -612,7 +635,7 @@ println!("{}", 17 % 5);        // 2    (17 = 3 * 5 + 2)
 
 ### Integer division throws the fraction away
 
-When **both** sides are integers, \`/\` is integer division: the fraction is cut off (truncated toward zero), not rounded.
+When **both** sides are integers, \`/\` is integer division: the fraction is cut off (toward zero), not rounded.
 
 ~~~rust
 println!("{}", 135 / 60);     // 2
@@ -622,7 +645,7 @@ println!("{}", -7 / 2);       // -3
 
 The pair \`/\` and \`%\` is the right tool for splitting a total into units: 135 minutes is \`135 / 60\` = 2 hours and \`135 % 60\` = 15 minutes.
 
-Dividing an integer by zero is a bug Rust refuses to hide. If the compiler can see it (\`let x = 10 / 0;\`) it is a compile error: *this operation will panic at runtime*. If the zero only arrives while running, the program panics with *attempt to divide by zero*. Floats behave differently: \`1.0 / 0.0\` is \`inf\`, and \`0.0 / 0.0\` is \`NaN\` ("not a number").
+Dividing an integer by zero is a bug Rust refuses to hide. If the compiler can see it (\`let x = 10 / 0;\`) it is a compile error: *this operation will panic at runtime*. If the zero only arrives while running, the program panics with *attempt to divide by zero*. Floats behave differently: \`1.0 / 0.0\` is \`inf\` (infinity), and \`0.0 / 0.0\` is \`NaN\` ("not a number").
 
 ### No automatic mixing of types
 
@@ -649,8 +672,8 @@ Two different integer types fail too (\`i32 + u32\` is E0308: mismatched types, 
 \`value as Type\` converts between number types. It always succeeds, so you need to know what it does when the value does not fit:
 
 - **Integer to float** keeps the value (as exactly as the float allows): \`42 as f64\` is \`42.0\`.
-- **Float to integer** **truncates** toward zero and **saturates** at the ends: \`3.99 as i32\` is \`3\`, \`-3.99 as i32\` is \`-3\`, \`300.7 as u8\` is \`255\`, and a \`NaN\` becomes \`0\`.
-- **Integer to a smaller integer** keeps the low bits, so it **wraps**: \`300_i32 as u8\` is \`44\` (300 − 256), and \`-1_i32 as u32\` is \`4294967295\`.
+- **Float to integer** cuts the fraction off toward zero, and a number too big for the target stops at the biggest value the target can hold: \`3.99 as i32\` is \`3\`, \`-3.99 as i32\` is \`-3\`, \`300.7 as u8\` is \`255\`, and a \`NaN\` becomes \`0\`.
+- **Integer to a smaller or unsigned integer** keeps only what fits, so it **wraps around** like the odometer in lesson 2: \`300_i32 as u8\` is \`44\` (300 − 256), and \`-1_i32 as u32\` is \`4294967295\`, the biggest \`u32\`.
 
 ~~~rust
 let depth_m: i32 = 42;
@@ -661,11 +684,23 @@ let wrapped = 300_i32 as u8;                    // 44
 
 \`as\` binds tighter than \`/\`, so \`depth_m as f64 / 10.0\` means \`(depth_m as f64) / 10.0\`. The classic beginner mistake is converting *after* an integer division, when the fraction is already gone: \`(a / b) as f64\` is not \`a as f64 / b as f64\`.
 
-Because \`as\` never complains, it is a quiet place for bugs. Later you will meet \`try_from\`, which returns a \`Result\` when a number does not fit. For the exact, deliberate conversions in this course, \`as\` is the right tool.
+Because \`as\` never complains, it is a quiet place for bugs. Use it only when you know the value fits or you want the wrap.
 
-### Float methods
+### Number methods
 
-Numbers have methods. A few you will use: \`x.abs()\`, \`x.sqrt()\`, \`x.powi(2)\` (integer power), \`x.round()\`, \`x.floor()\`, \`x.ceil()\`, \`a.min(b)\`, \`a.max(b)\`. They need to know the exact type they are working on. \`let n: f64 = 2.0; n.sqrt()\` is fine, but a bare literal such as \`2.pow(3)\` fails with error[E0689]: can't call method \`pow\` on ambiguous numeric type \`{integer}\`. Write \`2_i32.pow(3)\`, or give the variable a type.
+Numbers have built-in helpers you call with a dot, as you did with \`wrapping_add\`:
+
+~~~rust
+let side: f64 = 9.0;
+println!("{}", side.sqrt());        // 3      square root
+println!("{}", side.powi(2));       // 81     power with a whole-number exponent
+println!("{}", 2.6_f64.round());    // 3      nearest whole number
+println!("{}", 2.6_f64.floor());    // 2      round down
+println!("{}", 2.6_f64.ceil());     // 3      round up
+println!("{}", 2_i32.pow(3));       // 8      2 * 2 * 2
+~~~
+
+The helper needs to know the exact type it works on. A bare number such as \`2.pow(3)\` fails with error[E0689]: can't call method \`pow\` on ambiguous numeric type \`{integer}\`. Write \`2_i32.pow(3)\`, or give the variable a type.
 
 ### Floats are not exact
 
@@ -676,8 +711,8 @@ Numbers have methods. A few you will use: \`x.abs()\`, \`x.sqrt()\`, \`x.powi(2)
 - Dividing two integers and expecting a fraction (\`7 / 2\` is 3).
 - Casting the *result* of an integer division instead of the inputs.
 - Mixing \`u32\` with \`i32\` or \`f64\` (E0308 and E0277). Convert one side with \`as\`.
-- Expecting \`as\` to complain: \`-1 as u32\` happily becomes 4294967295.
-- Trusting \`300 as u8\`. It is a valid cast and it means 44.`,
+- Expecting \`as\` to complain. With \`let n: i32 = -1;\`, \`n as u32\` happily becomes 4294967295.
+- Trusting a cast to keep the number. With \`let big: i32 = 300;\`, \`big as u8\` is 44. (Writing the literal \`300 as u8\` directly is stopped by the compiler, because 300 does not fit a \`u8\`; the variable hides that from it, but the wrap still happens.)`,
       mission: md`The diving schedule depends on arithmetic. Pressure grows by about one bar for every ten metres, a dive log stores minutes but the board shows hours and minutes, and the air supply has to be divided fairly between six divers.
 
 Rust's numeric rules are strict on purpose, so you will walk into each one and then step around it. When this lesson passes, the **Pressure gauge** lights up with your numbers.`,

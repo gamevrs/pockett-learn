@@ -21,7 +21,21 @@ export const chapter4: Chapter = {
       concepts: ["class", "public / private", "constructor", "member initializer list", "member functions", "const methods", "encapsulation"],
       learn: md`### Data and behaviour, together
 
-A struct bundles data. A **class** bundles data *and the rules for changing it*. A control rod is a good example: its insertion depth must always stay between 0 and 100 percent. If the number is a plain public member, any line of code anywhere can set it to \`-500\`. A class lets you **hide** the number and offer only safe operations.
+A struct bundles data. A **class** bundles data *and the rules for changing it*. A control rod is a good example: its insertion depth must always stay between 0 and 100 percent. If the number is a plain public member, any line of code anywhere can set it to \`-500\`. A class lets you **hide** the number and offer only safe operations. A rule like "always between 0 and 100" that must hold for the whole life of an object is called an **invariant**.
+
+Start with the smallest possible class: one value and one action.
+
+~~~cpp
+class ControlRod {
+public:
+    int insertion = 0;                 // anyone can read or change this
+    void insert(int percent) {         // an action the rod can do
+        insertion += percent;
+    }
+};
+~~~
+
+It works, but nothing stops \`rod.insertion = -500;\`. So the next version keeps the number hidden behind \`private:\`, sets it up in a **constructor** (a special function that runs when the object is created), and clamps (limits) the value to the safe range. Read it slowly, one piece at a time; the list below explains each part.
 
 ~~~cpp
 class ControlRod {
@@ -37,6 +51,11 @@ public:
         if (insertion_ > 100) insertion_ = 100;
     }
 
+    void withdraw(int percent) {       // the mirror image of insert
+        insertion_ -= percent;
+        if (insertion_ < 0) insertion_ = 0;
+    }
+
     int insertion() const { return insertion_; }
 
 private:
@@ -47,7 +66,7 @@ private:
 
 ### The parts of a class
 
-- **\`public:\`** members can be used by anyone. This is the class's **interface**: what the outside world may do.
+- **\`public:\`** members can be used by anyone. This is the class's **interface** (the buttons and dials on the outside): what the outside world may do.
 - **\`private:\`** members can be used only from inside the class. Code elsewhere that touches them gets *'int ControlRod::insertion_' is private within this context*. By convention private data members end in an underscore (\`insertion_\`) so you can tell them apart at a glance.
 - A **constructor** has the class's name and no return type. It runs whenever an object is created and is where you put the object into a valid starting state. The part after the colon, \`: name_(name), insertion_(insertion)\`, is the **member initializer list**: it initializes the members directly, before the body runs. Prefer it to assigning in the body.
 - **Member functions** (methods) are the object's actions: \`insert\`, \`insertion\`. Inside them the members are simply in scope.
@@ -496,6 +515,8 @@ for (const w of ["Offline -> Standby", "Standby -> WarmUp", "WarmUp -> Running",
       concepts: ["throw", "try / catch", "std::exception hierarchy", "what()", "catch order", "validation", "uncaught exceptions"],
       learn: md`### When a function cannot do its job
 
+You met \`try\` and \`catch\` in lesson 7 as a copy-this pattern. Now you will learn how it works and how to throw your own errors.
+
 Some failures cannot be fixed where they happen. \`checkReading\` is handed a pressure of -1: it cannot "fix" that, and it cannot just return a number and hope the caller notices. C++ provides **exceptions**: the function **throws** an error object, execution leaves the function immediately (and every function above it, one by one) until some code **catches** it.
 
 ~~~cpp
@@ -517,6 +538,16 @@ try {
 - A **\`try\` block** guards code that may throw. If nothing throws, the \`catch\` blocks are skipped.
 - A **\`catch\` block** names the kind of error it handles. \`error.what()\` returns the message text you supplied.
 - Catch by **\`const&\`** (as above): no copy, and the full error object is preserved.
+
+You choose the kind of error when you throw. A second kind, for "the value is fine but it breaks a limit", looks the same:
+
+~~~cpp
+if (reading.value > reading.limit) {
+    throw std::runtime_error(reading.name + " exceeds its limit");
+}
+~~~
+
+A \`catch (const std::runtime_error& error)\` handles that one and ignores \`invalid_argument\`, so you can react differently to different problems.
 
 ### The standard error types
 
@@ -545,7 +576,7 @@ The **first** matching \`catch\` wins, so list the specific types first and the 
 
 ### What happens if nobody catches it?
 
-The exception travels up to \`main\` and past it, and the program is terminated: *terminate called after throwing an instance of 'std::invalid_argument'*, with the message in \`what()\`. Text still waiting in the output buffer can be lost when that happens, so a crash may leave your console looking emptier than you expect. The cure is to catch at a level where you know what to do about it.
+The exception travels up to \`main\` and past it, and the program is terminated: *terminate called after throwing an instance of 'std::invalid_argument'*, with the message in \`what()\`. Text you printed just before the crash may never appear (printed text waits in a holding area before it reaches the screen, and a crash can throw that waiting text away), so a crash may leave your console looking emptier than you expect. The cure is to catch at a level where you know what to do about it.
 
 ### Exceptions or if statements?
 

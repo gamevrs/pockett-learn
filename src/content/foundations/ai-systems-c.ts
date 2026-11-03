@@ -19,6 +19,7 @@ export const aiLessonsC: ConceptLesson[] = [
         kind: "explain",
         title: "Models read in tokens",
         body: P(
+          "A taxi has a fixed number of seats, and the fare depends on the distance. A model has a fixed number of tokens it can hold, and the bill depends on how many tokens you use. You met both ideas in the primer; here you will measure them.",
           "A language model does not see letters or words. Text is first cut into **tokens**: pieces that are usually a short common word, part of a longer word, a few digits or a punctuation mark. Everything is counted, limited and **priced** in tokens.",
           "Real tokenizers are learned from data; the toy one below follows the same spirit. Common short words are one token each, long or rare words break into several, numbers split into groups of digits, and other scripts cost more per character. Pick a sample, then edit the text.",
         ),
@@ -36,7 +37,7 @@ export const aiLessonsC: ConceptLesson[] = [
         kind: "explain",
         title: "One window for everything",
         body: P(
-          "A model can only attend to a limited number of tokens at once: its **context window**. Everything shares it: the rules you give it, the conversation so far, the passages you retrieved, the user’s question, **and the answer it is about to write**.",
+          "A model can only attend to a limited number of tokens at once: its **context window**. Everything shares it: the rules you give it, the conversation so far, any passages you found with a search and pasted in (the next lessons build on this), the user’s question, **and the answer it is about to write**.",
           "If the total is too large the request fails, or an old part is silently dropped. Even when it fits, more is not better: long prompts cost more, run slower, and models can overlook a detail buried in the middle. Below, the request is too big. Slide things until it fits.",
         ),
         widget: { type: "ai-budget", props: {} },
@@ -53,7 +54,7 @@ export const aiLessonsC: ConceptLesson[] = [
         kind: "explain",
         title: "Prefill, decode and sharing the GPU",
         body: P(
-          "Answering has two phases. **Prefill** reads the whole prompt in one go, which is fast because the GPU does it in parallel. **Decode** writes the answer **one token at a time**, and each new token needs a full pass over the model. Decode is the slow part, and it is limited by how fast the GPU can fetch the model’s weights from memory.",
+          "The model is a huge pile of learned numbers (its **weights**), and a **GPU** is the kind of chip that does that maths quickly, many pieces at once. Answering has two phases. **Prefill** reads the whole prompt in one go, which is fast because the GPU does it in parallel. **Decode** writes the answer **one token at a time**, and each new token needs a full pass over the model. Decode is the slow part, and it is limited by how fast the GPU can fetch the model’s weights from memory.",
           "That gives a trick: a decode step costs almost the same whether it serves one user or several, so the GPU can serve **a batch** of requests per step. More users per step means more total work per second and a lower cost per token, but each user waits slightly longer for each token.",
           "Slide the batch size. Notice how *per user* speed falls while *GPU total* and cost per million tokens improve.",
         ),
@@ -92,7 +93,7 @@ export const aiLessonsC: ConceptLesson[] = [
         ),
         widget: { type: "ai-infer", props: { minRate: 20, maxCost: 3, maxFirstS: 3, startMode: "cold" } },
         question: { type: "widget", goal: { ok: true, cold: false, streaming: true } },
-        explanation: "No amount of batching or streaming hides a 25-second load: only a **warm** instance does. The usual answers are a small number of always-on instances, scheduled pre-warming before busy hours, smaller or quantized models that load faster, and a queue with an honest “warming up” message for the rare cold request.",
+        explanation: "No amount of batching or streaming hides a 25-second load: only a **warm** instance does. The usual answers are a small number of always-on instances, scheduled pre-warming before busy hours, smaller or quantized models (stored with shorter numbers, so they take less memory) that load faster, and a queue with an honest “warming up” message for the rare cold request.",
       },
       {
         kind: "code",
@@ -138,6 +139,7 @@ export const aiLessonsC: ConceptLesson[] = [
         kind: "explain",
         title: "From answering to acting",
         body: P(
+          "A new intern wants to buy supplies with the company card. They suggest the purchase, the manager's checklist decides whether it is allowed, and finance approves the big ones. An AI **agent** works the same way: the model suggests, the code around it checks.",
           "On its own a model only produces text. **Tool calling** lets it do things. You describe a menu of tools (look up an order, issue a refund, send an email) and when the model decides it needs one, it replies with a **structured request** instead of prose: *“call `lookup_order` with `order_id = 4417`”*.",
           "A program around the model, the **harness**, receives that request, decides whether to run it, runs it, and feeds the **result** back to the model. The model reads it and either asks for another tool or writes the final answer. That cycle is the **agent loop**.",
           "Here is a bike-repair help desk. A customer’s wheel arrived bent. Press Next and follow who does what.",
@@ -184,8 +186,8 @@ parameters:
         kind: "explain",
         title: "Guardrails around the loop",
         body: P(
-          "A production agent is mostly **guardrails**. The ones worth having on day one:",
-          "- **Validate** every request against the tool’s schema; reject unknown tools and out-of-range values.\n- **Allowlist per task**: a refund conversation does not need `send_email`.\n- **Limits**: a maximum number of steps, a spend cap per run, a timeout for every tool call.\n- **Retries with care**: back off between attempts, and give writes an **idempotency key** so a retry cannot happen twice.\n- **Human approval** for anything costly or irreversible.\n- **Tracing**: record every proposal, check, result and decision under one run id, so you can replay what happened.",
+          "A production agent is mostly **guardrails**: rules and checks, like the railings on a staircase, that stop a mistake from becoming harm. The ones worth having on day one:",
+          "- **Validate** every request against the tool’s schema (the written description of its allowed fields); reject unknown tools and out-of-range values.\n- **Allowlist per task** (a short list of tools that are permitted, everything else is refused): a refund conversation does not need `send_email`.\n- **Limits**: a maximum number of steps, a spend cap per run, a timeout for every tool call.\n- **Retries with care**: back off between attempts, and give writes an **idempotency key** (a unique ticket number per action) so a retry cannot happen twice.\n- **Human approval** for anything costly or irreversible.\n- **Tracing**: record every proposal, check, result and decision under one run id, so you can replay what happened.",
         ),
       },
       {
@@ -275,9 +277,10 @@ parameters:
         kind: "explain",
         title: "Plugging systems into assistants",
         body: P(
+          "Think of the sockets on a wall: one standard shape means any lamp or kettle plugs into any socket. Tool servers aim to do the same for AI assistants.",
           "Your clinic has a booking system, a patient-notes database and an opening-hours page. You want AI assistants to be able to use them. If every assistant needs its own custom integration with every system, ten of each means a hundred integrations to build and secure.",
           "A **tool-server protocol** removes the multiplication. The best-known one is the **Model Context Protocol (MCP)**, an open standard introduced by Anthropic in 2024 and since adopted by many AI applications. You write **one server** for a system; any application that speaks the protocol can use it.",
-          "The roles: the AI application the user sees is the **host**; inside it, a **client** keeps a connection to one **server**. The server is a small program that **announces what it offers**, and answers requests to use it, as JSON messages over a local pipe or over HTTP. Here is what a clinic-booking server announces. Tap through it.",
+          "The roles: the AI application the user sees is the **host**; inside it, a **client** keeps a connection to one **server**. The server is a small program that **announces what it offers**, and answers requests to use it, as JSON messages (plain text made of labelled fields) over a local pipe or over HTTP. Here is what a clinic-booking server announces. Tap through it.",
         ),
         widget: { type: "ai-mcp", props: { mode: "browse" } },
       },
@@ -339,7 +342,7 @@ parameters:
         title: "Securing a tool server",
         body: P(
           "A tool server is an API that something **unpredictable** will call. Treat it as one, and then a bit more carefully:",
-          "- **Authenticate the user, not just the app.** The assistant should act with the **signed-in person’s** permissions (remote servers typically use OAuth for this), never a shared all-powerful key. Otherwise any user can borrow the server’s full power by asking nicely.\n- **Authorize per tool**, and split read from write. Decide which tools are allowed, which need a person to approve, and which should not exist for this deployment at all.\n- **Check on the server** that the record belongs to the caller; never trust an id sent by the model.\n- **Keep tools small and separate**: a bulk-export tool in the same server as booking is an accident waiting for a prompt.\n- **Treat tool output and tool descriptions as untrusted text.** Resources, web pages and other users’ fields can carry injected instructions, and a third-party server can change a tool’s description after you approved it. Pin versions and review changes.\n- **Rate-limit and size-limit** calls and results.\n- **Log everything**: who, which tool, which arguments, what was decided, including refusals.",
+          "- **Authenticate the user, not just the app.** The assistant should act with the **signed-in person’s** permissions (remote servers typically use OAuth, a standard way to let an app act on your behalf without learning your password, for this), never a shared all-powerful key. Otherwise any user can borrow the server’s full power by asking nicely.\n- **Authorize per tool**, and split read from write. Decide which tools are allowed, which need a person to approve, and which should not exist for this deployment at all.\n- **Check on the server** that the record belongs to the caller; never trust an id sent by the model.\n- **Keep tools small and separate**: a bulk-export tool in the same server as booking is an accident waiting for a prompt.\n- **Treat tool output and tool descriptions as untrusted text.** Resources, web pages and other users’ fields can carry injected instructions, and a third-party server can change a tool’s description after you approved it. Pin versions and review changes.\n- **Rate-limit and size-limit** calls and results.\n- **Log everything**: who, which tool, which arguments, what was decided, including refusals.",
         ),
       },
       {

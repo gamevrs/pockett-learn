@@ -9,7 +9,8 @@
 //   checks   a project check never shows a raw TypeError (pit-wall: submit the untouched starter).
 
 const LESSON = "fnd-bits-1-switches";
-const POSITION_KEY = "pockett_lesson_position_v1";
+const POSITION_KEY = "pockett_lesson_position_v1"; // legacy bare-number format, still read
+const POSITION_KEY_V2 = "pockett_lesson_position_v2";
 
 export async function checkLearn(h) {
   const { send, evaluate, inPage, waitFor, sleep, clickAt, record, open, screenshot, getCtx, BASE } = h;
@@ -64,7 +65,7 @@ export async function checkLearn(h) {
   const waitStep = (n) => waitFor((n) => Number(/Step (\d+) of/.exec(document.querySelector('[aria-label^="Step "]')?.getAttribute("aria-label") ?? "")?.[1]) === n, n, 8000, 100);
   const waitText = (src) => waitFor((src) => new RegExp(src).test(document.body.innerText), src, 8000, 100);
   const pressed = (v) => inPage((v) => document.querySelector(`button[aria-label^="Bit worth ${v}:"]`)?.getAttribute("aria-pressed") === "true", v);
-  const stored = () => evaluate(`localStorage.getItem(${JSON.stringify(POSITION_KEY)})`);
+  const stored = () => evaluate(`localStorage.getItem(${JSON.stringify(POSITION_KEY_V2)})`);
 
   /** Clean browser state (theme kept, optional lesson position seeded), then open the page and wait for the player. */
   async function fresh(path, positions) {
@@ -153,7 +154,7 @@ export async function checkLearn(h) {
   await key("Enter");
   await key("Enter");
   await waitStep(3);
-  await t("progress is saved per step", ((await stored()) ?? "").includes(`"${LESSON}":2`), String(await stored()));
+  await t("progress is saved per step", ((await stored()) ?? "").includes(`"${LESSON}":{"s":2`), String(await stored()));
   await clickWhere(() => document.querySelector('a[aria-label="Back to Foundations"]'));
   await waitFor(() => location.pathname === "/learn", null, 10000, 100);
   await t("closing a lesson with nothing typed leaves straight away", (await evaluate("location.pathname")) === "/learn");
@@ -168,7 +169,7 @@ export async function checkLearn(h) {
 
   // garbage in storage never breaks a lesson
   await fresh(`/learn/${LESSON}`, null);
-  await evaluate(`localStorage.setItem(${JSON.stringify(POSITION_KEY)}, "{not json")`);
+  await evaluate(`localStorage.setItem(${JSON.stringify(POSITION_KEY)}, "{not json"); localStorage.setItem(${JSON.stringify(POSITION_KEY_V2)}, "{not json")`);
   await open(`/learn/${LESSON}`, 700);
   await waitFor(() => !!document.querySelector('[aria-label^="Step "]'), null, 20000, 150);
   await t("a corrupt saved position falls back to step 1", (await stepNo()) === 1);
@@ -176,11 +177,11 @@ export async function checkLearn(h) {
   await t("a saved step past the end falls back to step 1", (await stepNo()) === 1);
 
   // ───────────────────────── leaving a code step ─────────────────────────
-  // fnd-bits-5-text step 8 is a code step
-  await fresh("/learn/fnd-bits-5-text", { "fnd-bits-5-text": 7 });
+  // fnd-programs-1-instructions step 6 is a code step
+  await fresh("/learn/fnd-programs-1-instructions", { "fnd-programs-1-instructions": 5 });
   const monaco = await waitFor(() => typeof window.monaco !== "undefined" && window.monaco.editor.getEditors().length > 0 && !!document.querySelector(".monaco-editor .view-line"), null, 60000, 200);
   if (!monaco) return t("code step mounts the editor", false, "no editor");
-  await t("a code step resumes at step 8", (await stepNo()) === 8);
+  await t("a code step resumes at step 6", (await stepNo()) === 6);
   const lines = () => inPage(() => window.monaco.editor.getEditors()[0].getModel().getLineCount());
   const starter = await inPage(() => window.monaco.editor.getEditors()[0].getModel().getValue());
   await clickWhere(() => document.querySelector(".monaco-editor .view-lines"));
@@ -198,9 +199,9 @@ export async function checkLearn(h) {
   await clickWhere(() => [...document.querySelectorAll('[role="alertdialog"] a')].find((a) => a.textContent.includes("Leave anyway")));
   await waitFor(() => location.pathname === "/learn", null, 10000, 100);
   await t("'Leave anyway' leaves", (await evaluate("location.pathname")) === "/learn");
-  await open("/learn/fnd-bits-5-text", 900);
+  await open("/learn/fnd-programs-1-instructions", 900);
   await waitFor(() => typeof window.monaco !== "undefined" && window.monaco.editor.getEditors().length > 0 && !!document.querySelector(".monaco-editor .view-line"), null, 60000, 200);
-  await t("reopening returns to the same code step with the starter code", (await stepNo()) === 8 && (await inPage(() => window.monaco.editor.getEditors()[0].getModel().getValue())) === starter);
+  await t("reopening returns to the same code step with the starter code", (await stepNo()) === 6 && (await inPage(() => window.monaco.editor.getEditors()[0].getModel().getValue())) === starter);
 
   // ───────────────────────── a terminal widget keeps its Enter ─────────────────────────
   // fnd-unix-4-shell step 3 is a terminal task

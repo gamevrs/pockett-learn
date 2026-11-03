@@ -18,100 +18,128 @@ export const chapter2: Chapter = {
       minutes: 35,
       xp: 110,
       concepts: ["stdin", "read_line", "String", "trim", "parse", "Result", "match", "expect", "turbofish"],
-      learn: md`### The intercom sends text
+      learn: md`### Text arrives, and it can be wrong
 
-A real program rarely knows its data in advance. It reads text from somewhere (a keyboard, a file, another program) and has to make sense of it. Standard input, **stdin**, is the simplest source. In this course the airlock intercom delivers a short script of four lines, and your program reads them one at a time.
+A radio operator hands you a note with a name, a depth and a site written on it. You cannot assume the note is tidy: there may be stray spaces, and the depth might say "40m" instead of "40". A program that receives information from outside has the same problem. The information arrives as **text**, even when it looks like a number, and it may be damaged.
+
+In this course the airlock intercom delivers four lines of text for you to read, one at a time:
+
+~~~text
+Mara Okoye
+35
+deep-ledge
+40m
+~~~
+
+(Some of them come with extra spaces around them.) You do not type anything: the lines arrive on **standard input**, usually called **stdin**, which is simply "the place a program reads its incoming text from".
+
+### Reading one line
 
 ~~~rust
 let mut line = String::new();
 std::io::stdin().read_line(&mut line).expect("could not read a line");
-println!("You typed: {}", line.trim());
+println!("You got: {}", line.trim());
 ~~~
 
-Take it apart:
+With the first line above, this prints \`You got: Mara Okoye\`. Take it apart piece by piece:
 
-- \`String::new()\` makes an empty, growable piece of text. A \`String\` **owns** its characters (lesson 11 is all about this). It has to be \`mut\` because reading will *add* to it.
-- \`std::io::stdin()\` gives access to standard input. \`read_line\` reads up to the next newline and **appends** it to the String you hand over.
-- \`&mut line\` means "lend \`read_line\` my String, and let it change it". The \`&mut\` is a **mutable reference**. You will learn the full story in lesson 10; for now read it as "here, you may write into this".
-- \`read_line\` returns \`std::io::Result<usize>\`: either the number of bytes it read, or an error. Rust will not let you ignore a possible failure silently. \`.expect("message")\` says: if it failed, stop the program and show this message. That is a sensible reaction when failing means something is badly broken. (Never use it on input a user might simply get wrong. That is what the rest of this lesson is for.)
+- \`String::new()\` makes an **empty piece of text that can grow**. That kind of text is called a \`String\`. We call the box \`line\`, and it needs \`mut\` because reading will add text to it.
+- \`std::io::stdin()\` is the way to reach standard input. \`.read_line(...)\` reads up to the next line break and **adds** it to the text you give it.
+- \`&mut line\` means "lend my box \`line\` out so that it can be changed". The \`&mut\` is how you let another piece of code write into your variable. Without it, \`read_line\` would have nowhere to put what it read. (Lesson 10 explains borrowing in full.)
+- \`read_line\` can fail, so it hands back a **result box**: a box that holds *either* the answer *or* an error. \`.expect("message")\` says: "if the box holds an error, stop the program and show this message; otherwise carry on". Use it only when failing means something is badly broken.
+- \`line.trim()\` gives the text without the invisible spaces and line break at both ends. This matters because \`read_line\` keeps the line break, so \`"Mara Okoye\n"\` is not the same as \`"Mara Okoye"\`.
 
-### Two gotchas of \`read_line\`
+### Keeping a line, and the next one
 
-1. The text includes the **newline** at the end. \`"Mara Okoye\n"\` is not the same as \`"Mara Okoye"\`. \`line.trim()\` returns the text without whitespace at both ends. (It returns a \`&str\`, a borrowed view into \`line\`. \`.to_string()\` makes an owned copy that you can keep after \`line\` changes. Lesson 11 explains both.)
-2. \`read_line\` **appends**. If you read twice into the same String you get both lines glued together. Call \`line.clear()\` before reading the next one, or use a fresh String.
+Two gotchas:
+
+1. \`trim()\` only *looks* at the text inside \`line\`. When you reuse \`line\` for the next read, that look disappears. To **keep** a copy, call \`.to_string()\`, which makes a separate piece of text that belongs to you.
+2. \`read_line\` **adds** to what is already there. Read twice into the same \`line\` and you get both lines glued together. Call \`line.clear()\` first to empty it.
 
 ~~~rust
 let mut line = String::new();
 std::io::stdin().read_line(&mut line).expect("no name");
-let diver = line.trim().to_string();
+let diver = line.trim().to_string();      // a kept copy: "Mara Okoye"
 
-line.clear();                                   // forget the first line
+line.clear();                             // empty the box again
 std::io::stdin().read_line(&mut line).expect("no depth");
 ~~~
 
 ### Text is not a number
 
-\`"35"\` is three characters, not the number 35. To convert you use \`parse\`. And converting can **fail**: what is the number in \`"40m"\`?
+\`"35"\` is the two characters 3 and 5, not the number thirty-five. To convert, you use \`parse\`. And converting can **fail**: what number is in \`"40m"\`? So \`parse\` hands back another result box, with one of two things in it:
 
-Many languages answer with an exception that flies up the call stack. Rust has none. Instead the failure is part of the type. \`parse\` returns a **\`Result\`**, an enum with exactly two shapes:
+- \`Ok(number)\`: it worked, here is the number.
+- \`Err(reason)\`: it failed, here is why.
 
-~~~rust
-enum Result<T, E> {
-    Ok(T),     // it worked, here is the value
-    Err(E),    // it failed, here is why
-}
-~~~
+You cannot use the box as a number until you have looked inside. The tool for looking inside is \`match\`.
 
-\`"35".parse::<i32>()\` has type \`Result<i32, ParseIntError>\`. You cannot use it as an \`i32\` until you have dealt with the \`Err\` case. That is the whole point: a forgotten error check is a compile error, not a crash in production.
+### \`match\`, the first time
+
+\`match\` opens the box and has **one branch for each thing that could be inside**. Each branch has a pattern on the left of \`=>\` and what to do on the right. The first pattern that fits runs.
 
 ~~~rust
-match "35".parse::<i32>() {
-    Ok(depth) => println!("depth is {depth}"),
+let text = "35";
+match text.parse::<i32>() {
+    Ok(number) => println!("got {number}"),
     Err(problem) => println!("not a number: {problem}"),
 }
 ~~~
 
-### \`match\`
+~~~text
+got 35
+~~~
 
-\`match\` compares a value against **patterns**, top to bottom, and runs the first arm that fits. \`Ok(depth)\` is a pattern that matches an \`Ok\` and **binds** its content to the name \`depth\`; \`Err(_)\` matches any error and ignores it with \`_\`. Two rules make \`match\` safe:
+- \`text.parse::<i32>()\` means "try to turn \`text\` into an \`i32\` whole number". The \`::<i32>\` says which kind of number to build.
+- \`Ok(number)\` fits when the box holds a success, and it also gives the name \`number\` to what is inside, for use on the right.
+- \`Err(problem)\` fits when the box holds an error, and names the reason \`problem\`.
 
-1. It must be **exhaustive**: every possible value is covered by some arm. Forget \`Err\` and the compiler refuses (E0004: non-exhaustive patterns: \`Err(_)\` not covered).
-2. \`match\` is an **expression**. It has a value, so you can write \`let depth = match ... { ... };\`, as long as every arm produces the same type.
+Change \`text\` to \`"40m"\` and the other branch runs:
+
+~~~text
+not a number: invalid digit found in string
+~~~
+
+The reason prints as a sentence when you use \`{}\`.
+
+### A match that gives back a number
+
+A \`match\` is a value, like an \`if\`. You can put the number it produces straight into a variable, as long as every branch produces the same type of value:
 
 ~~~rust
-let depth: i32 = match text.trim().parse::<i32>() {
+let depth: i32 = match line.trim().parse::<i32>() {
     Ok(n) => n,
     Err(_) => {
         println!("not a whole number, using 0");
-        0                                   // the last expression of a block is its value
+        0
     }
 };
 ~~~
 
-The \`::<i32>\` after \`parse\` is nicknamed the **turbofish**. It tells \`parse\` which type to produce. You can say the same thing with an annotation on the variable (\`let n: i32 = ...\`), but one of the two is required, since \`parse\` can build many types: without it you get *error: type annotations needed*.
+- \`Ok(n) => n\` hands the number back.
+- \`Err(_)\`: the underscore means "I do not need to know the reason".
+- A branch with braces can do several things. The last line, **without a semicolon**, is the value it hands back.
 
-### What does an Err look like?
+If the line holds \`35\`, \`depth\` is 35. If it holds \`40m\`, the message prints and \`depth\` is 0. Either way the program keeps running instead of crashing.
 
-\`{:?}\` shows the full value and \`{}\` the sentence:
+### Sending a text to the board
 
-~~~text
-{:?}  ->  ParseIntError { kind: InvalidDigit }
-{}    ->  invalid digit found in string
-~~~
-
-The kinds you will meet are \`Empty\` (cannot parse integer from empty string), \`InvalidDigit\`, \`PosOverflow\` (number too large to fit in target type) and \`NegOverflow\`. A trailing newline is an invalid digit, which is why \`trim()\` comes before \`parse()\`.
-
-### A word about \`&\`
-
-From now on, when you send a \`String\` or a \`Vec\` to the board you write a leading \`&\`: \`scene("diver", &diver);\`. Small values such as numbers and booleans can be passed as they are. The \`&\` **lends** the text to \`scene\` instead of handing it over. Without it, \`scene\` would take it away from you and your own code could not use it afterwards. Lesson 9 shows exactly why.
+From now on, when you send a \`String\` to the board you write a leading \`&\`: \`scene("diver", &diver);\`. The \`&\` lends the text to \`scene\`. Without it, \`scene\` would take the text away from you and you could not use it afterwards. Lesson 9 shows exactly why.
 
 ### Common mistakes
 
 - Forgetting \`mut\` on the String: error[E0596]: cannot borrow \`line\` as mutable, as it is not declared as mutable.
 - Writing \`read_line(line)\` or \`read_line(&line)\` instead of \`&mut line\`: error[E0308]: mismatched types.
 - Not clearing the String between reads.
-- Calling \`parse\` on text that still has its newline.
-- Using \`.unwrap()\` on a parse of user input. It panics with \`called Result::unwrap() on an Err value\` the first time someone types "12kg".`,
+- Calling \`parse\` on text that still has its line break. Always \`trim()\` first.
+
+### Going further (optional)
+
+- The result box is an ordinary Rust enum with exactly two shapes, which you will build yourself in lesson 13: \`enum Result<T, E> { Ok(T), Err(E) }\`. \`"35".parse::<i32>()\` has the type \`Result<i32, ParseIntError>\`.
+- Printing the error with \`{:?}\` shows its full structure, \`ParseIntError { kind: InvalidDigit }\`; \`{}\` gives the sentence. The kinds you will meet are \`Empty\`, \`InvalidDigit\`, \`PosOverflow\` and \`NegOverflow\` (a number too big for the type). A leftover line break is an invalid digit, which is why \`trim()\` comes before \`parse()\`.
+- \`match\` must cover every possible shape. Forget the \`Err\` branch and the compiler refuses to build: E0004, non-exhaustive patterns.
+- You can ask for the type with a variable annotation instead of the \`::<i32>\` form (nicknamed the **turbofish**): \`let n: i32 = text.parse().unwrap();\`. One of the two is required, since \`parse\` can build many types.
+- \`.unwrap()\` is like \`.expect()\` without a message. On a parse of something a person typed, it stops the program the first time someone types "12kg".`,
       mission: md`The airlock has an intercom, and divers radio in their requests as text: their name, the depth they want, the dive site, and sometimes a bonus depth typed by someone in a hurry. Names come with stray spaces, and one of the numbers contains a typo. The airlock desk must not crash on either.
 
 Read the four lines of the request, clean them up, and parse the depths. When this lesson passes, the **Airlock desk** lights up with the diver, site and depth.`,
@@ -248,7 +276,7 @@ assert(lines.includes('"40m" is not a whole number: invalid digit found in strin
       concepts: ["if", "else if", "if as an expression", "bool logic", "match on numbers", "ranges in patterns", "exhaustive match", "blocks as values", "conditions are booleans", "separate ifs vs else-if chain"],
       learn: md`### Why a condition? What does it give back?
 
-Programs constantly have to answer questions: "is the tank below 20%?", "is the hatch sealed?", "did the crew count change?". A **condition** is exactly such a question, written so that the only possible answers are *yes* or *no*. Rust evaluates it to one single value of type \`bool\`: \`true\` or \`false\`. An \`if\` does nothing mysterious. It just asks "did I get \`true\`?" and runs its block if so.
+Programs constantly have to answer questions: "is the tank below 20%?", "is the hatch sealed?", "did the crew count change?". A **condition** is exactly such a question, written so that the only possible answers are *yes* or *no*. Rust evaluates it to a single value of type \`bool\`: \`true\` or \`false\`. An \`if\` does nothing mysterious. It asks "did I get \`true\`?" and runs its block if so.
 
 You can look at that value yourself, because it is an ordinary value you can store and print:
 
@@ -264,27 +292,38 @@ true
 false
 ~~~
 
-So \`if tank_pct < 20 { ... }\` is the same as computing \`true\` first and then testing it. Anything that produces a \`bool\` can be a condition.
+Now the smallest \`if\`: ask the question, and run the braces only when the answer is yes.
 
-### Kinds of conditions you can write
+~~~rust
+if tank_pct < 20 {
+    println!("low");
+}
+~~~
+
+~~~text
+low
+~~~
+
+There are no parentheses around the condition. Here are the kinds of question you can ask for now:
 
 | Kind | Example | What it asks |
 | --- | --- | --- |
 | Comparison | \`depth > 40\`, \`crew <= 3\`, \`crew != 0\` | How do two numbers relate? |
 | Equality | \`crew == 6\`, \`status == "OK"\` | Are they the same? (text works too, and is case-sensitive) |
-| Empty text or list | \`name.is_empty()\` | Is there nothing in it? |
-| Contains / starts / ends | \`log.contains("leak")\`, \`tag.starts_with("HX")\` | Does this text have that piece? |
-| Inside a range | \`(20..=49).contains(&o2)\` | Is the value between two ends? (same as \`o2 >= 20 && o2 <= 49\`) |
-| A pattern test | \`matches!(crew, 4..=6)\` | Does the value fit this pattern? |
-| A method that returns a bool | \`ch.is_ascii_digit()\` | Whatever the method name says |
-| Both true | \`depth <= 40 && pumps_online\` | Are both parts yes? |
-| The opposite | \`!pumps_online\` | Is it not so? |
+| Both true | \`depth <= 40 && pumps_online\` | Are both parts yes? (\`&&\` reads "and") |
+| The opposite | \`!pumps_online\` | Is it not so? (\`!\` reads "not") |
 
-What Rust does **not** have: truthiness. An integer, a string or an empty list is never "true-ish" or "false-ish". You always have to write the actual yes/no test (\`crew > 0\`, \`!name.is_empty()\`).
+A fourth tool joins questions with "or": two vertical bars, so \`depth > 40 || !pumps_online\` is yes when at least one side is yes.
 
-Conditions can work **together**: \`&&\` (and) and \`||\` (at least one, "or") combine several into one answer. They can also be **tried in order**, or be **independent**. That difference trips up many beginners, so compare these two with \`o2 = 15\`:
+Rust has no "truthiness": a number or a piece of text is never quietly counted as yes or no. You always write the actual question (\`crew > 0\`).
+
+### Conditions together, and conditions in order
+
+Several \`if\` questions can be **independent** (every one is asked), or **tried in order** (the first yes wins). That difference trips up many beginners, so compare the two with \`let o2 = 15;\`:
 
 ~~~rust
+let o2 = 15;
+
 // separate ifs: every one is asked
 if o2 < 50 { println!("low"); }
 if o2 < 20 { println!("critical"); }
@@ -305,7 +344,7 @@ critical
 critical
 ~~~
 
-The first pair prints two lines because both questions are true. The chain prints one line because it stops at the first yes, so put the narrowest test first. When all the tests are about **one value**, a \`match\` (further down) says it more clearly than a long chain of \`else if\`.
+The first pair prints two lines because both questions are true. The chain prints one line because it stops at the first yes, so put the narrowest test first. \`else\` is the "none of the above" branch. When all the tests are about **one value**, a \`match\` (further down) says it more clearly than a long chain.
 
 ### How to pick the condition
 
@@ -313,7 +352,7 @@ The first pair prints two lines because both questions are true. The chain print
 2. Turn it into a yes/no test: \`o2 < 20\`.
 3. Check the edge value. What should happen at exactly 20? If it counts as danger, you need \`<=\`, not \`<\`.
 
-### \`if\` needs a real bool
+### A chain with real numbers
 
 ~~~rust
 if planned_depth > 40 {
@@ -325,7 +364,7 @@ if planned_depth > 40 {
 }
 ~~~
 
-There are no parentheses around the condition. The condition must be a \`bool\`: Rust has no "truthiness", so \`if crew { ... }\` with a number is an error, not a quiet check for zero.
+With \`planned_depth\` at 35 the first question says no, the second says yes, so it prints \`mid-water\`. The condition must be a real \`bool\`. \`if crew { ... }\` with a number is an error, not a quiet check for zero:
 
 ~~~text
 error[E0308]: mismatched types
@@ -335,44 +374,31 @@ error[E0308]: mismatched types
   |        ^^^^ expected \`bool\`, found \`u32\`
 ~~~
 
-Comparisons (\`==\`, \`!=\`, \`<\`, \`<=\`, \`>\`, \`>=\`) produce bools. Combine them with \`&&\` (and), \`||\` (or) and \`!\` (not). \`&&\` and \`||\` are **short-circuit**: the right side is only evaluated if it is needed. You can only compare values of the **same** type (\`u32\` with \`i32\` is E0308, convert one side with \`as\`).
+You can only compare values of the **same** type (\`u32\` with \`i32\` is E0308; convert one side with \`as\`).
 
-### \`if\` is an expression
+### \`if\` gives back a value
 
-In Rust almost everything produces a value, including \`if\`. That removes the need for a "ternary operator":
+An **expression** is a piece of code that produces a value. In Rust almost everything is one, including \`if\`. So you can store the answer of an \`if\` straight in a variable:
 
 ~~~rust
 let zone = if planned_depth < 10 { "shallow" } else if planned_depth < 30 { "mid-water" } else { "deep" };
-~~~
-
-Two rules follow from "it is an expression":
-
-1. **Every branch must produce the same type.** \`if x { 1 } else { "one" }\` is error[E0308]: \`if\` and \`else\` have incompatible types.
-2. **An \`if\` used as a value needs an \`else\`**, otherwise there is nothing to produce when the condition is false. Without it you get error[E0317]: \`if\` may be missing an \`else\` clause.
-
-### The last expression is the value, and a \`;\` changes that
-
-A block \`{ ... }\` is itself an expression: its value is its last expression, **the one without a semicolon**. A semicolon turns an expression into a statement that produces nothing (the "unit" value \`()\`).
-
-~~~rust
-let verdict = if cleared { "GO" } else { "NO-GO" };      // fine
-let verdict = if cleared { "GO"; } else { "NO-GO"; };    // mismatched types: expected \`&str\`, found \`()\`
+println!("{zone}");
 ~~~
 
 ~~~text
-error[E0308]: mismatched types
-  |
-  |     let verdict = if cleared { "GO"; } else { "NO-GO"; };
-  |                                ----^ expected \`&str\`, found \`()\`
-  |                                |
-  |                                help: remove this semicolon to return this value
+deep
 ~~~
 
-When you see "expected X, found \`()\`", look for a stray semicolon at the end of a block.
+(\`planned_depth\` is 35 here.) Two rules follow:
+
+1. **Every branch must produce the same type.** \`if x { 1 } else { "one" }\` is error[E0308]: \`if\` and \`else\` have incompatible types.
+2. **An \`if\` used as a value needs an \`else\`**, otherwise there is nothing to produce when the answer is no. Without it you get error[E0317]: \`if\` may be missing an \`else\` clause.
+
+Write the value in each branch **without** a \`;\` after it. A semicolon would throw the value away (the details are under *Going further*).
 
 ### \`match\`: choose by pattern
 
-In the last lesson you used \`match\` on a \`Result\`. It works on numbers too, and the patterns can be a value, a **range** (\`a..=b\` includes both ends), a list of alternatives with \`|\`, or a catch-all \`_\`.
+You met \`match\` briefly in lesson 4, when you opened a result box. Here it gets its full explanation. \`match\` takes one value and compares it with a list of **patterns**, top to bottom, and runs the first one that fits. A pattern can be a single value, a **range** (\`a..=b\` includes both ends), a list of alternatives separated by \`|\`, or the catch-all \`_\`, which means "anything else".
 
 ~~~rust
 let o2_whole = oxygen_pct as u32;
@@ -391,7 +417,9 @@ let watch = match crew {
 };
 ~~~
 
-The arms are checked from the top. The compiler also checks that **together they cover every possible value**. That is **exhaustiveness**, one of the best features of the language: delete the \`_\` arm above and Rust points at exactly what you forgot.
+With \`oxygen_pct\` at 87.5 the cast gives 87, which fits \`50..=100\`, so \`o2_status\` is \`"OK"\`. With \`crew\` at 6, \`watch\` is \`"full watch"\`.
+
+The arms are checked from the top. Rust also checks that **together they cover every possible value**. That is called **exhaustiveness**, and it is one of the best features of the language: delete the \`_\` arm above and the compiler points at exactly what you forgot.
 
 ~~~text
 error[E0004]: non-exhaustive patterns: \`101_u32..=u32::MAX\` not covered
@@ -400,11 +428,9 @@ error[E0004]: non-exhaustive patterns: \`101_u32..=u32::MAX\` not covered
   |                           ^^^^^^^^ pattern \`101_u32..=u32::MAX\` not covered
 ~~~
 
-A **guard** adds an extra condition to a pattern: \`n if n > 100 => "SENSOR FAULT"\`. The guard is run only when the pattern fits, and the compiler cannot count a guarded arm toward exhaustiveness, so you still need a general arm last.
-
 ### if or match?
 
-Use \`if\` for a yes/no question or a couple of unrelated conditions. Use \`match\` when you are sorting **one value** into cases, and especially when the cases are numbers, ranges, or (soon) the variants of an enum. A \`match\` tells the reader "these are all the cases" and the compiler agrees.
+Use \`if\` for a yes/no question or a couple of unrelated conditions. Use \`match\` when you are sorting **one value** into cases, especially numbers, ranges, or (soon) the variants of an enum. A \`match\` tells the reader "these are all the cases" and the compiler agrees.
 
 ### Common mistakes
 
@@ -412,7 +438,31 @@ Use \`if\` for a yes/no question or a couple of unrelated conditions. Use \`matc
 - Different types in the two branches, or a missing \`else\` when you use the \`if\` as a value.
 - A semicolon after the value in a branch.
 - Overlapping or missing ranges. Mind \`..=\` (inclusive): \`0..=19\` and \`20..=49\` do not overlap or leave gaps.
-- Comparing floats to ranges. Patterns work on integers and chars, so convert first (\`oxygen_pct as u32\`) or use \`if\`.`,
+- Comparing floats to ranges. Patterns work on whole numbers and chars, so convert first (\`oxygen_pct as u32\`) or use \`if\`.
+
+### Going further (optional)
+
+**More questions you can ask.** Text and lists have yes/no helpers: \`name.is_empty()\`, \`log.contains("leak")\`, \`tag.starts_with("HX")\`. A range can test a number: \`(20..=49).contains(&o2)\` is the same as \`o2 >= 20 && o2 <= 49\`. \`matches!(crew, 4..=6)\` asks "does this value fit this pattern?". \`&&\` and \`||\` are **short-circuit**: the right side is only worked out if the left side has not already settled the answer.
+
+**The last expression is the value.** A block \`{ ... }\` is itself an expression: its value is its last line, the one **without** a semicolon. A semicolon turns that line into an instruction that produces nothing (the "unit" value \`()\`).
+
+~~~rust
+let verdict = if cleared { "GO" } else { "NO-GO" };      // fine
+let verdict = if cleared { "GO"; } else { "NO-GO"; };    // mismatched types: expected \`&str\`, found \`()\`
+~~~
+
+~~~text
+error[E0308]: mismatched types
+  |
+  |     let verdict = if cleared { "GO"; } else { "NO-GO"; };
+  |                                ----^ expected \`&str\`, found \`()\`
+  |                                |
+  |                                help: remove this semicolon to return this value
+~~~
+
+When you see "expected X, found \`()\`", look for a stray semicolon at the end of a block.
+
+**Guards.** A **guard** adds an extra condition to a pattern: \`n if n > 100 => "SENSOR FAULT"\`. The guard is checked only when the pattern fits, and the compiler cannot count a guarded arm toward exhaustiveness, so you still need a general arm last.`,
       mission: md`The alarm board in the control room must tell the crew three things at a glance: which depth zone the dive request is in, whether the oxygen supply is healthy, and how the watch is staffed. Then it combines everything into one verdict: **GO** or **NO-GO**.
 
 You will decide with \`if\`, with \`match\` on a number and with a combination of conditions. When this lesson passes, the **Alarm board** lights up with your decisions.`,
@@ -554,11 +604,11 @@ assert(lines.includes("Dive status: GO"), 'Print the line "Dive status: GO".');`
       minutes: 35,
       xp: 120,
       concepts: ["loop", "while", "for", "ranges", "step_by", "break with a value", "continue", "labels", "choosing a loop", "range end is excluded"],
-      learn: md`### Three loops
+      learn: md`### Repeating a job
 
-Rust has three ways to repeat code.
+Some jobs repeat. Stamp five envelopes. Fill a tank until it is full. Check every seal on the hull. You would not write the same line five hundred times, so you tell the computer "do this again" and say when to stop. That is a **loop**. Each trip through the loop body is called a **lap**.
 
-**\`for\`** walks through a sequence. It is the one you will use most.
+Rust has three loops. Here is one of each, with what it prints:
 
 ~~~rust
 for marker in 1..=3 {
@@ -566,16 +616,27 @@ for marker in 1..=3 {
 }
 ~~~
 
-**\`while\`** repeats as long as a condition holds.
+~~~text
+marker 1
+marker 2
+marker 3
+~~~
+
+**\`for\`** walks through a sequence of values, one lap per value. \`1..=3\` is a **range**: the whole numbers from 1 up to and including 3. \`marker\` is a new variable that holds the current number on each lap.
 
 ~~~rust
 let mut reserve = 87.5;
 while reserve > 50.0 {
     reserve -= 12.5;
 }
+println!("{reserve}");
 ~~~
 
-**\`loop\`** repeats forever, until you \`break\`.
+~~~text
+50
+~~~
+
+**\`while\`** repeats as long as its condition is true. Before every lap it asks the yes/no question again (the same kind of question as in an \`if\`). Here the laps leave \`reserve\` at 75.0, then 62.5, then 50.0, and then the question "is it above 50?" says no, so the loop stops. (A float with no fraction prints as \`50\`.)
 
 ~~~rust
 let mut cycles = 0;
@@ -585,43 +646,43 @@ loop {
         break;
     }
 }
+println!("{cycles}");
 ~~~
 
-(A loop that never ends is stopped after a few seconds, with a message that your program ran for too long.)
+~~~text
+5
+~~~
 
-### Which loop, and what is a range?
+**\`loop\`** repeats forever, until something inside says \`break\`. Here \`cycles\` counts 1, 2, 3, 4, 5 and the \`break\` happens on the fifth lap.
 
-A loop repeats a block. There are two different reasons to repeat:
+### Which loop?
 
 | Situation | Loop |
 | --- | --- |
-| I know how many times, or I have a collection to walk through | \`for\` |
-| I wait until something changes (the tank is full) | \`while\` (its condition is the same yes/no question as in an \`if\`, asked again before every lap) |
+| I know how many times, or I have a range of numbers to walk through | \`for\` |
+| I wait until something changes (the tank is full) | \`while\` |
 | Repeat until I decide inside, or I need a value out | \`loop\` + \`break\` |
-| Must run at least once | Rust has no do-while: use \`loop\` and put the \`break\` test at the end |
 
-A range is just a sequence of whole numbers with a start and an end, and **the end is not included**. The count of numbers is simply end minus start:
+If nothing inside a loop ever makes the \`while\` question turn to "no" (or ever reaches the \`break\`), the loop never ends. pockett stops a program that runs for a few seconds and tells you it ran too long. When that happens, look at the variable the condition depends on and check that something inside the loop changes it.
+
+### Ranges: where the end stops
+
+A range has a start and an end. **\`..\` leaves the end out, \`..=\` includes it.** The number of laps of \`a..b\` is just \`b - a\`.
 
 ~~~rust
 for n in 0..5 { print!("{n} "); }                  // 0 1 2 3 4
 for n in 2..6 { print!("{n} "); }                  // 2 3 4 5
+for n in 1..=4 { print!("{n} "); }                 // 1 2 3 4
 for n in (0..10).step_by(3) { print!("{n} "); }    // 0 3 6 9
-for n in (0..10).rev().step_by(3) { print!("{n} "); } // 9 6 3 0
 ~~~
 
-\`0..5\` gives five numbers, and they are exactly the valid positions of a five-item list (0 to 4), which is why the end is left out. A range never counts backwards by itself: \`5..2\` is empty. Use \`.rev()\` to go down.
-
-When the thing you want is the **items**, not the numbers, loop over the items directly. The same task three ways:
+\`.step_by(3)\` means "jump by 3 instead of by 1". Put parentheses around the range first. The mission uses this shape to mark every ten metres:
 
 ~~~rust
-let levels = vec![12, 18, 25];
-
-for i in 0..levels.len() { println!("{}", levels[i]); }          // by index
-for lvl in &levels { println!("{lvl}"); }                        // the items
-for (i, lvl) in levels.iter().enumerate() { println!("{i}: {lvl}"); } // item + counter
+for m in (10..=35).step_by(10) { print!("{m} "); }  // 10 20 30
 ~~~
 
-The first two print \`12\`, \`18\`, \`25\`. The third prints \`0: 12\`, \`1: 18\`, \`2: 25\`. Prefer the middle one whenever you do not need the position. Use \`enumerate\` when you do. Index loops are the only ones that can run off the end by mistake. (\`&levels\` borrows the list, so you can still use it after the loop.)
+(40 would be next, but it is past 35, so the loop stops.) A range never counts backwards by itself: \`5..2\` has no laps.
 
 ### What happens each lap
 
@@ -640,11 +701,9 @@ while tank < 60 {
 | 3 | 50 | true | \`tank 50\` |
 | (stop) | 60 | false | loop ends |
 
-If nothing inside the loop ever changed \`tank\`, the test would stay \`true\` forever: the classic endless loop.
+### \`break\` and \`continue\`
 
-### \`break\`, \`continue\` and loops that use conditions
-
-\`continue\` skips the rest of this lap, \`break\` leaves the loop. Both are normally guarded by an \`if\`:
+\`continue\` skips the rest of this lap and starts the next. \`break\` leaves the loop completely. Both are normally guarded by an \`if\`:
 
 ~~~rust
 for n in 1..=6 {
@@ -652,34 +711,15 @@ for n in 1..=6 {
     if n == 5 { break; }
     print!("{n} ");
 }
-// prints: 1 3 4
 ~~~
 
-The same combination is how you count or filter: loop over everything, let a condition pick what matters.
-
-~~~rust
-let levels = [42, 18, 77, 15, 60];
-let mut low = 0;
-for &lvl in &levels {
-    if lvl < 20 { low += 1; }
-}
-println!("{low} tanks low");   // 2 tanks low
+~~~text
+1 3 4
 ~~~
-
-### Ranges
-
-\`1..4\` is the range 1, 2, 3 (it **excludes** the end). \`1..=4\` is 1, 2, 3, 4 (it **includes** the end). They work on integers and chars. Combine them with iterator methods you will meet properly in lesson 16:
-
-~~~rust
-for n in (1..=3).rev() { print!("{n} "); }          // 3 2 1
-for m in (10..=40).step_by(10) { print!("{m} "); }  // 10 20 30 40
-~~~
-
-Why prefer \`for\` over a \`while\` with a counter? Because the loop *cannot get the bounds wrong*. There is no index to forget to increment and no way to run past the end. With a \`for\` over a range or a collection, the loop variable is created fresh for each round and simply disappears afterwards.
 
 ### \`break\` can carry a value
 
-Because \`loop\` is an expression, \`break value\` ends the loop **and** says what the loop evaluated to. That is perfect for "keep trying until it works":
+A \`loop\` can hand a value back when it ends: \`break value\` stops the loop **and** says what the loop was worth. That is useful for "keep trying until it works":
 
 ~~~rust
 let mut cycles = 0;
@@ -691,13 +731,18 @@ let full_after = loop {
         break cycles;        // the whole loop is worth \`cycles\`
     }
 };
+println!("{full_after}");
 ~~~
 
-(\`while\` and \`for\` cannot carry a value, because they might run zero times and have nothing to produce.)
+~~~text
+7
+~~~
 
-### \`continue\` and labels
+Trace: after lap 6 the tank holds 90, after lap 7 it holds 105, which is at least 100, so the loop breaks with \`cycles\`, which is 7. (\`while\` and \`for\` cannot carry a value, because they might run zero times and have nothing to hand back.)
 
-\`continue\` skips to the next round. \`break\` leaves the loop it is in. When you have **nested** loops and want to leave the outer one, give it a **label** that starts with an apostrophe, and break to that label:
+### Labels: leaving a loop inside a loop
+
+When one loop sits inside another and you want to leave **both**, give the outer loop a **label** that starts with an apostrophe, and break to that label:
 
 ~~~rust
 'rows: for row in 1..=3 {
@@ -711,10 +756,6 @@ let full_after = loop {
 
 Without the label, \`break\` would only leave the inner loop and the outer one would keep going.
 
-### Types in loops
-
-A loop counter you declare as \`let mut n = 0;\` is an \`i32\` unless something else forces another type. In \`for row in 1..=3\` the type of \`row\` comes from the range, which in turn is decided by what you use it with. If you assign it into a variable of a particular type, the whole range takes that type.
-
 ### Common mistakes
 
 - Off-by-one: \`1..3\` stops at 2. Use \`1..=3\` if you mean it to include 3.
@@ -722,7 +763,13 @@ A loop counter you declare as \`let mut n = 0;\` is an \`i32\` unless something 
 - A \`while\` whose condition never changes, so the loop never ends.
 - \`break\` outside a loop: error[E0268]: \`break\` outside of a loop or labeled block.
 - A \`loop\` whose \`break\` values have different types.
-- Comparing floats with \`==\` to end a loop. Floats drift; use \`<=\` or \`>=\`.`,
+- Comparing floats with \`==\` to end a loop. Floats drift; use \`<=\` or \`>=\`.
+
+### Going further (optional)
+
+- Counting backwards: \`(1..=3).rev()\` walks 3, 2, 1, and \`(0..10).rev().step_by(3)\` gives 9 6 3 0.
+- Once you know \`Vec\` (lesson 8), you can loop over the items of a list directly instead of counting positions: \`for lvl in &levels { ... }\` visits each item. \`levels.iter().enumerate()\` gives you each item together with its position. Looping over the items is safer than looping over positions, because there is no position that can run off the end.
+- A loop that counts how many items pass a test is just a loop plus an \`if\`: \`let mut low = 0;\`, then inside \`if lvl < 20 { low += 1; }\`.`,
       mission: md`Halcyon's machinery runs in cycles. The descent shaft is marked every ten metres, the oxygen tank drains by a fixed amount per hour until it reaches the reserve line, the ballast pumps fill the trim tank in steps, and the hull has a grid of seals where one of them is leaking.
 
 You will write one loop of each kind. When this lesson passes, the **Ballast pumps** light up with your counts.`,
@@ -890,7 +937,7 @@ Or by **destructuring**, which unpacks the whole tuple into names in one step:
 let (east, north, below) = beacon;
 ~~~
 
-Destructuring is how functions return several values at once (you will do that in lesson 10): the caller gets a tuple and unpacks it. A tuple has a fixed length and its type spells out every part, so \`(i32, i32)\` and \`(i32, i32, i32)\` are different types. Tuples have a Debug format (\`{:?}\` prints \`(12, -4, 42)\`) but no Display, so \`println!("{}", beacon)\` is error[E0277]: \`({integer}, {integer}, {integer})\` doesn't implement \`std::fmt::Display\`. The empty tuple \`()\` is called **unit**. It is the "nothing" value that functions without a result and statements ending in \`;\` produce.
+A tuple has a fixed length and its type spells out every part, so \`(i32, i32)\` and \`(i32, i32, i32)\` are different types. To print a whole tuple use \`{:?}\`, which prints \`(12, -4, 42)\`. Plain \`{}\` is an error, because a tuple has no single neat everyday text form.
 
 Use a tuple for a small, throw-away grouping. When the parts have meaning that deserves names, you will make a **struct** (lesson 12).
 
@@ -905,9 +952,10 @@ println!("{}", readings.len());               // 6
 println!("{}", readings[0]);                  // 41
 ~~~
 
+\`[0u8; 4]\` has the shape \`[value; how_many]\`: it builds an array by repeating one value, here the number 0 typed as a \`u8\`, four times.
+
 - Indexes start at **0**, and they must be a \`usize\` (the type of lengths and positions). An \`i32\` index is error[E0277]: the type \`[{integer}]\` cannot be indexed by \`i32\`. Convert with \`as usize\`.
-- Arrays are stored right there in the function's memory (the "stack"). That makes them fast, and it is also why their size must be known when the program is compiled. A collection that can grow comes in the next chapter (\`Vec\`).
-- If the elements are \`Copy\` types (numbers, bools, chars), the whole array is \`Copy\`: using \`readings\` in a \`for\` loop does not use it up. Lesson 9 explains \`Copy\`.
+- The length of an array is fixed when you write the program. A list that can grow comes in the next chapter (\`Vec\`).
 - \`{:?}\` prints \`[41, 42, 42, 44, 41, 40]\`. Two arrays of the same type can be compared with \`==\`.
 
 ### Bounds checking: no silent out-of-range reads
@@ -938,9 +986,34 @@ let mut total = 0;
 for reading in readings {
     total += reading;
 }
+println!("{total}");
 ~~~
 
-\`for x in array\` gives you each element. You do not manage an index at all, so you cannot go out of bounds. If you do need the index too, there is \`for (i, x) in readings.iter().enumerate()\`. Lesson 16 explains iterators properly.
+~~~text
+250
+~~~
+
+\`for x in array\` gives you each element in turn. You do not manage an index at all, so you cannot go out of bounds. The total grows 41, 83, 125, 169, 210, 250.
+
+### Finding the biggest
+
+To find the biggest reading, keep a variable that remembers the best so far. Start it with the first element, then replace it whenever you meet something bigger:
+
+~~~rust
+let mut highest = readings[0];
+for reading in readings {
+    if reading > highest {
+        highest = reading;
+    }
+}
+println!("{highest}");
+~~~
+
+~~~text
+44
+~~~
+
+For the smallest, start with \`readings[0]\` again and flip the comparison to \`reading < lowest\`. For the average, divide the total by how many readings there are, converting both to \`f64\` first (lesson 3): \`total as f64 / readings.len() as f64\`, which is 250 divided by 6, about 41.67.
 
 ### Common mistakes
 

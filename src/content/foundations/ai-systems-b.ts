@@ -29,9 +29,9 @@ export const aiLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "A model that has never read your handbook",
         body: P(
-          "A language model knows a great deal about the public world up to the day it was trained. It has never read **your** library’s rules, your clinic’s opening hours or last week’s policy change.",
-          "**Retrieval-augmented generation (RAG)** is the fix: before asking the model, **look up** the relevant passages in your own documents and put them in the prompt. The model then answers from text in front of it, and can point at where it came from.",
-          "Step through it for a school library assistant. Then flip *Model alone* to see what happens without retrieval.",
+          "Think of an open-book exam. A student who has to answer from memory may guess; a student with the right pages open on the desk can check. A language model (see the primer) is that student: it knows a great deal about the public world up to the day it was trained, but it has never read **your** library’s rules, your clinic’s opening hours or last week’s policy change.",
+          "**Retrieval-augmented generation (RAG)** is the fix: before asking the model, **look up** the relevant passages (short pieces of your own documents) and put them in the prompt. The model then answers from text in front of it, and can point at where it came from.",
+          "An **assistant** here just means a chat program built on a model. Step through one for a school library. Then flip *Model alone* to see what happens without retrieval.",
         ),
         widget: { type: "ai-rag", props: {} },
       },
@@ -78,28 +78,11 @@ export const aiLessonsB: ConceptLesson[] = [
         explanation: "With 5 words of overlap, each chunk repeats the end of the one before, so the boundary no longer slices the answer. Try 10 as well: more overlap is **not** automatically better. It makes more chunks and shifts the boundaries to somewhere else that can cut a different answer.",
       },
       {
-        kind: "explain",
-        title: "Cut where the text breaks",
-        body: P(
-          "Fixed windows are blind to meaning. Better chunkers cut at **natural boundaries**: sentences, paragraphs, headings. A chunk that is a few whole sentences, or one short section, reads like something a person wrote.",
-          "Good chunks also carry **metadata**: the document and section they came from, a date or version, the language, the tenant, who may see it. Metadata powers filters (last lesson), citations (“from *Returns*, updated March”), and tells you which chunks to refresh when a page changes.",
-          "Try the three modes. *By section* keeps each heading with its text and never crosses into the next topic.",
-        ),
-        widget: { type: "ai-chunker", props: { size: 30, overlap: 0, question: "q1" } },
-      },
-      {
-        kind: "question",
-        title: "Keep the sentences whole",
-        body: "Question 1 needs the refund rule *and* its exception, which are two whole sentences (34 words). Use **whole sentences** and find a size of **40 or less** that keeps the answer together.",
-        widget: { type: "ai-chunker", props: { modes: ["sentence"], size: 20, overlap: 0, question: "q1" } },
-        question: { type: "widget", goal: { mode: "sentence", question: "q1", intact: true, maxSize: 40 } },
-        explanation: "A size of 35 is the smallest that fits both sentences. Sentence-aware chunking never cuts a sentence in half, but it can still separate two *neighbouring* sentences, so the size still matters. Bigger is not free: notice how long the retrieved chunk gets.",
-      },
-      {
         kind: "code",
         title: "Write a chunker",
         body: P(
           "Write `chunk_words(text, size, overlap)`. Split the text into words, then return chunks of `size` words, where each chunk starts `size - overlap` words after the previous one. Stop as soon as a chunk reaches the end of the text. Join each chunk’s words with spaces.",
+          "Worked example: ten words `1 2 3 4 5 6 7 8 9 10`, `size = 4`, `overlap = 1`. The step is `4 - 1 = 3`, so the chunks start at words 1, 4 and 7: `\"1 2 3 4\"`, `\"4 5 6 7\"`, `\"7 8 9 10\"`. The last one reaches the end of the text, so you stop there.",
           "If `overlap >= size` the window would never move: raise `ValueError`.",
         ),
         language: "python",
@@ -127,20 +110,39 @@ export const aiLessonsB: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "Chunk by section or sentence group with some overlap so a rule and its exception stay together",
+            "Make the chunks cut at the section or paragraph break, or overlap them, so a rule and its exception stay together",
             "Switch to a bigger language model",
             "Lower the temperature so the model is less creative",
             "Retrieve k = 1 so there is less to read",
           ],
           answer: 0,
         },
-        explanation: "The model can only use what is in the prompt. The exception was cut away from the rule at **indexing time**, long before any model ran. A bigger model cannot read a paragraph that was never retrieved. Fix the chunks, then check the fix on your regression questions (two lessons from now).",
+        explanation: "The model can only use what is in the prompt. The exception was cut away from the rule at **indexing time**, long before any model ran. A bigger model cannot read a paragraph that was never retrieved. Fix the chunks, then check the fix on your regression questions (two lessons on).",
+      },
+      {
+        kind: "explain",
+        title: "Cut where the text breaks",
+        body: P(
+          "### Going further (optional)",
+          "Fixed windows are blind to meaning. Better chunkers cut at **natural boundaries**: sentences, paragraphs, headings. A chunk that is a few whole sentences, or one short section, reads like something a person wrote.",
+          "Good chunks also carry **metadata**: the document and section they came from, a date or version, the language, the tenant, who may see it. Metadata powers filters (the lesson before this one), citations (“from *Returns*, updated March”), and tells you which chunks to refresh when a page changes.",
+          "Try the three modes. *By section* keeps each heading with its text and never crosses into the next topic.",
+        ),
+        widget: { type: "ai-chunker", props: { size: 30, overlap: 0, question: "q1" } },
+      },
+      {
+        kind: "question",
+        title: "Keep the sentences whole",
+        body: "Question 1 needs the refund rule *and* its exception, which are two whole sentences (34 words). Use **whole sentences** and find a size of **40 or less** that keeps the answer together.",
+        widget: { type: "ai-chunker", props: { modes: ["sentence"], size: 20, overlap: 0, question: "q1" } },
+        question: { type: "widget", goal: { mode: "sentence", question: "q1", intact: true, maxSize: 40 } },
+        explanation: "A size of 35 is the smallest that fits both sentences. Sentence-aware chunking never cuts a sentence in half, but it can still separate two *neighbouring* sentences, so the size still matters. Bigger is not free: notice how long the retrieved chunk gets.",
       },
       {
         kind: "recap",
         points: [
           "**RAG** = embed the question, **retrieve** the nearest chunks, **assemble** a prompt, let the model **answer from them** and cite.",
-          "Without retrieval the model produces a **plausible** answer, not a verified one.",
+          "Without retrieval the model produces a **plausible** answer, not a verified one (a hallucination when it is wrong).",
           "**Chunk size** is a trade-off: too small loses context, too large blurs topics and bloats the prompt.",
           "Cut at **natural boundaries**, use **overlap** with care, and attach **metadata** (source, section, date, tenant) to every chunk.",
           "Many “model” mistakes are really **indexing** mistakes made earlier.",
@@ -161,7 +163,8 @@ export const aiLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "Two kinds of eyes",
         body: P(
-          "**Keyword search** (scoring methods like BM25) counts the exact words a document shares with the query and weighs rare words more. It is superb with **identifiers**: error codes, product numbers, names. It is blind to paraphrases.",
+          "Two friends help you find a book. One only looks for the exact words you said. The other understands what you mean but is fuzzy on exact names. You want both.",
+          "**Keyword search** (scoring methods like BM25, a classic word-counting score) counts the exact words a document shares with the query and weighs rare words more. It is superb with **identifiers**: error codes, product numbers, names. It is blind to paraphrases.",
           "**Vector search** matches meaning. It handles “my bike loses power going uphill” finding an article about motors cutting out on hills. But embeddings blur precise strings: to a vector, **E-17** and **E-71** both mean “some error code”.",
           "A bike help desk has eight articles. Each has a keyword score and a meaning score for your query. Slide between *keywords only* and *meaning only* and watch where the article that really answers the question (the tick) lands. Try all three queries.",
         ),
@@ -187,12 +190,12 @@ export const aiLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "Mixing scores is awkward",
         body: P(
-          "Adding the two scores has a catch: keyword scores can be 0 to 20 or more, cosine scores 0 to 1. You must **normalise** each list first, and the weights you pick depend on the shape of today’s scores.",
+          "Adding the two scores has a catch: keyword scores can be 0 to 20 or more, cosine scores 0 to 1. You must **normalise** each list first (squash them onto the same 0-to-1 scale), and the weights you pick depend on the shape of today’s scores.",
           "**Reciprocal rank fusion (RRF)** sidesteps the problem by ignoring scores and using only **ranks**. Each list gives a document `1 / (60 + rank)`, and you add up what each document earns:",
           txt(`
 score(doc) = 1/(60 + rank in list A) + 1/(60 + rank in list B) + …
 `),
-          "The 60 is a conventional damping constant. It makes the first few ranks count most, without letting a single #1 dominate. A document that is near the top of **both** lists beats one that is first in one list and missing from the other.",
+          "The 60 is a conventional damping constant (a number that softens the gaps between ranks). It makes the first few ranks count most, without letting a single #1 dominate. A document that is near the top of **both** lists beats one that is first in one list and missing from the other.",
         ),
         widget: { type: "ai-hybrid", props: { methods: ["rrf"], noRerank: true, query: "mixed" } },
       },
@@ -281,8 +284,9 @@ assert rrf([["p", "q"], ["r", "q"]], k=0) == ["p", "q", "r"], f"k=0 gave {rrf([[
         kind: "explain",
         title: "“It looked fine in the demo”",
         body: P(
+          "Before a bakery sells a new recipe, it tastes a fixed tray of the same sample loaves every time, so one change can't quietly make something worse. A RAG assistant needs the same habit.",
           "A RAG system can fail in three separate places, and a good-looking demo hides all of them:",
-          "- **Retrieval**: the passage with the answer never reached the prompt.\n- **Faithfulness**: the answer says something the retrieved text does not support (the model filled a gap).\n- **Freshness**: the answer is faithful to a passage that is out of date.",
+          "- **Retrieval**: the passage with the answer never reached the prompt.\n- **Faithfulness**: the answer says something the retrieved text does not support (the model filled a gap; a hallucination).\n- **Freshness**: the answer is faithful to a passage that is out of date.",
           "Each has a different fix, so you need to be able to tell them apart. That means **measuring them separately**, on a fixed set of questions, every time something changes.",
         ),
       },

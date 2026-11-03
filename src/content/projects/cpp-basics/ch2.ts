@@ -55,11 +55,7 @@ std::cout << tooHot << "\n";          // false
 | --- | --- | --- |
 | Comparison | \`coreTemp <= 650\` | smaller, bigger, or at the limit? |
 | Equality | \`mode == 'R'\` or \`name == "Helios-1"\` | the same value? (a \`char\` uses single quotes; two \`std::string\`s are compared by their letters, capitals count) |
-| Text contains | \`log.find("SCRAM") != std::string::npos\` | does \`log\` contain this text? \`find\` returns a position, or \`npos\` when there is none |
-| Contains in a vector | \`std::count(levels.begin(), levels.end(), 0) > 0\` | does a 0 appear at all? (\`#include <algorithm>\`) |
-| Empty or not | \`log.empty()\`, \`levels.size() > 0\` | is there nothing in it? |
 | Number as a condition | \`if (fuelRods)\` | is it non-zero? (see "Numbers as conditions" below) |
-| Function that answers yes/no | \`levels.empty()\` | the call itself returns a \`bool\` |
 | Range check | \`low < temp && temp < high\` | is it between two limits? |
 | Combined | \`a && b\`, \`a || b\`, \`!a\` | both, either, or the opposite |
 
@@ -124,7 +120,7 @@ bool coolantOk = flowLpm >= minFlow && pressure < 5.0;
 bool scramNeeded = coreTemp >= maxTemp || pressure > 5.0;
 ~~~
 
-\`&&\` binds tighter than \`||\`, like multiplication over addition; use parentheses when you mix them so the next reader does not have to remember. Both operators are **short-circuit**: in \`a && b\`, if \`a\` is false, \`b\` is never even evaluated. That is not just speed; it lets you write guards such as \`index < size && values[index] > 0\`, where the second part would be unsafe if the first were false.
+\`&&\` binds tighter than \`||\`, like multiplication over addition; use parentheses when you mix them so the next reader does not have to remember. Both operators are **short-circuit**: in \`a && b\`, if \`a\` is false, \`b\` is never even evaluated. That is not just speed; it lets you write guards such as \`b != 0 && a / b > 2\`, where dividing by \`b\` would be unsafe if \`b\` were 0, but the check on the left stops it from ever running.
 
 ### Numbers as conditions
 
@@ -149,7 +145,7 @@ switch (mode) {
 ~~~
 
 - It works on whole numbers, \`char\`s and enums (lesson 14), **not** on strings or doubles.
-- \`break\` ends the case. Leave it out and execution **falls through** into the next case, which is almost never what you want (when it is, mark it \`[[fallthrough]];\`).
+- \`break\` ends the case. Leave it out and execution **falls through** into the next case, which is almost never what you want.
 - \`default\` catches everything that matched no case.
 - Declaring a variable inside a case needs its own braces: \`case 'R': { int x = 1; break; }\`, otherwise you get *jump to case label crosses initialization*.
 
@@ -173,7 +169,19 @@ Great for short choices. If you need to nest them, use a normal \`if\` instead.
 - A semicolon right after the condition: \`if (x > 5);\` ends the \`if\` immediately and the block after it *always* runs.
 - Forgetting \`break\` in a \`switch\`.
 - Writing \`a < b < c\` to mean "b is between a and c". Write \`a < b && b < c\`.
-- Using \`switch\` on a \`std::string\` (error: *switch quantity not an integer*).`,
+- Using \`switch\` on a \`std::string\` (error: *switch quantity not an integer*).
+
+### Going further (optional)
+
+More kinds of conditions, for when you have met strings and vectors (lessons 7 and 9):
+
+| Kind | Example | What it asks |
+| --- | --- | --- |
+| Text contains | \`log.find("SCRAM") != std::string::npos\` | does \`log\` contain this text? \`find\` returns a position, or the special value \`npos\` when there is none |
+| Empty or not | \`log.empty()\`, \`levels.size() > 0\` | is there nothing in it? The call itself returns a \`bool\` |
+| Contains in a vector | \`std::count(levels.begin(), levels.end(), 0) > 0\` | does a 0 appear at all? (\`#include <algorithm>\`) |
+
+If you ever want a deliberate fall-through in a \`switch\`, write \`[[fallthrough]];\` where the \`break\` would be, so the next reader knows it is on purpose.`,
       mission: md`A reactor does not just run, it **refuses** to run when conditions are wrong. The interlock system looks at a temperature probe and the coolant flow and decides three things: how serious the alarm level is, whether the coolant is healthy, and whether the operator is allowed to start the plasma. It also turns the one-letter mode code into a readable name.
 
 When this lesson passes, the **Interlocks** card lights up with lamps for each decision.`,
@@ -345,7 +353,7 @@ for (const w of want) assert(lines.includes(w), 'No line is exactly "' + w + '".
       concepts: ["while", "for", "do-while", "break", "continue", "nested loops", "off-by-one", "infinite loops", "range-based for", "loop with a condition"],
       learn: md`### Repeating work
 
-A **loop** runs a block of code again and again while a condition holds. C++ has three flavours, and they are all the same idea.
+Think of a teacher who makes you write "I will not run in the corridor" fifty times. You do not want to type fifty lines of code for that. A **loop** says it once: "do this, again and again, for as long as a condition holds". C++ has three flavours, and they are all the same idea.
 
 ### \`while\`: check first, then repeat
 
@@ -362,6 +370,28 @@ The condition is tested **before** each round. If it is false from the start, th
 
 Every \`while\` needs something inside that eventually makes the condition false. Forget \`rampTemp += 45.0\` and the loop never ends: the program is stopped after a few seconds with a "ran for too long" message.
 
+### Why a condition, and which loop?
+
+The condition of a loop is the same yes/no question you met in \`if\` (it gives a \`bool\`), but it is asked again before **every** round: "is it still below 400?" yes, go round; yes, go round; no, stop. Something inside the body has to change the answer, or you get the infinite loop described above.
+
+There are two reasons to repeat, and they point to different loops:
+
+| Situation | Use |
+| --- | --- |
+| I wait for something to change ("heat until warm") | \`while\` |
+| I know how many rounds, or I am counting | \`for\` |
+| It must run once before the first check | \`do ... while\` |
+
+Here is the \`while\` example traced round by round, the first three rounds:
+
+| round | rampTemp before | test \`rampTemp < 400.0\` | rampTemp after | ticks |
+| --- | --- | --- | --- | --- |
+| 1 | 20 | true | 65 | 1 |
+| 2 | 65 | true | 110 | 2 |
+| 3 | 110 | true | 155 | 3 |
+
+It keeps going until \`rampTemp\` reaches 425 after 9 rounds. 425 is not below 400, the test fails and the loop ends.
+
 ### \`for\`: when you can count
 
 ~~~cpp
@@ -373,6 +403,15 @@ for (int count = 5; count >= 1; count--) {
 The three parts in the parentheses are: **start** (\`int count = 5\`, runs once), **condition** (\`count >= 1\`, checked before every round) and **step** (\`count--\`, runs after every round). The variable \`count\` only exists inside the loop.
 
 A very common version counts from 0: \`for (int i = 0; i < n; i++)\` runs exactly \`n\` times with \`i\` = 0, 1, ..., n-1. Use \`<\`, not \`<=\`, to avoid running one time too many. This **off-by-one** error is the most common loop bug.
+
+C++ has no separate "list of numbers" to loop over. The three parts of the \`for\` make the sequence themselves: where it starts, when it stops, and how it steps. The stop value is where the test fails, so it is never visited. \`++i\` and \`i++\` do the same job in the step position; \`++i\` is the common habit.
+
+~~~cpp
+for (int i = 0; i < 5; ++i) { }        // i is 0, 1, 2, 3, 4
+for (int i = 2; i < 6; ++i) { }        // i is 2, 3, 4, 5
+for (int i = 0; i < 10; i += 3) { }    // i is 0, 3, 6, 9
+for (int i = 5; i > 0; --i) { }        // i is 5, 4, 3, 2, 1  (a countdown)
+~~~
 
 ### \`do ... while\`: run once, then check
 
@@ -391,6 +430,7 @@ The condition is tested **after** the body, so the body always runs at least onc
 - \`continue\` skips the rest of this round and moves on to the next one (in a \`for\` loop the step still runs).
 
 ~~~cpp
+int heatTotal = 0;
 for (int tick = 1; tick <= 12; tick++) {
     if (tick % 4 == 0) {
         continue;            // maintenance tick: nothing to add
@@ -400,6 +440,8 @@ for (int tick = 1; tick <= 12; tick++) {
         break;               // enough heat, stop early
     }
 }
+// heatTotal is 540: ticks 1, 2, 3, 5, 6, 7, 9, 10, 11 were added (4 and 8 skipped),
+// and the loop stopped at tick 11 because 540 is above 500
 ~~~
 
 ### Nested loops
@@ -428,31 +470,48 @@ line += "..";
 line += '\n';       // a newline character is a char too
 ~~~
 
-### Which loop, and what about ranges?
-
-There are two reasons to repeat: "go through every item, or count" and "keep going until something changes".
-
-| Situation | Use |
-| --- | --- |
-| I know how many rounds, or I am counting | \`for (int i = 0; i < n; ++i)\` |
-| I have a container and want every element | range-based \`for (int x : v)\` |
-| I wait for a state to change | \`while\` |
-| It must run once before the first check | \`do ... while\` |
-
-The condition of a \`while\` is the same yes/no question you meet in an \`if\`, but it is asked again before **every** round. Something inside the body has to change the answer, or you get the infinite loop described above.
-
-**C++ has no \`range(...)\` function.** The counting \`for\` makes the sequence. \`++i\` and \`i++\` do the same job in this position; \`++i\` is the common habit. The stop value is where the test fails, so it is never visited:
+### What happens each lap
 
 ~~~cpp
-for (int i = 0; i < 5; ++i) { }        // i is 0, 1, 2, 3, 4
-for (int i = 2; i < 6; ++i) { }        // i is 2, 3, 4, 5
-for (int i = 0; i < 10; i += 3) { }    // i is 0, 3, 6, 9
-for (int i = 5; i > 0; --i) { }        // i is 5, 4, 3, 2, 1  (a countdown)
+double rampTemp = 20.0;
+for (int tick = 1; tick <= 3; ++tick) {
+    rampTemp += 45.0;
+    std::cout << "Tick " << tick << ": " << rampTemp << "\n";
+}
 ~~~
 
-Starting at 0 with \`i < n\` gives exactly \`n\` rounds, and \`i\` lines up with the positions \`0\` to \`n - 1\` of a vector.
+| tick | test \`tick <= 3\` | rampTemp after | output |
+| --- | --- | --- | --- |
+| 1 | true | 65 | \`Tick 1: 65\` |
+| 2 | true | 110 | \`Tick 2: 110\` |
+| 3 | true | 155 | \`Tick 3: 155\` |
+| 4 | false | | loop ends |
 
-### Three ways to walk the same vector
+### Loops need conditions too
+
+Most real loops hold an \`if\`: the loop visits every round and the condition chooses which ones count.
+
+~~~cpp
+int everyThird = 0;
+for (int tick = 1; tick <= 12; ++tick) {
+    if (tick % 3 == 0) {
+        ++everyThird;
+    }
+}
+std::cout << everyThird << "\n";   // 4 (ticks 3, 6, 9 and 12)
+~~~
+
+### Common mistakes
+
+- An infinite loop: the condition never becomes false.
+- Off by one: \`i <= n\` instead of \`i < n\`.
+- A semicolon after the \`for(...)\` or \`while(...)\` parentheses, which makes the loop body empty.
+- Changing the loop variable inside the body and confusing the counting.
+- Declaring the counter inside the loop and then trying to use it after it.
+
+### Going further (optional)
+
+You will meet vectors (lists of values) in the next lesson. Once you have, here are three ways to walk the same one. Come back to this after lessons 7 and 8:
 
 ~~~cpp
 std::vector<int> rods = {72, 85, 64};
@@ -475,47 +534,7 @@ for (int level : rods) {
 }
 ~~~
 
-The first prints \`Rod 0: 72\`, \`Rod 1: 85\`, \`Rod 2: 64\`; the second prints 72, 85, 64 on separate lines; the third matches the first. Prefer the range-based form when you only need the values: nothing to get off by one. Use the index loop when you need the position or want to step differently. For big elements write \`const auto& x : v\` (no copy, read only) or \`auto& x : v\` when you want to change them in place.
-
-### What happens each lap
-
-~~~cpp
-double rampTemp = 20.0;
-for (int tick = 1; tick <= 3; ++tick) {
-    rampTemp += 45.0;
-    std::cout << "Tick " << tick << ": " << rampTemp << "\n";
-}
-~~~
-
-| tick | test \`tick <= 3\` | rampTemp after | output |
-| --- | --- | --- | --- |
-| 1 | true | 65 | \`Tick 1: 65\` |
-| 2 | true | 110 | \`Tick 2: 110\` |
-| 3 | true | 155 | \`Tick 3: 155\` |
-| 4 | false | | loop ends |
-
-### Loops need conditions too
-
-Most real loops hold an \`if\`: the loop visits every element and the condition chooses which ones count.
-
-~~~cpp
-std::vector<double> temps = {412.0, 388.5, 455.0, 530.0};
-int hotCount = 0;
-for (double t : temps) {
-    if (t >= 450.0) {
-        ++hotCount;
-    }
-}
-std::cout << hotCount << "\n";   // 2 (455 and 530)
-~~~
-
-### Common mistakes
-
-- An infinite loop: the condition never becomes false.
-- Off by one: \`i <= n\` instead of \`i < n\`.
-- A semicolon after the \`for(...)\` or \`while(...)\` parentheses, which makes the loop body empty.
-- Changing the loop variable inside the body and confusing the counting.
-- Declaring the counter inside the loop and then trying to use it after it.`,
+The first prints \`Rod 0: 72\`, \`Rod 1: 85\`, \`Rod 2: 64\`; the second prints 72, 85, 64 on separate lines; the third matches the first. Prefer the range-based form when you only need the values: nothing to get off by one. Use the index loop when you need the position or want to step differently. For big elements write \`const auto& x : v\` (no copy, read only) or \`auto& x : v\` when you want to change them in place.`,
       mission: md`Before the plasma ignites, the core has to warm up in a controlled ramp. Your program will simulate it tick by tick, count down to ignition, prime the pumps, add up heat while skipping maintenance ticks, and finally draw a map of the core cross-section with nested loops.
 
 When this lesson passes, the **Warm-up ramp** card lights up with the ramp and the core map.`,
@@ -735,44 +754,49 @@ for (int level : rodLevels) {
 }
 ~~~
 
-\`for (int level : rodLevels)\` means "for each element, copy it into \`level\`". If you only want to change nothing and the elements are big, you will use \`const auto&\` (lesson 8 explains the \`&\`). To modify the elements themselves write \`for (int& level : rodLevels) level -= 1;\`.
+\`for (int level : rodLevels)\` means "for each element, copy it into \`level\`". Changing \`level\` therefore changes only the copy. Lesson 8 shows how to change the elements themselves.
 
 ### The out-of-bounds trap
 
 \`v[i]\` does **not** check that \`i\` is valid. Reading \`rodLevels[99]\` in a vector of 24 is **undefined behaviour**: the program may print a random number, crash, or appear to work. There is no friendly error. Two defences:
 
 1. Check before you index: \`if (i >= 0 && i < size) ...\`
-2. Use \`v.at(i)\`, which *does* check and throws an exception (an error you can catch) if \`i\` is out of range.
+2. Use \`v.at(i)\`, which *does* check the position. When the position is out of range it does not guess: it **throws an exception**. The next section says what that means.
+
+### What an exception is: try and catch in three lines
+
+An **exception** is a program's way of shouting "I cannot do this!" instead of carrying on with nonsense. Think of a waiter who is asked for a dish that is not on the menu: he does not bring a random plate, he calls back to you "we do not have that". In C++ the shout is called **throwing**. Code that wants to react to a shout puts the risky call inside \`try\`, and the reaction inside \`catch\`:
 
 ~~~cpp
-#include <stdexcept>      // defines std::out_of_range
+#include <stdexcept>      // defines std::out_of_range (this line goes at the very top of the file)
 
 try {
-    std::cout << rodLevels.at(99) << "\n";
+    std::cout << rodLevels.at(99) << "\n";                // risky: there is no rod 99
 } catch (const std::out_of_range&) {
-    std::cout << "Rod 99 does not exist\n";
+    std::cout << "Rod 99 does not exist\n";               // our reaction
 }
 ~~~
 
-A \`try\` block runs code that might throw. If it throws a \`std::out_of_range\`, execution jumps to the matching \`catch\` block instead of crashing. Lesson 15 covers exceptions properly; for now treat this as a pattern. If nothing catches an exception, the program terminates and you see *terminate called after throwing an instance of 'std::out_of_range'*.
+Read it like this: "**try** to do this. If it shouts *out of range*, jump to the **catch** and do that instead." If nothing is thrown, the \`catch\` is skipped. If something is thrown and nothing catches it, the program stops and you see *terminate called after throwing an instance of 'std::out_of_range'*.
+
+For now treat the three lines as a pattern to copy. The \`const ...&\` in the \`catch\` is explained in lesson 8, and lesson 15 is all about exceptions: how to throw your own and which kinds exist.
 
 ### Building a vector with a loop
 
 ~~~cpp
 std::vector<int> rodLevels;
 for (int i = 0; i < 24; i++) {
-    rodLevels.push_back(40 + (i * 37) % 55);    // 24 pseudo-readings between 40 and 94
+    rodLevels.push_back(40 + (i * 37) % 55);    // a made-up pattern so the numbers look like real readings
 }
 ~~~
 
 ### Copies, not shared boxes
 
-\`std::vector<int> backup = rodLevels;\` makes a full **copy**. Changing \`backup\` never changes \`rodLevels\` (unlike in languages where variables point at shared objects). Copies are safe but can be slow for huge vectors; lesson 8 shows how to avoid them.
+\`std::vector<int> backup = rodLevels;\` makes a full **copy**. Changing \`backup\` never changes \`rodLevels\`. Copies are safe but can be slow for huge vectors; lesson 8 shows how to avoid them.
 
-### Two gotchas
+### One gotcha
 
-- \`std::vector<int> v(5, 0);\` (parentheses) means "5 elements, all 0". \`std::vector<int> v{5, 0};\` (braces) means "two elements: 5 and 0". Same characters, different meaning.
-- Do not add or remove elements inside a range-for over the same vector. The loop can be left pointing at memory that has moved.
+Do not add or remove elements inside a range-for over the same vector. The loop can be left pointing at memory that has moved.
 
 ### Common mistakes
 
@@ -953,7 +977,7 @@ In C++ a function must be **declared before it is used**: the compiler reads the
 
 ### Pass by value: the function works on a copy
 
-By default every argument is **copied** into the parameter. The function can change its copy all it likes; the caller's variable stays the same.
+The value you pass in a call is the **argument**; the variable inside the function that receives it is the **parameter**. By default every argument is **copied** into the parameter. The function can change its copy all it likes; the caller's variable stays the same.
 
 ~~~cpp
 void boostByValue(int rpm) {
@@ -976,7 +1000,7 @@ void boostByReference(int& rpm) {
 boostByReference(pumpRpm);   // pumpRpm is now 1500
 ~~~
 
-Use a reference parameter when the function is *meant* to change the caller's data. A reference cannot bind to a temporary: \`boostByReference(1200)\` is an error (*cannot bind non-const lvalue reference of type 'int&' to an rvalue*).
+Use a reference parameter when the function is *meant* to change the caller's data. A reference cannot bind to a temporary: \`boostByReference(1200)\` is an error (*cannot bind non-const lvalue reference of type 'int&' to an rvalue*). In plain words: you cannot hand a bare number like 1200 to something that is supposed to change it, because 1200 is not a variable that can hold the change.
 
 ### \`const&\`: look, don't copy
 

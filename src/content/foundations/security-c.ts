@@ -19,6 +19,7 @@ export const securityLessonsC: ConceptLesson[] = [
         kind: "explain",
         title: "Things that must stay unknown",
         body: P(
+          "Think of the spare house key. If it is under the doormat, in a photo you posted, and copied for six friends, it is hardly a secret any more. A key only protects you while few people have it and you know who they are.",
           "A **secret** is anything that grants access and is not meant to be known by everyone: API keys, database passwords, signing keys, private keys, tokens, password-reset links, session ids. Its power comes entirely from *staying unknown*, so the question is never “is it encrypted?” but “who can see it, in how many copies, for how long?”",
           "Secrets escape in boring ways: pasted into **source code**, printed into **logs**, put into **URLs** (which land in logs and browser history), baked into **images**, shared in **chat**, left in **screenshots**, or shown in **error pages**. The nastiest is source code, because git remembers everything: a secret committed once is in every clone, fork and backup, even after you delete the line.",
         ),
@@ -95,6 +96,22 @@ Secrets manager / vault a service that stores values encrypted, checks WHO is
           "Logs are copied everywhere, so sensitive values must never reach them. Write `redact(line)` to replace secret values in a log line with `***`:",
           "- for `password`, `token`, `api_key` or `secret` followed by `=`, replace the value (everything up to a space or `&`) with `***`, keeping the name and `=` exactly as written. Match the name in any capitalisation.\n- after the word `Bearer` (any capitalisation), replace the token with `***`.",
           "Lines without secrets must come back **unchanged**. `re.sub` with a group reference like `r\"\\1=***\"` keeps what you matched.",
+          "This mission uses **regular expressions** (regex): little patterns that describe text, which Python's `re` module can find and replace. The few pieces you need:",
+          txt(String.raw`
+(?i)        at the start: ignore upper/lower case
+\b          a word edge, so "mytoken=" is not matched by "token="
+(a|b)       "a" or "b"; the brackets also remember what matched as group 1
+[^\s&]+     one or more characters that are NOT a space and NOT &
+\1          in the replacement: "put group 1 back here"
+`),
+          "A worked example, with the output:",
+          txt(String.raw`
+import re
+re.sub(r"(?i)\b(password)=[^\s&]+", r"\1=***", "pw PASSWORD=abc x")
+
+result:  pw PASSWORD=*** x
+`),
+          "The pattern found `PASSWORD=abc`, remembered the name as group 1 (spelled exactly as written), and wrote it back followed by `=***`. The hint below widens the pattern to four names and adds a second `re.sub` for `Bearer`.",
         ),
         language: "python",
         starter: "import re\n\n\ndef redact(line):\n    return line\n",
@@ -111,10 +128,12 @@ Secrets manager / vault a service that stores values encrypted, checks WHO is
       },
       {
         kind: "explain",
-        title: "The code you did not write",
+        title: "Going further: the code you did not write",
         body: P(
-          "A typical app is mostly other people's code: dozens of packages that pull in hundreds more. Every one is trust you extended. The ways it goes wrong: a maintainer's account is **hijacked** and a malicious release published; a package name is a **typo-squat** (`pocket-dates` and `pocket-datse`); an old version has a **known vulnerability**; a package is **abandoned**; or a registry mirror serves **tampered files**.",
-          "The defences are mostly about *not changing by accident*: commit a **lockfile** so every build installs exactly the versions you tested, install from it in CI instead of resolving fresh, keep **integrity hashes** so altered files are refused, let a bot propose updates as reviewable pull requests, scan for known vulnerabilities, and prefer fewer, well-maintained dependencies. Do the same for base images: pin them by digest.",
+          "### Going further (optional)",
+          "Everything above is about secrets. This second topic is about trusting other people's code. Imagine a shopping list that says only “cereal”: each week the shop might hand you a different brand, or a box someone tampered with. A better list says the exact brand, the size and the batch number, and you check the seal on the box. Software dependencies need the same exactness.",
+          "A typical app is mostly other people's code: dozens of packages (ready-made libraries) that pull in hundreds more. Every one is trust you extended. The ways it goes wrong: a maintainer's account is **hijacked** and a malicious release published; a package name is a **typo-squat** (a look-alike name that relies on a slip of the finger: `pocket-dates` and `pocket-datse`); an old version has a **known vulnerability**; a package is **abandoned**; or a registry mirror (a copy of the package store) serves **tampered files**.",
+          "The defences are mostly about *not changing by accident*. A **lockfile** is the exact shopping list: it records the exact version of every package, so every build installs what you tested. Install from it in CI (the automatic build robot) instead of resolving fresh. **Integrity hashes** are the seal on the box: a fingerprint of each package's files, so altered files are refused. Also let a bot propose updates as reviewable pull requests, scan for known vulnerabilities, and prefer fewer, well-maintained dependencies. Do the same for base images (the starting layer your app is packed on): pin them by **digest**, the fingerprint of the exact image, rather than by a name like `latest` that can change.",
           "Four days, three ways of installing one package. Tap a day under each policy to see what a build that day would ship.",
         ),
         widget: { type: "sec-supply", props: {} },
@@ -152,8 +171,11 @@ Secrets manager / vault a service that stores values encrypted, checks WHO is
         kind: "explain",
         title: "Data that became code",
         body: P(
+          "Imagine you tell a helper: “Write the name the visitor gives you on the guest list.” A prankster says their name is “Sam, and also unlock the back door”. If the helper obeys the whole sentence, the visitor's words were treated as orders. Many attacks are that one mistake.",
           "Most famous web attacks share one root: a program builds a **command** out of text, mixes in text from a stranger, and the receiver cannot tell which part was supposed to be which. Whatever the stranger typed has become *part of the instructions*. That is **injection**.",
-          "A school library lets pupils look up a shelf. The program glues the typed name into a query string. Try the sensible inputs first, then the odd ones (tap the examples). The widget is a small mock of a real database, with the same rules.",
+          "A school library lets pupils look up a shelf. The program asks its database with a **query** (a question written in SQL, the language databases understand, which you met in the data module). A tiny reminder of what one looks like: `SELECT * FROM books WHERE shelf = 'History'` means “give me every book whose shelf is History”.",
+          "Try the sensible inputs first, then the odd ones (tap the examples). The widget is a small mock of a real database, with the same rules.",
+          "Here the program glues whatever the pupil types into the middle of that text. Watch what the widget builds.",
         ),
         widget: { type: "sec-inject", props: { kind: "sql", fixToggle: false } },
       },
@@ -196,7 +218,9 @@ Secrets manager / vault a service that stores values encrypted, checks WHO is
         title: "The same mistake in HTML: XSS",
         body: P(
           "Now move the idea from the database to the browser. A comment box inserts what visitors type straight into the page. If someone types HTML, the browser cannot tell it from the page's own markup, and a `<script>` tag runs **on your site, with the visitor's login**. This is **cross-site scripting** (XSS).",
-          "The cure is the same shape: keep data as data. **Escape output** for the place it lands (in HTML, `<` becomes `&lt;`), so the browser shows the characters instead of obeying them. Modern frameworks do this by default; the danger is the escape hatches (`innerHTML`, `dangerouslySetInnerHTML`, raw template output). A Content Security Policy header adds a second layer by limiting which scripts may run.",
+          "The cure is the same shape: keep data as data. **Escape output** for the place it lands (in HTML, `<` becomes `&lt;`), so the browser shows the characters instead of obeying them. Modern frameworks do this by default, so the main rule is: do not bypass them.",
+          "### Going further (optional)",
+          "The danger is the “escape hatches” that insert text as raw HTML: the browser property `innerHTML`, React's deliberately scary-named `dangerouslySetInnerHTML`, and raw template output. A **Content Security Policy** (CSP) is a header the server sends that tells the browser which scripts it may run, a second layer in case an XSS hole slips through.",
         ),
         widget: { type: "sec-inject", props: { kind: "html" } },
       },
@@ -212,8 +236,12 @@ Secrets manager / vault a service that stores values encrypted, checks WHO is
         kind: "explain",
         title: "Two more: CSRF and SSRF",
         body: P(
-          "**CSRF** (cross-site request forgery) abuses the browser's helpfulness. Cookies go along with *every* request to their site, whoever caused it. A page on another site can make your browser submit a form to your bank or clinic, and the request arrives logged in. Defences: `SameSite` cookies, an **anti-CSRF token** the attacker's page cannot know, checking the `Origin` header, and never changing data on a `GET`.",
-          "**SSRF** (server-side request forgery) turns the tables. A feature makes the *server* fetch a URL the user supplied: link previews, webhooks, “import from URL”, PDF renderers. An attacker supplies an *internal* address, and the server, which sits inside your network, obliges: `http://localhost:8080/admin`, an internal dashboard, or a cloud platform's metadata address at `169.254.169.254` that can hand out credentials. Defences: allow only specific destinations, block private, loopback and link-local addresses (after resolving DNS), do not follow redirects blindly, and fetch from a locked-down network.",
+          "Picture a bank clerk who obeys any note that arrives with your signature stamp on it, and a trickster who slips a note into your pocket that makes you stamp it for them. That is CSRF. Now picture a receptionist who phones any number a visitor writes down, including the private line to the manager's safe. That is SSRF.",
+          "**CSRF** (cross-site request forgery, met in the cookies lesson) abuses the browser's helpfulness. Cookies go along with *every* request to their site, whoever caused it. A page on another site can make your browser submit a form to your bank or clinic, and the request arrives logged in. Defences: `SameSite` cookies, an **anti-CSRF token** (a secret number the real form carries and the attacker's page cannot know), checking the `Origin` header (which names the site that started the request), and never changing data on a `GET`.",
+          "**SSRF** (server-side request forgery) turns the tables. A feature makes the *server* fetch a URL the user supplied: link previews, webhooks (a URL another service calls when something happens), “import from URL”, PDF renderers. An attacker supplies an *internal* address, and the server, which sits inside your network, obliges: `http://localhost:8080/admin`, or an internal dashboard.",
+          "The main defence is an **allowlist**: only fetch from destinations you named in advance. The mission below builds one. Note the trick it must survive: in `https://good.com@evil.com/x`, the part before the `@` is just a username, so the server would really contact `evil.com`.",
+          "### Going further (optional)",
+          "Cloud platforms often answer on a special internal address, `169.254.169.254`, the *metadata address*, that can hand out the server's own credentials. Addresses like it are *link-local* (only reachable from the machine's own network), and `localhost` is *loopback* (the machine itself). If you block instead of allowlist, you must block private, loopback and link-local addresses after looking up the name's real address (DNS), not follow redirects blindly, and fetch from a locked-down network.",
         ),
       },
       {
@@ -252,7 +280,14 @@ Secrets manager / vault a service that stores values encrypted, checks WHO is
         body: P(
           "A feature downloads images from URLs that users paste. Write `fetch_ok(url, allowed_hosts)` returning `True` only when **all** of these hold:",
           "- the scheme is `https`\n- the host name, lower-cased, is exactly one of `allowed_hosts`\n- the port is the default (`443`) or not given",
-          "Use `urllib.parse.urlsplit`; its `hostname` ignores any `user@` prefix, and an allowlist beats trying to list everything dangerous. Return `False` for anything that fails to parse.",
+          "Use `urllib.parse.urlsplit`, which splits a URL into named parts. A worked example:",
+          txt(`
+u = urlsplit("https://good.com@evil.com:8443/x")
+u.scheme    "https"
+u.hostname  "evil.com"      (the user@ prefix is ignored, the name is lower-cased)
+u.port      8443            (None when the URL gives no port)
+`),
+          "Because the real host is `evil.com`, a guard allowing only `good.com` correctly refuses it. An allowlist beats trying to list everything dangerous. Return `False` for anything that fails to parse (asking for `u.port` can raise `ValueError` on a bad port).",
         ),
         language: "python",
         starter: "from urllib.parse import urlsplit\n\n\ndef fetch_ok(url, allowed_hosts):\n    return url.startswith(\"https://\")\n",
@@ -293,17 +328,19 @@ Secrets manager / vault a service that stores values encrypted, checks WHO is
         kind: "explain",
         title: "Many clinics, one system",
         body: P(
+          "Think of an apartment block. Many families share one building, one roof and one set of pipes, yet each has its own locked door, and nobody expects to open their neighbour's fridge by mistake. A software product shared by many customers must keep the same promise.",
           "Dovetail does not serve one clinic. Hundreds of clinics, called **tenants**, share one platform. The worst bug such a system can have is not downtime: it is **clinic A seeing clinic B's patients**. That ends companies.",
           "There are three common ways to separate tenants, trading isolation against cost:",
           txt(`
 Database per tenant     strongest wall, highest cost, hardest to run
                         thousands of databases and migrations
-Schema per tenant       one database, a set of tables each; a middle path
+Schema per tenant       one database, a separate set of tables (a "schema")
+                        for each tenant; a middle path
 Shared tables           one set of tables, every row has tenant_id
                         cheapest and most flexible, but ONE forgotten
                         WHERE clause leaks everything
 `),
-          "Most SaaS products start with shared tables, so this lesson is about making that safe. In the next step you get eight real-looking queries from the code base, run as **Elm Street Clinic**. Run them, look at whose rows come back, and label each *Safe* or *Leaks*.",
+          "Most SaaS products (software you rent online instead of installing, *software as a service*) start with shared tables, so this lesson is about making that safe. In the next step you get eight real-looking queries from the code base, run as **Elm Street Clinic**. Run them, look at whose rows come back, and label each *Safe* or *Leaks*.",
         ),
       },
       {
@@ -312,7 +349,7 @@ Shared tables           one set of tables, every row has tenant_id
         body: "Run the queries (or run them all) and label each. Remember that **writes**, **counts** and **joins** can leak too.",
         widget: { type: "sec-tenant", props: { mode: "classify" } },
         question: { type: "widget", goal: { allCorrect: true }, prompt: "Label all eight queries correctly." },
-        explanation: "Only two of the reads and one of the writes carried the tenant condition on every table they touched. The sneaky ones: the **count** (you learned how big a competitor is), the **update by id alone** (one clinic could cancel another's booking), and the **join** that filtered invoices but not patients, where per-tenant ids collided. A query is safe only if *every* table it touches is tied to the caller's tenant.",
+        explanation: "Only two of the reads and one of the writes carried the tenant condition on every table they touched. The sneaky ones: the **count** (you learned how big a competitor is), the **update by id alone** (one clinic could cancel another's booking), and the **join** (a query that combines rows from two tables) that filtered invoices but not patients, where per-tenant ids collided. A query is safe only if *every* table it touches is tied to the caller's tenant.",
       },
       {
         kind: "explain",
@@ -340,7 +377,7 @@ Shared tables           one set of tables, every row has tenant_id
           options: [
             "Cache keys, such as `patients:list` (which could serve one clinic's list to another)",
             "File paths in object storage for uploaded documents",
-            "Search index queries and vector search filters",
+            "Search index queries and vector search filters (searching by meaning, which the AI module covers later)",
             "The text of the HTTP 404 page",
           ],
           answer: [0, 1, 2],
@@ -379,7 +416,7 @@ Shared tables           one set of tables, every row has tenant_id
         kind: "code",
         title: "Verify a chain",
         body: P(
-          "Entries are dicts `{\"data\": ..., \"prev\": ..., \"hash\": ...}`. The first entry's `prev` is `GENESIS`, and every `hash` is `entry_hash(prev, data)`. `entry_hash` and `build_chain` are given.",
+          "Entries are dicts `{\"data\": ..., \"prev\": ..., \"hash\": ...}`. The first entry has no predecessor, so its `prev` is the fixed starting value `GENESIS` (the “genesis”, or beginning, marker), and every `hash` is `entry_hash(prev, data)`. `entry_hash` and `build_chain` are given.",
           "Write `first_bad(chain)` returning the **index of the first entry that does not check out**, or `-1` if the whole chain is sound. An entry is bad if its `prev` is not the previous entry's `hash` (or `GENESIS` for the first), or if its `hash` does not match its own content.",
         ),
         language: "python",

@@ -1,6 +1,6 @@
 import type { Module } from "../../learn/types.ts";
 
-/** Module 1: how computers store information (bits → bytes → text, colour, sizes). */
+/** Module: how computers store information (bits → bytes → text, colour, sizes). */
 export const bitsModule: Module = {
   id: "bits",
   part: "start",
@@ -162,7 +162,7 @@ export const bitsModule: Module = {
         {
           kind: "explain",
           title: "Before the code step: reading three lines of Python",
-          body: "The next step is a tiny bit of Python, a programming language. If you have never seen code, here is everything you need, in plain words.\n\n```python\na = 5\nb = bin(5)\n```\n\n- `a = 5` means: make a labelled box called `a` and put the number 5 in it. The `=` is not \"equals\", it means \"store this into that name\".\n- `bin(5)` means: use the ready-made tool named `bin` on the number 5. It hands back the number written in binary, as text: `'0b101'` (the `0b` just marks it as binary).\n- Text goes inside quotes, like `\"101\"`. The tool `int(\"101\", 2)` reads the text as a base-2 number and gives back `5`.\n\nSo `b = bin(5)` means: run the tool, store its answer in the box named `b`.\n\nIn the next step, type your answer to the right of each `=`, then press **Run & check** under the editor. A list of tests appears below it: a tick means passed, a cross shows what was expected. A red error message just means Python could not read a line; the first line of it names the problem.",
+          body: "The next step is a tiny bit of Python, a programming language. If you have never seen code, here is everything you need, in plain words.\n\n```python\na = 5\nb = bin(5)\n```\n\n- `a = 5` means: make a labelled box called `a` and put the number 5 in it. The `=` is not \"equals\", it means \"store this into that name\".\n- `bin(5)` means: use the ready-made tool named `bin` on the number 5. It hands back the number written in binary, as text: `'0b101'` (the `0b` just marks it as binary).\n- Text goes inside quotes, like `\"101\"`. The tool `int(\"101\", 2)` reads the text as a base-2 number and gives back `5`.\n\nSo `b = bin(5)` means: run the tool, store its answer in the box named `b`.\n\nIn the next step, type your answer to the right of each `=`, then press **Run & check** under the editor. A list of tests appears below it: a tick means that check passed, and a cross means it did not (a short red line under it may say what was expected). A red error such as `NameError: ... (line 2)` just means Python could not carry out a line: the words before the colon name the kind of problem and `line 2` says where.",
         },
         {
           kind: "code",

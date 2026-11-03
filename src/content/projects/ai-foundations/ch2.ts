@@ -61,7 +61,16 @@ To find the nearest neighbour you need the distance from the mystery fruit to **
 distances = np.sqrt(((X - q) ** 2).sum(axis=1))    # X: (240, 4), q: (4,)  ->  (240,)
 ~~~
 
-\`axis=1\` adds up each row's four squared differences, leaving one distance per known fruit. Then \`np.argmin(distances)\` returns the **index** of the smallest one, and \`y[index]\` is the neighbour's label.
+\`axis=1\` adds up each row's four squared differences, leaving one distance per known fruit. Then \`np.argmin(distances)\` returns the **index** of the smallest one, and \`y[index]\` is the neighbour's label. A tiny example:
+
+~~~python
+distances = np.array([4.2, 0.9, 3.1])
+y = np.array(["apple", "pear", "plum"])
+index = np.argmin(distances)    # 1  (0.9 is the smallest, and it sits at position 1)
+y[index]                        # "pear"  the mystery fruit looks most like the pear
+~~~
+
+In the mission you write three small helpers that follow this recipe: \`scale_one\` (scale one mystery fruit), \`distances_to\` (the distance from it to every stored fruit) and \`nearest_index\` (the position of the closest one).
 
 ### Scale first!
 
@@ -274,6 +283,8 @@ for name in ["pear", "apple", "pear"]:
 max(counts, key=counts.get)       # "pear": the key with the biggest value
 ~~~
 
+(\`max(counts, key=counts.get)\` says: "look at each key in \`counts\`, ask \`counts.get\` for its number, and give me the key whose number is biggest".)
+
 Ties are possible with three kinds (2 pears, 2 apples, 1 plum). Our rule: the label that **reached the vote first**, meaning the one belonging to the nearer fruit, wins. If your tally inserts labels nearest-first, \`max\` returns the first of equal winners, which is exactly that.
 
 ### Choosing k
@@ -286,7 +297,7 @@ With two classes, an odd \`k\` avoids ties. In a later lesson you will pick \`k\
 
 ### The model's memory
 
-We will keep the stored fruit in two global names, \`memory_X\` (scaled features) and \`memory_y\` (labels). The scene and your later code read from them, so when we change what the machine remembers in the next lesson, \`classify\` follows automatically.
+The "memory" is just the stored fruit we compare against. We will keep it in two global names, \`memory_X\` (scaled features) and \`memory_y\` (labels). The scene and your later code read from them, so when we change what the machine remembers in the next lesson, \`classify\` follows automatically.
 
 ### Common mistakes
 
@@ -512,7 +523,7 @@ Never let test fruit influence anything: not the memory, not the scaler, not the
 
 ### Shuffle first (and keep it repeatable)
 
-Look at the order of our fruit: 110 apples, then 80 pears, then 50 plums. If you simply took the last 25% as the test set, it would be all plums and the machine would never have seen one. So shuffle the row numbers first.
+Look at the order of our fruit: 110 apples, then 80 pears, then 50 plums. The last 25% of 240 fruit is the final 60 rows: 50 plums and 10 pears. The test would be mostly plums, and the first 180 rows left for learning (110 apples and 70 pears) would hold not a single plum, so the machine would be graded on a kind it has never seen. So shuffle the row numbers first.
 
 Shuffling should be random but **repeatable**, so your results are the same every run and a friend can reproduce them. A **seed** starts a random number generator in a known state: the same seed always gives the same shuffle. The sensor rig already contains one, \`Rng(seed)\`, with a method \`below(n)\` that returns a whole number from 0 to n-1.
 
@@ -524,6 +535,8 @@ for i in range(n - 1, 0, -1):          # walk from the end to the start
     j = rng.below(i + 1)               # pick a position from 0..i
     order[i], order[j] = order[j], order[i]   # swap
 ~~~
+
+The line with two names on each side swaps two entries: Python reads both right-hand values first, then puts them into the left-hand places, so no entry is lost. \`range(n - 1, 0, -1)\` counts downwards: n-1, n-2, ..., 1.
 
 ### Accuracy
 
@@ -776,7 +789,7 @@ assert accuracy(y_train, predict_all(Xtr, k=1)) == 1.0, "with k=1 every remember
 
 Your machine scores 88% on the test fruit. Is that good? Which fruit does it get wrong? Is it equally bad at everything, or terrible at one kind? A single number cannot say.
 
-It can also mislead badly. Imagine a rotten-fruit detector where only 5 fruit in 100 are rotten. A "model" that says *"fine"* for every fruit scores **95% accuracy** and catches **zero** rotten fruit. When one class is rare (**class imbalance**), accuracy alone is a trap.
+It can also mislead badly. Imagine a rotten-fruit detector where only 5 fruit in 100 are rotten. A "model" that says *"fine"* for every fruit scores **95% accuracy** and catches **zero** rotten fruit. When one class (a "class" is just a kind of fruit, here "rotten" or "fine") is rare (**class imbalance**), accuracy alone is a trap.
 
 ### The confusion matrix
 
@@ -788,6 +801,18 @@ real apple        25           0           0
 real pear          7          15           0
 real plum          0           0          13
 ~~~
+
+You can build it with a list of lists, where cell \`[r][c]\` counts the fruit that were really kind \`r\` and were called kind \`c\`:
+
+~~~python
+labels = ["apple", "pear", "plum"]
+matrix = [[0] * 3 for _ in labels]          # three rows of three zeros (a fresh row each time)
+for real, said in zip(["apple", "pear", "pear"], ["apple", "apple", "pear"]):
+    matrix[labels.index(real)][labels.index(said)] += 1
+# matrix is [[1, 0, 0], [1, 1, 0], [0, 0, 0]]
+~~~
+
+(\`zip\` walks two lists side by side, giving the pairs apple/apple, pear/apple, pear/pear. \`labels.index("pear")\` is the position of "pear" in the list, here 1. The \`_\` is a loop variable name that says "I do not need this".)
 
 The diagonal holds the correct answers. Everything off the diagonal is a mistake, and its position tells you the *kind* of mistake: here seven real pears were called apples, and no apple was ever called a pear.
 

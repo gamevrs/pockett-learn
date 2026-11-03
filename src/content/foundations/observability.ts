@@ -27,12 +27,12 @@ export const observabilityModule: Module = {
         {
           kind: "explain",
           title: "A system you cannot see",
-          body: "When your code runs on your own laptop you can see everything: add a print, set a breakpoint, poke at it. In production the code runs on machines you may never touch, for thousands of people at once, and the only evidence of what it is doing is whatever it *chooses to report*.\n\n**Observability** is how well you can understand what is happening inside a system from the outside, using the data it emits. The goal is not a pile of dashboards. The goal is being able to ask a question you did not think of in advance (\"why are only travellers on the early flights seeing errors?\") and answer it from the data you already have.\n\nSystems emit three main kinds of evidence, and each is good at a different job.",
+          body: "A doctor works out what is wrong from three kinds of clues: a patient's diary of what happened (that is like **logs**), a thermometer and blood-pressure readings over time (like **metrics**), and a map of where a symptom travelled through the body (like **traces**). None of them alone tells the whole story. A running program needs the same three kinds of clues.\n\nWhen your code runs on your own laptop you can see everything: add a print, set a breakpoint, poke at it. In production the code runs on machines you may never touch, for thousands of people at once, and the only evidence of what it is doing is whatever it *chooses to report*.\n\n**Observability** is how well you can understand what is happening inside a system from the outside, using the data it emits. The goal is not a pile of dashboards. The goal is being able to ask a question you did not think of in advance (\"why are only travellers on the early flights seeing errors?\") and answer it from the data you already have.\n\nSystems emit three main kinds of evidence, and each is good at a different job.",
         },
         {
           kind: "explain",
           title: "One incident, three views",
-          body: "The boarding-pass service has become slow for some travellers. Open each tab and look at what that signal offers, and just as important, what it cannot tell you.",
+          body: "The boarding-pass service has become slow for some travellers. Open each tab and look at what that signal offers, and just as important, what it cannot tell you.\n\nTwo words you will see in the Traces tab: a **span** is one timed step of a request (for example “ask the database”), and the **waterfall** is the picture of all the spans of one request laid out along a timeline, so you can see which step took the longest.",
           widget: { type: "obs-signals", props: { tab: "logs" } },
         },
         {
@@ -68,7 +68,7 @@ export const observabilityModule: Module = {
         {
           kind: "explain",
           title: "They work as a team",
-          body: "In a real investigation the signals take turns:\n\n1. A **metric** alert says the error rate is high.\n2. A dashboard of metrics, split by route and region, narrows it to the seat-reservation step.\n3. A **trace** of one failing request shows the seat-service call timing out.\n4. That service's **logs**, found using the same request id, give the exact error message.\n\nWhat ties them together is a shared **identifier**: the request id or trace id written into every log line and attached to every span. Without it each signal is a separate island.\n\nThe signals also differ in cost. Metrics are the cheapest per unit of insight (they are pre-aggregated). Logs are the most expensive at volume. Traces are usually **sampled**: you keep a fraction of requests, often favouring slow or failed ones.",
+          body: "In a real investigation the signals take turns:\n\n1. A **metric** alert says the error rate is high.\n2. A dashboard of metrics, split by route and region, narrows it to the seat-reservation step.\n3. A **trace** of one failing request shows the seat-service call timing out.\n4. That service's **logs**, found using the same request id, give the exact error message.\n\nWhat ties them together is a shared **identifier**: the request id or trace id written into every log line and attached to every span. Without it each signal is a separate island.\n\nThe signals also differ in cost. Metrics are the cheapest per unit of insight (they are pre-aggregated). Logs are the most expensive at volume. Traces are usually **sampled**: you keep only a fraction of requests (like checking every tenth parcel instead of all of them), often favouring slow or failed ones.",
         },
         {
           kind: "question",
@@ -147,7 +147,7 @@ export const observabilityModule: Module = {
         {
           kind: "explain",
           title: "Same events, with fields",
-          body: "**Structured logging** writes each event as a record of named fields, usually one JSON object per line. The words still exist (a `msg` field), but everything you might filter or count is its own field with a stable name and type.\n\nSwitch to **Structured** below and filter. Questions that were guesswork become exact.",
+          body: "**Structured logging** writes each event as a record of named fields, usually one JSON object per line. (**JSON** is a plain-text way to write named values in curly braces, like `{\"level\": \"error\", \"order_id\": 5521}`: each name is followed by its value.) The words still exist (a `msg` field), but everything you might filter or count is its own field with a stable name and type.\n\nSwitch to **Structured** below and filter. Questions that were guesswork become exact.",
           widget: { type: "obs-logs", props: { mode: "structured" } },
         },
         {
@@ -202,7 +202,7 @@ export const observabilityModule: Module = {
         {
           kind: "code",
           title: "Write the logger",
-          body: "Write `make_logger(request_id, sink)`. It returns a function `log(level, message, **fields)`. Each call appends **one dictionary** to the list `sink` with the keys `level`, `message` and `request_id`, plus every extra field. Any field whose name is in `SENSITIVE` must have its value replaced by the string `\"[redacted]\"`.\n\n" +
+          body: "Write `make_logger(request_id, sink)`. It returns a function `log(level, message, **fields)`. Each call appends **one dictionary** to the list `sink` with the keys `level`, `message` and `request_id`, plus every extra field. Any field whose name is in `SENSITIVE` must have its value replaced by the string `\"[redacted]\"`.\n\nThe `**fields` in the function's brackets collects any extra named values (like `order_id=5521`) into a dictionary called `fields`, so `fields.items()` gives you each name and value. `SENSITIVE` is a set of names given in the starter.\n\n" +
             py(`
 sink = []
 log = make_logger("r-77", sink)
@@ -276,7 +276,7 @@ def make_logger(request_id, sink):
         {
           kind: "explain",
           title: "Numbers, measured again and again",
-          body: "A **metric** is a named number that a service reports over and over, so you get a line over time instead of a single value. Each report carries **labels** (also called tags or dimensions) that say which slice it describes:\n\n" +
+          body: "A car's dashboard has an odometer that only counts up, a speedometer that goes up and down, and a trip log of how long each journey took. Metrics are the same kind of instruments for software.\n\nA **metric** is a named number that a service reports over and over, so you get a line over time instead of a single value. Each report carries **labels** (also called tags or dimensions) that say which slice it describes:\n\n" +
             text(`
 http_requests_total{route="/checkout", status="500", region="eu-west"}  4172
 `) +
@@ -407,7 +407,7 @@ rate([(0, 100), (10, 190), (20, 40)])    # (90 + 40) / 20 = 6.5   (reset between
         {
           kind: "explain",
           title: "The politely lying average",
-          body: "Ninety-nine requests take 100 ms and one takes 10 seconds. The **average** is about 199 ms: a number that describes *nobody*. Ninety-nine people had a quick page. One person stared at a spinner for ten seconds, and the average neither shows that person nor tells you they exist.\n\n**Percentiles** answer a better question: *what delay do most people stay under?*\n\n- **p50** (the median): half the requests are faster than this.\n- **p95**: 95 out of 100 are faster; the slowest 5 are slower.\n- **p99**: 99 out of 100 are faster. One in a hundred is slower.\n\nThe high percentiles are called the **tail**, and the tail is where timeouts, retries and angry users live. Below, 200 requests are drawn as a histogram on a log scale. Add very slow requests and see which numbers notice.",
+          body: "Imagine a class where 29 children score 90 on a test and one scores 0. The class average is 87, which sounds fine, but it hides the one child who needs help. Averages smooth away exactly the people you most need to see.\n\nNinety-nine requests take 100 ms and one takes 10 seconds. The **average** is about 199 ms: a number that describes *nobody*. Ninety-nine people had a quick page. One person stared at a spinner for ten seconds, and the average neither shows that person nor tells you they exist.\n\n**Percentiles** answer a better question: *what delay do most people stay under?*\n\n- **p50** (the median): half the requests are faster than this.\n- **p95**: 95 out of 100 are faster; the slowest 5 are slower.\n- **p99**: 99 out of 100 are faster. One in a hundred is slower.\n\nThe high percentiles are called the **tail**, and the tail is where timeouts, retries and angry users live. Below, 200 requests are drawn as a histogram on a log scale. Add very slow requests and see which numbers notice.",
           widget: { type: "obs-percentiles", props: { slow: 0 } },
         },
         {
@@ -513,7 +513,7 @@ def percentile(values, p):
         {
           kind: "explain",
           title: "Which numbers first?",
-          body: "A production system can emit thousands of metrics. When something is wrong, staring at all of them is hopeless. Two small checklists, one from each side of the system, tell you where to look first.\n\n**RED** describes a *service*, from the point of view of the people using it:\n\n- **R**ate: how many requests per second arrive?\n- **E**rrors: how many of them fail?\n- **D**uration: how long do they take (as percentiles)?\n\n**USE** describes each *resource* a service depends on (CPU, memory, disk, network, a connection pool, a queue):\n\n- **U**tilization: how much of its capacity is in use, on average?\n- **S**aturation: how much extra work is *waiting* because it cannot keep up?\n- **E**rrors: is it reporting faults (dropped packets, failed reads, timeouts)?\n\nRED tells you *whether users are hurting*. USE tells you *which resource is the reason*.",
+          body: "When you feel ill, a doctor does not run every test in the hospital. She asks a short list first: temperature, pulse, breathing. RED and USE are the short lists for software.\n\nA production system can emit thousands of metrics. When something is wrong, staring at all of them is hopeless. Two small checklists, one from each side of the system, tell you where to look first.\n\n**RED** describes a *service*, from the point of view of the people using it:\n\n- **R**ate: how many requests per second arrive?\n- **E**rrors: how many of them fail?\n- **D**uration: how long do they take (as percentiles)?\n\n**USE** describes each *resource* a service depends on (CPU, memory, disk, network, a connection pool, a queue):\n\n- **U**tilisation: how much of its capacity is in use, on average?\n- **S**aturation: how much extra work is *waiting* because it cannot keep up?\n- **E**rrors: is it reporting faults (dropped packets, failed reads, timeouts)?\n\nRED tells you *whether users are hurting*. USE tells you *which resource is the reason*.",
         },
         {
           kind: "explain",
@@ -543,12 +543,12 @@ def percentile(values, p):
             ],
             answer: 1,
           },
-          explanation: "A low reading on one resource only rules out that resource. Work through the USE list for every dependency and look for the one with a queue or high utilization. A system is as fast as its tightest constraint, which is often not the CPU.",
+          explanation: "A low reading on one resource only rules out that resource. Work through the USE list for every dependency and look for the one with a queue or high utilisation. A system is as fast as its tightest constraint, which is often not the CPU.",
         },
         {
           kind: "explain",
-          title: "Utilization is not saturation",
-          body: "These two get confused all the time:\n\n- **Utilization** is *how busy* a resource is over time: \"the disk was busy 60% of the last minute\".\n- **Saturation** is *how much work is waiting* for it: \"31 disk operations are queued\".\n\nA resource can be only 60% utilized **on average** and still be saturated in bursts: ten seconds at 100% with a queue, fifty seconds idle. And a resource at 100% utilization with nothing waiting is merely well used. Saturation, the queue, is the earlier and more reliable warning, because waiting is exactly what the user experiences as latency.\n\nThe third letter, **errors**, covers the resource's own faults: a disk with read errors, a network card dropping packets, a process killed for using too much memory.",
+          title: "Utilisation is not saturation",
+          body: "These two get confused all the time:\n\n- **Utilisation** is *how busy* a resource is over time: \"the disk was busy 60% of the last minute\".\n- **Saturation** is *how much work is waiting* for it: \"31 disk operations are queued\".\n\nA resource can be only 60% utilised **on average** and still be saturated in bursts: ten seconds at 100% with a queue, fifty seconds idle. And a resource at 100% utilisation with nothing waiting is merely well used. Saturation, the queue, is the earlier and more reliable warning, because waiting is exactly what the user experiences as latency.\n\nThe third letter, **errors**, covers the resource's own faults: a disk with read errors, a network card dropping packets, a process killed for using too much memory.",
         },
         {
           kind: "question",
@@ -564,7 +564,7 @@ def percentile(values, p):
             ],
             answer: 1,
           },
-          explanation: "Pool A is fully used but keeping up. Pool B has bursts that exceed capacity, so requests pile up and wait. Watch the queue, not just the utilization percentage.",
+          explanation: "Pool A is fully used but keeping up. Pool B has bursts that exceed capacity, so requests pile up and wait. Watch the queue, not just the utilisation percentage.",
         },
         {
           kind: "code",
@@ -623,8 +623,8 @@ def red(requests, window_s):
           kind: "recap",
           points: [
             "**RED** (Rate, Errors, Duration) describes what users get from a **service**; start there to see whether anyone is hurting.",
-            "**USE** (Utilization, Saturation, Errors) describes each **resource**; use it to find which one is the limit.",
-            "**Saturation** (work waiting) warns earlier than utilization and matches what users feel as delay.",
+            "**USE** (Utilisation, Saturation, Errors) describes each **resource**; use it to find which one is the limit.",
+            "**Saturation** (work waiting) warns earlier than utilisation and matches what users feel as delay.",
             "A system is only as fast as its tightest resource; a calm CPU says nothing about the connection pool.",
           ],
         },
@@ -642,7 +642,7 @@ def red(requests, window_s):
         {
           kind: "explain",
           title: "One request, many machines",
-          body: "Placing a food order touches a gateway, an order service, an inventory service, a pricing service and a payments service. Each keeps its own logs and its own graphs. When an order feels slow, no single service's view tells you where the time went: each one only knows about its own slice.\n\n**Distributed tracing** reconstructs the whole journey. A **trace** is the record of one request. It is made of **spans**: each span is one unit of work (a function, a database query, a call to another service) with a **name**, a **start time**, a **duration** and a **parent** span that caused it. All spans in one trace share a **trace id**. Drawn on a timeline, a trace becomes a **waterfall**.\n\nTap spans in the waterfall below to see how much time each one spent on its own work.",
+          body: "When a parcel travels, every depot stamps it with the time it arrived and left. Put the stamps together and you can see the whole journey, and which depot kept it too long. A trace does the same for a request.\n\nPlacing a food order touches a gateway, an order service, an inventory service, a pricing service and a payments service. Each keeps its own logs and its own graphs. When an order feels slow, no single service's view tells you where the time went: each one only knows about its own slice.\n\n**Distributed tracing** reconstructs the whole journey. A **trace** is the record of one request. It is made of **spans**: each span is one unit of work (a function, a database query, a call to another service) with a **name**, a **start time**, a **duration** and a **parent** span that caused it. All spans in one trace share a **trace id**. Drawn on a timeline, a trace becomes a **waterfall**.\n\nTap spans in the waterfall below to see how much time each one spent on its own work.",
           widget: { type: "obs-trace", props: { toggles: [] } },
         },
         {
@@ -678,7 +678,8 @@ traceparent: 00-9a3c1e7d5b2f4086a1c4e3d2f7b05c68-5d1e8a4c20b7f396-01
              │  └─ trace id (32 hex)             └─ parent span id (16 hex)
              └─ version
 `) +
-            "\nThe receiver reads it, creates a **child span** whose parent is that span id, and passes the same trace id along to anything *it* calls. This hand-over is **context propagation**. It must happen at every hop, including calls through message queues (put the id in the message headers) and background jobs.\n\nOne service that forgets breaks the chain: everything after it starts a brand-new, disconnected trace.",
+            "\n(“Hex” means the digits 0 to 9 and the letters a to f: a compact way to write long random numbers. A system that is **instrumented** has had code added so that it reports spans like these.)\n" +
+            "\nThe receiver reads it, creates a **child span** whose parent is that span id, and passes the same trace id along to anything *it* calls. This hand-over is **context propagation**. It must happen at every **hop** (each step from one service to the next), including calls through message queues (put the id in the message headers) and background jobs.\n\nOne service that forgets breaks the chain: everything after it starts a brand-new, disconnected trace.",
         },
         {
           kind: "question",
@@ -761,7 +762,7 @@ traceparent: 00-9a3c1e7d5b2f4086a1c4e3d2f7b05c68-5d1e8a4c20b7f396-01
         {
           kind: "explain",
           title: "How good is good enough?",
-          body: "Perfect reliability is impossible, and chasing it is ruinously expensive: each extra \"nine\" of availability costs many times the one before. It is also often pointless. If a person's phone connection fails more often than your API does, making the API ten times better changes nothing they notice.\n\nSo teams decide, deliberately, how reliable a service *needs* to be. Three terms make the conversation precise:\n\n- An **SLI** (service level indicator) is a *measurement* of how well the service is doing, as a ratio of good events to valid events. Example: *the share of storm alerts delivered to phones within 60 seconds*.\n- An **SLO** (service level objective) is the *target* for that SLI over a window of time. Example: *99.9% of alerts within 60 seconds, over 30 days*.\n- An **SLA** (service level agreement) is a *contract* with consequences if you miss, such as refunds. It is usually looser than the internal SLO, so you have room to fix things before you owe anyone money.",
+          body: "Think of pocket money. The amount you actually saved this week is a *measurement*. The amount you *aim* to save is a goal. And a promise to a friend, “I'll pay you back or you get a sweet”, is a deal with a penalty. Reliability has the same three layers.\n\n**Availability** is the share of the time (or of requests) that a service works. Perfect availability is impossible, and chasing it is ruinously expensive: each extra \"nine\" (99%, 99.9%, 99.99%: one more 9 each time) costs many times the one before. It is also often pointless. If a person's phone connection fails more often than your API does, making the API ten times better changes nothing they notice.\n\nSo teams decide, deliberately, how reliable a service *needs* to be. Three terms make the conversation precise:\n\n- An **SLI** (service level indicator) is a *measurement* of how well the service is doing, as a ratio of good events to valid events. Example: *the share of storm alerts delivered to phones within 60 seconds*.\n- An **SLO** (service level objective) is the *target* for that SLI over a window of time. Example: *99.9% of alerts within 60 seconds, over 30 days*.\n- An **SLA** (service level agreement) is a *contract* with consequences if you miss, such as refunds. It is usually looser than the internal SLO, so you have room to fix things before you owe anyone money.",
         },
         {
           kind: "question",
@@ -883,7 +884,7 @@ def burn_rate(error_ratio, slo):
         {
           kind: "explain",
           title: "An alert spends a human's attention",
-          body: "A **page** is a request that interrupts a person, perhaps asleep, to do something *now*. That is expensive, so a page should satisfy three tests:\n\n1. **Urgent**: it cannot wait until morning.\n2. **Actionable**: there is something a human can do about it.\n3. **Real**: it reflects genuine user harm, not a number that looks scary.\n\nAnything that fails these belongs somewhere gentler: a ticket for tomorrow, a chat message, a dashboard. Teams that page on everything end up with **alert fatigue**: so many false and trivial pages that people stop trusting the pager and slow-walk the real ones.",
+          body: "A smoke alarm that goes off every time you make toast soon gets its battery taken out, and then it is silent when there is a real fire. Alerts work the same way.\n\nA **page** is a request that interrupts a person, perhaps asleep, to do something *now*. That is expensive, so a page should satisfy three tests:\n\n1. **Urgent**: it cannot wait until morning.\n2. **Actionable**: there is something a human can do about it.\n3. **Real**: it reflects genuine user harm, not a number that looks scary.\n\nAnything that fails these belongs somewhere gentler: a ticket for tomorrow, a chat message, a dashboard. Teams that page on everything end up with **alert fatigue**: so many false and trivial pages that people stop trusting the pager and slow-walk the real ones.",
         },
         {
           kind: "question",
@@ -939,7 +940,7 @@ def burn_rate(error_ratio, slo):
         {
           kind: "explain",
           title: "Dashboards that answer questions",
-          body: "A dashboard is not a place to display everything you can measure. It is the answer sheet for questions someone will actually ask, usually in a hurry. Start with the questions, then add only the panels that answer them.\n\nGood habits: put **user-facing health** (RED, SLO status) at the top, then one panel per resource that could be the limit (USE); show **deploy and flag markers** on the time axis so \"what changed?\" is a glance; break key numbers down by the dimension you will want (route, region); keep the same time range and scale across graphs. Leave out vanity charts that make a screen feel busy and a person feel informed but answer nothing.",
+          body: "A **dashboard** is a screen of live charts about your system, like a car's instrument panel. A dashboard is not a place to display everything you can measure. It is the answer sheet for questions someone will actually ask, usually in a hurry. Start with the questions, then add only the panels that answer them.\n\nGood habits: put **user-facing health** (RED, SLO status) at the top, then one panel per resource that could be the limit (USE); show **deploy and flag markers** on the time axis so \"what changed?\" is a glance; break key numbers down by the dimension you will want (route, region); keep the same time range and scale across graphs. Leave out vanity charts that make a screen feel busy and a person feel informed but answer nothing.",
         },
         {
           kind: "question",
@@ -995,7 +996,7 @@ def burn_rate(error_ratio, slo):
         {
           kind: "explain",
           title: "When it breaks anyway",
-          body: "However careful the team, things will break. An **incident** is an unplanned event that degrades the service enough to need a coordinated response. What separates a calm hour from a chaotic night is rarely cleverness; it is having rehearsed the same four jobs:\n\n- **Detect**: find out quickly, ideally from your own alerts and not from customers.\n- **Mitigate**: stop the harm *now*, by whatever is fastest and safest.\n- **Communicate**: keep the people affected, and the rest of the company, informed.\n- **Learn**: afterwards, understand why it happened and change the system so it is less likely or less costly next time.\n\nEven a small team should name one person who is **in charge** of the incident (the incident commander). Their job is to coordinate, decide and keep the thread, *not* to debug; it is hard to do both.",
+          body: "Schools hold fire drills so that on the real day nobody has to think about where to go. Teams do the same for outages: they agree the steps while it is calm.\n\nHowever careful the team, things will break. An **incident** is an unplanned event that degrades the service enough to need a coordinated response. What separates a calm hour from a chaotic night is rarely cleverness; it is having rehearsed the same four jobs:\n\n- **Detect**: find out quickly, ideally from your own alerts and not from customers.\n- **Mitigate**: stop the harm *now*, by whatever is fastest and safest.\n- **Communicate**: keep the people affected, and the rest of the company, informed.\n- **Learn**: afterwards, understand why it happened and change the system so it is less likely or less costly next time.\n\nEven a small team should name one person who is **in charge** of the incident (the incident commander). Their job is to coordinate, decide and keep the thread, *not* to debug; it is hard to do both.",
         },
         {
           kind: "explain",
@@ -1122,7 +1123,7 @@ def mttr(incidents):
         {
           kind: "explain",
           title: "Will it hold on the big day?",
-          body: "You will not find out how a service behaves under pressure by reading its code. You find out by putting it under pressure on purpose, somewhere it is safe to fail. The kinds of **performance test** answer different questions:\n\n- **Load test**: run the traffic you *expect* at peak. Does it meet its targets?\n- **Stress test**: keep raising load *past* the expected peak until it breaks. Where is the limit, and *how* does it fail (gracefully, or in a heap)?\n- **Soak test**: run at a moderate, steady load for many hours. Does anything leak or degrade over time (memory, connections, disk)?\n- **Spike test**: jump suddenly from low to high. Do autoscaling, queues and caches cope with a sudden crowd?",
+          body: "Before opening a new bridge, engineers drive heavy lorries over it to see whether it holds. You do the same with a service: you do not hope it copes with the big day, you test it first.\n\nYou will not find out how a service behaves under pressure by reading its code. You find out by putting it under pressure on purpose, somewhere it is safe to fail. The kinds of **performance test** answer different questions:\n\n- **Load test**: run the traffic you *expect* at peak. Does it meet its targets?\n- **Stress test**: keep raising load *past* the expected peak until it breaks. Where is the limit, and *how* does it fail (gracefully, or in a heap)?\n- **Soak test**: run at a moderate, steady load for many hours. Does anything leak or degrade over time (memory, connections, disk)?\n- **Spike test**: jump suddenly from low to high. Do autoscaling (the platform adding extra copies of your service by itself when it gets busy), queues and caches cope with a sudden crowd?",
         },
         {
           kind: "question",
@@ -1138,7 +1139,7 @@ def mttr(incidents):
         {
           kind: "explain",
           title: "The hockey stick",
-          body: "Every load test of a normal system draws the same shape. At low load, latency is flat: requests are served as they arrive. As the servers get busier, requests increasingly arrive while others are being handled, and start to **queue**. Latency bends upward, slowly at first and then violently: the **knee** of the curve. Past 100% utilization, work arrives faster than it can be done, the queue grows without end, and requests fail.\n\nDrag the load and change the number of instances. Keep the dot inside the green zone.",
+          body: "Every load test of a normal system draws the same shape. At low load, latency is flat: requests are served as they arrive. As the servers get busier, requests increasingly arrive while others are being handled, and start to **queue**. Latency (how long a request takes) bends upward, slowly at first and then violently: the **knee** of the curve. (You saw this **hockey stick** in the traffic module.) Past 100% utilisation, work arrives faster than it can be done, the queue grows without end, and requests fail.\n\nDrag the load and change the number of instances. Keep the dot inside the green zone.",
           widget: { type: "obs-loadtest", props: { load: 60, instances: 1 } },
         },
         {
@@ -1152,7 +1153,7 @@ def mttr(incidents):
         {
           kind: "question",
           title: "Why does it slow down before it is full?",
-          body: "At 70% utilization the servers are not even close to maxed out, yet latency has already doubled. Why?",
+          body: "At 70% utilisation the servers are not even close to maxed out, yet requests already take about 3.3 times their bare work time (the 1 ÷ (1 − utilisation) curve from the traffic module: 2× at 50%, 3.3× at 70%). Why?",
           question: {
             type: "choice",
             options: [
@@ -1163,12 +1164,12 @@ def mttr(incidents):
             ],
             answer: 1,
           },
-          explanation: "Arrivals are bursty, not evenly spaced. When a server is mostly idle a burst is absorbed in a moment; when it is mostly busy there is little slack to catch up, so waiting piles up. That is why capacity planning aims for roughly 50 to 70% utilization at peak, not 95%.",
+          explanation: "Arrivals are bursty, not evenly spaced. When a server is mostly idle a burst is absorbed in a moment; when it is mostly busy there is little slack to catch up, so waiting piles up. That is why capacity planning aims for roughly 50 to 70% utilisation at peak, not 95%.",
         },
         {
           kind: "explain",
           title: "Little's law",
-          body: "There is a beautiful bit of arithmetic that holds for any stable queue:\n\n" +
+          body: "A quick recap of **Little's law** from the traffic module. It holds for any stable queue:\n\n" +
             text(`
 requests in the system = arrival rate x average time in the system
 
@@ -1191,7 +1192,7 @@ requests in the system = arrival rate x average time in the system
         {
           kind: "code",
           title: "Size the fleet",
-          body: "Write `capacity_needed(peak_rps, per_instance_rps, target_util=0.6, spare=1)`. Each instance can serve `per_instance_rps` at full tilt, but you only want to run it at `target_util` (a fraction) at peak. Return the number of instances needed to carry `peak_rps` at that utilization, rounded **up**, plus `spare` extra instances so a failure does not push the rest into the knee.\n\n(Hint: round the division to 6 decimals before `math.ceil`, so floating-point noise cannot add a phantom instance.)",
+          body: "Write `capacity_needed(peak_rps, per_instance_rps, target_util=0.6, spare=1)`. Each instance can serve `per_instance_rps` at full tilt, but you only want to run it at `target_util` (a fraction) at peak. Return the number of instances needed to carry `peak_rps` at that utilisation, rounded **up**, plus `spare` extra instances so a failure does not push the rest into the knee.\n\n(Hint: round the division to 6 decimals before `math.ceil`, so tiny decimal rounding errors in the computer's arithmetic cannot add an extra instance by accident.)",
           language: "python",
           starter: `import math
 

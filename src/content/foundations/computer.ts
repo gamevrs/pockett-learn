@@ -8,7 +8,7 @@ const COUNT_UP = ["LOAD 14", "ADD 15", "OUT", "JUMP 1", 0, 0, 0, 0, 0, 0, 0, 0, 
 const COUNTDOWN = (n: number) => ["LOAD 14", "OUT", "SUB 15", "JZ 5", "JUMP 1", "HALT", 0, 0, 0, 0, 0, 0, 0, 0, n, 1];
 const COUNTDOWN_NAMES = { "14": "start", "15": "one" };
 
-/** Module 2: inside the computer (parts, memory, the CPU's loop, clock, buses, caches, I/O, boot). */
+/** Module: inside the computer (parts, memory, the CPU's loop, clock, buses, caches, I/O, boot). */
 export const computerModule: Module = {
   id: "computer",
   part: "start",

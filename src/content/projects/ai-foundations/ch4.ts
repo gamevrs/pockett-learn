@@ -319,7 +319,7 @@ The goal sits in between: flexible enough to learn the real pattern, restrained 
 
 ### The fit curve
 
-Compute accuracy for many values of \`k\`, on training and on held-out fruit, and put them side by side:
+Compute accuracy for many values of \`k\`, on training fruit and on **held-out** fruit (fruit the machine has not memorised; the test fruit are the main example), and put them side by side:
 
 ~~~text
   k    train   held-out
@@ -348,6 +348,24 @@ gaps = queries[:, None, :] - reference[None, :, :]       # (n_q, n_ref, 4)
 distances = np.sqrt((gaps ** 2).sum(axis=2))            # (n_q, n_ref)
 order = np.argsort(distances, axis=1, kind="stable")    # row i: reference rows nearest-first
 ~~~
+
+Do not panic over the three-number shapes. Say there are 2 queries and 3 reference fruit, each with 4 numbers. The result \`gaps\` is a stack of 2 sheets (one per query); each sheet is a small table with 3 rows (one per reference fruit) and 4 columns (one per feature):
+
+~~~text
+gaps.shape = (2, 3, 4)
+ sheet 0 (query 0):  3 rows x 4 columns = query 0 minus each reference fruit
+ sheet 1 (query 1):  3 rows x 4 columns = query 1 minus each reference fruit
+~~~
+
+\`axis=2\` adds up the 4 columns of each row, leaving one distance per (query, reference) pair, shape \`(2, 3)\`. The same thing with plain loops, slower but easy to read:
+
+~~~python
+for i in range(len(queries)):
+    for j in range(len(reference)):
+        distances[i, j] = np.sqrt(((queries[i] - reference[j]) ** 2).sum())
+~~~
+
+If this feels heavy, write the loop version first and come back to the stacked one once it works.
 
 \`[:, None, :]\` inserts a new axis of size 1, so every query is subtracted from every reference row. For training fruit scored against themselves, column 0 of \`order\` is the fruit itself (distance 0); dropping it with \`order[:, 1:]\` gives the leave-one-out version.
 
@@ -535,7 +553,7 @@ assert best_k in K_VALUES, "best_k must be one of the values in K_VALUES"
 
 A model can only use what you show it. Often the cheapest way to improve it is not a fancier algorithm but a **better input**: a feature that makes the pattern easy to see. Inventing such features is **feature engineering**, and it is where knowing your subject pays off.
 
-Think about apples and pears. They have similar diameters and similar weights, so the raw numbers overlap. But a pear is a *dense* fruit and an apple is airy: for the same size, a pear is heavier. The useful fact lives in the **relationship** between two measurements, not in either one alone.
+Think about apples and pears. They have similar diameters and similar weights, so the raw numbers overlap. In our orchard's data, a pear is a *dense* fruit and an apple is airy: for the same size, a pear is heavier. (That is a fact about this orchard's fruit, not a law of nature; always check your data.) The useful fact lives in the **relationship** between two measurements, not in either one alone.
 
 ### Ratios: capture "heavy for its size"
 
@@ -567,7 +585,7 @@ We turn the hue (an angle in degrees) into a band: below 35 is "warm", 35 up to 
 Feature engineering must follow the same rules as everything else:
 
 1. A new feature may only use the fruit's **own measurements**, never its label (that would be leakage).
-2. Scale **after** engineering, with a scaler learned from the training fruit only (the helper below does it for you).
+2. Scale **after** engineering, with a scaler learned from the training fruit only (the starter reuses your own \`fit_scaler\` and \`apply_scaler\` from lesson 4).
 3. **Measure** the result. A clever feature that does not improve held-out accuracy is just noise. Add features one idea at a time and keep what helps.
 
 ### Common mistakes
@@ -780,15 +798,15 @@ You have all the parts. A real machine learning system strings them into a **pip
 5. predict   sort brand-new fruit with the same scaler and model
 ~~~
 
-Writing the whole thing as **one function** that takes data and a seed is a professional habit. You can rerun it on any batch, with any seed, and get a number you can compare. Reproducibility is what turns "it seemed to work" into evidence.
+Writing the whole thing as **one function** that takes data and a seed is a professional habit. You can rerun it on any batch, with any seed, and get a number you can compare. Reproducibility (the same seed gives the same answer, every run) is what turns "it seemed to work" into evidence.
 
 ### A new day, a new batch
 
-Today's model was built from one batch of 240 fruit. Tomorrow the farm delivers a **fresh** batch. If the pipeline still scores well on it, you have a model that survives contact with reality; if not, something about the data has drifted and it is time to investigate. We will call \`read_sensors(seed=99)\` to simulate a new day.
+Today's model was built from one batch of 240 fruit. Tomorrow the farm delivers a **fresh** batch. If the pipeline still scores well on it, you have a model that survives contact with reality; if not, something about the data has drifted (changed over time, like a new season of fruit) and it is time to investigate. We will call \`read_sensors(seed=99)\` to simulate a new day.
 
 ### Decisions in a single call
 
-The belt does not run three models separately. For each fruit it needs everything at once: the kind, whether it is ripe and what to charge. A single \`sort_fruit(features)\` that returns a dict with all of it keeps the rest of the system simple.
+The belt does not run three models separately. For each fruit it needs everything at once: the kind, whether it is ripe and what to charge. A single \`sort_fruit(features)\` that returns a dict with all of it keeps the rest of the system simple. The mission's \`evaluate_pipeline\` likewise returns a dict with four keys: \`"accuracy"\` (the share of test fruit right), \`"confusion"\` (the confusion matrix of lesson 8), \`"train_size"\` and \`"test_size"\` (how many fruit went into each part).
 
 ### Predicting many fruit together
 
@@ -798,7 +816,7 @@ Hundreds of fruit per second call for a **batch** version. You already have the 
 
 Look back at the toolbox: data tables, NumPy, scaling, k-NN, honest splits, confusion matrices, a line and then a plane trained by gradient descent, logistic regression, thresholds, over- and underfitting, engineered features. That is the foundation of practical machine learning.
 
-Here is the bridge to **neural networks**. Your ripeness model computes \`sigmoid(weights . features + bias)\`. That is one **neuron**. A neural network is many of those wired in layers, where the outputs of one layer become the inputs of the next, trained with the same idea you used here: measure a loss, follow its gradient downhill. The extra step, **backpropagation**, just applies the chain rule so the gradient can flow back through every layer. The network then learns its own features instead of relying on hand-made ones like density. That is where this track goes next.
+Here is the bridge to **neural networks**. Your ripeness model computes \`sigmoid(weights . features + bias)\`. That is one **neuron** (a tiny calculator that adds up weighted inputs and squashes the result). A neural network is many of those wired in layers, where the outputs of one layer become the inputs of the next, trained with the same idea you used here: measure a loss, follow its gradient downhill. The extra step, **backpropagation**, is a bookkeeping trick (it uses the *chain rule* from calculus) for working out how much each knob in every layer is to blame for the error, so the gradient can flow back through every layer. The network then learns its own features instead of relying on hand-made ones like density. That is where this track goes next.
 
 ### Common mistakes
 

@@ -3,7 +3,7 @@ import type { Module } from "../../learn/types.ts";
 /** Fenced Python block for lesson prose. */
 const py = (code: string) => "~~~python\n" + code.trim() + "\n~~~";
 
-/** Module 4: design patterns. Each pattern: the pain first, then the mechanism, the roles, code, and when to use it. */
+/** Module: design patterns. Each pattern: the pain first, then the mechanism, the roles, code, and when to use it. */
 export const patternsModule: Module = {
   id: "patterns",
   part: "building",

@@ -21,8 +21,9 @@ export const cachingLessonsA: ConceptLesson[] = [
         kind: "explain",
         title: "Some answers cost more than others",
         body: P(
-          "Every program spends its life asking for things: a value from memory, a row from a database, a page from another continent. The questions look alike in code, a function call or a line of SQL, but they are **not** alike in time.",
-          "Tap each row. The bars are on a log scale, so each one is *many times* longer than the one above it. The note underneath stretches time until a single nanosecond lasts a whole second, so the numbers stop being abstract.",
+          "If you are hungry, you can grab a snack from the **fridge** in ten seconds, or walk to the **supermarket** and back in half an hour. A clever person keeps the snacks they eat most in the fridge, so most of the time the trip is short. A **cache** is that fridge, and this module is about deciding what goes in it.",
+          "Every program spends its life asking for things: a value from memory, a row from a database, a page from another continent. The questions look alike in code, a function call or a line of SQL, but they are **not** alike in time. **Latency** just means *how long one thing takes* from asking to getting the answer.",
+          "Two small units: a **millisecond (ms)** is a thousandth of a second, and a **nanosecond (ns)** is a thousandth of a millionth of a second, so 1 ms = 1,000,000 ns. Tap each row below. The bars are on a **log scale** (each step along the bar means *ten times* more, not one more), so each row is *many times* longer than the one above it; people say they differ by **orders of magnitude** (each order is a factor of 10). The note underneath stretches time until a single nanosecond lasts a whole second, so the numbers stop being abstract.",
         ),
         widget: { type: "cache-latency", props: { mode: "ladder" } },
       },
@@ -42,7 +43,7 @@ export const cachingLessonsA: ConceptLesson[] = [
         kind: "explain",
         title: "A cache is a bet that the past repeats",
         body: P(
-          "A **cache** is a small, fast place that keeps copies of answers you already paid for. When someone asks again, you hand back the copy instead of redoing the slow thing.",
+          "A **cache** is a small, fast place that keeps copies of answers you already paid for (the fridge, not the supermarket). When someone asks again, you hand back the copy instead of redoing the slow thing.",
           "Picture **Pantry**, a recipe app. The page for “weeknight lentil soup” is requested a thousand times an hour, and building it needs three database queries and a pass through a template. Build it once, keep the finished page for a while, and 999 of those requests cost almost nothing.",
           "Two words you will use all module:\n\n- A **hit** is a request the cache answers itself.\n- A **miss** is a request it can't, so the slow path runs (and usually the answer is stored on the way back).",
           "Every cache is a trade: you spend **space** and accept that the copy might be **out of date**, and in return you get **time**. The rest of this module is about making that trade on purpose.",
@@ -54,7 +55,7 @@ export const cachingLessonsA: ConceptLesson[] = [
         body: P(
           "Say a hit takes 1 ms and a miss takes 40 ms (the slow path, plus the small cost of checking the cache first). If a fraction `h` of requests are hits:",
           txt("average read  =  h × hit time  +  (1 − h) × miss time"),
-          "Drag the hit rate. Notice the shape: going from 0% to 50% barely helps, but the last few percent near 100% matter enormously, because each miss is so much slower than a hit.",
+          "Drag the hit rate and watch the number. With these times: at 0% hits the average is 40 ms; at 50% it is 0.5 × 1 + 0.5 × 40 = **20.5 ms**, almost twice as fast, so even a half-useful cache halves the wait. Every extra 10 points of hit rate saves the same 3.9 ms. But the *multiple* grows the closer you get to 100%, because once the misses are rare, each remaining miss is what is left of the time.",
         ),
         widget: { type: "cache-latency", props: { mode: "average", hitMs: 1, missMs: 40, initial: 50 } },
       },
@@ -111,7 +112,13 @@ export const cachingLessonsA: ConceptLesson[] = [
       {
         kind: "code",
         title: "Build the smallest cache",
-        body: "Write `make_cached(fn)`. It returns a wrapper that remembers answers: calling the wrapper with an argument it has seen before returns the stored answer **without calling `fn` again**. The wrapper must also count `wrapper.hits` and `wrapper.misses` (attributes on the function, both starting at 0).",
+        body: "Write `make_cached(fn)`. It returns a wrapper that remembers answers: calling the wrapper with an argument it has seen before returns the stored answer **without calling `fn` again**. The wrapper must also count `wrapper.hits` and `wrapper.misses`.\n\nIn Python a function is an object, so you can hang a number on it like a label on a jar. After the function is defined, write `wrapper.hits = 0`; inside it, add one with `wrapper.hits += 1`:\n\n" + py(`
+def wrapper(x):
+    wrapper.hits += 1      # uses the label set below
+    return x
+
+wrapper.hits = 0           # set the label once, after def
+`) + "\nA plain dict (`store = {}`) is the memory: `if x in store` asks 'have I seen this?', and `store[x] = value` remembers it.",
         language: "python",
         starter: `def make_cached(fn):
     # Return a wrapper around fn that remembers answers.

@@ -37,7 +37,7 @@ function Player({ ctx }: { ctx: ConceptContext }) {
   const { lesson, module } = ctx;
   const progress = useProgress();
   const total = lesson.steps.length;
-  const [index, setIndex] = useState(() => savedStep(lesson.id, total));
+  const [index, setIndex] = useState(() => savedStep(lesson.id, lesson.steps));
   // the step this visit resumed at (0 = a fresh start): drives the "picked up where you left off" note
   const [resumedAt, setResumedAt] = useState(index);
   const [done, setDone] = useState<CompletionResult | null>(null);
@@ -49,7 +49,7 @@ function Player({ ctx }: { ctx: ConceptContext }) {
   const goTo = (n: number) => {
     setIndex(n);
     setDirty(false);
-    saveStep(lesson.id, n);
+    saveStep(lesson.id, lesson.steps, n);
   };
 
   const finish = () => {

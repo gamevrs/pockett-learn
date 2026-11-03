@@ -24,7 +24,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "A function call, stretched across a network",
-          body: "Inside one program, calling a function ends in one of two ways: it **returns**, or it **throws**. Either way you know what happened.\n\nPut a network in the middle and that certainty goes. Your call becomes a **message** to another computer, and that computer may be busy, rebooting, unreachable, or perfectly fine but sitting behind a cable somebody just kicked.\n\nSystems built from many machines have a special kind of breakage called **partial failure**: *some* parts stop working while the rest carry on. Nobody switches the whole thing off for you. You have to notice, and decide what to do.",
+          body: "Picture shouting a question across a noisy playground and hearing nothing back. Did your friend hear you? Did they say no? Did they walk away? You can't tell. Programs that talk over a network are in that spot all the time.\n\nInside one program, calling a function ends in one of two ways: it **returns**, or it **throws**. Either way you know what happened.\n\nPut a network in the middle and that certainty goes. Your call becomes a **message** to another computer, and that computer may be busy, rebooting, unreachable, or perfectly fine but sitting behind a cable somebody just kicked.\n\nSystems built from many machines have a special kind of breakage called **partial failure**: *some* parts stop working while the rest carry on. Nobody switches the whole thing off for you. You have to notice, and decide what to do.",
         },
         {
           kind: "question",
@@ -59,7 +59,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Three kinds of failure, one of them nasty",
-          body: "Not all failures are equally hard to deal with:\n\n- **Refused**: the connection is rejected straight away (nothing is listening). Fast and clear.\n- **An error answer**: the server replies *“503, try later”*. Fast and clear: you even know it did nothing.\n- **Silence**: the connection opens, or the request leaves, and then nothing. Slow, and you can't tell what state the world is in.\n\nSilence is the one that takes systems down. While you wait, you are holding a thread, a connection, memory. A *dead* dependency costs you almost nothing; a *slow* one costs you something every second.",
+          body: "Not all failures are equally hard to deal with:\n\n- **Refused**: the connection is rejected straight away (nothing is listening). Fast and clear.\n- **An error answer**: the server replies *“503, try later”* (503 is a status number a server sends to say “I'm busy, come back later”). Fast and clear: you even know it did nothing.\n- **Silence**: the connection opens, or the request leaves, and then nothing. Slow, and you can't tell what state the world is in.\n\nSilence is the one that takes systems down. While you wait, you are holding a **thread** (one worker inside your program doing one job at a time), a **connection** (the open line to the other computer) and some memory. A *dead* dependency costs you almost nothing; a *slow* one costs you something every second.",
         },
         {
           kind: "question",
@@ -80,9 +80,9 @@ export const reliabilityModule: Module = {
         {
           kind: "question",
           title: "Nines multiply",
-          body: "One user action touches **5 services in a row**, and each one works **99.9%** of the time (three nines, a very good service). About how many out of **10,000** such actions fail?",
+          body: "One user action touches **5 services in a row**, and each one works **99.9%** of the time (“three nines”: 9, 9, 9 in 99.9, and a very good service). About how many out of **10,000** such actions fail?",
           question: { type: "number", hint: "The chance that all 5 work is 0.999 multiplied by itself 5 times.", answer: 50, tolerance: 3 },
-          explanation: "0.999⁵ ≈ 0.995, so about **0.5%** of actions fail, roughly 50 in 10,000. Each extra dependency in a chain makes the whole thing a little less reliable than its weakest part. With dozens of dependencies, “something is failing right now” is the normal state, which is why we design for it.",
+          explanation: "Multiplying 0.999 by itself 5 times (0.999⁵) gives about 0.995, so about **0.5%** of actions fail, roughly 50 in 10,000. Each extra dependency in a chain makes the whole thing a little less reliable than its weakest part. With dozens of dependencies, “something is failing right now” is the normal state, which is why we design for it.",
         },
         {
           kind: "recap",
@@ -107,7 +107,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Waiting forever is a bug",
-          body: "A call with **no timeout** is a promise to wait as long as the other side likes. If the other side never answers, you wait for ever, and some popular HTTP libraries behave exactly like this by default.\n\nThe damage isn't your one stuck call. It's everything that stuck call is *holding*: a worker thread, a connection from a pool, a bit of memory, perhaps a database lock. Hold enough of them and nothing else can run.",
+          body: "Imagine a shop with 20 cashiers. A customer at one till says “wait, my friend is bringing the money” and then never pays. That cashier is stuck. If 20 customers do this, the shop is closed, even for people who only wanted to ask the opening hours.\n\nA call with **no timeout** is the same: a promise to wait as long as the other side likes. If the other side never answers, you wait for ever, and some popular HTTP libraries behave exactly like this by default.\n\nA **pool** is a fixed number of workers (or connections) that all the requests share, like those 20 cashiers. The damage isn't your one stuck call. It's everything that stuck call is *holding*: one worker thread from the pool, a bit of memory, perhaps a database lock. Hold enough of them and nothing else can run.",
         },
         {
           kind: "explain",
@@ -121,19 +121,19 @@ export const reliabilityModule: Module = {
           body: "Choose a timeout so the **pool never fills up**, and the site stays up even while the partner is hanging.",
           widget: { type: "rel-hang", props: { initial: "10" } },
           question: { type: "widget", hint: "Pick a timeout short enough that hung calls are released before the pool fills up.", goal: { neverFull: true } },
-          explanation: "At 4 checkouts a second, a timeout of 1 s pins about 4 workers and 3 s pins about 12. Past 4 s the stuck calls need more workers than exist. The rule of thumb: **arrival rate × timeout must stay well below your pool size.** A timeout that is *too long* protects nothing.",
+          explanation: "At 4 checkouts a second, a timeout of 1 s pins about 4 workers and 3 s pins about 12. At 5 s the stuck calls need 4 × 5 = 20 workers, the whole pool, and anything longer needs more than exist. (Normal traffic needs a few workers too, so stay clearly below that.) The rule of thumb: **arrival rate × timeout must stay well below your pool size.** A timeout that is *too long* protects nothing.",
         },
         {
           kind: "question",
           title: "How many workers?",
           body: "Calls arrive at **4 per second**, and each one hangs for **6 seconds** before its timeout fires. About how many workers are stuck at any moment?",
           question: { type: "number", hint: "Stuck workers = calls per second × seconds each call hangs.", answer: 24 },
-          explanation: "4 per second × 6 seconds = **24** calls in flight. That is more than a 20-worker pool, so it is already full. This relationship (in-flight = arrival rate × time in system) is called **Little's law**, and you'll meet it again when we talk about traffic.",
+          explanation: "4 per second × 6 seconds = **24** calls in flight. That is more than a 20-worker pool, so it is already full. This relationship (in-flight = arrival rate × time in system) is called **Little's law**, and you'll meet it again when we talk about traffic. (Picture a bath: water flowing in at 4 litres a second, each litre staying 6 seconds before it drains, means 24 litres in the bath at any moment.)",
         },
         {
           kind: "explain",
           title: "More than one clock",
-          body: "“The timeout” is really several, and a good client sets each one:\n\n- **Connect timeout**: how long to wait for the connection to open. Short: reaching a healthy server takes milliseconds.\n- **Read timeout**: how long to wait for the response once the request is sent. Set it from what the call really needs.\n- **Total timeout**: an overall cap on the whole exchange, so a trickle of bytes can't keep a call alive for ever.\n\nIn Python's `requests` library the first two look like this:\n\n" + py("requests.get(url, timeout=(3, 10))   # 3 s to connect, 10 s to read a response"),
+          body: "“The timeout” is really several, and a good client sets each one:\n\n- **Connect timeout**: how long to wait for the connection to open. Short: reaching a healthy server takes milliseconds.\n- **Read timeout**: how long to wait for the response once the request is sent. Set it from what the call really needs.\n- **Total timeout**: an overall cap on the whole exchange, so a trickle of bytes can't keep a call alive for ever.\n\nIn Python's `requests` library the first two look like this:\n\n" + py("requests.get(url, timeout=(3, 10))   # 3 s to connect, 10 s to read a response") + "\nThe pair `(3, 10)` is a **tuple**: two values in one set of brackets. The first is the connect timeout (3 seconds), the second the read timeout (10 seconds).",
         },
         {
           kind: "question",
@@ -145,19 +145,19 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Choosing the number",
-          body: "Too short and healthy-but-slow calls fail (and, as you'll see, their retries add more load). Too long and a dying dependency eats your pool. So measure, don't guess.\n\nLook at how long calls *really* take, using percentiles: the **p99** is the time that 99 out of 100 calls beat. A common recipe is to set the timeout at a small multiple of the p99: enough headroom for a bad day, still far below your pool's limit.",
+          body: "Too short and healthy-but-slow calls fail (and, as you'll see, their retries add more load). Too long and a dying dependency eats your pool. So measure, don't guess.\n\nThe time a call takes is its **latency**. Take 10 latencies and sort them from fastest to slowest:\n\n" + text("30  32  35  38  40  41  44  50  60  900   (ms)") + "\nThe **median** is the middle one (about 40 ms): half the calls are faster. The **p99** (99th percentile) is the time that 99 out of 100 calls beat, so it describes the slow end. Here the slowest of these 10 is 900 ms, and that is the number a p99 cares about. The average would hide it.\n\nA common recipe is to set the timeout at a small multiple of the p99: enough headroom for a bad day, still far below your pool's limit. (Percentiles get a whole lesson of their own in the observability module.)",
         },
         {
           kind: "question",
           title: "Pick one",
           body: "A call has these latencies: median **40 ms**, p99 **300 ms**, p99.9 **900 ms**. The caller's pool is small and the user is waiting. Which timeout is the best fit?",
           question: { type: "choice", options: ["30 seconds, to be generous", "About 1 second", "50 milliseconds, to be snappy", "No timeout: the median is tiny"], answer: 1 },
-          explanation: "About **1 s** clears even the slow tail (p99.9 is 0.9 s) while releasing resources quickly. 50 ms would fail more than half of the p99 calls on a healthy day. 30 s would let a dead dependency pin your pool for 30× longer than any healthy call ever takes.",
+          explanation: "About **1 s** clears even the slow tail (p99.9 is 0.9 s) while releasing resources quickly. 50 ms would cut off a large share of ordinary calls on a healthy day, since the median is already 40 ms. 30 s would let a dead dependency pin your pool for 30× longer than any healthy call ever takes.",
         },
         {
           kind: "code",
           title: "Timeout from samples",
-          body: "Write `pick_timeout(samples_ms)`: it returns **twice the 99th percentile** of the latency samples, in milliseconds.\n\nUse the *nearest-rank* method: sort the samples; the p99 is the value at position `ceil(0.99 × n)` (counting from 1). For 100 samples that is the 99th smallest, so one terrible outlier at the end doesn't set your timeout.",
+          body: "Write `pick_timeout(samples_ms)`: it returns **twice the 99th percentile** of the latency samples, in milliseconds.\n\nUse the *nearest-rank* method: sort the samples; the p99 is the value at position `ceil(0.99 × n)` (counting from 1). For 100 samples that is the 99th smallest, so one terrible outlier at the end doesn't set your timeout.\n\n`ceil` means “round up to a whole number”: `ceil(9.9)` is 10. Worked example with 5 samples `[30, 10, 20, 50, 40]`: sorted they are `[10, 20, 30, 40, 50]`; n = 5; rank = ceil(0.99 × 5) = ceil(4.95) = 5; the p99 is the 5th value, 50; the answer is 2 × 50 = 100.",
           language: "python",
           starter: "def pick_timeout(samples_ms):\n    ordered = sorted(samples_ms)\n    # nearest rank: position ceil(0.99 * n), counting from 1\n    return ordered[-1] * 2\n",
           solution: "def pick_timeout(samples_ms):\n    ordered = sorted(samples_ms)\n    rank = -(-99 * len(ordered) // 100)  # ceil(0.99 * n) with whole numbers\n    return ordered[rank - 1] * 2\n",
@@ -192,7 +192,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Timeouts stack the wrong way",
-          body: "A shopper taps **Buy**. The request goes Gateway → Orders → Inventory → Warehouse. Each service gives its downstream call a sensible timeout of 5 seconds.\n\nBut the shopper's patience is **4 seconds**. After that they've closed the tab. Nobody told Orders or Inventory or the Warehouse, though. Each one keeps waiting on *its own* 5-second clock, working for a result nobody wants.",
+          body: "Think of a relay race where the crowd leaves after 4 minutes, but the runners keep running their full laps because nobody told them. That is wasted effort.\n\nA shopper taps **Buy**. The request goes Gateway → Orders → Inventory → Warehouse. Each service in that chain makes a call to the next one, its **downstream**, and gives that call a sensible timeout of 5 seconds.\n\nBut the shopper's patience is **4 seconds**. After that they've closed the tab. Nobody told Orders or Inventory or the Warehouse, though. Each one keeps waiting on *its own* 5-second clock, working for a result nobody wants.",
         },
         {
           kind: "explain",
@@ -211,7 +211,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "A deadline is a time, not a duration",
-          body: "The fix is to stop thinking in “how long may *this* call take?” and think in **“by when must the whole request be finished?”**\n\nThe gateway computes one **deadline** (now + 4 s) and passes it along with the request. Every service:\n\n1. works out how much time is **left** (deadline − now),\n2. uses that, minus a little for the trip home, as its downstream timeout, and\n3. gives up straight away if nothing is left.\n\nBetween machines whose clocks may disagree, systems usually pass the **remaining time** (“3.2 s left”) rather than a clock reading, and each hop subtracts what it has used. gRPC does exactly this with its deadlines.",
+          body: "The fix is to stop thinking in “how long may *this* call take?” and think in **“by when must the whole request be finished?”**\n\nThe gateway computes one **deadline** (now + 4 s) and passes it along with the request. Every service:\n\n1. works out how much time is **left** (deadline − now),\n2. uses that, minus a little for the trip home, as its downstream timeout, and\n3. gives up straight away if nothing is left.\n\nBetween machines whose clocks may disagree, systems usually pass the **remaining time** (“3.2 s left”) rather than a clock reading, and each hop (one step from one service to the next) subtracts what it has used. Some popular service-to-service tools do exactly this with their deadlines.\n\nTiny example: deadline 10 s, the clock now says 7 s, and you keep 0.5 s in reserve for the trip home. Time left = 10 − 7 − 0.5 = **2.5 s** for the downstream call.",
         },
         {
           kind: "question",
@@ -277,7 +277,12 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "A retry is a bet",
-          body: "Many failures are **transient**: a server restarting, a packet lost, a briefly overloaded node. Trying again a moment later often just works, and that is why every serious client retries.\n\nBut a retry is only a good bet when the failure is *temporary*. If the request is wrong, sending it again just fails again, wasting time and load. So the first skill is telling the two apart.",
+          body: "If a friend's phone line is busy, you redial a minute later and it often works. If you posted a letter with a rude word and the post office returned it, re-posting the same letter gets it returned again. Retrying is smart for one kind of problem and pointless for the other.\n\nMany failures are **transient** (they pass by themselves): a server restarting, a packet lost, a briefly overloaded node. Trying again a moment later often just works, and that is why every serious client retries.\n\nBut a retry is only a good bet when the failure is *temporary*. If the request is wrong, sending it again just fails again, wasting time and load. So the first skill is telling the two apart.",
+        },
+        {
+          kind: "explain",
+          title: "A quick refresher: status codes",
+          body: "You met requests, responses and status codes in the network module's lesson **HTTP**. Here is the part this lesson needs. A server answers every request with a three-digit **status code**, and the first digit tells you the family:\n\n| Code | Family | Plain meaning |\n| --- | --- | --- |\n| 2xx (200) | worked | all fine |\n| 4xx (400, 401, 404, 422) | you asked wrongly | the request was bad, missing or not allowed |\n| 408, 429 | 4xx, but about timing | 408: you were too slow; 429: you are sending too many |\n| 5xx (500, 502, 503, 504) | the server had trouble | 500: it crashed on this; 502/504: a middle server could not reach or wait for the next one; 503: busy, come back later |\n\nA **header** is a labelled extra line sent with a request or response, like `Retry-After: 30`, which means “wait 30 seconds before asking again”.",
         },
         {
           kind: "question",
@@ -320,7 +325,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "The three questions",
-          body: "Before retrying, ask:\n\n1. **Is the failure likely temporary?** (Not a 400, not a 404.)\n2. **Is the operation safe to repeat?** (Reads, or writes made safe.)\n3. **Is there budget left?** (Time before the deadline; room before you overload the service.)\n\nThe HTTP standard marks some methods as **idempotent**, meaning repeating them has the same effect as doing them once: `GET`, `PUT`, `DELETE` (and `HEAD`, `OPTIONS`). `POST` is the usual suspect: it often *creates* something.",
+          body: "Before retrying, ask:\n\n1. **Is the failure likely temporary?** (Not a 400, not a 404.)\n2. **Is the operation safe to repeat?** (Reads, or writes made safe.)\n3. **Is there budget left?** (Time before the deadline; room before you overload the service.)\n\nThe HTTP standard marks some methods as **idempotent**, meaning repeating them has the same effect as doing them once. Think of a thermostat: “set it to 21°” can be said ten times and the room ends at 21°, but “raise it by 1°” ten times gives a different room. `GET`, `PUT`, `DELETE` (and `HEAD`, `OPTIONS`) are idempotent. `POST` is the usual suspect: it often *creates* something.",
         },
         {
           kind: "question",
@@ -348,7 +353,7 @@ export const reliabilityModule: Module = {
         {
           kind: "code",
           title: "The retry decision",
-          body: "Write `should_retry(status, attempt, max_attempts)`.\n\n- `status` is an HTTP status code, or `None` when the call failed at the network level (reset, timeout).\n- Retry only for `None` or for **408, 429, 502, 503, 504**.\n- Stop once `attempt` has reached `max_attempts` (`attempt` counts the tries already made).",
+          body: "Write `should_retry(status, attempt, max_attempts)`.\n\n- `status` is an HTTP status code, or `None` when the call failed at the network level (reset, timeout).\n- Retry only for `None` or for **408, 429, 502, 503, 504**.\n- Stop once `attempt` has reached `max_attempts` (`attempt` counts the tries already made).\n\nTwo example calls: `should_retry(503, 1, 3)` is `True` (a temporary error, and only 1 of 3 tries used). `should_retry(503, 3, 3)` is `False` (all 3 tries used). `should_retry(404, 1, 3)` is `False` (retrying cannot help).",
           language: "python",
           starter: "RETRYABLE = {408, 429, 502, 503, 504}\n\n\ndef should_retry(status, attempt, max_attempts):\n    return attempt < max_attempts\n",
           solution: "RETRYABLE = {408, 429, 502, 503, 504}\n\n\ndef should_retry(status, attempt, max_attempts):\n    if attempt >= max_attempts:\n        return False\n    return status is None or status in RETRYABLE\n",
@@ -386,7 +391,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Don't ask again immediately",
-          body: "Failures that fix themselves usually need a moment: a process restarts, a failover completes, a queue drains. Asking again 1 ms later mostly gets the same answer and adds load to a system that's struggling.\n\nSo each retry waits a bit **longer** than the last. The classic recipe is **exponential backoff**: the wait doubles with every failure (`base × 2 × 2 × …`), up to a **cap** so it never grows silly.",
+          body: "If you knock on a door and nobody answers, you don't knock again every millisecond. You wait a bit, knock again, wait longer, and so on. That is all backoff is.\n\nFailures that fix themselves usually need a moment: a process restarts, a failover completes, a queue drains. Asking again 1 ms later mostly gets the same answer and adds load to a system that's struggling.\n\nSo each retry waits a bit **longer** than the last. The classic recipe is **exponential backoff**: the wait doubles with every failure (`base × 2 × 2 × …`), up to a **cap** so it never grows silly.",
         },
         {
           kind: "explain",
@@ -399,7 +404,7 @@ export const reliabilityModule: Module = {
           title: "Do the doubling",
           body: "Base delay **200 ms**, doubling after each failure, no cap. How long (in ms) is the wait after the **5th** failure?",
           question: { type: "number", hint: "The first wait is 200 ms and each wait is double the one before it.", answer: 3200, unit: "ms" },
-          explanation: "200 → 400 → 800 → 1,600 → **3,200 ms**. That's `200 × 2⁴`. Without a cap, wait number 10 would be over 100 seconds, which is why you always set one.",
+          explanation: "200 → 400 → 800 → 1,600 → **3,200 ms**. That's `200 × 2⁴` (the little 4 means “double 4 times”: 2 × 2 × 2 × 2 = 16, and 200 × 16 = 3,200). Without a cap, wait number 10 would be over 100 seconds, which is why you always set one.",
         },
         {
           kind: "question",
@@ -434,7 +439,7 @@ export const reliabilityModule: Module = {
         {
           kind: "code",
           title: "Delay with jitter",
-          body: "Write `backoff_delay(attempt, base, cap, rand)` for **full jitter**. `attempt` counts failures from 1. The ceiling is `min(cap, base × 2^(attempt-1))`; the delay is that ceiling times `rand` (a number in [0, 1) passed in, so tests are predictable).",
+          body: "Write `backoff_delay(attempt, base, cap, rand)` for **full jitter**. `attempt` counts failures from 1. The ceiling is `min(cap, base × 2^(attempt-1))`; the delay is that ceiling times `rand` (a number in [0, 1) passed in, so tests are predictable).\n\nTwo words to keep apart: the **ceiling** is the wait before randomising; the **cap** is the biggest ceiling allowed. `2^(attempt-1)` means “double, once for every failure after the first”: attempt 1 → 1, attempt 2 → 2, attempt 3 → 4, attempt 4 → 8.\n\nExample: `backoff_delay(3, 1, 100, 0.5)`: ceiling = min(100, 1 × 4) = 4, delay = 0.5 × 4 = **2.0**.",
           language: "python",
           starter: "def backoff_delay(attempt, base, cap, rand):\n    return base * 2 ** (attempt - 1)\n",
           solution: "def backoff_delay(attempt, base, cap, rand):\n    ceiling = min(cap, base * 2 ** (attempt - 1))\n    return rand * ceiling\n",
@@ -449,7 +454,7 @@ export const reliabilityModule: Module = {
         {
           kind: "code",
           title: "The retry loop",
-          body: "Write `call_with_retry(fn, max_attempts, sleep, delay_for)`.\n\nCall `fn()`. If it raises an exception, wait with `sleep(delay_for(attempt))` (where `attempt` is the number of the try that just failed, starting at 1) and try again. Return `fn`'s result as soon as one works. If every attempt fails, raise the **last** exception, with no sleep after the final failure.",
+          body: "Write `call_with_retry(fn, max_attempts, sleep, delay_for)`.\n\nCall `fn()`. If it raises an exception, wait with `sleep(delay_for(attempt))` (where `attempt` is the number of the try that just failed, starting at 1) and try again. Return `fn`'s result as soon as one works. If every attempt fails, raise the **last** exception, with no sleep after the final failure.\n\nNotice that `sleep` and `delay_for` are *functions handed in as arguments*; you call them like any function. A test can hand in a fake `sleep` that just records the waits instead of really waiting: `slept = []` and `sleep=slept.append`, then `slept` ends up as, say, `[10, 20]`.",
           language: "python",
           starter: "def call_with_retry(fn, max_attempts, sleep, delay_for):\n    return fn()\n",
           solution: "def call_with_retry(fn, max_attempts, sleep, delay_for):\n    for attempt in range(1, max_attempts + 1):\n        try:\n            return fn()\n        except Exception:\n            if attempt == max_attempts:\n                raise\n            sleep(delay_for(attempt))\n",
@@ -490,12 +495,12 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Friendly fire",
-          body: "Tickets for the derby go on sale at noon, and **200 fans** all tap Buy inside the same second. The ticket service can absorb **80 requests a second**. The rest get errors, and every fan's app does what we taught it: it retries.\n\nBut retries are *more load*, arriving at a service that is already the one in trouble. If they arrive in lockstep, or too fast, the retries themselves can keep the service down long after the original crowd would have drained. This is a **retry storm**.",
+          body: "Think of a radio phone-in: the host says “lines are open!” and everyone dials at the same second. Most get a busy tone, so they all redial at the same second again, and the lines never clear.\n\nTickets for the derby go on sale at noon, and **200 fans** all tap Buy inside the same second. The ticket service can absorb **80 requests a second**. The rest get errors, and every fan's app does what we taught it: it retries.\n\nBut retries are *more load*, arriving at a service that is already the one in trouble. If they arrive in lockstep, or too fast, the retries themselves can keep the service down long after the original crowd would have drained. This is a **retry storm**.",
         },
         {
           kind: "explain",
           title: "Sale day",
-          body: "The chart shows attempts per second reaching the ticket service. The dashed line is its capacity. Try each retry policy in turn: *Retry at once*, *Fixed 2 s*, *Exponential*, and *Exponential + jitter*.\n\nWatch the **retry peak** and **gave up** readouts. (When the service gets more than twice its capacity in a moment, it thrashes and absorbs even less in the next.)",
+          body: "The chart shows attempts per second reaching the ticket service. The dashed line is its capacity. Try each retry policy in turn: *Retry at once*, *Fixed 2 s*, *Exponential*, and *Exponential + jitter*.\n\nWatch the **retry peak** and **gave up** readouts. (When the service gets more than twice its capacity in a moment, it gets so overloaded that it gets worse, and absorbs even less in the next.)",
           widget: { type: "rel-storm", props: { policy: "fixed", clients: 200 }, live: true },
         },
         {
@@ -509,7 +514,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Retries multiply across layers",
-          body: "Real systems have layers: the app calls the **API**, the API calls the **service**, the service calls the **database**. If each layer retries up to 3 times *independently*, the database sees up to 3 × 3 × 3 requests for one user tap.\n\n" + text("app  → API        3 tries\nAPI  → service    3 tries each\nsvc  → database  3 tries each\n\nworst case at the database: 3 × 3 × 3 = 27 requests\nfor ONE tap on the screen") + "\nA struggling database gets **27× the load** exactly when it can least take it.",
+          body: "Real systems have layers: the app calls the **API**, the API calls the **service**, the service calls the **database**. If each layer retries up to 3 times *independently*, that means up to **4 attempts** per layer (the first try plus 3 retries), and the database sees up to 4 × 4 × 4 requests for one user tap.\n\n" + text("app  → API        4 attempts\nAPI  → service    4 attempts each\nsvc  → database  4 attempts each\n\nworst case at the database: 4 × 4 × 4 = 64 requests\nfor ONE tap on the screen") + "\nA struggling database gets **64× the load** exactly when it can least take it.",
         },
         {
           kind: "question",
@@ -532,12 +537,12 @@ export const reliabilityModule: Module = {
             ],
             answer: 1,
           },
-          explanation: "One deliberate place keeps the total predictable (here, 3 tries instead of 27). The others should return errors quickly and leave it to the retrying layer. Having **no** retries makes every blip visible to users; having them **everywhere** multiplies load.",
+          explanation: "One deliberate place keeps the total predictable (here, 4 attempts instead of 64). The others should return errors quickly and leave it to the retrying layer. Having **no** retries makes every blip visible to users; having them **everywhere** multiplies load.",
         },
         {
           kind: "explain",
           title: "A retry budget",
-          body: "Backoff and jitter spread retries out. A **retry budget** *limits* them: allow retries only up to a small fraction of your normal traffic, say **10%**.\n\nIn a quiet moment, a failed request retries freely. When a dependency has completely failed, every request wants to retry, but only the first 10% are allowed. The rest fail straight away. The extra load on the sick service is capped at **1.1× normal**, instead of 3× or 27×.",
+          body: "Backoff and jitter spread retries out. A **retry budget** *limits* them: allow retries only up to a small fraction of your normal traffic, say **10%**.\n\nIn a quiet moment, a failed request retries freely. When a dependency has completely failed, every request wants to retry, but only the first 10% are allowed. The rest fail straight away. The extra load on the sick service is capped at **1.1× normal**, instead of 4× or 64×.",
         },
         {
           kind: "question",
@@ -549,7 +554,7 @@ export const reliabilityModule: Module = {
         {
           kind: "code",
           title: "Write the budget",
-          body: "Complete `RetryBudget`. `record_request()` counts a normal request. `can_retry()` answers whether one more retry is allowed: it's allowed while retries (counting this one) stay **within `ratio × requests`**. When it says yes, it counts that retry.",
+          body: "Complete `RetryBudget`. `record_request()` counts a normal request. `can_retry()` answers whether one more retry is allowed: it's allowed while retries (counting this one) stay **within `ratio × requests`**. When it says yes, it counts that retry.\n\nExample: ratio 0.1 and 10 requests recorded. The first retry is allowed (1 ≤ 0.1 × 10 = 1) and is counted. A second one is not (2 > 1), so `can_retry()` says `False`.",
           language: "python",
           starter: "class RetryBudget:\n    def __init__(self, ratio):\n        self.ratio = ratio\n        self.requests = 0\n        self.retries = 0\n\n    def record_request(self):\n        self.requests += 1\n\n    def can_retry(self):\n        return True\n",
           solution: "class RetryBudget:\n    def __init__(self, ratio):\n        self.ratio = ratio\n        self.requests = 0\n        self.retries = 0\n\n    def record_request(self):\n        self.requests += 1\n\n    def can_retry(self):\n        if self.retries + 1 <= self.ratio * self.requests:\n            self.retries += 1\n            return True\n        return False\n",
@@ -578,7 +583,7 @@ export const reliabilityModule: Module = {
           points: [
             "Retries are **extra load** on a service that is already in trouble. Synchronised or instant retries can keep it down.",
             "**Jitter** spreads retries out; **exponential backoff** slows them down.",
-            "Retries **multiply across layers** (3 × 3 × 3 = 27). Retry in one place and let the rest fail fast.",
+            "Retries **multiply across layers** (4 × 4 × 4 = 64 attempts when each of three layers allows 3 retries). Retry in one place and let the rest fail fast.",
             "A **retry budget** (e.g. retries ≤ 10% of requests) caps the extra load no matter how bad the failure is.",
           ],
         },
@@ -609,7 +614,7 @@ export const reliabilityModule: Module = {
               "Add €10 to Maya's balance",
               "Delete order #77",
               "Append a line to the audit log",
-              "Send Maya an SMS",
+              "Send Maya a text message",
             ],
             answer: [0, 2],
           },
@@ -661,7 +666,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Details that matter",
-          body: "Servers that take idempotency seriously also:\n\n- **Store the key and the result together**, in the same transaction as the work, so a crash can't leave one without the other.\n- Handle **two copies at the same time**: the second one waits for, or is told about, the first (an HTTP 409 is common).\n- **Reject a reused key with a different request** (same key, different amount): that is a client bug, not a retry.\n- Forget keys after a while (a day is typical).\n\nAnd what about “**exactly once**”? A network can lose, repeat or delay any message, so a message can't be *physically* delivered exactly once. What you can get is **at-least-once delivery** (keep trying until acknowledged) plus **idempotent handling** (ignore repeats). Together they give exactly-once *effect*.",
+          body: "Servers that take idempotency seriously also:\n\n- **Store the key and the result together**, in the same transaction as the work (a **transaction** is a group of changes saved all-or-nothing), so a crash can't leave one without the other.\n- Handle **two copies at the same time**: the second one waits for, or is told about, the first (the status code 409, “conflict”, is common).\n- **Reject a reused key with a different request** (same key, different amount): that is a client bug, not a retry.\n- Forget keys after a while (a day is typical).\n\nAnd what about “**exactly once**”? A network can lose, repeat or delay any message, so a message can't be *physically* delivered exactly once. What you can get is **at-least-once delivery** (keep trying until acknowledged) plus **idempotent handling** (ignore repeats). Together they give exactly-once *effect*.",
         },
         {
           kind: "question",
@@ -717,7 +722,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Stop knocking on a locked door",
-          body: "Timeouts and backoff make each failed call cheaper, but you still make the call, wait for the failure, and only then give up. If the dependency has been down for five minutes, every one of your users pays that wait, and the sick service gets no peace to recover.\n\nA **circuit breaker** watches the recent calls. After enough failures in a row, it **opens**: from then on calls are refused *immediately*, without touching the dependency. After a cool-down, it lets a single test call through to see if things are better.\n\nThink of a receptionist who, after five unanswered calls to an office, stops transferring visitors there and tries the line once every few minutes.",
+          body: "Timeouts and backoff make each failed call cheaper, but you still make the call, wait for the failure, and only then give up. If the dependency has been down for five minutes, every one of your users pays that wait, and the sick service gets no peace to recover.\n\nA **circuit breaker** watches the recent calls. After enough failures in a row, it **opens**: from then on calls are refused *immediately*, without touching the dependency. After a cool-down, it lets a single test call through to see if things are better.\n\nThink of the **fuse** in a house. When too much current flows, the fuse trips and cuts the circuit, so the wires don't burn. A circuit that is *closed* lets electricity flow (normal); a tripped fuse makes it *open* (nothing flows). Software breakers borrow those words, which is why “closed” means “working normally” here. A receptionist who, after five unanswered calls to an office, stops transferring visitors there and tries the line once every few minutes is doing the same job.",
         },
         {
           kind: "explain",
@@ -792,7 +797,7 @@ export const reliabilityModule: Module = {
         {
           kind: "code",
           title: "Build the breaker",
-          body: "Complete `CircuitBreaker` (time is passed in, so tests are predictable).\n\n- `allow(now)`: **closed** → `True`. **Open** → `False`, unless `now - opened_at >= cooldown`: then become **half-open** and return `True` (that call is the test). **Half-open** with a test already out → `False`.\n- `record(ok, now)`: report how an allowed call went. Closed: a success resets the failure count; a failure adds one and opens the breaker at `threshold` (remember `opened_at = now`). Half-open: success → closed (count reset); failure → open again with `opened_at = now`.",
+          body: "Complete `CircuitBreaker` (time is passed in, so tests are predictable).\n\n- `allow(now)`: **closed** → `True`. **Open** → `False`, unless `now - opened_at >= cooldown`: then become **half-open** and return `True` (that call is the test). **Half-open** with a test already out → `False`.\n- `record(ok, now)`: report how an allowed call went. Closed: a success resets the failure count; a failure adds one and opens the breaker at `threshold` (remember `opened_at = now`). Half-open: success → closed (count reset); failure → open again with `opened_at = now`.\n\nThe starter gives you the fields: `state` (starts `\"closed\"`; the other values are `\"open\"` and `\"half\"`), `failures` (0), `opened_at` (0, the time it tripped) and `test_out` (`False`, true while the half-open test call is in flight).",
           language: "python",
           starter: "class CircuitBreaker:\n    def __init__(self, threshold, cooldown):\n        self.threshold = threshold\n        self.cooldown = cooldown\n        self.state = \"closed\"\n        self.failures = 0\n        self.opened_at = 0\n        self.test_out = False\n\n    def allow(self, now):\n        return True\n\n    def record(self, ok, now):\n        pass\n",
           solution: "class CircuitBreaker:\n    def __init__(self, threshold, cooldown):\n        self.threshold = threshold\n        self.cooldown = cooldown\n        self.state = \"closed\"\n        self.failures = 0\n        self.opened_at = 0\n        self.test_out = False\n\n    def allow(self, now):\n        if self.state == \"closed\":\n            return True\n        if self.state == \"open\":\n            if now - self.opened_at >= self.cooldown:\n                self.state = \"half\"\n                self.test_out = True\n                return True\n            return False\n        # half-open: only one test call at a time\n        if self.test_out:\n            return False\n        self.test_out = True\n        return True\n\n    def record(self, ok, now):\n        if self.state == \"half\":\n            self.test_out = False\n            if ok:\n                self.state = \"closed\"\n                self.failures = 0\n            else:\n                self.state = \"open\"\n                self.opened_at = now\n            return\n        if ok:\n            self.failures = 0\n        else:\n            self.failures += 1\n            if self.failures >= self.threshold:\n                self.state = \"open\"\n                self.opened_at = now\n",
@@ -949,7 +954,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "The layers work together",
-          body: "You now have a toolbox. None of the tools is enough alone:\n\n- **Timeouts** keep a stuck call from holding you.\n- **Retries with backoff and jitter** fix short, random failures.\n- A **retry budget** and a **deadline** stop retries from running away.\n- A **circuit breaker** stops pointless calls to something that is down.\n- A **fallback** gives the user something anyway.\n\nThe skill is in how they stack up. In pseudo-code, one call looks like this:\n\n" + py("def get_price(item):\n    if breaker.is_open():                  # fail fast, no call at all\n        return fallback(item)\n    for attempt in range(1, 4):            # bounded by the overall deadline\n        try:\n            return call(item, timeout=0.5) # each attempt has its own timeout\n        except Exception:\n            breaker.record_failure()\n            sleep(jittered_backoff(attempt))\n    return fallback(item)                  # everything failed: the weaker answer"),
+          body: "A careful cyclist wears a helmet, uses lights, checks the brakes and plans a route around the busy road. No single item keeps you safe; together they do.\n\nYou now have a toolbox. None of the tools is enough alone:\n\n- **Timeouts** keep a stuck call from holding you.\n- **Retries with backoff and jitter** fix short, random failures.\n- A **retry budget** and a **deadline** stop retries from running away.\n- A **circuit breaker** stops pointless calls to something that is down.\n- A **fallback** gives the user something anyway.\n\nThe skill is in how they stack up. In simplified pseudo-code (real code would also check the deadline and the retry budget before each attempt), one call looks like this:\n\n" + py("def get_price(item):\n    if breaker.is_open():                  # fail fast, no call at all\n        return fallback(item)\n    for attempt in range(1, 4):            # at most 3 attempts\n        try:\n            price = call(item, timeout=0.5) # each attempt has its own timeout\n            breaker.record_success()\n            return price\n        except Exception:\n            breaker.record_failure()\n            sleep(jittered_backoff(attempt))\n    return fallback(item)                  # everything failed: the weaker answer"),
         },
         {
           kind: "question",
@@ -979,7 +984,7 @@ export const reliabilityModule: Module = {
           body: "Under **Flaky** (3 in 10 calls fail at random), make shoppers see **at least 97%** successes with **no more than 1.5 calls** per shopper.",
           widget: { type: "rel-client", props: { scenario: "flaky" } },
           question: { type: "widget", hint: "A retry or two recovers most random failures, but every retry is an extra call.", goal: { scenario: "flaky", minServed: 0.97, maxAmplification: 1.5 } },
-          explanation: "For random, short failures, **retries** are the tool: a call that fails 30% of the time still succeeds on one of 3 tries 97% of the time, at an average cost of about 1.35 calls per shopper. Timeouts and breakers don't help here; nothing is slow or down.",
+          explanation: "For random, short failures, **retries** are the tool: a call that fails 30% of the time still succeeds on one of 3 tries 97% of the time, at an average cost of about 1.4 calls per shopper (1 + 0.3 + 0.09 = 1.39: everyone makes the first call, 30% need a second, and 9% need a third). Timeouts and breakers don't help here; nothing is slow or down.",
         },
         {
           kind: "question",
@@ -1000,7 +1005,7 @@ export const reliabilityModule: Module = {
         {
           kind: "explain",
           title: "Proving it works",
-          body: "None of this is worth anything if you haven't seen it fire. Teams prove their protections by **breaking things on purpose**: injecting latency, errors and outages in staging (and carefully in production), during planned **game days**.\n\nAnd they watch the protections in their dashboards: how often the breaker opens, how many retries are spent, how many answers come from fallbacks. A breaker that never opens might be great, or might be misconfigured. You only know if you've tested it.",
+          body: "None of this is worth anything if you haven't seen it fire. Teams prove their protections by **breaking things on purpose**: injecting delays, errors and outages in **staging** (a practice copy of the live system) and, carefully, in production, during planned **game days** (a scheduled day when the team deliberately breaks things to see what happens).\n\nAnd they watch the protections in their dashboards: how often the breaker opens, how many retries are spent, how many answers come from fallbacks. A breaker that never opens might be great, or might be misconfigured. You only know if you've tested it.",
         },
         {
           kind: "code",

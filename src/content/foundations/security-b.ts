@@ -19,8 +19,9 @@ export const securityLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "Access without the password",
         body: P(
+          "Imagine you lend a friend a *valet key* for your car: it starts the engine but does not open the boot or the glovebox, and you can ask for it back without changing your locks. You would never hand over your whole key ring. OAuth is that valet key for apps.",
           "You use **RideVault** to record bike rides. A training-plan app called **SpokeLog** would like to read them. The old way: type your RideVault password into SpokeLog. That is a terrible deal. SpokeLog now holds a key to *everything*, it can never be told apart from you, you cannot cut it off without changing your password everywhere, and one breach at SpokeLog leaks your RideVault login.",
-          "**OAuth 2.0** exists to replace that deal with a better one. It is a protocol for **delegated authorization**: you sign in at RideVault itself and tell RideVault, “let SpokeLog read my rides, nothing else”. SpokeLog receives a **token** that is limited in scope, limited in time, and revocable on its own.",
+          "**OAuth 2.0** exists to replace that deal with a better one. It is a protocol (an agreed set of steps) for **delegated authorization**: you sign in at RideVault itself and tell RideVault, “let SpokeLog read my rides, nothing else”. SpokeLog receives a **token** (a small string that works like a pass) that is limited in what it can touch (its *scope*), limited in time, and revocable on its own.",
           "Notice what OAuth is about: *may this app do this on my behalf?* It is not, by itself, about *who you are*. We will come back to that.",
         ),
       },
@@ -55,8 +56,10 @@ export const securityLessonsB: ConceptLesson[] = [
         title: "The authorization code flow",
         body: P(
           "The standard recipe is the **authorization code flow**. Four lanes: your *browser*, the *app*, the *authorization server*, and the *API*. Press **Next** and read what each message carries.",
-          "Three things to watch for. **Your password only ever goes to the authorization server.** What comes back through the browser is a short-lived **code**, not a token. And the app swaps that code for tokens in a separate request that goes **directly** to the server (the *back channel*), never through the browser.",
+          "Two words you will see: a **redirect** is when a website sends your browser on to another address, and the **callback** is the address on the app's side that the browser is sent back to at the end, carrying the result.",
+          "Three things to watch for. **Your password only ever goes to the authorization server.** What comes back through the browser is a short-lived **code**, not a token. And the app swaps that code for tokens in a separate request that goes **directly** to the server (the *back channel*: a private line between the two servers, which your browser never sees).",
           "The `state` value the app invents at the start comes back unchanged. It lets the app recognise that this return trip answers *its own* request, which blocks an attacker from pushing someone else's code at the callback.",
+          "Why not hand over the token right away? Because the browser's address bar and history are public-ish places. A short-lived code is little use alone; the real token only travels on the private back channel.",
         ),
         widget: { type: "sec-oauth", props: {} },
       },
@@ -66,14 +69,14 @@ export const securityLessonsB: ConceptLesson[] = [
         body: "Step all the way through, reading the detail box under the lanes at each message.",
         widget: { type: "sec-oauth", props: {} },
         question: { type: "widget", goal: { flow: "code", finished: true }, prompt: "Reach the end of the flow." },
-        explanation: "SpokeLog ended up calling the API with a bearer token it was *given*, and at no point saw your password. Anyone who holds a **bearer token** can use it, hence the short lifetime, the narrow scope, and the habit of never logging it.",
+        explanation: "SpokeLog ended up calling the API with a bearer token it was *given*, and at no point saw your password. Anyone who holds a **bearer token** (one that works for whoever “bears”, or carries, it, like cash) can use it, hence the short lifetime, the narrow scope, and the habit of never logging it.",
       },
       {
         kind: "question",
         title: "A stolen code, and PKCE",
         body: P(
           "The code travels through the browser, which is exactly where a look-alike app on a phone or a snooping extension might copy it. If the server hands tokens to *whoever redeems the code first*, that attacker wins.",
-          "**PKCE** (pronounced “pixie”, *Proof Key for Code Exchange*) fixes it. At the start the app makes a random secret, the **verifier**, and sends only its **hash**, the *challenge*. To redeem the code it must present the verifier; the server hashes it and compares. A stolen code is useless without it. Turn on **Interceptor** and watch the attack succeed, then add **PKCE** and run it again.",
+          "**PKCE** (pronounced “pixie”, *Proof Key for Code Exchange*) fixes it. At the start the app makes a random secret, the **verifier**, and sends only its **hash** (a one-way fingerprint: you can check a verifier against it, but not recover the verifier from it), the *challenge*. To redeem the code it must present the verifier; the server hashes it and compares. A stolen code is useless without it. Turn on **Interceptor** and watch the attack succeed, then add **PKCE** and run it again.",
         ),
         widget: { type: "sec-oauth", props: { toggles: ["pkce", "attacker"] } },
         question: { type: "widget", goal: { flow: "code", pkce: true, attacker: true, finished: true, blocked: true }, prompt: "Run it to the end with PKCE on and the interceptor active." },
@@ -84,7 +87,8 @@ export const securityLessonsB: ConceptLesson[] = [
         title: "Make a code challenge",
         body: P(
           "Write `code_challenge(verifier)`: the SHA-256 hash of the verifier text, encoded as **base64url without the `=` padding**. (The same function checks a redemption: hash what arrives and compare it with the stored challenge.)",
-          "`hashlib.sha256(text.encode()).digest()` gives the raw hash bytes, and `base64.urlsafe_b64encode(...)` encodes them. Then strip the trailing `=` characters.",
+          "`hashlib.sha256(text.encode()).digest()` gives the raw hash bytes, and `base64.urlsafe_b64encode(...)` encodes them (base64 writes bytes as letters and digits; you saw it in the tokens lesson). Then strip the trailing `=` characters.",
+          "A worked example: the verifier `dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk` gives the challenge `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`. Without the stripping step you would get the same text with a single `=` on the end, which the server would reject.",
         ),
         language: "python",
         starter: "import base64, hashlib\n\n\ndef code_challenge(verifier):\n    digest = hashlib.sha256(verifier.encode()).digest()\n    return base64.urlsafe_b64encode(digest).decode()\n",
@@ -104,8 +108,10 @@ export const securityLessonsB: ConceptLesson[] = [
       },
       {
         kind: "explain",
-        title: "Scopes, and signing in with OpenID Connect",
+        title: "Going further: scopes and OpenID Connect",
         body: P(
+          "### Going further (optional)",
+          "The code flow and PKCE above are the core. The rest of this lesson adds two extras that real sign-in buttons rely on.",
           "A **scope** names a slice of access: `rides:read` is not `rides:write`, and neither is `profile:delete`. The consent screen shows them, and the token carries only what was granted. Ask for the minimum, because every extra scope is blast radius if the token leaks.",
           "OAuth alone does not tell the app *who just signed in*. **OpenID Connect (OIDC)** is a thin layer on top that does. The app adds the scope `openid` to its request and the response includes a second token, the **ID token**: a signed statement that says who authenticated, when, and for which app. It is meant to be read by the **app**, to start a session. The **access token** is meant for the **API**.",
           "Run the flow again with `openid` on and see the extra token arrive.",
@@ -130,9 +136,9 @@ export const securityLessonsB: ConceptLesson[] = [
       },
       {
         kind: "question",
-        title: "Why the implicit flow retired",
+        title: "Going further: why the implicit flow retired",
         body: P(
-          "Early browser apps could not keep secrets or make cross-site requests, so OAuth had a shortcut: the **implicit flow** returned the *access token directly* in the redirect, in the part of the URL after `#`. Try it, then turn on the interceptor and run it to the end.",
+          "Early browser apps could not keep secrets or make cross-site requests, so OAuth had a shortcut: the **implicit flow** returned the *access token directly* in the redirect, in the part of the URL after `#` (the *fragment*, which the browser keeps for itself and never sends to servers, but which stays in history and is readable by scripts). Try it, then turn on the interceptor and run it to the end.",
           "Reasons it was dropped: the token sits in the address bar and **browser history**, can leak through screenshots, referrer headers and any script on the page, and nothing ties it to the app that asked. Code + PKCE does the same job for single-page apps, with the token delivered over the back channel.",
         ),
         widget: { type: "sec-oauth", props: { flow: "implicit", toggles: ["attacker"], attacker: true } },

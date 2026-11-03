@@ -27,7 +27,7 @@ Instruments rarely send neat variables. They send **text**: \`T=412.5;P=2.4;S=RU
 
 ### Finding things: \`find\`
 
-\`s.find("P=")\` returns the **position** where the text first appears (counting from 0), or the special value \`std::string::npos\` when it is not there. Always compare against \`npos\`, never against \`-1\` (the position type is unsigned).
+\`s.find("P=")\` returns the **position** where the text first appears (counting from 0), or the special value \`std::string::npos\` when it is not there. Always compare against \`npos\`, never against \`-1\`. (The position type is *unsigned*, which means it can never be negative, so \`-1\` would not mean "not found".)
 
 ~~~cpp
 std::string packet = "T=412.5;P=2.4;S=RUN";
@@ -69,13 +69,6 @@ std::string field(const std::string& packet, const std::string& key) {
 }
 ~~~
 
-### More string tools
-
-- \`==\`, \`!=\`, \`<\` compare whole strings (alphabetical order by character code).
-- \`s += "text"\` or \`s.append("text")\` adds to the end; \`s.insert(pos, "x")\`, \`s.erase(pos, len)\` and \`s.replace(pos, len, "x")\` edit in place.
-- \`s.front()\`, \`s.back()\`, \`s.empty()\`, \`s.size()\` as before.
-- Convert one character with \`std::toupper(c)\` (include \`<cctype>\`); loop over the string to convert all of it.
-
 ### Text to number: \`std::stoi\` and \`std::stod\`
 
 ~~~cpp
@@ -88,7 +81,7 @@ They **throw an exception** if the text does not start with a number:
 - \`std::invalid_argument\` for something like \`"abc"\` or an empty string,
 - \`std::out_of_range\` for a number too big for the type.
 
-An unhandled exception ends the program with *terminate called after throwing an instance of 'std::invalid_argument'*. So you wrap risky conversions in **try / catch** (lesson 15 covers it in depth):
+An unhandled exception ends the program with *terminate called after throwing an instance of 'std::invalid_argument'*. So you wrap risky conversions in **try / catch**. Lesson 7 showed the three-line pattern ("try this; if it shouts, jump to catch"), and lesson 15 covers exceptions in depth:
 
 ~~~cpp
 try {
@@ -101,7 +94,7 @@ try {
 
 Everything in the \`try\` block runs until something throws; then execution jumps to the \`catch\`. Catching \`const std::exception&\` catches both exception types above.
 
-**Trailing junk is ignored.** \`std::stoi("24x")\` happily returns 24. If you care, pass a pointer for how many characters were used and compare:
+**Trailing junk is ignored.** \`std::stoi("24x")\` happily returns 24. If you care, give \`stoi\` a second argument, \`&used\`. The \`&\` hands \`stoi\` your own variable \`used\` so it can write into it how many characters it read (lesson 8 explains \`&\` properly; for now copy the pattern). Then compare with the full length:
 
 ~~~cpp
 std::size_t used = 0;
@@ -130,7 +123,14 @@ An \`ostringstream\` works exactly like \`std::cout\`, but collects the text in 
 - Treating the second argument of \`substr\` as an end position.
 - Forgetting that \`stoi\` / \`stod\` can throw, so one bad packet crashes the whole program.
 - Forgetting that \`std::to_string\` of a double has six decimals.
-- Adding two literals: \`"T=" + "412"\` does not compile (one side must be a \`std::string\`).`,
+- Adding two literals: \`"T=" + "412"\` does not compile (one side must be a \`std::string\`).
+
+### Going further (optional)
+
+- \`==\`, \`!=\`, \`<\` compare whole strings (alphabetical order by character code).
+- \`s += "text"\` or \`s.append("text")\` adds to the end; \`s.insert(pos, "x")\`, \`s.erase(pos, len)\` and \`s.replace(pos, len, "x")\` edit in place.
+- \`s.front()\`, \`s.back()\`, \`s.empty()\`, \`s.size()\` as before.
+- Convert one character with \`std::toupper(c)\` (include \`<cctype>\`); loop over the string to convert all of it.`,
       mission: md`Helios-1's sensors report as text packets like \`T=412.5;P=2.4;S=RUN;R=24\`. Some arrive damaged: a temperature reading of \`abc\`, a missing field, a rod count with junk after it. Your decoder must take a good packet apart, build a log line from it, and check a batch of packets without ever crashing.
 
 When this lesson passes, the **Telemetry decoder** lights up, with the raw packet split into fields and the good/bad packet counts.`,
@@ -322,7 +322,7 @@ std::cout << core.name << " is at " << core.value << "\n";
 core.value = 431.0;                             // change one member
 ~~~
 
-The braces initialize the members in the order they are declared. If you give too many values you get *too many initializers*. If you give fewer, the rest become zero/empty. (C++20 also allows naming them, \`Sensor core = {.name = "Core temp", .value = 420.5, .limit = 650.0};\`, but the members must stay in declaration order.)
+The braces initialize the members in the order they are declared. If you give too many values you get *too many initializers*. If you give fewer, the rest become zero/empty.
 
 ### Vectors of structs
 
@@ -362,8 +362,6 @@ Pass by \`const&\` when the function only reads, by \`&\` when it should change 
 ### Why not parallel vectors?
 
 You *could* keep \`std::vector<std::string> names\`, \`std::vector<double> values\`, \`std::vector<double> limits\` and always use the same index. It works, but nothing stops you from sorting one and not the others or from deleting an element from just one of them. A vector of structs keeps each sensor's data glued together. We still send parallel vectors to the board, because the \`scene\` helper only understands plain numbers, strings, bools, vectors and maps.
-
-(What does the compiler say if you try \`scene("sensors", sensors)\`? A very long message about *no matching function* or *no match for call*. In template-heavy code read the **first** error line and the line that mentions your own file.)
 
 ### Common mistakes
 
@@ -537,8 +535,8 @@ for (const std::string& event : events) {
 
 ### \`std::map\` versus \`std::unordered_map\`
 
-- \`std::map\` keeps its keys **sorted** (alphabetical for strings). Lookups take time proportional to log(n). Use it when you want ordered output.
-- \`std::unordered_map\` (\`#include <unordered_map>\`) uses hashing: lookups are typically instant, but the order of the keys is unspecified and can change.
+- \`std::map\` keeps its keys **sorted** (alphabetical for strings). Lookups are fast either way. Use it when you want ordered output.
+- \`std::unordered_map\` (\`#include <unordered_map>\`) finds entries by a quick shortcut instead of keeping them in order: lookups are typically instant, but the order of the keys is unspecified and can change.
 
 They look the same in code; pick \`std::map\` when order matters and \`std::unordered_map\` when you only look things up.
 
@@ -559,6 +557,10 @@ for (const auto& [name, count] : tally) {
 Reading with \`[]\` on a missing key silently **adds** it, which is a bug when you only wanted to check. Use \`find\`:
 
 ~~~cpp
+std::unordered_map<std::string, double> limitOf;   // sensor name -> its limit
+limitOf["Pressure"] = 5.0;
+limitOf["Core temp"] = 650.0;
+
 auto entry = limitOf.find("Fusion yield");
 if (entry == limitOf.end()) {
     std::cout << "No limit for Fusion yield\n";
@@ -567,11 +569,17 @@ if (entry == limitOf.end()) {
 }
 ~~~
 
-\`find\` returns an **iterator**: something that points at an element, or equals \`end()\` when the key is absent. \`->\` reaches through it (\`entry->second\`). Other tools: \`count(key)\` (0 or 1), \`contains(key)\` (C++20, a bool), \`at(key)\` (throws \`std::out_of_range\` if missing), \`erase(key)\`, \`size()\`.
+\`find\` returns an **iterator**: something that points at one entry of the map. If the key is absent it returns the special value \`end()\`, which means "the spot one past the last entry". Picture the entries in a row of boxes, with an empty marker after the final box:
+
+~~~text
+[Core temp] [Pressure] [Flow]  | end()
+~~~
+
+Finding "Pressure" gives you an arrow at the second box; finding "Fusion yield" gives you the arrow at the marker, which is how you know it was not there. \`->\` reaches through it (\`entry->second\`). Other tools: \`count(key)\` (0 or 1), \`contains(key)\` (C++20, a bool), \`at(key)\` (throws \`std::out_of_range\` if missing), \`erase(key)\`, \`size()\`.
 
 ### Choosing the key
 
-Keys must be comparable (and hashable for \`unordered_map\`): strings, numbers and chars are all fine. Each key appears once: assigning to an existing key replaces its value.
+Keys must be something C++ can compare: strings, numbers and chars are all fine. Each key appears once: assigning to an existing key replaces its value.
 
 ### Common mistakes
 
@@ -715,7 +723,12 @@ assert(lines.includes("No limit for Fusion yield"), 'Print "No limit for Fusion 
       concepts: ["<algorithm>", "std::sort", "std::find_if", "std::count_if", "lambdas", "captures", "iterators begin/end"],
       learn: md`### Don't write the loop again
 
-You have written the same loops several times: add everything up, find the biggest, count the ones that qualify. The standard library ships well-tested versions in **\`<algorithm>\`**. They work on **ranges** given as two iterators: \`v.begin()\` (the first element) and \`v.end()\` (one past the last).
+You have written the same loops several times: add everything up, find the biggest, count the ones that qualify. The standard library ships well-tested versions in **\`<algorithm>\`**. They work on **ranges** given as two iterators (arrows that point at elements): \`v.begin()\` points at the first element and \`v.end()\` at the spot one past the last, so the range is "from here up to, but not including, there":
+
+~~~text
+[ 12 ][ 40 ][ 41 ][ 55 ]  |
+  ^begin()                 ^end()
+~~~
 
 ~~~cpp
 #include <algorithm>
@@ -746,6 +759,10 @@ std::sort(ranked.begin(), ranked.end(),
 
 The comparison answers "should \`a\` come **before** \`b\`?". It must be a strict ordering: use \`<\` or \`>\`, never \`<=\` or \`>=\`. A comparison that returns true for equal elements breaks \`sort\`'s assumptions and can crash. \`std::sort\` needs a vector (or another random-access container), not a \`std::map\`/\`std::list\`.
 
+### Captures
+
+A lambda cannot see variables from around it unless you list them in \`[]\`. \`[warnFrom]\` copies \`warnFrom\` into the lambda; \`[&warnFrom]\` captures it by reference; \`[=]\` and \`[&]\` capture everything used, by copy or by reference. Capturing exactly what you need is the clearest.
+
 ### Finding the first match: \`std::find_if\`
 
 ~~~cpp
@@ -758,10 +775,6 @@ if (hot != sensors.end()) {
 ~~~
 
 It returns an iterator to the first element for which the lambda gives true, or \`end()\` when none does. \`hot->name\` reaches the member through the iterator (\`->\`), just like in the map lesson.
-
-### Captures
-
-A lambda cannot see variables from around it unless you list them in \`[]\`. \`[warnFrom]\` copies \`warnFrom\` into the lambda; \`[&warnFrom]\` captures it by reference; \`[=]\` and \`[&]\` capture everything used, by copy or by reference. Capturing exactly what you need is the clearest.
 
 ### Counting: \`std::count_if\`
 
@@ -777,7 +790,7 @@ It returns how many elements satisfy the rule (a signed number type; convert wit
 - \`std::max_element(b, e)\` / \`std::min_element(b, e)\` return an iterator to the biggest / smallest (dereference with \`*\`).
 - \`std::count(b, e, value)\`, \`std::find(b, e, value)\`: the no-lambda versions.
 - \`std::any_of\`, \`std::all_of\`, \`std::none_of\` answer yes/no questions about a range.
-- \`std::reverse(b, e)\` flips the order. \`std::accumulate(b, e, 0)\` (from \`<numeric>\`) adds up a range.
+- \`std::reverse(b, e)\` flips the order. \`std::accumulate(b, e, 0)\` (from \`<numeric>\`) adds up a range. The last argument is the starting total and its type decides the answer's type: use \`0.0\` for \`double\` data, or the decimals are cut off.
 - To remove elements: \`std::erase_if(v, rule)\` (C++20) is the one-liner.
 
 ### The middle of a sorted list

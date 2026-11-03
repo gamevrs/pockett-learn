@@ -32,15 +32,17 @@ Plot weight (across) against price (up) and the fruit form a loose upward-slopin
 ### A line has two knobs
 
 ~~~text
-price = w * weight + b
+price = w * x + b
 ~~~
 
-- \`w\` is the **slope** (or *weight* in machine-learning speak): how many dollars each extra unit of weight adds.
+Here \`x\` is the fruit's weight measurement (its unit comes in a moment). Think of a ramp: \`w\` says how steep it is and \`b\` says how high off the ground it starts.
+
+- \`w\` is the **slope**: how many dollars each extra step of \`x\` adds. (Careful with a word: in machine learning a model's knobs are also called its *weights*. That is something different from the fruit's weight in grams, so in this lesson we call \`w\` the slope.)
 - \`b\` is the **intercept** (the *bias*): the price when the weight is zero, where the line starts.
 
 Those two numbers are the model's **parameters**. Learning means finding good values for them.
 
-To keep the numbers friendly we measure weight in **hundreds of grams** (\`weight / 100\`), so a 250 g fruit has \`x = 2.5\`. With \`w = 0.25\` and \`b = 0.50\` that fruit is predicted to cost \`0.25 * 2.5 + 0.50 = 1.125\`.
+To keep the numbers friendly we measure weight in **hundreds of grams** (\`weight / 100\`), so a 250 g fruit has \`x = 2.5\`. The divisor 100 is kept in a named constant, \`WEIGHT_UNIT = 100\`, so you never type a mysterious 100 in the middle of a formula. With \`w = 0.25\` and \`b = 0.50\` that fruit is predicted to cost \`0.25 * 2.5 + 0.50 = 1.125\`.
 
 ### How wrong is a line?
 
@@ -64,6 +66,23 @@ Where do good values of \`w\` and \`b\` come from? The most direct idea: try lot
 for w in [0.00, 0.05, 0.10, ...]:
     for b in [0.00, 0.05, 0.10, ...]:
         error = mse(prices, w * x + b)
+~~~
+
+(The \`...\` just means "and so on". Here is a complete tiny version with the three fruit from the table, trying only three values of each knob.)
+
+~~~text
+x = 1, 2, 3     truth = 0.80, 1.10, 1.40
+
+ w     b     MSE
+0.0   0.5   0.42
+0.0   0.8   0.15
+0.0   1.1   0.06
+0.3   0.5   0.00    <- the winner: price = 0.3 * x + 0.5 hits all three exactly
+0.3   0.8   0.09
+0.3   1.1   0.36
+0.6   0.5   0.42
+0.6   0.8   0.87
+0.6   1.1   1.50
 ~~~
 
 This **brute-force search** works fine for two knobs. But a model with 10 knobs and 20 values each needs 20^10 (ten trillion) tries. We need a smarter search, and that is the next lesson.
@@ -249,13 +268,19 @@ assert search_mse < float(np.asarray(price_train).var()) * 0.5, "a real line sho
       minutes: 30,
       xp: 140,
       concepts: ["gradient", "learning rate", "epochs", "loss curve", "divergence"],
-      learn: md`### Walking downhill in the fog
+      learn: md`### A ball rolling downhill
+
+Drop a ball on a hilly field. It does not need a map: gravity feels the slope under it and the ball rolls down, again and again, until it settles in the lowest spot. Gradient descent is a ball for numbers. In the last lesson we looked for the best line by trying hundreds of combinations; here we let the knobs *roll* to the best values instead.
+
+First a word you will see all the time: the **loss** is simply our score for "how wrong is the line", which is the MSE from lesson 9. Lower loss is better, so "lowest valley" means "least wrong".
+
+### Walking downhill in the fog
 
 Picture the MSE as a landscape: the two knobs \`w\` and \`b\` are your position on the map, and the height is the error. The best line is the lowest valley. You cannot see the whole map, but you can feel the **slope** under your feet. So: step a little in the downhill direction, feel the slope again, step again. That is **gradient descent**, the engine behind nearly all modern machine learning.
 
 ### The slope, in two formulas
 
-The slope of the error with respect to each knob is called the **gradient**. Calculus gives it for the MSE of a line (you do not have to derive it, only to trust and use it):
+The slope of the error with respect to each knob is called the **gradient**. Calculus gives it for the MSE of a line (you do not have to derive it, only to trust and use it). The 2 in the formulas comes from squaring: the error was squared in the MSE, and the slope of a squared number is two times that number, the way a square of side s gains about 2s of area when you make the side a little longer.
 
 ~~~text
 error  = prediction - truth                      for each fruit
@@ -263,7 +288,7 @@ dw     = average of (2 * error * x)              how the loss changes if w grows
 db     = average of (2 * error)                  how the loss changes if b grows
 ~~~
 
-If \`dw\` is positive, increasing \`w\` makes things worse, so we should decrease it. That gives the update rule:
+If \`dw\` is positive, increasing \`w\` makes things worse, so we should decrease it. That gives the update rule. The \`learning_rate\` is just the size of each step (a small number such as 0.1; the section after next says how to choose it):
 
 ~~~text
 w = w - learning_rate * dw
@@ -470,13 +495,13 @@ assert 0 < line_test_mse < 0.05, f"line_test_mse looks off: {line_test_mse!r}"
       concepts: ["multiple regression", "dot product", "matrix form", "bias trick", "feature weights"],
       learn: md`### Price depends on more than weight
 
-Weight explains much of the price, but sugar matters too: sweeter fruit sell for more. With several features the model becomes a **weighted sum**:
+How heavy a fruit is explains much of the price, but sugar matters too: sweeter fruit sell for more. Think of a shopper adding up a bill: so much for the grams, so much for the sweetness, and so on. With several features the model becomes a **weighted sum**:
 
 ~~~text
-price = w1 * weight + w2 * diameter + w3 * hue + w4 * sugar + b
+price = w1 * grams + w2 * diameter + w3 * hue + w4 * sugar + b
 ~~~
 
-Each feature gets its own **weight** (a knob). A large positive weight says "this feature pushes the price up strongly"; near zero says "it hardly matters".
+Here \`grams\` is the fruit's weight measurement. Each *feature* gets its own number \`w1\`, \`w2\`, ...: a **model weight**, which is a knob the model turns (not to be mixed up with the fruit's weight in grams). From now on, "weight" on its own means a model's knob, and the fruit's measurement is "the weight measurement" or "grams". A large positive knob says "this feature pushes the price up strongly"; near zero says "it hardly matters".
 
 ### The dot product
 
@@ -486,7 +511,18 @@ Multiply two equal-length lists element by element and add the results: that is 
 [2, 3] . [1.0, 0.5]  =  2*1.0 + 3*0.5  =  3.5
 ~~~
 
-A weighted sum is exactly a dot product of the weights with the feature values. In NumPy it is the \`@\` operator (or \`np.dot\`).
+A weighted sum is exactly a dot product of the weights (knobs) with the feature values. In NumPy it is the \`@\` operator (or \`np.dot\`).
+
+A **matrix** is just a table of numbers (rows and columns), like the spreadsheet of fruit. Here is a tiny one: 3 fruit, 2 features, and a third column of ones (the bias trick, explained below), multiplied by 3 knobs:
+
+~~~text
+Zb  (3 fruit x 3 columns)       weights (3 knobs)      Zb @ weights
+ 1.0   2.0   1.0                  0.5                  1.0*0.5 + 2.0*1.0 + 1.0*0.0 = 2.5
+ 2.0   0.0   1.0                  1.0                  2.0*0.5 + 0.0*1.0 + 1.0*0.0 = 1.0
+ 0.0   1.0   1.0                  0.0                  0.0*0.5 + 1.0*1.0 + 1.0*0.0 = 1.0
+~~~
+
+Each row of the table is dotted with the list of knobs, so you get one prediction per fruit: \`[2.5, 1.0, 1.0]\`.
 
 ### Doing every fruit at once: matrix form
 
@@ -519,7 +555,20 @@ gradient = 2 * (Zb.T @ errors) / number_of_fruit
 weights  = weights - lr * gradient
 ~~~
 
-\`Zb.T\` is the table flipped on its side (rows become columns), so \`Zb.T @ errors\` adds up, for each feature, "how much did the errors correlate with this feature?". It is the earlier \`mean(2 * error * x)\` for every feature in one line.
+\`Zb.T\` is the table flipped on its side (rows become columns; the "T" is for *transpose*). \`Zb.T @ errors\` then adds up, for each column, "each fruit's error times that fruit's value in this column". It is the earlier \`mean(2 * error * x)\` for every column in one line. Continuing the tiny example, say the true prices are \`[3.0, 1.0, 2.0]\`:
+
+~~~text
+errors = predictions - truth = [2.5, 1.0, 1.0] - [3.0, 1.0, 2.0] = [-0.5, 0.0, -1.0]
+
+Zb.T @ errors, one number per column:
+  column 1:  1.0*(-0.5) + 2.0*0.0 + 0.0*(-1.0) = -0.5
+  column 2:  2.0*(-0.5) + 0.0*0.0 + 1.0*(-1.0) = -2.0
+  column 3:  1.0*(-0.5) + 1.0*0.0 + 1.0*(-1.0) = -1.5
+
+gradient = 2 * [-0.5, -2.0, -1.5] / 3 = [-0.33, -1.33, -1.0]
+~~~
+
+All three are negative, so every knob should go up. The step \`weights - lr * gradient\` does exactly that.
 
 ### Why we scale first
 
@@ -527,7 +576,7 @@ With every feature z-scored (lesson 4), one learning rate suits all the weights,
 
 ### Reading the weights
 
-After training you can *read* the model: on scaled features, the weight of each column says how many dollars one standard deviation of that feature is worth. It is a first taste of **interpretability**, knowing why a model answers as it does.
+After training you can *read* the model: on scaled features, the model weight of each column says how many dollars one standard deviation of that feature is worth. It is a first taste of **interpretability**, knowing why a model answers as it does.
 
 ### Common mistakes
 
@@ -726,6 +775,8 @@ Compute a score exactly as before (a weighted sum), then pass it through the **s
 sigmoid(s) = 1 / (1 + e^(-s))
 ~~~
 
+What is that \`e\`? It is just a special number, about 2.718, like \`pi\` is about 3.14. \`e^s\` ("e to the power s") means multiplying e by itself s times, and it works for any s: \`e^0 = 1\`, \`e^2 = 7.39\`, \`e^-2 = 0.135\`. Notice that \`e^-s\` is always positive and shrinks towards 0 when s gets big. So for a big s the formula is 1 / (1 + almost 0), which is almost 1. For s = 2: 1 / (1 + 0.135) = 0.88, the number in the table below.
+
 ~~~text
 s = -4   ->  0.02     very unlikely
 s = -2   ->  0.12
@@ -744,7 +795,7 @@ In NumPy, \`np.exp(x)\` is e^x. Clipping the score to the range -30..30 first ke
 
 ### A new loss: log loss
 
-Squared error is awkward for probabilities. Instead we use **log loss** (also called cross-entropy). For one fruit with true answer \`t\` (0 or 1) and predicted probability \`p\`:
+Squared error is awkward for probabilities: it punishes a confident wrong answer (p = 0.01 for a fruit that is ripe) only mildly, and a confident wrong answer should hurt a lot. Instead we use **log loss** (also called cross-entropy). For one fruit with true answer \`t\` (0 or 1) and predicted probability \`p\`. (\`ln\` is the natural logarithm, the "undo" button for \`e^\`: \`ln(e^2) = 2\`. Two facts are all you need: \`ln(1) = 0\`, and the \`ln\` of a number between 0 and 1 is negative, which is why the loss has a minus sign in front, to come out positive.)
 
 ~~~text
 loss = -( t * ln(p) + (1 - t) * ln(1 - p) )
@@ -772,7 +823,21 @@ gradient = Zb.T @ errors / number_of_fruit
 weights  = weights - lr * gradient
 ~~~
 
-The only changes from the last lesson are the sigmoid in the prediction and no factor of 2.
+The only changes from the last lesson are the sigmoid in the prediction and no factor of 2. (Lesson 10's formula had a 2 from differentiating a square; here the algebra cancels it, and in any case a missing 2 would only change the effective learning rate.)
+
+### One training step by hand
+
+One fruit with scaled sugar x = 1.0 that really is ripe (t = 1). Start with w = 0, b = 0, learning rate 0.5.
+
+~~~text
+score = 0*1.0 + 0 = 0   ->  p = sigmoid(0) = 0.50,  loss = 0.693
+error  = p - t = 0.50 - 1 = -0.50
+dw = error * x = -0.50      db = error = -0.50
+w = 0 - 0.5 * (-0.50) = 0.25      b = 0.25
+new score = 0.25*1.0 + 0.25 = 0.5  ->  p = sigmoid(0.5) = 0.62,  loss = 0.474
+~~~
+
+The model was unsure (0.50) about a ripe fruit; one step made it a little more sure (0.62) and the loss dropped from 0.693 to 0.474.
 
 ### From probability to decision
 

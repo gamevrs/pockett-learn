@@ -92,7 +92,7 @@ export const chapter1: Chapter = {
       concepts: ["#include", "main", "std::cout", "<<", "\\n vs std::endl", "string literals", "escape sequences", "comments", "compiler errors"],
       learn: md`### Every C++ program has a \`main\`
 
-A C++ program is a list of **functions**, and the computer always starts with one of them, called \`main\`. Everything between its curly braces runs from top to bottom, one **statement** after another.
+A program is a list of instructions for the computer, like a recipe. A recipe needs a first step, so the computer needs to know where to start. In C++ that starting point is always a **function** (a named group of instructions) called \`main\`. Everything between its curly braces runs from top to bottom, one **statement** after another.
 
 ~~~cpp
 #include <iostream>
@@ -104,14 +104,14 @@ int main() {
 
 Read it line by line:
 
-- \`#include <iostream>\` pastes in the **header** that describes the input/output tools. Without it the compiler has never heard of \`std::cout\`. Lines starting with \`#\` are instructions for the *preprocessor*, which runs before the compiler, and they do not end with a semicolon.
+- \`#include <iostream>\` pastes in the **header** that describes the input/output tools. Without it the compiler has never heard of \`std::cout\`. Lines starting with \`#\` are instructions for a helper that runs before the compiler proper, and they do not end with a semicolon. (A *header* is just a ready-made list of tools that you ask for by name.)
 - \`int main()\` declares the function called \`main\`. \`int\` means it hands back a whole number to the operating system when it finishes. \`{ ... }\` is its body.
 - \`std::cout\` is **c**onsole **out**put. The \`std::\` in front says "the \`cout\` that lives in the standard library". All the standard tools (\`std::string\`, \`std::vector\`, ...) carry that prefix.
-- \`<<\` is the **stream insertion operator**. Read it as "send this into the stream". You can chain as many as you like: \`std::cout << "Rods: " << 24 << "\n";\`
+- \`<<\` is the **stream insertion operator** (you can just call it "the arrows"). Read it as "send this into the stream". You can chain as many as you like: \`std::cout << "Rods: " << 24 << "\n";\`
 - \`"Hello, control room!"\` is a **string literal**: text between double quotes.
 - The \`;\` ends the statement. Nearly every statement ends with one.
 
-You never wrote \`return 0;\`. For \`main\` only, C++ adds it for you: reaching the closing brace means "everything went fine" (exit code 0).
+You never wrote \`return 0;\`. For \`main\` only, C++ adds it for you: reaching the closing brace means "everything went fine" (the program reports the number 0 to the operating system, which means "no problem").
 
 ### New line: \`\n\` or \`std::endl\`?
 
@@ -356,14 +356,14 @@ maxTemp = 700;      // error: assignment of read-only variable 'maxTemp'
 ~~~cpp
 auto pressure = 2.4;     // a double, exactly as if you had written double
 auto loops = 3;          // an int
-auto name = "Helios";    // careful: this is a const char*, not a std::string!
+auto name = "Helios";    // careful: this is NOT a std::string (you will meet the real one in lesson 4)
 ~~~
 
 A variable declared with \`auto\` must be given a value on the same line. Use it when the type is obvious from the right-hand side; write the type out when that makes the code easier to read.
 
 ### Names
 
-Letters, digits and underscores; it cannot start with a digit; no spaces. Names are case-sensitive: \`coreTemp\` and \`CoreTemp\` are different variables. A name can be declared only **once** per scope: in this one growing \`main\`, every variable you create in any lesson needs a name nobody used before. Choose names that say what the value *means*: \`coreTemp\`, not \`t\`.
+Letters, digits and underscores; it cannot start with a digit; no spaces. Names are case-sensitive: \`coreTemp\` and \`CoreTemp\` are different variables. A name can be declared only **once** per scope (a scope is the stretch of code inside one pair of curly braces): in this one growing \`main\`, every variable you create in any lesson needs a name nobody used before. Choose names that say what the value *means*: \`coreTemp\`, not \`t\`.
 
 ### Where C++ is looser than other languages
 
@@ -537,7 +537,7 @@ netKw++;         // 3241
 
 ### Trap 1: integer division
 
-When **both** sides are whole numbers, \`/\` gives a whole number: the fraction is thrown away (truncated toward zero), not rounded.
+When **both** sides are whole numbers, \`/\` gives a whole number: the fraction is thrown away ("truncated toward zero": cut off, not rounded; 3.9 becomes 3 and -3.9 becomes -3).
 
 ~~~cpp
 std::cout << 7 / 2 << "\n";       // 3
@@ -556,7 +556,7 @@ A **cast** converts a value to another type on purpose. In modern C++ you write 
 int electricKw = 1800;
 int thermalKw = 5400;
 double wrong = electricKw / thermalKw;                        // 0       (the division happened between ints, THEN became 0.0)
-double right = static_cast<double>(electricKw) / thermalKw;   // 0.3333  (one side is a double before dividing)
+double right = static_cast<double>(electricKw) / thermalKw;   // 0.333333  (cout shows 6 digits; one side is a double before dividing)
 int dropped = static_cast<int>(3.9);                          // 3       a cast truncates, it does not round
 ~~~
 
@@ -564,7 +564,7 @@ The classic mistake is casting the *result* (\`static_cast<double>(a / b)\`) ins
 
 ### Rounding up with integers
 
-How many trays of 8 do you need for 30 fuel pellets? Plain division gives 3, but 3 trays only hold 24. Add \`size - 1\` before dividing to round **up**:
+How many trays of 8 do you need for 30 fuel pellets? Plain division gives 3, but 3 trays only hold 24. Add \`size - 1\` before dividing to round **up**. Why it works: dividing cuts off the leftover, so you push the total just over the next multiple first. Adding 7 means that any leftover (1 to 7 pellets) tips the count into a new tray, while an exact fit (24 + 7 = 31, still 3 trays) is not affected:
 
 ~~~cpp
 int trays = (30 + 8 - 1) / 8;     // 4
@@ -853,15 +853,7 @@ std::getline(std::cin, shift);    // now reads "night shift"
 
 ### Did the read work?
 
-A failed read does not crash. It silently sets the stream into a *fail state* and leaves your variable unchanged (or zero). You can test the read itself:
-
-~~~cpp
-if (!(std::cin >> clearance)) {
-    std::cout << "That was not a number\n";
-}
-~~~
-
-Real software checks the result of every read of untrusted input. Lesson 9 returns to this with proper error handling.
+A failed read does not crash. It silently sets the stream into a *fail state* and leaves your variable unchanged (or zero). Testing for that needs \`if\`, which you learn in the very next lesson, so for now just remember that the check exists: real software tests the result of every read of untrusted input. In lesson 5 you will be able to write \`if (!(std::cin >> clearance)) { ... }\`, which reads "if the read did not work". Lesson 9 returns to error handling.
 
 ### \`std::string\` basics
 

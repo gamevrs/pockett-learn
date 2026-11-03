@@ -19,7 +19,17 @@ export const cachingLessonsC: ConceptLesson[] = [
         kind: "explain",
         title: "The web has a cache built in",
         body: P(
-          "Every browser keeps a cache of the responses it has fetched, and every server decides how that cache may behave by adding **headers** to its responses. No code in the page: just a few lines of metadata.",
+          "Your school sends home a newsletter every week. If last week's is still stuck on the fridge, do you phone the school every morning to ask whether there is a new one? Probably not, unless it is the day a new one is due. A browser faces the same choice with every picture and page it has seen before.",
+          "First, what is being sent. When your browser asks a server for a page, it sends a **request**; the server sends back a **response**. Both start with a few lines of labelled notes called **headers** (`Name: value`), followed by the content. A **status code** is the three-digit result on the first line of the response: `200` means OK, `304` means 'Not Modified, use your old copy', `404` means not found. (The *HTTP* lesson in the network module covers all of this in full.)\n\n" + txt(`
+GET /menu HTTP/1.1                  <- request line: fetch /menu
+Host: pantry.example                <- a header
+
+HTTP/1.1 200 OK                     <- status code 200
+Cache-Control: max-age=60           <- a header saying how long to keep it
+ETag: "v7"                          <- a header: a fingerprint of this version
+(the page itself follows)
+`),
+          "Every browser keeps a cache of the responses it has fetched, and every server decides how that cache may behave by adding headers to its responses. No code in the page: just a few lines of metadata.",
           "When a browser needs a URL it has seen before, there are three possible outcomes:\n\n1. **Use the stored copy** without asking anyone (the copy is *fresh*).\n2. **Ask the server “has it changed?”** and reuse the copy if the answer is no (**revalidation**).\n3. **Download it all again.**",
           "Play with the playground below. Choose headers on the left, then load the page, wait, and publish new versions. Every load adds a line to the log explaining what the browser did.",
         ),
@@ -65,7 +75,7 @@ stale-while-revalidate=N   may show a stale copy for N seconds while refreshing
         kind: "explain",
         title: "Asking “has it changed?”",
         body: P(
-          "When a stored copy isn't fresh, the browser needn't download everything again. It can send a **conditional request** carrying a *validator* from the old response:\n\n- an **ETag**: an opaque fingerprint of the content, such as `\"v7\"`. The browser sends it back as `If-None-Match: \"v7\"`.\n- a **Last-Modified** date, sent back as `If-Modified-Since`.",
+          "When a stored copy isn't fresh, the browser needn't download everything again. It can send a **conditional request** carrying a *validator* (a clue that lets the server say whether the copy is still right) from the old response:\n\n- an **ETag**: an opaque fingerprint of the content, such as `\"v7\"`. The browser sends it back as `If-None-Match: \"v7\"`.\n- a **Last-Modified** date, sent back as `If-Modified-Since`.",
           "If nothing changed, the server replies **304 Not Modified** with *no body*, only headers. The browser reuses its copy. If the page did change, the server answers a normal **200** with the new content.",
           txt(`
 GET /menu HTTP/1.1
@@ -75,6 +85,7 @@ HTTP/1.1 304 Not Modified      (a few hundred bytes, no body)
 ETag: "v7"
 `),
           "A 304 still costs a round trip, but not the transfer of the page.",
+          "Three small variations of `If-None-Match` appear in real traffic, and the server-side exercise at the end of this lesson needs all of them:\n\n- **A list.** A browser may hold several versions and send them all, separated by commas: `If-None-Match: \"v5\", \"v7\"`. It means 'I have any of these'. If your current tag is in the list, answer 304.\n- **A weak tag.** A tag written `W/\"v7\"` starts with `W/` for *weak*: 'about the same content, not byte for byte'. For this question you compare only the part inside the quotes, so `W/\"v7\"` matches `\"v7\"`.\n- **A star.** `If-None-Match: *` means 'I have *some* version, whatever it is'. Since the page exists, answer 304.",
         ),
       },
       {

@@ -1,7 +1,7 @@
 import type { ConceptLesson, Module, WidgetSpec } from "../../learn/types.ts";
 
 /**
- * Module 2: how programs run. Values, variables, decisions, loops, functions, collections,
+ * Module: how programs run. Values, variables, decisions, loops, functions, collections,
  * references and the call stack. Most lessons centre on the "trace" widget, which steps through
  * a real CPython run of each program (the TRACES block below is generated, never hand-written).
  */
@@ -128,50 +128,50 @@ const lessons: ConceptLesson[] = [
   {
     id: "fnd-programs-0-editor",
     title: "Meet the editor",
-    summary: "Where you type, what Run and Submit do, how to read the tests and a red error, and what to do when a loop never ends.",
+    summary: "Where you type, what Run & check does, how to read the tests list, the output and a red error, and what to do when a loop never ends.",
     minutes: 4,
     xp: 20,
     steps: [
       {
         kind: "explain",
         title: "Where you type",
-        body: "Learning to cook means standing in a kitchen. Learning to code means standing in the **editor**: the box where you write your program. Some lessons have a code step, and it comes with an editor already holding some **starter code**.\n\n- Click inside the box and type, exactly like in a notes app.\n- To move a line, cut it (Ctrl+X, or Cmd+X on a Mac), click where it should go and paste it (Ctrl+V).\n- Spaces at the start of a line matter in Python. Keep them as they are unless the lesson tells you to change them.\n\nNothing you type can break your computer. If you get in a mess, the editor has a reset option to bring the starter code back.",
+        body: "Learning to cook means standing in a kitchen. Learning to code means standing in the **editor**: the box where you write your program. Some lessons have a code step, and it comes with an editor already holding some **starter code**.\n\n- Click inside the box and type, exactly like in a notes app.\n- To move a line, cut it (Ctrl+X, or Cmd+X on a Mac), click where it should go and paste it (Ctrl+V).\n- Spaces at the start of a line matter in Python. Keep them as they are unless the lesson tells you to change them.\n\nThe top bar of the editor shows the file name (for Python it is `main.py`) and a **Reset** button on the right. Reset puts the starter code back, so nothing you type can break the lesson. If you get in a mess, press it and start again.",
       },
       {
         kind: "explain",
-        title: "Run and Submit",
-        body: "Under the editor are two buttons that do different jobs.\n\n- **Run** is for trying. The computer carries out your program, and you see what it shows. Nothing is marked right or wrong. Run as often as you like.\n- **Submit** is for checking. Your program runs again, and the **tests** decide whether you got it right.\n\nA good habit is to Run, look at what happened, fix, and Run again. Submit when you think you have it.",
+        title: "Run & check",
+        body: "Under the editor is one big button: **Run & check**. When you press it, the computer carries out your program, then the lesson's **tests** look at what it did and decide whether you got it right.\n\nYou can press it as often as you like. A wrong try costs nothing: you just see what went wrong and change your code. When every test passes, the bar at the bottom says **All checks pass.** and its button becomes **Continue**.\n\nA good habit is to press **Run & check**, look at what happened, fix one thing, and press it again. (Later, in projects, you will meet a workspace where **Run** and **Submit** are two separate buttons. In these lessons there is just the one.)",
       },
       {
         kind: "question",
         title: "Which button?",
-        body: "You have changed a line and you just want to see what your program prints, without being marked. Which button do you press?",
-        question: { type: "choice", options: ["Run", "Submit"], answer: 0 },
-        explanation: "**Run** shows you what your program does, with no marking. **Submit** is the one that checks your work against the tests.",
+        body: "You have changed a line in the editor and want to see whether it works. Which button do you press?",
+        question: { type: "choice", options: ["Run & check", "Reset", "Continue"], answer: 0 },
+        explanation: "**Run & check** runs your program and shows how the tests judged it. **Reset** throws your code away and brings back the starter code, and **Continue** only appears once everything passes.",
       },
       {
         kind: "explain",
-        title: "Output and the tests list",
-        body: "Whatever your program prints with `print` appears in the **output panel**, one line per `print`. If your program prints nothing, the panel stays empty. That is not a failure, it just means nothing was printed.\n\nThe **tests list** is a checklist of what the lesson expects. Each row is one small check, written in plain words, like *Prints 3, 2, 1, Liftoff! in that order*.\n\n- A tick means that check passed.\n- A cross means it did not. The row also tells you what went wrong, for example *Print 3, 2, 1 and then Liftoff!, one per line, in that order*. That message is a clue, so read it.\n\nYou are done when every row has a tick.",
+        title: "The tests list and the output",
+        body: "After you press **Run & check**, a box appears under the editor. At the top is the **tests list**: a checklist of what the lesson expects. Each row is one small check, written in plain words, like *Prints 3, 2, 1, Liftoff! in that order*.\n\n- A tick (a check mark) means that check passed.\n- A cross means it did not. Sometimes a short red line under the row says what went wrong. The bar at the bottom also says **Not quite.** and shows the first check that failed. These are clues, so read them.\n\nYou are done when every row has a tick.\n\nBelow the list, in a grey box, is the **output**: whatever your program printed with `print`, one line per `print`. If your program printed nothing, the grey box is simply not there. That is not a failure, it just means nothing was printed.",
       },
       {
         kind: "question",
         title: "A cross in the list",
-        body: "One row in the tests list shows a cross, and the message says *Liftoff! should be the very last line*. What does that tell you?",
+        body: "One row in the tests list shows a cross, and its red line says *Liftoff! should be the very last line*. What does that tell you?",
         question: { type: "choice", options: ["That check failed, and the message hints at how to fix it", "Your computer is broken", "The lesson is finished", "You must start the course again"], answer: 0 },
-        explanation: "A cross means that one check did not pass. The message is written to help you: here it says where `Liftoff!` belongs. Fix it, Run again, and the cross should turn into a tick.",
+        explanation: "A cross means that one check did not pass. The message is written to help you: here it says where `Liftoff!` belongs. Fix it, press **Run & check** again, and the cross should turn into a tick.",
       },
       {
         kind: "explain",
         title: "What a red error looks like",
-        body: "Sometimes a line cannot be carried out, and the computer stops and shows an **error** in red. It looks something like this:\n\n" + out(`Traceback (most recent call last):\n  File "main.py", line 2, in <module>\n    prnt("B")\nNameError: name 'prnt' is not defined`) + "\n\nIt looks scary but it is just a message to you. **Read the last line first.** It names the problem: here, the name `prnt` is not known (a typo for `print`). The lines above it say *where*: `line 2` tells you which line to look at.\n\nAn error never means you broke anything. Fix the line it points at and Run again.",
+        body: "Sometimes a line cannot be carried out, and the computer stops and shows an **error** in red under the tests list. It looks something like this:\n\n" + out(`NameError: name 'prnt' is not defined (line 2)`) + "\n\nIt looks scary but it is just a message to you. It has three parts. The word before the colon (`NameError`) is the kind of problem. After the colon comes the detail: here, the name `prnt` is not known (a typo for `print`). The part in brackets says *where*: `line 2` is the line to look at.\n\nAn error never means you broke anything. Fix the line it points at and press **Run & check** again.",
       },
       {
         kind: "question",
         title: "Read the error",
-        body: "An error appears and it is long. Which part do you read first?",
-        question: { type: "choice", options: ["The last line, which names the problem", "The first line, because it came first", "Nothing: errors cannot be read", "Only the colour"], answer: 0 },
-        explanation: "The **last line** says what went wrong, and the line number just above it says where. Start there.",
+        body: "A red error appears: `IndentationError: unexpected indent (line 4)`. Which line of your program do you look at first?",
+        question: { type: "choice", options: ["Line 4, the one it points at", "Line 1, because it came first", "None: errors cannot be read", "Only the colour matters"], answer: 0 },
+        explanation: "The part in brackets, **line 4**, says where Python noticed the problem, and the words before it say what kind of problem it is. Start at that line.",
       },
       {
         kind: "question",
@@ -181,22 +181,22 @@ const lessons: ConceptLesson[] = [
           type: "choice",
           options: [
             "Wait for it: it will finish eventually",
-            "Do not worry: the runner stops long programs after a time limit and tells you. Then read your loop, find why it never ends, fix it and Run again",
+            "Do not worry: the runner stops a program that runs longer than about 4 seconds and shows an error. Then read your loop, find why it never ends, fix it and press Run & check again",
             "Close the computer",
             "Delete the whole lesson",
           ],
           answer: 1,
         },
-        explanation: "A loop that never ends is a normal mistake, not a disaster. The runner cuts a program off after a time limit and shows a message. Then look at the loop and ask: *what changes each time round that would make it stop?* You will practise spotting that in the loops lesson.",
+        explanation: "A loop that never ends is a normal mistake, not a disaster. The runner cuts a program off after about 4 seconds and shows a red error (`TimeoutError: This ran for too long. Is there a loop that never ends?`). Then look at the loop and ask: *what changes each time round that would make it stop?* You will practise spotting that in the loops lesson.",
       },
       {
         kind: "recap",
         points: [
-          "Type in the editor box; the starter code is already there for you.",
-          "Run tries your program with no marking; Submit checks it against the tests.",
-          "Output from `print` shows in the output panel; the tests list shows a tick or a cross per check.",
-          "A red error is a message: read the last line first, and the line number above it.",
-          "A program that never ends gets stopped by the runner. Find what should make the loop stop, fix it and Run again.",
+          "Type in the editor box; the starter code is already there, and Reset brings it back.",
+          "Run & check runs your program and then the tests judge it.",
+          "The tests list shows a tick or a cross per check; what `print` printed appears in a grey output box under it.",
+          "A red error is a message: the kind of problem, the detail, and the line number in brackets.",
+          "A program that runs longer than about 4 seconds gets stopped. Find what should make the loop stop, fix it and press Run & check again.",
         ],
       },
     ],
@@ -252,7 +252,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "code",
         title: "Fix the countdown",
-        body: "This program should count down and then launch, but its lines are jumbled. Click in the editor and move the lines around (cut and paste), then press **Run** to see what it prints. When the tests list under it shows ticks, press **Submit**. The goal is this output:\n\n" + out("3\n2\n1\nLiftoff!"),
+        body: "This program should count down and then launch, but its lines are jumbled. Click in the editor and move the lines around (cut and paste), then press **Run & check** to see what it prints. When every row in the tests list under it shows a tick, you are done. The goal is this output:\n\n" + out("3\n2\n1\nLiftoff!"),
         language: "python",
         starter: `print("Liftoff!")\nprint(1)\nprint(3)\nprint(2)\n`,
         solution: `print(3)\nprint(2)\nprint(1)\nprint("Liftoff!")\n`,
@@ -746,7 +746,7 @@ const lessons: ConceptLesson[] = [
         title: "Round and round",
         body: "What happens when you run this?\n\n" + py(`n = 1\nwhile n < 5:\n    print(n)`),
         question: { type: "choice", options: ["It prints 1, 2, 3, 4", "It prints 1 forever", "It prints nothing", "It prints 1 once, then stops"], answer: 1 },
-        explanation: "Nothing in the body changes `n`, so `n < 5` is True every time: an **infinite loop**. A `while` loop needs something in its body that eventually makes the condition False, here `n = n + 1`.\n\nIf you ever run one for real, the runner won't let it go on forever: it stops the program after a time limit and shows a message (you saw this in *Meet the editor*). The fix is always to find what should change each pass.",
+        explanation: "Nothing in the body changes `n`, so `n < 5` is True every time: an **infinite loop**. A `while` loop needs something in its body that eventually makes the condition False, here `n = n + 1`.\n\nIf you ever run one for real, the runner won't let it go on forever: it stops the program after about 4 seconds and shows a red error (you saw this in *Meet the editor*). The fix is always to find what should change each pass.",
       },
       {
         kind: "code",

@@ -79,7 +79,7 @@ const HERO = {
 
 const SOLID = ["Single responsibility", "Open/closed", "Liskov substitution", "Interface segregation", "Dependency inversion"];
 
-/** Module 3: object-oriented programming, built around the four pillars. */
+/** Module: object-oriented programming, built around the four pillars. */
 export const oopModule: Module = {
   id: "oop",
   part: "building",

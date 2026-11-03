@@ -7,6 +7,121 @@ const P = (...paras: string[]) => paras.join("\n\n");
 
 /** Lessons 1 to 4 of "Shipping AI features": embeddings, vector search, choosing an index, filters. */
 export const aiLessonsA: ConceptLesson[] = [
+  // ─────────────────────────────── 0. What is a language model? ───────────────────────────────
+  {
+    id: "fnd-ai-0-llm-primer",
+    title: "What is a language model?",
+    summary: "Prompt, model, token, context window, temperature and why the same question can get different answers. The words every later lesson uses.",
+    minutes: 7,
+    xp: 50,
+    steps: [
+      {
+        kind: "explain",
+        title: "A very well-read autocomplete",
+        body: P(
+          "Think of the phone keyboard that suggests your next word. Now imagine one that has read a huge part of the internet, every book it could find and millions of pages of code. Give it the start of a sentence and it writes what most likely comes next, one small piece at a time.",
+          "That is a **language model** (an LLM, a *large* language model): a program that **continues text**. The text you hand it is the **prompt**. Whatever it writes back is the **answer**.",
+          "Example: the prompt *“The capital of France is”* is continued with *“Paris”*, because in everything the model has read, “Paris” is what usually follows. It did not look the answer up in a table. It knows what usually comes next.",
+        ),
+      },
+      {
+        kind: "question",
+        title: "What it does",
+        body: "In one sentence, what does a language model do with your prompt?",
+        question: {
+          type: "choice",
+          options: [
+            "It writes the text that most plausibly continues it",
+            "It searches the internet and copies the best page",
+            "It runs your prompt as a program",
+            "It looks the answer up in a database of true facts",
+          ],
+          answer: 0,
+        },
+        explanation: "A model **continues text plausibly**. Most of the time plausible and true are the same thing, which is why it is so useful. When they differ, the model can sound sure and still be wrong. You will meet that again in a few steps.",
+      },
+      {
+        kind: "explain",
+        title: "Tokens and the context window",
+        body: P(
+          "The model does not read letters or whole words. It reads **tokens**: little pieces of text. A short common word such as *cat* is usually one token. A long or rare word is split into several, like *un*, *believ*, *able*. A rough rule for English is that one token is about four letters.",
+          "Everything is counted and priced in tokens, because that is what the model actually processes.",
+          "A model can only keep so much in view at once. That limit is its **context window**, counted in tokens, like the size of a desk. On the desk go your instructions, the conversation so far, any pages you add, your question, **and the answer it is about to write**. If the desk is full, something has to come off.",
+        ),
+      },
+      {
+        kind: "question",
+        title: "Which costs more?",
+        body: "Which of these will most likely use the most tokens?",
+        question: {
+          type: "choice",
+          options: ["The word “cat”", "The word “unbelievable”", "A single space"],
+          answer: 1,
+        },
+        explanation: "Short, common words are about one token. A longer word is cut into several pieces, so “unbelievable” costs more. This is why you budget by tokens, not by words.",
+      },
+      {
+        kind: "question",
+        title: "How much room is left?",
+        body: "A model has a context window of **4,000 tokens**. Your instructions take 500, the extra pages you pasted take 2,500 and the user's question takes 200. How many tokens are left for the answer?",
+        question: { type: "number", answer: 800, tolerance: 0 },
+        explanation: "4,000 − 500 − 2,500 − 200 = **800**. The answer has to fit in what is left over, so a long prompt leaves a short answer. A later lesson in this module comes back to this budget in detail.",
+      },
+      {
+        kind: "explain",
+        title: "Why answers vary: temperature",
+        body: P(
+          "At every step the model has a ranked list of possible next pieces, each with a chance. After *“I like to eat”* it might rate *pizza* highly, *apples* less, *shoes* barely at all.",
+          "**Temperature** is a dial for how adventurous the pick is. At **0** it always takes the top choice, so the same prompt gives (almost) the same answer each time. At a **higher** temperature it sometimes takes the second or third choice, so the same prompt can give different answers. Low suits facts and code. Higher suits brainstorming and stories.",
+        ),
+      },
+      {
+        kind: "question",
+        title: "Pick the dial",
+        body: "A bot must read out the library's opening hours the same way every time. Which temperature suits it?",
+        question: {
+          type: "choice",
+          options: ["Low (near 0): steady, repeatable answers", "High: so the wording stays fresh and surprising"],
+          answer: 0,
+        },
+        explanation: "For facts you want the most likely, steadiest wording, so a **low** temperature. High temperature is for when variety is the point, such as naming a pet or writing a poem. Even at 0, a very small difference in the prompt can still change the answer.",
+      },
+      {
+        kind: "explain",
+        title: "Confident and wrong: hallucination",
+        body: P(
+          "Because the model continues text *plausibly*, it can write a smooth, confident sentence that is simply false, such as a rule that does not exist or a book that was never written. That is called a **hallucination**.",
+          "It is not lying and it is not a bug that will be patched next week. It is what continuing text does when the model has no good source in front of it. Much of this module is about ways to give the model something solid to read, and ways to check that it used it.",
+        ),
+      },
+      {
+        kind: "question",
+        title: "Spot the hallucination risk",
+        body: "Which question is the model most likely to answer with a made-up, confident detail?",
+        question: {
+          type: "choice",
+          options: [
+            "“What is our school's late fee per day?” when the model has never seen the school's rules",
+            "“What is two plus two?”",
+            "“Summarise this paragraph”, with the paragraph pasted into the prompt",
+          ],
+          answer: 0,
+        },
+        explanation: "The model has never seen your school's rules, so it fills the gap with something that **sounds** right. When the paragraph is pasted into the prompt, it has the facts on the desk and can stick to them. Putting the right text in the prompt is the idea behind most of this module.",
+      },
+      {
+        kind: "recap",
+        points: [
+          "A **language model** continues text plausibly. The text you give it is the **prompt**.",
+          "Text is cut into **tokens** (roughly four letters each in English). Models count and bill in tokens.",
+          "The **context window** is the token limit for everything at once: instructions, history, pasted pages, the question and the answer.",
+          "**Temperature** is how adventurous the next-piece choice is: low for steady facts, higher for variety.",
+          "A confident, false answer is a **hallucination**. Give the model the right text to read to reduce it.",
+        ],
+      },
+    ],
+  },
+
   // ─────────────────────────────── 1. Meaning as coordinates ───────────────────────────────
   {
     id: "fnd-ai-1-meaning",
@@ -20,7 +135,7 @@ export const aiLessonsA: ConceptLesson[] = [
         title: "Search that understands",
         body: P(
           "Picture a school library chatbot. A student types **“my book is late”**. The library’s own help page is called *Overdue items and fines*. It never uses the word “late”, so a keyword search finds nothing, even though any person would match them instantly.",
-          "An **embedding model** closes that gap. It reads a piece of text and returns a **list of numbers**: a few hundred to a few thousand of them. The model was trained so that texts used in similar ways produce lists that sit close together. “My book is late” and “overdue items” land near each other without sharing a single word.",
+          "An **embedding model** closes that gap. It reads a piece of text and returns a **list of numbers** (called a **vector**): a few hundred to a few thousand of them. Each number in the list is one **dimension**, one direction you can move in. The model was trained so that texts used in similar ways produce lists that sit close together. “My book is late” and “overdue items” land near each other without sharing a single word.",
           "Real embeddings have hundreds of dimensions. This one has two, so you can see it. Every phrase is an arrow from the centre; its **direction** is what it is about. Tap a dot to make it the query and watch the others rank.",
         ),
         widget: { type: "ai-space", props: {} },
@@ -45,7 +160,7 @@ cosine(a, b) = (a · b) / (|a| × |b|)
  0.0  right angle     (unrelated)
 -1.0  opposite        (opposite)
 `),
-          "`a · b` is the dot product (multiply matching numbers, add them up) and `|a|` is the length of an arrow. Dividing by the lengths means **only the direction counts**. Many embedding models already return arrows of length 1, in which case the dot product and cosine give the same answer.",
+          "`a · b` is the dot product (multiply matching numbers, add them up) and `|a|` is the length of an arrow. A tiny example with `a = (3, 4)` and `b = (4, 3)`: the dot product is `3×4 + 4×3 = 24`, and each arrow has length 5 (because `3² + 4² = 25`), so cosine = `24 / (5 × 5) = 0.96`. Almost the same direction. Dividing by the lengths means **only the direction counts**. Many embedding models already return arrows of length 1, in which case the dot product and cosine give the same answer.",
           "Flip the switch to *Distance* and compare. Straight-line distance cares about length too, so it can rank things differently.",
         ),
         widget: { type: "ai-space", props: { query: "overdue book", k: 3, metricToggle: true } },
@@ -64,7 +179,7 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         body: "Same query. Raise **k** until a neighbour from the *wrong* topic sneaks into the list.",
         widget: { type: "ai-space", props: { query: "overdue book", k: 3, metricToggle: true } },
         question: { type: "widget", goal: { query: "overdue book", pure: false } },
-        explanation: "Around k = 5 the list reaches **damaged book**, which is half about libraries and half about repairs. There is always a neighbour list of length k, even when only two items are really relevant. Asking for more than exists buys noise, and in a RAG system that noise goes into the prompt.",
+        explanation: "Around k = 5 the list reaches **damaged book**, which is half about libraries and half about repairs. There is always a neighbour list of length k, even when only two items are really relevant. Asking for more than exists buys noise. Later you will build assistants that look things up and paste the results into the prompt (that is called RAG), and there this noise would mislead the model.",
       },
       {
         kind: "question",
@@ -85,7 +200,7 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         title: "Write cosine similarity",
         body: P(
           "Finish `cosine(a, b)` for two lists of numbers of the same length. Use `math.sqrt` for the lengths.",
-          "`zip(a, b)` pairs up matching numbers, and `sum(...)` adds a generator of products.",
+          "`zip(a, b)` pairs up matching numbers: `zip([3, 4], [4, 3])` gives the pairs `(3, 4)` and `(4, 3)`. Then `sum(x * y for x, y in zip(a, b))` multiplies each pair and adds the results: `3×4 + 4×3 = 24`.",
         ),
         language: "python",
         starter: "import math\n\n\ndef cosine(a, b):\n    # dot product divided by the product of the two lengths\n    return 0.0\n",
@@ -154,8 +269,9 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         kind: "explain",
         title: "The honest way is slow",
         body: P(
-          "The simplest vector search compares the query with **every stored vector** and keeps the best k. It is called **exact** (or brute-force) search, and it is always right.",
-          "The cost is the problem. Each comparison multiplies one number per dimension, so a query costs about **N × d** multiplications for N vectors of d dimensions. It grows in a straight line with the collection: ten times the books, ten times the work for every single question.",
+          "Imagine finding the book most like your favourite by holding it up against every single book in the library, one by one. It always works, and it takes forever.",
+          "The simplest vector search does exactly that: it compares the query with **every stored vector** and keeps the best k. It is called **exact** (or brute-force) search, and it is always right.",
+          "The cost is the problem. Each comparison multiplies one number per dimension, so with N vectors that are each d numbers long, one query costs about **N × d** multiplications (N times d). It grows in a straight line with the collection: ten times the books, ten times the work for every single question.",
         ),
       },
       {
@@ -170,7 +286,7 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         title: "Good-enough neighbours",
         body: P(
           "**Approximate nearest neighbour (ANN)** search gives up the guarantee. It looks at a small, well-chosen part of the collection and returns neighbours that are *usually* the true ones.",
-          "How often it is right is called **recall**: of the true 5 nearest neighbours, how many did the method find? 100% means all of them. You pay for it with **distance checks**: how many vectors had to be compared.",
+          "How often it is right is called **recall** (here it means “how much of the true answer did you find”): of the true 5 nearest neighbours, how many did the method find? 100% means all of them. You pay for it with **distance checks**: how many vectors had to be compared.",
           "Here is a cloud of 80 points. **Scan everything** is exact; **Layered graph** walks from point to point towards the query. Tap the plot to move the query, and raise *ef* (how many candidates the walk keeps in mind) to see recall rise.",
         ),
         widget: { type: "ai-ann", props: { methods: ["brute", "hnsw"], method: "hnsw" } },
@@ -213,7 +329,9 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         kind: "explain",
         title: "The other way: clusters",
         body: P(
-          "**IVF** (inverted file) takes a different route. First, group the vectors into **clusters** with an algorithm like k-means; each cluster has a centre. To search, compare the query with the **centres only**, pick the closest few clusters, and scan just the vectors inside them.",
+          "### Going further (optional)",
+          "You can skip this section and still follow the rest of the module. Think of a school with neighbourhood buses: to find a friend, you check only the buses that go near their street.",
+          "**IVF** (inverted file) takes a different route. First, group the vectors into **clusters** (groups of nearby vectors) with a sorting algorithm called k-means; each cluster has a centre. To search, compare the query with the **centres only**, pick the closest few clusters, and scan just the vectors inside them.",
           "The dial is **nprobe**: how many clusters you visit. Visit one and you are fast but can miss neighbours that live just across a boundary; visit them all and you have rebuilt exact search.",
         ),
         widget: { type: "ai-ann", props: { methods: ["ivf"], method: "ivf" } },
@@ -254,10 +372,10 @@ cosine(a, b) = (a · b) / (|a| × |b|)
       {
         kind: "recap",
         points: [
-          "**Exact search** compares the query with every vector: perfect recall, cost grows with N × d.",
-          "**ANN** checks only part of the collection. **Recall@k** says how many true neighbours it found.",
+          "**Exact search** compares the query with every vector: perfect recall, cost grows with N × d (N vectors, each d numbers long).",
+          "**ANN** checks only part of the collection. **Recall@k** says how many of the true k nearest neighbours it found.",
           "**HNSW** walks a layered graph: sparse layers for long hops, the base layer for detail. Dial: **ef**.",
-          "**IVF** visits the nearest clusters only. Dial: **nprobe**. Neighbours across a border are its blind spot.",
+          "Going further: **IVF** visits the nearest clusters only. Dial: **nprobe**. Neighbours across a border are its blind spot.",
         ],
       },
     ],
@@ -275,8 +393,9 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         kind: "explain",
         title: "Four numbers pull against each other",
         body: P(
+          "Packing for a trip, you trade space, weight and what you can find quickly. A vector index is the same: you can't have everything, so you choose what to give up.",
           "Every vector index trades four things:",
-          "- **Recall**: how often it finds the true neighbours.\n- **Latency**: how long one query takes.\n- **Memory**: how much RAM (or disk) the index needs.\n- **Build time**: how long to create it, and to rebuild it when data changes.",
+          "- **Recall**: how often it finds the true neighbours (as in the last lesson).\n- **Latency**: how long one query takes.\n- **Memory**: how much RAM (or disk) the index needs.\n- **Build time**: how long to create it, and to rebuild it when data changes.",
           "You can improve any of them by spending another. Faster usually costs recall or memory; smaller costs recall; higher recall costs time. The skill is not knowing a favourite index, it is **writing down your requirements first** and checking designs against them.",
         ),
       },
@@ -349,7 +468,7 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         kind: "code",
         title: "Write the planner",
         body: P(
-          "Turn the rules of thumb into code. `plan_index(n, dims, budget_ms, ram_gb)` returns one of three strings:",
+          "Turn the rules of thumb into code. To keep it simple, assume the machine does 4 million multiplications per millisecond, so an exact scan takes `n * dims / 4_000_000` milliseconds. `plan_index(n, dims, budget_ms, ram_gb)` returns one of three strings (`\"ivfpq\"` means clusters plus product quantization, which squashes each vector into a short code so it takes much less memory):",
           "- `\"exact\"` if an exact scan fits the time budget (`n * dims / 4_000_000` milliseconds) **and** the raw vectors fit in RAM (`n * dims * 4` bytes; one GB is `1e9` bytes),\n- else `\"hnsw\"` if a graph fits in RAM (`n * (dims * 4 + 128)` bytes),\n- else `\"ivfpq\"`.",
         ),
         language: "python",
@@ -407,8 +526,9 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         kind: "explain",
         title: "Nearest is not the whole question",
         body: P(
+          "Imagine one big filing cabinet shared by four shops. When you ask for “the best article about tyres”, you want the best one from *your* drawer, not the nearest one from anyone's.",
           "Real searches arrive with conditions: *only articles from my shop*, *only 2025 policies*, *only in French*, *only things this user may see*. Each vector therefore carries **metadata** next to it, and the search must honour the conditions as well as the distance.",
-          "Our example is a help-centre service shared by **four bike shops**. Their articles live in one index (the dots below), and the colours say whose they are. When a shop’s assistant searches, only that shop’s articles should ever be shown.",
+          "Our example is a help-centre service shared by **four bike shops**. Each shop is a **tenant**: a customer who shares the system with others but must never see their data. Their articles live in one index (the dots below), and the colours say whose they are. When a shop’s assistant searches, only that shop’s articles should ever be shown.",
         ),
         widget: { type: "ai-filter", props: { modes: ["none"] } },
       },
@@ -469,7 +589,7 @@ cosine(a, b) = (a · b) / (|a| × |b|)
           type: "choice",
           options: [
             "The query to the index, with the shop id taken from the signed-in session on the server",
-            "The prompt: tell the model “only answer about shop X”",
+            "The prompt (the text you give the model): tell it “only answer about shop X”",
             "The browser, which hides articles that are not the user’s",
             "The model, which can tell whose article is whose",
           ],

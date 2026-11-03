@@ -15,6 +15,147 @@ SELECT i * 7, CASE i % 3 WHEN 0 THEN 'Hall A' WHEN 1 THEN 'Hall B' ELSE 'Arena' 
 `;
 
 const lessons: ConceptLesson[] = [
+  // ─────────────────────────────── 0. Databases in ten minutes ───────────────────────────────
+  {
+    id: "fnd-data-0-sql-primer",
+    title: "Databases in ten minutes",
+    summary: "Tables, rows, columns and keys, plus the five SQL commands that read and change them, and what an index is for.",
+    minutes: 10,
+    xp: 50,
+    steps: [
+      {
+        kind: "explain",
+        title: "A filing cabinet with rules",
+        body: "Imagine a class pet register on a sheet of paper. Each line is one pet; each column holds one kind of fact (name, kind of animal, age). A **database** is that sheet, grown up: it stores facts in neat grids so a program can find them quickly and change them safely, even when thousands of people use it at once.\n\nThe names to learn:\n\n- A **table** is one grid, like one spreadsheet tab. Ours is called `pets`.\n- A **row** is one line of the grid: one pet.\n- A **column** is one vertical strip: one kind of fact about every pet.\n- A **primary key** is a column whose value is different in every row (here `id`), so it points at exactly one row, the way a student number points at exactly one student.\n\n" +
+          txt(`
+pets
+id | name | kind    | age
+ 1 | Mimi | cat     |  3
+ 2 | Rex  | dog     |  5
+ 3 | Pip  | hamster |  1
+ 4 | Luna | cat     |  7
+ 5 | Bolt | dog     |  2
+`) +
+          "\nYou talk to a database in a language called **SQL** (say 'S-Q-L' or 'sequel'). One instruction in SQL is called a **statement**; a statement that asks a question is a **query**. Each ends with a semicolon.",
+      },
+      {
+        kind: "question",
+        title: "Find your way around the table",
+        body: txt(`
+pets
+id | name | kind    | age
+ 1 | Mimi | cat     |  3
+ 2 | Rex  | dog     |  5
+ 3 | Pip  | hamster |  1
+ 4 | Luna | cat     |  7
+ 5 | Bolt | dog     |  2
+`) + "\nHow many **rows** does the `pets` table have?",
+        question: { type: "number", answer: 5, hint: "A row is one line across, one pet each. Count the pets." },
+        explanation: "**5**: one row per pet. The table has 4 *columns* (id, name, kind, age); do not mix up the two. Rows run across, columns run down.",
+      },
+      {
+        kind: "explain",
+        title: "Asking a question: SELECT",
+        body: "To read data you write `SELECT` (which columns do I want?), `FROM` (which table?) and optionally `WHERE` (only the rows that pass this test):\n\n" +
+          sql(`SELECT name, age FROM pets WHERE kind = 'cat';`) +
+          "\nRead it like a sentence: 'show me the name and age of pets, where the kind is cat'. The text `'cat'` is in single quotes because it is words; numbers need none. The answer is itself a little table:\n\n" +
+          txt(`
+name | age
+Mimi |   3
+Luna |   7
+`) +
+          "\n`SELECT *` means 'every column'. You can join tests with `AND`: `WHERE kind = 'dog' AND age > 3` keeps only the rows where **both** tests pass (Rex, here). And `SELECT COUNT(*) FROM pets;` counts rows: it answers 5.",
+      },
+      {
+        kind: "question",
+        title: "Predict the answer",
+        body: sql(`SELECT name FROM pets WHERE age > 4;`) + "\nWhich names does this return? (Check each pet's age in the table above. `>` means 'greater than'.)",
+        question: {
+          type: "choice",
+          options: ["Rex and Luna", "Rex only", "Luna, Rex and Bolt", "Mimi and Pip"],
+          answer: 0,
+          hint: "Go row by row and ask: is this pet's age greater than 4?",
+        },
+        explanation: "Rex is 5 and Luna is 7: both are greater than 4. Mimi (3), Pip (1) and Bolt (2) fail the test, so they are left out. Only the `name` column comes back, because that is all the query asked for.",
+      },
+      {
+        kind: "explain",
+        title: "Changing the table: INSERT, UPDATE, DELETE",
+        body: "Three more commands change data. Each one is followed by what the table looks like afterwards.\n\n**INSERT** adds a new row:\n\n" +
+          sql(`INSERT INTO pets (id, name, kind, age) VALUES (6, 'Dot', 'cat', 2);`) +
+          "\nNow `pets` has six rows, and the last one is `6 | Dot | cat | 2`.\n\n**UPDATE** changes values in the rows that pass a `WHERE` test:\n\n" +
+          sql(`UPDATE pets SET age = 4 WHERE id = 1;`) +
+          "\nMimi's row is now `1 | Mimi | cat | 4`. Using the primary key in `WHERE` means exactly one row changes.\n\n**DELETE** removes rows:\n\n" +
+          sql(`DELETE FROM pets WHERE id = 3;`) +
+          "\nPip is gone. **Always include the WHERE.** `DELETE FROM pets;` with no test removes *every* row, and an `UPDATE` without a `WHERE` changes every row.",
+      },
+      {
+        kind: "question",
+        title: "Careful with DELETE",
+        body: "What does this statement do?\n\n" + sql(`DELETE FROM pets;`),
+        question: {
+          type: "choice",
+          options: ["Deletes every row in the table", "Deletes nothing, because there is no test", "Deletes only the first row", "Deletes the `pets` table and its columns too"],
+          answer: 0,
+          hint: "WHERE is the part that narrows down which rows. What happens when nothing narrows them down?",
+        },
+        explanation: "Without `WHERE`, the statement applies to all rows, so the table ends up empty (the empty table itself still exists). That is why people type the `WHERE` first and the rest second.",
+      },
+      {
+        kind: "question",
+        title: "Follow the changes",
+        body: "Start from the original 5-row table. Run these two statements:\n\n" +
+          sql(`
+INSERT INTO pets (id, name, kind, age) VALUES (6, 'Dot', 'cat', 2);
+DELETE FROM pets WHERE kind = 'dog';
+`) +
+          "\nHow many rows are left?",
+        question: { type: "number", answer: 4, hint: "Do them in order: first one row is added, then every dog row is removed. How many dogs are there?" },
+        explanation: "5 rows + 1 inserted = 6. Then the delete removes the two dogs (Rex and Bolt): 6 - 2 = **4**, namely Mimi, Pip, Luna and Dot.",
+      },
+      {
+        kind: "explain",
+        title: "Why an index: the book at the back",
+        body: "To answer `WHERE kind = 'cat'` the database, by default, reads **every row** and checks each one. With 5 pets that is nothing. With 50 million tickets it takes long enough for people to notice.\n\nA book solves this with an **index** at the back: an alphabetical list that says 'volcano: page 212'. A database index is the same: a separate, sorted lookup list on one column that tells the database where to find matching rows without reading them all. You ask for one with:\n\n" +
+          sql(`CREATE INDEX idx_pets_kind ON pets (kind);`) +
+          "\nThe parts: `CREATE INDEX`, a name you choose (`idx_pets_kind`), `ON`, the table (`pets`), and the column in brackets (`kind`).\n\nAn index never changes your answers, only how fast they arrive. It is not free: it takes extra space, and every INSERT, UPDATE and DELETE must also keep the list tidy, like a librarian who has to re-sort the index after each new book. The next lesson looks inside to see how the lookup works.",
+      },
+      {
+        kind: "question",
+        title: "Who gets faster?",
+        body: "Suppose a big `pets` table has an index on `kind` and no other index. Which query does that index speed up?",
+        question: {
+          type: "choice",
+          options: ["SELECT * FROM pets WHERE kind = 'cat';", "SELECT * FROM pets WHERE age = 3;", "INSERT INTO pets (id, name, kind, age) VALUES (7, 'Zed', 'dog', 1);", "SELECT COUNT(*) FROM pets;"],
+          answer: 0,
+          hint: "The index is a sorted list of one column. Which query searches by exactly that column?",
+        },
+        explanation: "An index helps queries that **look up by its column**. Searching by `age` needs a list sorted by age, which does not exist. The INSERT gets slightly *slower* (it must update the index too), and counting every row needs no lookup at all.",
+      },
+      {
+        kind: "question",
+        title: "Spell it right",
+        body: "Which statement builds an index on the `age` column of `pets`?",
+        question: {
+          type: "choice",
+          options: ["CREATE INDEX idx_pets_age ON pets (age);", "CREATE pets INDEX ON age;", "INDEX pets (age) CREATE;", "SELECT INDEX age FROM pets;"],
+          answer: 0,
+          hint: "Look back at the example: CREATE INDEX, then a name, then ON, then the table, then the column in brackets.",
+        },
+        explanation: "The order is always: `CREATE INDEX` name `ON` table `(` column `)`. You will write one yourself in the next lesson.",
+      },
+      {
+        kind: "recap",
+        points: [
+          "A **table** holds **rows** (one thing each) split into **columns** (one fact each); a **primary key** column is different in every row.",
+          "`SELECT columns FROM table WHERE test;` reads data; `AND` joins tests; `COUNT(*)` counts rows.",
+          "`INSERT` adds a row, `UPDATE ... SET` changes rows, `DELETE FROM` removes rows. Always add a `WHERE` unless you mean every row.",
+          "`CREATE INDEX name ON table (column);` builds a sorted lookup list that makes searches by that column faster, at the cost of space and slower writes.",
+        ],
+      },
+    ],
+  },
+
   // ─────────────────────────────── 1. How an index finds a row ───────────────────────────────
   {
     id: "fnd-data-1-index-btree",
@@ -26,7 +167,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "explain",
         title: "The cost is pages, not rows",
-        body: "A database does not read a table one row at a time. It stores rows in **pages**: fixed-size blocks, usually 8 KB, that each hold a few dozen to a few hundred rows. Asking the disk (or the cache) for a page is the unit of work, so the useful question about any query is: **how many pages does it have to touch?**\n\nYour concert-ticket site has a `tickets` table. The simplest way to find order number 651 is to open the first page, look through its rows, open the next page, and carry on until the order turns up. That is a **full scan**. Try it on this tiny table of 64 rows, 4 per page.",
+        body: "Want to find the word 'volcano' in a 500-page book? You could read every page from the start. Or you could flip to the **index** at the back, find 'volcano: page 212', and open the book right there. Databases have the same two choices, and this lesson is about the second one.\n\nA database does not read a table one row at a time. It stores rows in **pages**: fixed-size blocks, usually 8 KB, that each hold a few dozen to a few hundred rows. Asking the disk (or the cache) for a page is the unit of work, so the useful question about any query is: **how many pages does it have to touch?**\n\nYour concert-ticket site has a `tickets` table. The simplest way to find order number 651 is to open the first page, look through its rows, open the next page, and carry on until the order turns up. That is a **full scan**. Try it on this tiny table of 64 rows, 4 per page.",
         widget: { type: "data-btree", props: { mode: "scan", fixedMode: true } },
       },
       {
@@ -56,7 +197,7 @@ const lessons: ConceptLesson[] = [
         title: "How many pages was that?",
         body: "A lookup in this index, found or not found, reads how many pages?",
         question: { type: "number", answer: 3 },
-        explanation: "**Three**: one page per level of the tree. The cost of an index lookup is the tree's **depth**, and that stays small even as the table grows, as the next step shows.",
+        explanation: "**Three**: one page per level of the tree, to find where the row lives. (Fetching the row itself from the table is one more page, so a found row costs 3 + 1.) The cost of an index lookup is the tree's **depth**, and that stays small even as the table grows, as the next step shows.",
       },
       {
         kind: "explain",
@@ -68,7 +209,7 @@ const lessons: ConceptLesson[] = [
 3 levels                 ~ 8,000,000 rows
 4 levels                 ~ 1.6 billion rows
 `) +
-          "\nDepth is roughly the logarithm of the row count, base 'keys per page'. Slide the table size up and compare the pages a scan needs (100 rows per page) with the pages the index needs.",
+          "\nPut another way, the depth is *how many times you can multiply by 200 before you pass the number of rows* (mathematicians call that a logarithm). Slide the table size up and compare the pages a scan needs (100 rows per page) with the pages the index needs.",
         widget: { type: "data-btree", props: { mode: "index", fixedMode: true, scale: true } },
       },
       {
@@ -80,7 +221,7 @@ const lessons: ConceptLesson[] = [
           options: ["About a thousand times slower", "About twice as slow", "About one page read more", "No change at all: it's a constant"],
           answer: 2,
         },
-        explanation: "Going from 3 levels to 4 means **one extra page read**. A scan, meanwhile, got a thousand times slower. That gap is why a lookup by key on a huge table can still take milliseconds.",
+        explanation: "Going from 3 levels to 4 means **one extra page read** (1 million is under 200 x 200 x 200 = 8 million; 1 billion needs a fourth multiplication by 200). A scan, meanwhile, got a thousand times slower. That gap is why a lookup by key on a huge table can still take milliseconds.",
       },
       {
         kind: "question",
@@ -95,7 +236,7 @@ const lessons: ConceptLesson[] = [
             "Follow the leaf's pointer to the row in the table",
           ],
         },
-        explanation: "One page per level, each time narrowing the search to a single child, then one hop to the row itself. Every step can skip huge parts of the data because the keys are **sorted**.",
+        explanation: "One page per level, each time narrowing the search to a single child, then one hop to the row itself (3 pages to find the row's address, plus 1 to fetch the row). Every step can skip huge parts of the data because the keys are **sorted**.",
       },
       {
         kind: "explain",
@@ -130,7 +271,7 @@ const lessons: ConceptLesson[] = [
       {
         kind: "code",
         title: "Turn a scan into a seek",
-        body: "SQLite can tell you how it plans to run a query: put `EXPLAIN QUERY PLAN` in front of it. The plan below says `SCAN tickets`: every row is read. Add one statement, **before** the EXPLAIN line, that creates an index on `order_no`, and the plan should change to a `SEARCH`.",
+        body: "SQLite (a small database that runs right here in your browser) can tell you how it plans to run a query: put `EXPLAIN QUERY PLAN` in front of it and it prints its plan instead of the rows. The plan below says `SCAN tickets`: every row is read.\n\nYou met `CREATE INDEX` in the previous lesson. The shape is:\n\n" + sql(`CREATE INDEX index_name ON table_name (column_name);`) + "\nFor example, `CREATE INDEX idx_tickets_venue ON tickets (venue);` would build an index on the `venue` column. Now do it for `order_no`: add one such statement, **before** the EXPLAIN line, and the plan should change to a `SEARCH`. (Pick any index name you like; `idx_` plus table and column is a common habit.) Remember to press Run and read the plan in the output.",
         language: "sql",
         starter: TICKETS_SEED + `
 -- Add your CREATE INDEX statement here:
@@ -168,14 +309,14 @@ SELECT * FROM tickets WHERE order_no = 4200;
   {
     id: "fnd-data-2-index-kinds",
     title: "Choosing the right index",
-    summary: "Column order, partial, expression and covering indexes, plus the inverted and block-range ideas.",
+    summary: "Column order, partial, expression and covering indexes; inverted and block-range ideas as an optional extra.",
     minutes: 14,
     xp: 80,
     steps: [
       {
         kind: "explain",
         title: "An index is sorted by its first column first",
-        body: "An index on **two columns** is not two indexes. It is one sorted list, ordered by the first column, then by the second inside each group of equal first values:\n\n" +
+        body: "A phone book is sorted by surname first, and by first name only inside each surname. You can find 'Okafor, Ana' fast, and 'all the Okafors' fast, but 'all the Anas' means reading the whole book. A database index on two columns works exactly like that. It is not two indexes. It is one sorted list, ordered by the first column, then by the second inside each group of equal first values:\n\n" +
           txt(`
 index on (venue, show_date)
 
@@ -186,7 +327,7 @@ Hall A  2027-03-12   <- every Hall A entry sits together,
 Hall A  2027-03-13      and its dates are in order
 Hall B  2027-03-11
 `) +
-          "\nThat has a sharp consequence, the **leftmost prefix rule**: the index can narrow a search using its first column, and then its second, and so on, but only if each earlier column is pinned down. Below is a million-row `tickets` table and a query that only knows the **date**. Try each index and watch how many entries it has to walk.",
+          "\nThat has a sharp consequence, the **leftmost prefix rule**: the index can narrow a search using its first column, and then its second, and so on, but only if each earlier column is pinned down. An index also keeps its entries in order, which is what makes all of this work. Below is a million-row `tickets` table and a query that only knows the **date**. Try each index and watch how many entries it has to walk.",
         widget: { type: "data-indexes", props: { scenario: "prefix" } },
       },
       {
@@ -200,7 +341,7 @@ Hall B  2027-03-11
       {
         kind: "explain",
         title: "Equality first, then one range",
-        body: "Real queries mix tests. A good rule of thumb for composite indexes: put the columns tested with **=** first, and the column tested with a **range** (BETWEEN, <, >) last. A range column can narrow the search, but once the index is walking a range the later columns are no longer in one tidy run, so they cannot narrow it further.\n\nThis query wants Hall A, one week. Compare (venue, show_date) with (show_date, venue).",
+        body: "Real queries mix tests. A good rule of thumb for composite indexes: put the columns tested with **=** first, and the column tested with a **range** (`BETWEEN a AND b` means 'from a to b, inclusive'; `<` and `>` also make ranges) last. A range column can narrow the search, but once the index is walking a range the later columns are no longer in one tidy run, so they cannot narrow it further.\n\nThis query wants Hall A, one week. Compare (venue, show_date) with (show_date, venue).",
         widget: { type: "data-indexes", props: { scenario: "range" } },
       },
       {
@@ -244,7 +385,7 @@ CREATE INDEX idx_open_by_date ON tickets (show_date)
       {
         kind: "explain",
         title: "Indexes on expressions",
-        body: "The sign-up form compares e-mail addresses ignoring case, so queries look like `WHERE lower(email) = 'ana@example.com'`. An ordinary index on `email` is sorted by the stored text, not by its lower-case version, so it cannot help: the database would have to compute lower() for every row.\n\nAn **expression index** stores the computed value instead:\n\n" +
+        body: "The sign-up form compares e-mail addresses ignoring case, so queries look like `WHERE lower(email) = 'ana@example.com'` (`lower()` turns text into lower-case letters). An ordinary index on `email` is sorted by the stored text, not by its lower-case version, so it cannot help: the database would have to compute lower() for every row.\n\nAn **expression index** stores the computed value instead:\n\n" +
           sql(`
 CREATE INDEX idx_email_lower ON tickets (lower(email));
 `) +
@@ -257,12 +398,45 @@ CREATE INDEX idx_email_lower ON tickets (lower(email));
         body: "This query only needs two columns, `show_date` and `price`, for a venue. An index normally tells the database *where* the rows are, and then it fetches each one from the table. A **covering index** holds every column the query needs, so the table is skipped entirely. Choose the index that covers it.",
         widget: { type: "data-indexes", props: { scenario: "covering" } },
         question: { type: "widget", goal: { scenario: "covering", kind: "covering" }, prompt: "Pick the index that covers the query." },
-        explanation: "(venue, show_date, price) holds venue to find the rows and the two columns the query returns, so there are **0 table fetches**: half the work. The cost is a wider index to store and update. PostgreSQL spells this INCLUDE; in SQLite (and most others) you simply add the columns to the end of the key.",
+        explanation: "(venue, show_date, price) holds venue to find the rows and the two columns the query returns, so there are **0 table fetches**. Without the cover it is 2 steps (look in the index, then fetch the row from the table); with it, 1 step: half the work. The cost is a wider index to store and update. PostgreSQL spells this INCLUDE; in SQLite (and most others) you simply add the columns to the end of the key.",
+      },
+      {
+        kind: "code",
+        title: "Fix the column order",
+        body: "Someone created an index on **(show_date, venue)** for the Hall A, one-week query, and the plan still doesn't narrow by venue. Replace it with an index in the better order so the plan seeks on **both** `venue=?` and the date range.",
+        language: "sql",
+        starter: TICKETS_SEED + `
+-- Someone's first guess:
+CREATE INDEX idx_date_venue ON tickets (show_date, venue);
+
+EXPLAIN QUERY PLAN
+SELECT * FROM tickets
+WHERE venue = 'Hall A' AND show_date BETWEEN '2027-03-01' AND '2027-03-07';
+`,
+        solution: TICKETS_SEED + `
+DROP INDEX IF EXISTS idx_date_venue;
+CREATE INDEX idx_venue_date ON tickets (venue, show_date);
+
+EXPLAIN QUERY PLAN
+SELECT * FROM tickets
+WHERE venue = 'Hall A' AND show_date BETWEEN '2027-03-01' AND '2027-03-07';
+`,
+        tests: [
+          { id: "t1", description: "The plan seeks using the index", assertionCode: `assert(rows.some((r) => /SEARCH/.test(String(r.detail))), "The plan should be a SEARCH using an index")` },
+          { id: "t2", description: "It narrows on venue first (venue=?)", assertionCode: `assert(rows.some((r) => /venue=\\?/.test(String(r.detail))), "The plan should mention venue=?: put the equality column first in the index")` },
+          { id: "t3", description: "And on the date range too", assertionCode: `assert(rows.some((r) => /show_date>\\?/.test(String(r.detail))), "The plan should also narrow with the show_date range")` },
+        ],
+        hints: ["Equality columns first, the range column last.", "You may drop the old index first (DROP INDEX idx_date_venue;) so the planner has only one good choice."],
+      },
+      {
+        kind: "explain",
+        title: "Going further (optional): other index shapes",
+        body: "### Going further (optional)\n\nYou now know the indexes you will use most. The rest of this lesson is two special shapes for special data. Skip it for now and come back whenever you are curious.",
       },
       {
         kind: "explain",
         title: "Beyond B-trees: inverted indexes",
-        body: "A B-tree is great for 'this value' and 'this range'. But a recipe app has a different question: **which recipes contain chickpea, garlic and harissa?** Each recipe holds *many* ingredients, and a B-tree sorts one value per row.\n\nAn **inverted index** flips the table: for every ingredient it keeps a sorted list of the recipe numbers that use it. Finding recipes with several ingredients is then a quick merge of short lists. PostgreSQL's GIN indexes work this way (for arrays, JSON and full-text words), and so do search engines. The price is slow writes, because one recipe adds entries to many lists.",
+        body: "A B-tree is great for 'this value' and 'this range'. But a recipe app has a different question: **which recipes contain chickpea, garlic and harissa?** Each recipe holds *many* ingredients, and a B-tree sorts one value per row.\n\nAn **inverted index** flips the table: for every ingredient it keeps a sorted list of the recipe numbers that use it. Finding recipes with several ingredients is then a quick merge of short lists. PostgreSQL's GIN indexes work this way (for arrays, JSON documents, which are nested records of named values, and full-text search, which finds words inside long text), and so do search engines. The price is slow writes, because one recipe adds entries to many lists.",
         widget: { type: "data-inverted" },
       },
       {
@@ -299,34 +473,6 @@ CREATE INDEX idx_email_lower ON tickets (lower(email));
         explanation: "Append-only data queried by time window is exactly the block-range index's niche: tiny and cheap to keep, and the data is already in time order. A B-tree would work but costs far more space and write time.",
       },
       {
-        kind: "code",
-        title: "Fix the column order",
-        body: "Someone created an index on **(show_date, venue)** for the Hall A, one-week query, and the plan still doesn't narrow by venue. Replace it with an index in the better order so the plan seeks on **both** `venue=?` and the date range.",
-        language: "sql",
-        starter: TICKETS_SEED + `
--- Someone's first guess:
-CREATE INDEX idx_date_venue ON tickets (show_date, venue);
-
-EXPLAIN QUERY PLAN
-SELECT * FROM tickets
-WHERE venue = 'Hall A' AND show_date BETWEEN '2027-03-01' AND '2027-03-07';
-`,
-        solution: TICKETS_SEED + `
-DROP INDEX IF EXISTS idx_date_venue;
-CREATE INDEX idx_venue_date ON tickets (venue, show_date);
-
-EXPLAIN QUERY PLAN
-SELECT * FROM tickets
-WHERE venue = 'Hall A' AND show_date BETWEEN '2027-03-01' AND '2027-03-07';
-`,
-        tests: [
-          { id: "t1", description: "The plan seeks using the index", assertionCode: `assert(rows.some((r) => /SEARCH/.test(String(r.detail))), "The plan should be a SEARCH using an index")` },
-          { id: "t2", description: "It narrows on venue first (venue=?)", assertionCode: `assert(rows.some((r) => /venue=\\?/.test(String(r.detail))), "The plan should mention venue=?: put the equality column first in the index")` },
-          { id: "t3", description: "And on the date range too", assertionCode: `assert(rows.some((r) => /show_date>\\?/.test(String(r.detail))), "The plan should also narrow with the show_date range")` },
-        ],
-        hints: ["Equality columns first, the range column last.", "You may drop the old index first (DROP INDEX idx_date_venue;) so the planner has only one good choice."],
-      },
-      {
         kind: "recap",
         points: [
           "A composite index is sorted by its **first column first**: queries must pin down the leading columns to use it (the leftmost prefix rule).",
@@ -350,7 +496,7 @@ WHERE venue = 'Hall A' AND show_date BETWEEN '2027-03-01' AND '2027-03-07';
       {
         kind: "explain",
         title: "The planner decides; EXPLAIN tells you",
-        body: "You write **what** you want; the database's **query planner** picks **how** to get it. It weighs the available indexes, guesses how many rows each step produces, and chooses the plan it thinks is cheapest. `EXPLAIN` prints that plan so you can check the guess.\n\nSQLite's plans are short and easy to read:\n\n" +
+        body: "Ask a librarian for 'all books about volcanoes'. You say *what* you want; she decides *how*: walk every shelf, or check the card catalogue first. A database has such a librarian too. You write **what** you want; the database's **query planner** picks **how** to get it. It weighs the available indexes, guesses how many rows each step produces, and chooses the plan it thinks is cheapest. `EXPLAIN` prints that plan so you can check the guess.\n\nSQLite's plans are short and easy to read:\n\n" +
           txt(`
 SEARCH tickets USING INDEX idx_venue (venue=?)
 USE TEMP B-TREE FOR ORDER BY
@@ -379,7 +525,7 @@ USE TEMP B-TREE FOR ORDER BY
       {
         kind: "code",
         title: "Don't hide the column",
-        body: "This query finds tickets for March 2027. There is an index on `show_date`, yet the plan is a `SCAN`: wrapping the column in `strftime()` means the database must compute it for every row, so it cannot use a sorted list of the *stored* dates. Rewrite the WHERE clause as a **range on the bare column**, so the plan becomes a SEARCH on `idx_date`.",
+        body: "This query finds tickets for March 2027. There is an index on `show_date`, yet the plan is a `SCAN`: `strftime('%Y-%m', show_date)` is a function that turns a full date like `2027-03-14` into just `2027-03` (year and month). Wrapping the column in it means the database must compute it for every row, so it cannot use a sorted list of the *stored* dates. Rewrite the WHERE clause as a **range on the bare column**, so the plan becomes a SEARCH on `idx_date`.",
         language: "sql",
         starter: TICKETS_SEED + `
 CREATE INDEX idx_date ON tickets (show_date);
@@ -405,7 +551,7 @@ WHERE show_date >= '2027-03-01' AND show_date < '2027-04-01';
       {
         kind: "code",
         title: "Remove the sort",
-        body: "The query below returns Hall A's tickets in date order. The plan seeks on venue, then needs `USE TEMP B-TREE FOR ORDER BY`. Add an index so the rows come out of the index **already in date order** and the extra sort disappears.",
+        body: "`ORDER BY show_date` tells the database to hand the rows back sorted by date. Sorting costs work, **unless the rows already come out in that order**, and an index keeps its entries sorted: that is the whole trick. Within one venue, entries of a `(venue, show_date)` index are already in date order, so no sort is needed.\n\nThe query below returns Hall A's tickets in date order. The plan seeks on venue, then needs `USE TEMP B-TREE FOR ORDER BY`. Add an index so the rows come out of the index **already in date order** and the extra sort disappears.",
         language: "sql",
         starter: TICKETS_SEED + `
 CREATE INDEX idx_venue ON tickets (venue);
@@ -428,7 +574,7 @@ SELECT * FROM tickets WHERE venue = 'Hall A' ORDER BY show_date;
       {
         kind: "explain",
         title: "Three ways to join",
-        body: "A join combines two tables, and there is more than one way to do it. We will join the **refunded orders** (after the filter, A rows) to the million-row `tickets` table, which has an index on `order_id`:\n\n- **Nested loop**: for each refunded order, seek its tickets in the index. Cost grows with A, and every seek is a random page read.\n- **Hash join**: read every ticket once, in a straight line, and look each one up in an in-memory hash of the orders. Cost is the size of the big table, almost regardless of A.\n- **Merge join**: if both sides arrive sorted by the join key, walk them side by side like a zip. Cheap if the sorting is free, expensive if it must be done first.\n\nNo strategy always wins. The best depends on **how many rows reach the join**. Slide the real row count up and watch the winner change.",
+        body: "A **join** matches rows from two tables using a shared value. Tiny example: an `orders` table with rows (order 1, refunded) and (order 2, refunded), and a `tickets` table where each ticket names its `order_id`. Joining them gives each refunded order next to its tickets: order 1 with tickets 10 and 11, order 2 with ticket 12. There is more than one way to do that matching. We will join the **refunded orders** (after the filter, A rows) to the million-row `tickets` table, which has an index on `order_id`:\n\n- **Nested loop**: for each refunded order, seek its tickets in the index. Cost grows with A, and every seek is a random page read.\n- **Hash join**: read every ticket once, in a straight line, and look each one up in a **hash** (a quick-lookup table kept in memory, like a coat-check where your ticket number takes you straight to your coat) of the orders. Cost is the size of the big table, almost regardless of A.\n- **Merge join**: if both sides arrive sorted by the join key, walk them side by side like a zip fastener. Cheap if the sorting is free, expensive if it must be done first.\n\nNo strategy always wins. The best depends on **how many rows reach the join**. Slide the real row count up and watch the winner change.",
         widget: { type: "data-plan", props: { fixedStats: true } },
       },
       {
@@ -442,7 +588,7 @@ SELECT * FROM tickets WHERE venue = 'Hall A' ORDER BY show_date;
       {
         kind: "explain",
         title: "Estimated versus actual rows",
-        body: "The planner never counts rows before it runs a query: it relies on **statistics**, a small summary of each column's values that the database collects periodically (ANALYZE in SQLite and PostgreSQL). Statistics go stale. After a bulk import, a big delete or a change in what customers do, the table no longer looks like its summary, and the planner's **estimated rows** drift away from the **actual rows**.\n\nPostgreSQL's `EXPLAIN ANALYZE` prints both numbers on every step. The pattern to hunt for is **a step whose estimate is off by 10× or more**: everything above it was planned around a lie. Switch the statistics to stale below and watch the plan.",
+        body: "Imagine a librarian who counts every shelf once a year and then *guesses* how many books are on each from that count. After a big donation her guesses are badly wrong. The planner is that librarian: it never counts rows before it runs a query. It relies on **statistics**, a small summary of each column's values that the database collects periodically (ANALYZE in SQLite and PostgreSQL). Statistics go stale. After a bulk import, a big delete or a change in what customers do, the table no longer looks like its summary, and the planner's **estimated rows** drift away from the **actual rows**.\n\nPostgreSQL's `EXPLAIN ANALYZE` prints both numbers on every step. The pattern to hunt for is **a step whose estimate is off by 10× or more**: everything above it was planned around a lie. Switch the statistics to stale below and watch the plan.",
         widget: { type: "data-plan", props: { stale: true, actual: 2000 } },
       },
       {
@@ -492,7 +638,7 @@ SELECT * FROM tickets WHERE venue = 'Hall A' ORDER BY show_date;
       {
         kind: "explain",
         title: "A bundle that succeeds or fails together",
-        body: "Buying two seats means several writes: mark seat 14 as sold, mark seat 15 as sold, record the payment, reduce the stock. If the server dies halfway, you do not want fourteen sold and no payment. A **transaction** wraps the writes in `BEGIN ... COMMIT`, and the database promises the **ACID** properties:\n\n- **Atomic**: all of it happens, or none of it. A crash or a ROLLBACK undoes the lot.\n- **Consistent**: the data never breaks a rule the database knows about (constraints, unique indexes, foreign keys).\n- **Isolated**: transactions running at the same time do not trip over each other's half-finished work.\n- **Durable**: once COMMIT returns, the change survives a power cut.\n\nThree of those are mostly 'it just works'. **Isolation** is the one with settings, and the one that causes subtle bugs.",
+        body: "When you move 20 coins from your piggy bank to your sister's, two things must happen: yours goes down by 20 and hers goes up by 20. If the lights go out between the two, 20 coins have vanished. You want the two steps to count as **one move**: either both happen or neither does.\n\nOn the ticket site, buying two seats means several writes: mark seat 14 as sold, mark seat 15 as sold, record the payment, reduce the stock. If the server dies halfway, you do not want fourteen sold and no payment. A **transaction** wraps the writes in `BEGIN ... COMMIT` (start the bundle, then make it final), and the database promises the **ACID** properties:\n\n- **Atomic**: all of it happens, or none of it. A crash or a **ROLLBACK** (the command that cancels the bundle and undoes what it did so far) undoes the lot.\n- **Consistent**: the data never breaks a rule the database knows about (constraints, which are rules such as 'this column may not be empty' or 'this value must be unique', and foreign keys, which say 'this ticket must point at an order that exists').\n- **Isolated**: transactions running at the same time do not trip over each other's half-finished work.\n- **Durable**: once COMMIT returns, the change survives a power cut.\n\nThree of those are mostly 'it just works'. **Isolation** is the one with settings, and the one that causes subtle bugs.",
       },
       {
         kind: "question",
@@ -504,7 +650,7 @@ SELECT * FROM tickets WHERE venue = 'Hall A' ORDER BY show_date;
       {
         kind: "explain",
         title: "Isolation is a dial",
-        body: "Perfect isolation (every transaction behaves as if it ran alone) is expensive, so databases offer weaker, faster levels. Each level is a promise about **which anomalies cannot happen**. In the sequencer below, two transactions each have a few statements. **You** choose which one moves next; click the highlighted statement to run it. Try the **Dirty read** scenario: a box-office clerk raises a seat's price to 90 and then rolls it back, while a customer asks the price.",
+        body: "Perfect isolation (every transaction behaves as if it ran alone) is expensive, so databases offer weaker, faster levels. Each level is a promise about **which anomalies** (strange wrong results) **cannot happen**:\n\n| Level | What it forbids |\n| --- | --- |\n| Uncommitted | nothing |\n| Committed | reading another transaction's unfinished work |\n| Repeatable read | the same read giving two answers inside one transaction |\n| Serializable | everything: the result is as if transactions ran one after another |\n\nIn the sequencer below, two transactions each have a few statements. **You** choose which one moves next; click the highlighted statement to run it. Try the **Dirty read** scenario: a box-office clerk raises a seat's price to 90 and then rolls it back, while a customer asks the price.",
         widget: { type: "data-isolation", props: { scenario: "dirty", level: "ru" } },
       },
       {
@@ -540,7 +686,7 @@ SELECT * FROM tickets WHERE venue = 'Hall A' ORDER BY show_date;
       {
         kind: "explain",
         title: "The lost update",
-        body: "Now the one that costs real money. Two buyers each read how many tickets are left (10), subtract one in application code, and write the result back. The first writes 9, the second also writes 9 (it never saw the first buyer's change), and one sale evaporates. This **lost update** is possible at Committed. At Repeatable read the second writer is *rejected* instead (its row changed since its snapshot) and must retry.",
+        body: "Now the one that costs real money. Two buyers each read how many tickets are left (10), subtract one in application code, and write the result back. The first writes 9, the second also writes 9 (it never saw the first buyer's change), and one sale evaporates. This **lost update** is possible at Committed. At Repeatable read in PostgreSQL the second writer is *rejected* instead (its row changed since its snapshot) and must retry. Other databases behave differently here, so this lesson does not rely on it.",
         widget: { type: "data-isolation", props: { scenario: "lost", level: "rc" } },
       },
       {
@@ -553,8 +699,8 @@ SELECT * FROM tickets WHERE venue = 'Hall A' ORDER BY show_date;
       },
       {
         kind: "explain",
-        title: "Four ways to stop a lost update",
-        body: "Fixes, from simplest to heaviest:\n\n1. **Let the database do the arithmetic**, in one atomic statement: `UPDATE stock SET seats_left = seats_left - 1 WHERE show_id = 1 AND seats_left > 0`. No read-then-write gap exists.\n2. **Lock what you read**: `SELECT ... FOR UPDATE` makes the second buyer wait until the first commits.\n3. **Compare-and-set** (optimistic concurrency): store a `version` number; update only `WHERE version = :the_one_I_read`, and treat 0 rows changed as 'someone beat me, try again'.\n4. **Use a stricter level** (Repeatable read or Serializable) and retry on failure.\n\nThe first one needs no extra machinery. Practise it.",
+        title: "The simplest way to stop a lost update",
+        body: "The bug lives in the gap between *reading* the number and *writing* it back. The simplest fix removes the gap: **let the database do the arithmetic**, in one atomic statement (a single step that cannot be interrupted):\n\n" + sql(`UPDATE stock SET seats_left = seats_left - 1 WHERE show_id = 1 AND seats_left > 0;`) + "\nThe database reads and writes in one move, and the `AND seats_left > 0` part means 'only do it if a seat is left'. If no seat is left, the statement matches no rows and changes nothing. Practise it.",
       },
       {
         kind: "code",
@@ -589,6 +735,11 @@ SELECT seats_left FROM stock WHERE show_id = 1;
           { id: "t3", description: "Exactly one of the two updates changed a row", assertionCode: `assertEqual((stdout.match(/UPDATE ok · 1 row changed/g) || []).length, 1, "exactly one buyer should get the seat")` },
         ],
         hints: ["Add a condition to each UPDATE's WHERE clause.", "AND seats_left > 0"],
+      },
+      {
+        kind: "explain",
+        title: "Going further (optional): three heavier fixes",
+        body: "### Going further (optional)\n\nThe fix you just wrote is the best first choice. Three heavier ones exist for cases where one statement is not enough:\n\n1. **Lock what you read**: `SELECT ... FOR UPDATE` makes the second buyer wait until the first commits.\n2. **Compare-and-set** (optimistic concurrency): store a `version` number next to the value; update only `WHERE version = :the_one_I_read` (a **bind parameter**: a placeholder the program fills in with the version it saw earlier), and treat 0 rows changed as 'someone beat me, try again'. You write this one next.\n3. **Use a stricter level** (Repeatable read or Serializable) and retry on failure.\n\nThe rest of the lesson covers write skew and what to do when the database rejects a transaction.",
       },
       {
         kind: "code",
@@ -1097,7 +1248,7 @@ SELECT COUNT(*) AS filled FROM orders WHERE total_cents IS NOT NULL;
       {
         kind: "explain",
         title: "The speed of light is not negotiable",
-        body: "Your users are in Frankfurt and Singapore. Light in fibre covers about 200,000 km a second, and Singapore is nearly 10,000 km away along real cable routes, so even in a perfect straight line a round trip takes about **100 milliseconds**, and real cable routes and routers push it to roughly **170**, however good your hardware is. A page that needs a few sequential database round trips to the other side of the world spends most of its time waiting on physics.\n\nSo companies put data in **several regions**: for speed (a copy near each user group), for survival (a whole region can go dark), and sometimes for law (some data must stay in one country). What it costs you is **simplicity**: the same record now lives in places that cannot instantly agree.",
+        body: "Imagine two shops, one in Frankfurt and one in Singapore, that share a single stock notebook. If the notebook lives in Frankfurt, the Singapore shopkeeper must phone every time she wants to look or write. That is the whole problem of this lesson.\n\nYour users are in Frankfurt and Singapore. Light in fibre covers about 200,000 km a second, and Singapore is nearly 10,000 km away along real cable routes, so even in a perfect straight line a round trip takes about **100 milliseconds**, and real cable routes and routers push it to roughly **170**, however good your hardware is. A page that needs a few sequential database round trips to the other side of the world spends most of its time waiting on physics.\n\nSo companies put data in **several regions**: for speed (a copy near each user group), for survival (a whole region can go dark), and sometimes for law (some data must stay in one country). What it costs you is **simplicity**: the same record now lives in places that cannot instantly agree.",
       },
       {
         kind: "question",
@@ -1109,7 +1260,7 @@ SELECT COUNT(*) AS filled FROM orders WHERE total_cents IS NOT NULL;
       {
         kind: "explain",
         title: "Active-passive",
-        body: "The simplest multi-region design has **one home region for writes**. This is **active-passive** (or primary/replica across regions). Frankfurt takes every write; Singapore holds a read replica and **forwards** any write it receives. Reads in Singapore are fast and slightly stale; writes from Singapore pay the 170 ms trip.\n\nIf the primary region fails, you **fail over**: promote the replica, point traffic at it, and accept that a few of the latest writes may be gone (the replication lag from the last lesson).\n\nNow cut the link between regions and try to write from Singapore.",
+        body: "The simplest multi-region design has **one home region for writes**. This is **active-passive** (or primary/replica across regions). Frankfurt takes every write; Singapore holds a read replica and **forwards** any write it receives. Reads in Singapore are fast and slightly stale; writes from Singapore pay the 170 ms trip.\n\nIf the primary region fails, you **fail over**: promote the replica (make it the new home for writes), point traffic at it, and accept that a few of the latest writes may be gone (the replication lag from the last lesson).\n\nA **partition** is when the link between two regions breaks, so each side keeps running but cannot talk to the other. Cut the link and try to write from Singapore.",
         widget: { type: "data-regions", props: { mode: "ap", type: "counter", fixedMode: true, fixedType: true } },
       },
       {
@@ -1118,7 +1269,7 @@ SELECT COUNT(*) AS filled FROM orders WHERE total_cents IS NOT NULL;
         body: "Cut the link, then sell a ticket **in Singapore**.",
         widget: { type: "data-regions", props: { mode: "ap", type: "counter", fixedMode: true, fixedType: true } },
         question: { type: "widget", goal: { mode: "ap", partition: true, rejectedMin: 1 }, prompt: "Cut the link and get a write refused." },
-        explanation: "Singapore **refused** the write: it cannot reach the one place that is allowed to accept it. That is a deliberate choice of consistency over availability. Frankfurt is still fine and nothing can disagree, but from Singapore's side the feature is down until the link returns.",
+        explanation: "Singapore **refused** the write: it cannot reach the one place that is allowed to accept it. That is a deliberate choice of **consistency over availability**: better to say 'no, try later' than to accept something that might contradict the other region. Frankfurt is still fine and nothing can disagree, but from Singapore's side the feature is down until the link returns.",
       },
       {
         kind: "explain",
@@ -1137,7 +1288,7 @@ SELECT COUNT(*) AS filled FROM orders WHERE total_cents IS NOT NULL;
       {
         kind: "explain",
         title: "Merge instead of overwrite",
-        body: "Some data has a natural way to combine. A counter of sales can simply be **added up**: if Frankfurt sold 2 and Singapore sold 3, the answer is 5. A set of notes can be **unioned**. Data types designed so that every replica converges to the same answer, whatever order the changes arrive in, are called **CRDTs** (conflict-free replicated data types).\n\nSwitch the merge rule to *merge by data type* and repeat the experiment.",
+        body: "Some data has a natural way to combine, if you store it the right way. Think of two shop tills that each keep their own tally sheet. At closing time you do not add the two sheets together *every time you compare notes*: if the tills copy each other's sheets twice, you would count the same sale twice.\n\nSo a merge-friendly **counter** keeps **one number per region**, and each region only ever raises its own number: `{fra: 2, sin: 3}` means 'Frankfurt has sold 2, Singapore has sold 3'. When two copies meet, for each region you keep the **larger** number. Why the larger? A region's own number only goes up, so the bigger one is simply the newer one; taking it never loses a sale and never counts one twice, however many times the copies are merged or in what order. The **total** is then the sum of the per-region numbers: 2 + 3 = 5.\n\nA set of notes can likewise be **unioned** (everything from both). Data types built so that every replica converges to the same answer, whatever order the changes arrive in, are called **CRDTs** (conflict-free replicated data types).\n\nSwitch the merge rule to *merge by data type* and repeat the experiment.",
         widget: { type: "data-regions", props: { mode: "aa", type: "counter", strategy: "merge", fixedMode: true, fixedType: true } },
       },
       {
@@ -1146,7 +1297,7 @@ SELECT COUNT(*) AS filled FROM orders WHERE total_cents IS NOT NULL;
         body: "Cut the link, sell in both regions, reconnect: with merging, no sale may be lost.",
         widget: { type: "data-regions", props: { mode: "aa", type: "counter", strategy: "merge", fixedMode: true, fixedType: true } },
         question: { type: "widget", goal: { strategy: "merge", diverged: true, partition: false, lost: 0 }, prompt: "Diverge, reconnect, and keep every sale." },
-        explanation: "Both regions' sales are summed after the reconnect. The total is right and there are no silent losses. Note what this does *not* solve: a rule like 'never sell more tickets than seats exist' can still be broken while the regions are apart, because neither can see the other's sales.",
+        explanation: "Each region kept its own count, and after the reconnect the copies were merged entry by entry (larger number per region) and the total is the sum of those entries. The total is right and there are no silent losses. Note what this does *not* solve: a rule like 'never sell more tickets than seats exist' can still be broken while the regions are apart, because neither can see the other's sales.",
       },
       {
         kind: "explain",
@@ -1394,8 +1545,8 @@ COMMIT;   -- both rows exist, or neither does
     steps: [
       {
         kind: "explain",
-        title: "Work that outlives a request",
-        body: "Fulfilling a ticket order takes four steps: charge the card, reserve the seats, e-mail the tickets, mark the order done. You cannot do all that while the customer's browser waits, and it must finish even if a server restarts in the middle. So the web request just **puts a message on a queue** ('fulfil order 42') and answers quickly; a **worker** picks the message up and does the job.\n\nA queue gives you decoupling and smoothing (a burst of orders waits its turn). Its delivery rules are worth knowing: a worker **receives** a message, does the work, then **acknowledges** it. If the worker dies before acknowledging, the queue assumes failure and, after a **visibility timeout**, hands the message to another worker. After a few failed tries it moves to a **dead-letter queue** for humans. That's **at-least-once** delivery again: a job can run more than once.",
+        title: "Part 1: work that outlives a request",
+        body: "Picture a restaurant. The waiter does not cook your meal while you stand at the counter: he writes your order on a slip, pins it to a rail, and goes back to the dining room. A cook takes slips off the rail one at a time. This lesson has two parts: **(1)** how to run slow, multi-step jobs safely, and **(2)** how to resist adding fancy new databases.\n\nFulfilling a ticket order takes four steps: charge the card, reserve the seats, e-mail the tickets, mark the order done. You cannot do all that while the customer's browser waits, and it must finish even if a server restarts in the middle. So the web request just **puts a message on a queue** ('fulfil order 42', the slip on the rail) and answers quickly; a **worker** (the cook) picks the message up and does the job.\n\nA queue gives you decoupling and smoothing (a burst of orders waits its turn). Its delivery rules are worth knowing: a worker **receives** a message, does the work, then **acknowledges** it (tells the queue 'done, you can throw the slip away'). While one worker holds a message, the queue hides it from the others for a set time called the **visibility timeout**. If the worker dies before acknowledging, the timeout runs out and the queue hands the message to another worker. After a few failed tries it moves to a **dead-letter queue**, a side shelf of failed slips for humans to look at. That's **at-least-once** delivery again: a job can run more than once.",
       },
       {
         kind: "explain",
@@ -1414,7 +1565,7 @@ COMMIT;   -- both rows exist, or neither does
       {
         kind: "explain",
         title: "A durable workflow",
-        body: "A queue message knows nothing about progress. A **durable workflow** engine (Temporal, AWS Step Functions, Azure Durable Functions and similar) keeps a **history** of every step that finished. After a crash it resumes at the step that was running; it does not repeat the earlier ones. It can also wait for days (a payment settling, a human approval) without holding a process open, and when a step fails for good it can run **compensations** (a refund) for the steps already done. That structure is called a **saga**.\n\nSwitch to the workflow engine and make the seats sell out during the job.",
+        body: "A queue message knows nothing about progress: it is a slip that says 'make order 42', not 'I'm already on step 3'. A **durable workflow** engine (a service that remembers progress for you; Temporal, AWS Step Functions and Azure Durable Functions are examples) keeps a **history** of every step that finished. After a crash it resumes at the step that was running; it does not repeat the earlier ones. It can also wait for days (a payment settling, a human approval) without holding a process open, and when a step fails for good it can run **compensations**: actions that undo an earlier step, like a refund for a charge. A job made of steps that each have a matching undo is called a **saga**.\n\nSwitch to the workflow engine and make the seats sell out during the job.",
         widget: { type: "data-workflow", props: { mode: "workflow", fixedMode: true } },
       },
       {
@@ -1481,8 +1632,8 @@ COMMIT;   -- both rows exist, or neither does
       },
       {
         kind: "explain",
-        title: "Choose boring technology",
-        body: "Everything so far used one relational database for almost everything, and there is a reason that is a good default. Every new kind of data store you add must be **learned, deployed, monitored, backed up, secured, upgraded and debugged at 3 a.m.**, and its data must be kept in step with the rest. A sensible team gives itself only a small budget for novelty and spends it on what makes the product different, not on the database.\n\nA mature relational database (PostgreSQL, MySQL, SQLite for small things) already does: transactions, indexes, JSON documents, full-text search, geospatial queries, queues (`SELECT ... FOR UPDATE SKIP LOCKED`), scheduled jobs, and enough scale for the vast majority of products.\n\nThe rule is not 'never use anything else'. It is: **start boring, measure, and move only when evidence shows the boring option can't meet a stated requirement.** Judge six workloads on their numbers.",
+        title: "Part 2: choose boring technology",
+        body: "Think of a kitchen. Every new gadget you buy has to be learned, cleaned, repaired and stored, even if you use it once a month. A good cook buys one when the knife she already owns truly cannot do the job. Databases are the same.\n\nEverything so far used one relational database for almost everything, and there is a reason that is a good default. Every new kind of data store you add must be **learned, deployed, monitored, backed up, secured, upgraded and debugged at 3 a.m.**, and its data must be kept in step with the rest. A sensible team gives itself only a small budget for novelty and spends it on what makes the product different, not on the database.\n\nA mature relational database (PostgreSQL, MySQL, SQLite for small things) already does: transactions, indexes, JSON documents (flexible nested records), full-text search (finding words inside text), geospatial queries (distances and maps), queues (`SELECT ... FOR UPDATE SKIP LOCKED`), scheduled jobs, and enough scale for the vast majority of products.\n\nThe rule is not 'never use anything else'. It is: **start boring, measure, and move only when evidence shows the boring option can't meet a stated requirement.** Judge six workloads on their numbers.",
         widget: { type: "data-boring" },
       },
       {

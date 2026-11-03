@@ -27,7 +27,7 @@ export const shippingModule: Module = {
         {
           kind: "explain",
           title: "Source is not what runs",
-          body: "The repository holds **source**: text files that a person can read. Production never runs those files directly. It runs something that was *made from* them: a compiled program, a bundle of JavaScript, a zip of a serverless function, a container image.\n\nThat made thing is a **build artifact**, and the step that makes it is the **build**. A build takes three inputs, source code, the dependencies it names, and the build settings, and produces one sealed output.\n\nThink of a recipe card and a boxed dinner. The card says how to cook; the box is what actually leaves the kitchen. Customers never receive the card, and the kitchen does not cook a second time at the doorstep.",
+          body: "The repository holds **source**: text files that a person can read. Production never runs those files directly. It runs something that was *made from* them: a compiled program, a bundle of JavaScript, a zip of a serverless function, a container image.\n\nThat made thing is a **build artifact**, and the step that makes it is the **build**. A build takes three inputs, source code, the dependencies it names, and the build settings, and produces one sealed output.\n\nThink of a recipe card and a boxed dinner. The card says how to cook; the box is what actually leaves the kitchen. Customers never receive the card, and the kitchen does not cook a second time at the doorstep.\n\nA few words you will meet in this module. An **environment** is a place where the program runs. **Production** is the live one that real users use; **staging** is a practice copy of it, where you check a change before real people see it. A **registry** is a storage shelf for artifacts. A **tag** is a label stuck on an artifact (like `v2`), and a **bundle** is just many files packed into one.",
         },
         {
           kind: "question",
@@ -48,7 +48,7 @@ export const shippingModule: Module = {
         {
           kind: "explain",
           title: "Name it by what is inside",
-          body: "Artifacts need names, and the obvious names are traps. A label such as `latest` or `prod` is just a sticker: tomorrow someone can peel it off one artifact and stick it on another, and nothing in the name tells you.\n\nSo registries also give every artifact a **digest**: a fingerprint calculated from its exact contents. Change a single byte and the digest changes completely. The same digest always means the same bytes.\n\n" +
+          body: "Artifacts need names, and the obvious names are traps. A label such as `latest` or `prod` is just a sticker: tomorrow someone can peel it off one artifact and stick it on another, and nothing in the name tells you.\n\nSo registries also give every artifact a **digest**: a fingerprint calculated from its exact contents (the `sha256` in the example below is the name of the recipe used to compute it, giving a long string of letters and digits). Change a single byte (one tiny character of data) and the digest changes completely. The same digest always means the same bytes.\n\n" +
             text(`
 delivery-api:latest                      <- a sticker, can move
 delivery-api@sha256:9c1e07ab...          <- a fingerprint, cannot lie
@@ -277,7 +277,7 @@ find_flaky(runs)   # ["test_login"]
         {
           kind: "explain",
           title: "The end of \"works on my machine\"",
-          body: "A program rarely depends on its own code alone. It needs a particular language version, system libraries, fonts, a timezone database, environment variables. Two machines that differ in any of these can behave differently, which is where \"works on my machine\" comes from.\n\nA **container** packages the program *together with* its whole filesystem of libraries and tools, then runs it in a bubble where it can only see that filesystem. The package is called an **image**: a read-only template. Start it and you get a **container**: a running process built from the image, with a thin writable layer on top.\n\nSo: the image is the sealed tin, the container is a tin that has been opened and is being served. Start the same image three times and you have three containers and still one image.",
+          body: "Imagine posting a cake to a friend. If you send only the recipe, their oven, flour and sugar might make something different. If you send the cake in a sealed tin, it arrives exactly as you made it. A container is that tin for a program.\n\nA program rarely depends on its own code alone. It needs a particular language version, system libraries, fonts, a timezone database, environment variables. Two machines that differ in any of these can behave differently, which is where \"works on my machine\" comes from.\n\nA **container** packages the program *together with* its whole filesystem of libraries and tools, then runs it in a bubble where it can only see that filesystem. The package is called an **image**: a read-only template. Start it and you get a **container**: a running process built from the image, with a thin writable layer on top.\n\nSo: the image is the sealed tin, the container is a tin that has been opened and is being served. Start the same image three times and you have three containers and still one image.",
         },
         {
           kind: "question",
@@ -298,12 +298,12 @@ find_flaky(runs)   # ["test_login"]
         {
           kind: "explain",
           title: "Not a small virtual machine",
-          body: "A virtual machine runs a whole operating system on pretend hardware. A container does not: it shares the **host's kernel** and uses kernel features to hide everything else. Namespaces give the process its own view of processes, network and filesystem, and control groups cap how much CPU and memory it may use.\n\nThat is why containers start in a fraction of a second and cost almost nothing to run beside each other. The price is weaker isolation than a VM, because every container on a host trusts the same kernel.",
+          body: "A virtual machine runs a whole operating system on pretend hardware. A container does not: it shares the **host's kernel** (the core of the operating system that every program on the machine uses) and just hides everything else from the process, while capping how much processor and memory it may use.\n\nThat is why containers start in a fraction of a second and cost almost nothing to run beside each other. The price is weaker isolation than a VM, because every container on a host trusts the same kernel.",
         },
         {
           kind: "explain",
           title: "Images are stacks of layers",
-          body: "Each instruction in a build file creates a **layer**: a snapshot of the files that instruction changed. The layers stack to form the image.\n\nBuilds are fast because layers are **cached**. A layer is reused only if its own inputs are unchanged *and every layer above it was reused too*. The moment one layer must be rebuilt, everything below it rebuilds as well.\n\nEdit the code and rebuild with each ordering. Watch which layers rebuild, and how long the build takes.",
+          body: "An image is described in a text file called a **Dockerfile**: a recipe listing, one instruction per line, what to put in the image (for example: start from a base, copy these files, install these packages). Each instruction creates a **layer**: a snapshot of the files that instruction changed. The layers stack up, first instruction at the bottom, to form the image.\n\nBuilds are fast because layers are **cached** (saved so they need not be redone). A layer is reused only if its own inputs are unchanged *and every earlier layer (the ones above it in the file) was reused too*. The moment one layer must be rebuilt, every later layer (the ones after it in the file) rebuilds as well.\n\nEdit the code and rebuild with each ordering. Watch which layers rebuild, and how long the build takes.",
           widget: { type: "ship-layers", props: { order: "copy-first" } },
         },
         {
@@ -317,7 +317,7 @@ find_flaky(runs)   # ["test_login"]
         {
           kind: "question",
           title: "Why everything rebuilt",
-          body: "A Dockerfile has `COPY . /app` on line 2 and `RUN pip install -r requirements.txt` on line 3. Editing any source file makes line 3 rerun. Why?",
+          body: "A Dockerfile has `COPY . /app` on line 2 (copy all the files into the image) and `RUN pip install -r requirements.txt` on line 3 (install the Python packages listed in the file `requirements.txt`). Editing any source file makes line 3 rerun. Why?",
           question: {
             type: "choice",
             options: [
@@ -328,12 +328,12 @@ find_flaky(runs)   # ["test_login"]
             ],
             answer: 1,
           },
-          explanation: "A layer's cache key includes everything beneath it. Line 2 now holds different files, so line 3 sits on a different foundation and can't reuse its old result, even though the dependency list never changed.",
+          explanation: "A layer's cache key includes every earlier line. Line 2 now holds different files, so line 3 follows a different earlier step and can't reuse its old result, even though the dependency list never changed.",
         },
         {
           kind: "explain",
           title: "Keep images small",
-          body: "Every megabyte is pulled again each time a fresh server starts, and every installed package is something to keep patched and a thing an attacker could use. Two big levers:\n\n- **Choose a smaller base.** A full operating-system image carries hundreds of tools your service never calls; slim and minimal bases carry only what the runtime needs (a minimal one often has no shell at all).\n- **Use a multi-stage build.** Compile in one stage that has compilers and headers, then copy only the finished program into a clean final stage. The build tools stay behind and never ship.\n\nTry the combinations.",
+          body: "Every megabyte is pulled again each time a fresh server starts, and every installed package is something to keep patched and a thing an attacker could use. Two big levers:\n\n- **Choose a smaller base.** A full operating-system image carries hundreds of tools your service never calls; slim and minimal bases carry only what the runtime needs (a minimal one often has no shell at all).\n- **Use a multi-stage build.** Compile in one stage that has the compilers (programs that turn source code into a runnable program) and other build tools, then copy only the finished program into a clean final stage. The build tools stay behind and never ship.\n\nTry the combinations.",
           widget: { type: "ship-size", props: {} },
         },
         {
@@ -355,12 +355,12 @@ docker run \\
   -e DATABASE_URL=postgres://db.internal/loans \\
   delivery-api@sha256:9c1e07
 `) +
-            "\nThe program reads them at start-up and fails fast with a clear message if a required one is missing. **Secrets** (passwords, API keys) follow the same rule, and then some: never write them into a layer. Layers can be listed and unpacked by anyone who can pull the image, and they remain in the history even if a later line deletes the file.",
+            "\nRead it as: `docker run` starts a container; each `-e NAME=value` sets one environment variable (a named setting handed to the program); the last line names the image; the `\\` at the end of a line just means “the command continues on the next line”. `postgres://db.internal/loans` is the address of the database.\n\nThe program reads them at start-up and fails fast with a clear message if a required one is missing. **Secrets** (passwords, API keys) follow the same rule, and then some: never write them into a layer. Layers can be listed and unpacked by anyone who can pull the image, and they remain in the history even if a later line deletes the file.",
         },
         {
           kind: "code",
           title: "Read the environment",
-          body: "Write `load_config(env)`, where `env` is a dictionary of environment variables (all values are strings).\n\n- `PORT`: an integer, default `8080`\n- `LOG_LEVEL`: default `\"info\"`\n- `DEBUG`: true only when the value is `\"1\"` or `\"true\"` (any capitalisation)\n- `DATABASE_URL`: **required**. If it is missing, raise `ValueError(\"DATABASE_URL is required\")`.\n\nReturn a dictionary with the keys `port`, `log_level`, `debug` and `database_url`.",
+          body: "Write `load_config(env)`, where `env` is a dictionary of environment variables (all values are strings).\n\n- `PORT`: an integer, default `8080`\n- `LOG_LEVEL`: default `\"info\"`\n- `DEBUG`: true only when the value is `\"1\"` or `\"true\"` (any capitalisation)\n- `DATABASE_URL`: **required**. If it is missing, raise `ValueError(\"DATABASE_URL is required\")`.\n\nReturn a dictionary with the keys `port`, `log_level`, `debug` and `database_url`.\n\nEnvironment values are always text, so `PORT` arrives as `\"9000\"` and needs `int(...)`. For `DEBUG`, `.lower()` turns `\"True\"` into `\"true\"`, so one comparison covers every capitalisation. Example: `{\"DATABASE_URL\": \"u\", \"PORT\": \"9000\", \"DEBUG\": \"True\"}` gives `{\"port\": 9000, \"log_level\": \"info\", \"debug\": True, \"database_url\": \"u\"}`.",
           language: "python",
           starter: `def load_config(env):
     # TODO: raise ValueError if DATABASE_URL is missing
@@ -428,7 +428,7 @@ docker run \\
         {
           kind: "explain",
           title: "Being asked to leave",
-          body: "In production, processes are stopped all the time, on purpose: a deploy replaces old instances, an autoscaler removes surplus ones, a machine is drained for maintenance. None of those is a crash. The platform *asks* your process to stop.\n\nThe operating system's way of asking is a **signal**: a tiny message delivered to a process. Two matter most:\n\n- **SIGTERM** (terminate): \"please finish up and exit.\" A program can **catch** it, run its own code, then exit by itself.\n- **SIGKILL**: \"you are being removed, now.\" It cannot be caught, ignored or delayed. The kernel simply ends the process.\n\n(Ctrl-C in a terminal sends a third one, SIGINT, which behaves like a polite SIGTERM.)\n\nA platform stops things in two beats: send SIGTERM, wait a **grace period** (30 seconds is a common default), and if the process is still alive, send SIGKILL.",
+          body: "When a shop closes, a good shopkeeper does not shove customers out of the door mid-purchase. She stops letting new people in, finishes serving those at the till, tidies up, and then locks up. A server should leave the same way.\n\nIn production, processes are stopped all the time, on purpose: a deploy replaces old instances, an **autoscaler** (a helper that adds or removes copies of your program as traffic rises and falls) removes surplus ones, a machine is **drained** (emptied of work, ready to be switched off) for maintenance. None of those is a crash. The platform *asks* your process to stop.\n\nThe operating system's way of asking is a **signal**: a tiny message delivered to a process. Two matter most:\n\n- **SIGTERM** (terminate): \"please finish up and exit.\" A program can **catch** it, run its own code, then exit by itself.\n- **SIGKILL**: \"you are being removed, now.\" It cannot be caught, ignored or delayed. The kernel simply ends the process.\n\n(Ctrl-C in a terminal sends a third one, SIGINT, which behaves like a polite SIGTERM.)\n\nA platform stops things in two beats: send SIGTERM, wait a **grace period** (30 seconds is a common default), and if the process is still alive, send SIGKILL.",
         },
         {
           kind: "question",
@@ -472,7 +472,7 @@ docker run \\
         {
           kind: "explain",
           title: "Graceful shutdown in four moves",
-          body: "A **graceful shutdown** turns SIGTERM into an orderly retirement:\n\n1. **Stop taking new work.** Close the listening socket and start failing the readiness check so the load balancer sends new requests elsewhere.\n2. **Finish what is in flight.** Let current requests run to completion (with an upper bound).\n3. **Release resources.** Flush buffered logs and metrics, finish writes, close database connections, acknowledge or hand back queued jobs.\n4. **Exit** with status 0.\n\nThe grace period has to be longer than your slowest legitimate request *plus* cleanup, or SIGKILL still cuts someone off.\n\nTwo practical traps. Load balancers take a few seconds to notice an instance is leaving, so many services pause briefly after SIGTERM before they stop listening. And in a container your program is process number 1: if the start command is a shell script, the shell may receive the signal and never pass it on. Use `exec` in the script (or an exec-style command) so the signal reaches your program.",
+          body: "A **graceful shutdown** turns SIGTERM into an orderly retirement:\n\n1. **Stop taking new work.** Close the listening **socket** (the doorway where new connections arrive) and start failing the **readiness check**, so the **load balancer** (the traffic director in front of your servers) sends new requests elsewhere. A readiness check is a little question the platform keeps asking your program, “are you ready for requests right now?”; a later lesson, *Health probes*, covers it properly.\n2. **Finish what is in flight.** Let current requests run to completion (with an upper bound).\n3. **Release resources.** Flush buffered logs and metrics, finish writes, close database connections, acknowledge or hand back queued jobs.\n4. **Exit** with status 0 (the number a program returns to say “finished normally”; any other number means something went wrong).\n\nThe grace period has to be longer than your slowest legitimate request *plus* cleanup, or SIGKILL still cuts someone off.\n\nTwo practical traps. Load balancers take a few seconds to notice an instance is leaving, so many services pause briefly after SIGTERM before they stop listening. And in a container your program is process number 1 (the first program started, which is the one that receives signals): if the start command is a shell script, the shell may receive the signal and never pass it on. Starting your program with `exec` in the script (it means “replace the shell with this program”) makes sure the signal reaches your program.",
         },
         {
           kind: "question",
@@ -598,7 +598,7 @@ docker run \\
         {
           kind: "explain",
           title: "Meet the cast",
-          body: "Four words cover most of it:\n\n- **Node**: one machine in the cluster.\n- **Pod**: the smallest thing Kubernetes runs: one container (sometimes a few tightly coupled ones) with its own network address. Pods are disposable.\n- **Deployment**: the declaration \"run N identical pods from this image, and update them safely.\" It is the thing you edit.\n- **Service**: a stable address in front of a changing set of pods. It sends traffic only to pods that are ready.\n\nBelow, the cluster wants 3 replicas. Tap a pod to crash it, take a machine down, change the replica count, and press **Next tick** to let the control loop take one pass.",
+          body: "Four words cover most of it:\n\n- **Node**: one machine in the cluster.\n- **Pod**: the smallest thing Kubernetes runs: one container (sometimes a few tightly coupled ones) with its own network address. Pods are disposable.\n- **Deployment**: the declaration \"run N identical pods from this image, and update them safely.\" It is the thing you edit.\n- **Service**: a stable address in front of a changing set of pods. It sends traffic only to pods that are ready.\n\nTwo helpers do the work behind the scenes: the **controller** is the loop that counts pods and creates or deletes them, and the **scheduler** picks which machine a new pod goes on. The identical copies a Deployment keeps are called **replicas**.\n\nBelow, the cluster wants 3 replicas. Tap a pod to crash it, take a machine down, change the replica count, and press **Next tick** to let the control loop take one pass.",
           widget: { type: "ship-cluster", props: { desired: 3 } },
         },
         {
@@ -644,7 +644,7 @@ docker run \\
         {
           kind: "explain",
           title: "Updates and throwaway pods",
-          body: "To ship a new version you edit the Deployment's image. It then starts pods with the new image and retires old ones gradually, within limits you set: how many extra pods may exist during the switch (*surge*) and how many may be missing (*unavailable*). If the new version misbehaves, going back means re-applying the previous declaration.\n\nOne rule makes this all workable: **pods are cattle, not pets**. Any pod can vanish at any moment and be replaced by a blank one. So a pod's local disk, in-memory sessions and uploaded files are all temporary. Anything that must survive lives outside: in a database, an object store or a mounted volume.",
+          body: "To ship a new version you edit the Deployment's image. It then starts pods with the new image and retires old ones gradually, within limits you set: how many extra pods may exist during the switch (*surge*) and how many may be missing (*unavailable*). Think of changing the staff on a shift: you let a few new people arrive before the old ones leave, but never send everyone home at once. If the new version misbehaves, going back means re-applying the previous declaration.\n\nOne rule makes this all workable: **pods are cattle, not pets**. (Cattle are all treated alike and replaced when they fall ill; a pet is named and nursed, and we do not want that.) Any pod can vanish at any moment and be replaced by a blank one. So a pod's local disk, in-memory sessions and uploaded files are all temporary. Anything that must survive lives outside: in a database, an object store or a mounted volume.",
         },
         {
           kind: "question",
@@ -710,7 +710,7 @@ docker run \\
         {
           kind: "explain",
           title: "Running is not working",
-          body: "From the outside, a process that is alive can still be useless: stuck in a deadlock, out of memory, or simply still loading a big map file. The orchestrator can see that the process exists, but not whether it is *any good*. So it asks, by calling a health endpoint (or opening a port, or running a command) on a schedule. Those questions are **probes**, and there are three kinds with three different consequences:\n\n- **Liveness**: \"Are you stuck beyond recovery?\" If it keeps failing, the container is **restarted**.\n- **Readiness**: \"Can you take traffic right now?\" If it fails, the pod is **removed from the load balancer** but left alone.\n- **Startup**: \"Have you finished booting?\" Until it passes, the other probes are held off.\n\nThe distinction is the whole game. Restart is a heavy hammer; \"stop sending me requests for a bit\" is a gentle one.",
+          body: "A nurse checking on a patient does not just look for breathing. She asks: awake? able to talk? ready to leave bed? A process can be \"alive\" the way a sleeping patient is alive, and still not ready to help anyone.\n\nFrom the outside, a process that is alive can still be useless: stuck in a **deadlock** (two parts of the program each waiting for the other, so neither moves), out of memory, or simply still loading a big map file. The orchestrator can see that the process exists, but not whether it is *any good*. So it asks, by calling a **health endpoint** (a web address in your program that answers “I'm fine” or not), opening a port, or running a command, on a schedule. Those questions are **probes**, and there are three kinds with three different consequences:\n\n- **Liveness**: \"Are you stuck beyond recovery?\" If it keeps failing, the container is **restarted**.\n- **Readiness**: \"Can you take traffic right now?\" If it fails, the pod is **removed from the load balancer** but left alone.\n- **Startup**: \"Have you finished booting?\" Until it passes, the other probes are held off.\n\nThe distinction is the whole game. Restart is a heavy hammer; \"stop sending me requests for a bit\" is a gentle one.",
         },
         {
           kind: "question",
@@ -770,7 +770,7 @@ docker run \\
         {
           kind: "code",
           title: "Write the two answers",
-          body: "Write `probe_results(app)` returning `{\"live\": ..., \"ready\": ...}` from a dictionary describing the pod:\n\n- **live** is `True` unless the event loop is stuck: `app[\"loop_lag_ms\"] >= 5000`.\n- **ready** is `True` only if the app has `loaded`, is **not** `draining`, and its `queue_depth` is below 100.\n\nThe dictionary also has a `db_ok` key. Do **not** use it: dependencies stay out of both probes.",
+          body: "Write `probe_results(app)` returning `{\"live\": ..., \"ready\": ...}` from a dictionary describing the pod:\n\n- **live** is `True` unless the event loop is stuck: `app[\"loop_lag_ms\"] >= 5000`. (The **event loop** is the part of the program that picks up its next task; its **lag** is how late it is in doing so. A lag of 5000 ms means it is five seconds late, so the program is effectively frozen.)\n- **ready** is `True` only if the app has `loaded`, is **not** `draining`, and its `queue_depth` is below 100.\n\nThe dictionary also has a `db_ok` key. Do **not** use it: dependencies stay out of both probes.",
           language: "python",
           starter: `def probe_results(app):
     live = True
@@ -836,13 +836,13 @@ docker run \\
         {
           kind: "explain",
           title: "Replacing an engine in flight",
-          body: "The simplest deploy is: stop the old version, start the new one. For the minute in between, nobody is home. That is fine for a hobby site and unacceptable for anything people rely on.\n\nSo real deploys keep the old version serving while the new one comes in. The three common patterns differ in *how* traffic moves over:\n\n- **Rolling**: replace instances a few at a time. At every moment some run the old version and some the new.\n- **Blue-green**: build a complete second fleet (\"green\") beside the live one (\"blue\"), test it, then flip the router so everyone moves at once.\n- **Canary**: send a small slice of real traffic, say 5%, to the new version first; widen in stages while watching the numbers. (Miners took canaries underground to detect gas before it reached people.)\n\nStep through each. The new version below is healthy for now.",
+          body: "A theatre that wants to change the scenery does not stop the play and send the audience home. It swaps pieces behind the curtain while the show goes on. A deploy is the same: update the program while people are still using it.\n\nThe simplest deploy is: stop the old version, start the new one. For the minute in between, nobody is home. That is fine for a hobby site and unacceptable for anything people rely on.\n\nSo real deploys keep the old version serving while the new one comes in. The three common patterns differ in *how* traffic moves over:\n\n- **Rolling**: replace instances a few at a time. At every moment some run the old version and some the new.\n- **Blue-green**: build a complete second fleet (\"green\") beside the live one (\"blue\"), test it, then flip the router so everyone moves at once.\n- **Canary**: send a small slice of real traffic, say 5%, to the new version first; widen in stages while watching the numbers. (Miners took canaries underground to detect gas before it reached people.)\n\nStep through each. The new version below is healthy for now.",
           widget: { type: "ship-rollout", props: { bug: false, gate: false } },
         },
         {
           kind: "question",
           title: "Least damage from a bad release",
-          body: "Version 2 has a bug that fails 8% of the requests it serves, and the **automatic gate** halts the rollout when version 2's own error rate passes 2%. Pick the strategy that lets **fewer than 10 requests** fail. Run each to the end.",
+          body: "The **blast radius** of a bad release is how many users it can hurt before you stop it. Version 2 has a bug that fails 8% of the requests it serves, and the **automatic gate** (a check that halts the rollout when the numbers look bad) stops it when version 2's own error rate passes 2%. Pick the strategy that lets **fewer than 10 requests** fail. Run each to the end.",
           widget: { type: "ship-rollout", props: { bug: true, gate: true, lockBug: true, strategy: "rolling" } },
           question: { type: "widget", hint: "A gradual rollout exposes only a few requests before the gate halts it.", goal: { finished: true, aborted: true, maxBad: 9 } },
           explanation: "A **canary** exposes only 5% of traffic before the gate trips: about 4 failed requests. A rolling deploy had already moved 20% (16 failures) by the first check, and blue-green sent everyone to the bad version at once (80). The strategy sets the *blast radius*; the gate decides how long it lasts.",
@@ -871,7 +871,7 @@ docker run \\
         {
           kind: "explain",
           title: "Two versions, one database",
-          body: "Renaming a column sounds trivial: `due_date` becomes `return_by`. But during any deploy, the old app (which says `due_date`) and the new app (which says `return_by`) are alive together. Whichever order you do it in, one of them breaks.\n\nThe safe method is **expand and contract** (also called parallel change): never *replace* something in one step. First **expand** the database so it supports both old and new. Move the application over in compatible steps. Only when nothing uses the old shape do you **contract** and remove it.\n\nTry the three plans. A cross marks any running version that would fail at that step.",
+          body: "Renaming a column sounds trivial: `due_date` becomes `return_by`. But during any deploy, the old app (which says `due_date`) and the new app (which says `return_by`) are alive together. Whichever order you do it in, one of them breaks.\n\n(You may have met this idea in the data module's lesson on changing the schema without downtime; here it is again in the context of deploys.) The safe method is **expand and contract** (also called parallel change): never *replace* something in one step. First **expand** the database so it supports both old and new. Move the application over in compatible steps. Only when nothing uses the old shape do you **contract** and remove it.\n\nTry the three plans. A cross marks any running version that would fail at that step.",
           widget: { type: "ship-schema", props: { plan: "migrate-first" } },
         },
         {
@@ -937,7 +937,7 @@ docker run \\
         {
           kind: "explain",
           title: "Deploy is not release",
-          body: "Two words that sound alike are separate decisions:\n\n- **Deploy**: put new code on the servers.\n- **Release**: let users actually experience the new behaviour.\n\nA **feature flag** is what pulls them apart. The new code ships wrapped in an `if` whose answer comes from configuration that can change while the program runs:\n\n" +
+          body: "A light dimmer lets you change a room's brightness slowly, or switch the light off in a second, without rewiring the house. A feature flag is a dimmer for a new feature.\n\nTwo words that sound alike are separate decisions:\n\n- **Deploy**: put new code on the servers.\n- **Release**: let users actually experience the new behaviour.\n\nA **feature flag** is what pulls them apart. The new code ships wrapped in an `if` whose answer comes from configuration that can change while the program runs:\n\n" +
             py(`
 if flags.is_enabled("new-renewal-flow", member):
     return renew_v2(member, book)
@@ -970,7 +970,7 @@ return renew_v1(member, book)
         {
           kind: "explain",
           title: "Stable bucketing",
-          body: "How should the flag decide *which* 20% of members? Not by a coin flip on each request: then a member would see the new flow on one page and the old flow on the next, and you could never tell whether the new flow was better.\n\nInstead, hash the flag's name together with the member's id into a number from 0 to 99, and enable the flag when that number is below the rollout percentage:\n\n" +
+          body: "How should the flag decide *which* 20% of members? Not by a coin flip on each request: then a member would see the new flow on one page and the old flow on the next, and you could never tell whether the new flow was better.\n\nInstead, imagine a hat holding 100 numbered slots: each member's name always drops into the same slot, however many times you ask. A **hash** is the maths that does this: it turns any text into a number, and the same text always gives the same number. Hash the flag's name together with the member's id into a number from 0 to 99 (that number is the member's **bucket**), and enable the flag when that number is below the rollout percentage:\n\n" +
             text(`
 bucket = hash("new-renewal-flow" + ":" + member_id) mod 100
 enabled = bucket < percent
@@ -1084,7 +1084,7 @@ def is_enabled(flag, user_id):
         {
           kind: "explain",
           title: "Functions on demand",
-          body: "In the **serverless** model you hand the platform a function and an event to trigger it (an HTTP request, a file upload, a timer). You do not provision machines. The platform starts an **instance** of your function when work arrives, runs it, keeps it around for a little while in case more comes, and eventually throws it away. When nothing is happening there are zero instances and you pay nothing. (Servers still exist; you just don't manage them.)\n\nThe typical rules: **one request at a time per instance**, so a burst of 20 simultaneous requests needs 20 instances, and the platform may freeze an instance after a short idle period.",
+          body: "A taxi appears when you call it, takes you where you need to go, and drives away when it is not needed, and you pay only for the ride. Serverless is a taxi for your code.\n\nIn the **serverless** model you hand the platform a function and an event to trigger it (an HTTP request, a file upload, a timer). You do not provision (set up and pay for) machines. The platform starts an **instance** of your function when work arrives, runs it, keeps it around for a little while in case more comes, and eventually throws it away. When nothing is happening there are zero instances and you pay nothing. (Servers still exist; you just don't manage them.)\n\nThe typical rules: on many platforms, **one request at a time per instance**, so a burst of 20 simultaneous requests needs 20 instances, and the platform may freeze an instance after a short idle period.",
         },
         {
           kind: "question",
@@ -1119,7 +1119,7 @@ def is_enabled(flag, user_id):
         {
           kind: "explain",
           title: "What goes into a cold start",
-          body: "A cold start is the sum of several steps:\n\n1. The platform finds capacity and downloads your **package**. Bigger packages take longer.\n2. It starts the **runtime** (a compiled binary starts in milliseconds; a heavy framework can take seconds).\n3. Your **initialisation code** runs: imports, reading config, opening connections, loading models.\n4. Only then does the **handler** run for the request.\n\nYou control 1 and 3 the most. Keep dependencies lean, import heavy libraries lazily if only some requests need them, and avoid doing slow work at start-up that you could do later or once.\n\nThere is a flip side that is a feature: anything created **outside** the handler (at module level) is built once per instance and reused by every warm request on it. That is the right place for a database client or a loaded configuration.",
+          body: "A cold start is the sum of several steps:\n\n1. The platform finds capacity and downloads your **package**. Bigger packages take longer.\n2. It starts the **runtime** (the engine that runs your language, for example Node or Python; a compiled binary starts in milliseconds, a heavy framework can take seconds).\n3. Your **initialisation code** runs: imports, reading config, opening connections, loading models.\n4. Only then does the **handler** (the function that deals with one request) run.\n\nYou control 1 and 3 the most. Keep dependencies lean, import heavy libraries lazily if only some requests need them, and avoid doing slow work at start-up that you could do later or once.\n\nThere is a flip side that is a feature: anything created **outside** the handler (at module level) is built once per instance and reused by every warm request on it. That is the right place for a database client or a loaded configuration.",
         },
         {
           kind: "question",
@@ -1145,13 +1145,13 @@ def is_enabled(flag, user_id):
             type: "choice",
             options: [
               "Making thumbnails whenever a member uploads a photo (bursty, event-driven)",
-              "A webhook receiver that gets 50 calls on a busy day and none most days",
-              "Transcoding a six-hour video in one go",
+              "A webhook receiver (a small address other services call to tell you something happened) that gets 50 calls on a busy day and none most days",
+              "Transcoding (converting to another format) a six-hour video in one go",
               "A matching engine that must answer in 5 ms, every time, around the clock",
             ],
             answer: [0, 1],
           },
-          explanation: "Serverless shines for spiky, unpredictable or event-driven work where idle time is common and cold starts do not matter. It fits badly when a single job runs longer than platform time limits, when tail latency must be tiny and consistent, or when traffic is a steady flood where always-on servers are cheaper.",
+          explanation: "Serverless shines for spiky, unpredictable or event-driven work where idle time is common and cold starts do not matter. It fits badly when a single job runs longer than platform time limits, when the slowest few percent of requests (the tail latency) must still be fast, or when traffic is a steady flood where always-on servers are cheaper.",
         },
         {
           kind: "code",
@@ -1211,7 +1211,7 @@ count_cold_starts([0, 5, 100, 104], 30)   # 2: first, and after the long gap
         {
           kind: "explain",
           title: "The way back is part of the release",
-          body: "Every release can go wrong, so every release needs a rehearsed way back. You have three levers, from fastest to slowest:\n\n1. **Turn the flag off.** Seconds. Works only if the change was behind a flag.\n2. **Roll back.** Redeploy the previous known-good artifact. Minutes. This is why artifacts are immutable and kept: the old one is still there, byte for byte.\n3. **Roll forward.** Write and ship a fix. Slowest, and the right choice only when going back is impossible or the fix is trivial.\n\nWhen users are being hurt, the aim is to **stop the harm first** and understand it afterwards. Investigating live while the error rate is climbing is how a ten-minute problem becomes a two-hour one.",
+          body: "A climber ties a rope to the last safe ledge before going up. If the next step is slippery, she does not stand there thinking: she steps back to the ledge first and works out what went wrong from safety.\n\nEvery release can go wrong, so every release needs a rehearsed way back. You have three levers, from fastest to slowest:\n\n1. **Turn the flag off.** Seconds. Works only if the change was behind a flag.\n2. **Roll back.** Redeploy the previous known-good artifact. Minutes. This is why artifacts are immutable and kept: the old one is still there, byte for byte.\n3. **Roll forward.** Write and ship a fix. Slowest, and the right choice only when going back is impossible or the fix is trivial.\n\nWhen users are being hurt, the aim is to **stop the harm first** and understand it afterwards. Investigating live while the error rate is climbing is how a ten-minute problem becomes a two-hour one.",
         },
         {
           kind: "question",
@@ -1249,7 +1249,7 @@ count_cold_starts([0, 5, 100, 104], 30)   # 2: first, and after the long gap
         {
           kind: "explain",
           title: "Habits that make releases boring",
-          body: "Teams that ship constantly are not braver; they have arranged for failures to be small and cheap:\n\n- **Small changes.** A release of one change has one suspect. A release of forty has forty, and a rollback throws away thirty-nine good ones.\n- **Automatic gates.** Health checks, smoke tests and canary analysis catch most problems before a human is involved.\n- **Visible releases.** Mark deploys on your graphs so \"errors began when version 214 went out\" is a glance, not a debate.\n- **Observable by default.** You cannot decide to roll back if you cannot see the harm. (The next module is about exactly that.)\n- **Practised rollbacks.** A rollback tried only during a crisis is untested code. Run it regularly, when nothing is on fire.\n- **Clear ownership.** Someone has the authority and the runbook to pull the lever without asking for permission.",
+          body: "Teams that ship constantly are not braver; they have arranged for failures to be small and cheap:\n\n- **Small changes.** A release of one change has one suspect. A release of forty has forty, and a rollback throws away thirty-nine good ones.\n- **Automatic gates.** Health checks, smoke tests (a few quick checks that the main paths work at all) and canary analysis (comparing the small slice's numbers with the rest) catch most problems before a human is involved.\n- **Visible releases.** Mark deploys on your graphs so \"errors began when version 214 went out\" is a glance, not a debate.\n- **Observable by default.** You cannot decide to roll back if you cannot see the harm. (The next module is about exactly that.)\n- **Practised rollbacks.** A rollback tried only during a crisis is untested code. Run it regularly, when nothing is on fire.\n- **Clear ownership.** Someone has the authority and the runbook (a written checklist for exactly this situation) to pull the lever without asking for permission.",
         },
         {
           kind: "question",
