@@ -11,7 +11,7 @@ import { LIME } from "../go-inventory/ui";
  * people who ask for less motion), so nothing needs cleaning up when the scene unmounts.
  */
 
-export const OVERVIEW_W = 640;
+export const OVERVIEW_W = 600;
 export const OVERVIEW_H = 320;
 
 const DIM = "rgba(255,255,255,0.16)";
@@ -21,8 +21,8 @@ function Node({ x, y, w, label, sub, on, lit }: { x: number; y: number; w: numbe
   return (
     <g>
       <rect x={x} y={y} width={w} height={46} rx={9} fill={lit ? "rgba(197,238,138,0.08)" : "rgba(255,255,255,0.03)"} stroke={on ? LIME : DIM} strokeDasharray={on ? undefined : "4 4"} strokeOpacity={on ? 0.7 : 1} />
-      <text x={x + w / 2} y={y + 20} textAnchor="middle" fontSize="11.5" fontWeight="600" fill={on ? "#e0f6c1" : TEXT}>{label}</text>
-      <text x={x + w / 2} y={y + 36} textAnchor="middle" fontSize="9.5" fill={TEXT} fontFamily="monospace">{sub ?? ""}</text>
+      <text x={x + w / 2} y={y + 20} textAnchor="middle" fontSize="12.5" fontWeight="600" fill={on ? "#e0f6c1" : TEXT}>{label}</text>
+      <text x={x + w / 2} y={y + 36} textAnchor="middle" fontSize="10" fill={TEXT} fontFamily="monospace">{sub ?? ""}</text>
     </g>
   );
 }
@@ -45,15 +45,15 @@ export function Overview({ board, unlocked, built, flashing }: { board: Board; u
   const ticks = board.ticks?.runs;
   const bestRun = ticks?.find((r) => r.workers === board.ticks?.best) ?? ticks?.[ticks.length - 1];
   const nodes: { id: string; label: string; sub: string; w: number }[] = [
-    { id: "gp-lanes", label: "Buoys", sub: board.lanes ? `${board.lanes.length} lanes` : "6 lanes", w: 82 },
-    { id: "gp-stream", label: "Channel", sub: board.waves ? `${board.waves.length} passed` : "hatch", w: 82 },
-    { id: "gp-pipeline", label: "Stages", sub: board.pipeline ? `${board.pipeline.in}→${board.pipeline.out}` : "chain", w: 82 },
-    { id: "gp-pool", label: "Pool", sub: board.pool ? `${board.pool.workers} workers` : "workers", w: 82 },
-    { id: "gp-fan", label: "Merge", sub: board.fan ? `${board.fan.total} readings` : "fan-in", w: 82 },
-    { id: "gp-shutdown", label: "Desk", sub: board.shutdown ? `lost ${(board.shutdown.accepted ?? 0) - (board.shutdown.processed ?? 0)}` : "report", w: 82 },
+    { id: "gp-lanes", label: "Buoys", sub: board.lanes ? `${board.lanes.length} lanes` : "6 lanes", w: 80 },
+    { id: "gp-stream", label: "Channel", sub: board.waves ? `${board.waves.length} passed` : "hatch", w: 80 },
+    { id: "gp-pipeline", label: "Stages", sub: board.pipeline ? `${board.pipeline.in}→${board.pipeline.out}` : "chain", w: 80 },
+    { id: "gp-pool", label: "Pool", sub: board.pool ? `${board.pool.workers} workers` : "workers", w: 80 },
+    { id: "gp-fan", label: "Merge", sub: board.fan ? `${board.fan.total} readings` : "fan-in", w: 80 },
+    { id: "gp-shutdown", label: "Desk", sub: board.shutdown ? `lost ${(board.shutdown.accepted ?? 0) - (board.shutdown.processed ?? 0)}` : "report", w: 80 },
   ];
-  const gap = (OVERVIEW_W - 24 - nodes.length * 82) / (nodes.length - 1);
-  const xs = nodes.map((_, i) => 12 + i * (82 + gap));
+  const gap = (OVERVIEW_W - 24 - nodes.length * 80) / (nodes.length - 1);
+  const xs = nodes.map((_, i) => 12 + i * (80 + gap));
   const chips: { id: string; text: string; bad?: boolean }[] = [
     { id: "gp-race", text: board.race ? `race: ${board.lostRuns ?? "?"} of ${board.race.length} orders lose an update` : "race replay", bad: true },
     { id: "gp-tally", text: board.tally ? `mutex tally ${board.tally.match ? "matches" : "differs"}` : "mutex tally" },
@@ -64,14 +64,14 @@ export function Overview({ board, unlocked, built, flashing }: { board: Board; u
   return (
     <div className="relative h-full w-full">
       <style>{`
-        @keyframes gp-flow { to { stroke-dashoffset: -20; } }
+        @keyframes gp-flow { to { stroke-dashoffset: -12; } }
         .gp-flow { animation: gp-flow 1.1s linear infinite; }
         @media (prefers-reduced-motion: reduce) { .gp-flow { animation: none; } }
       `}</style>
       <svg viewBox={`0 0 ${OVERVIEW_W} ${OVERVIEW_H - 40}`} className="h-full w-full" role="img" aria-label="Tidewatch pipeline overview">
         {nodes.slice(0, -1).map((n, i) => {
           const live = has(n.id) && has(nodes[i + 1].id);
-          return <line key={n.id} x1={xs[i] + 84} y1={36} x2={xs[i + 1] - 2} y2={36} stroke={live ? LIME : DIM} strokeWidth="2" strokeDasharray="5 5" className={live ? "gp-flow" : undefined} />;
+          return <line key={n.id} x1={xs[i] + 82} y1={36} x2={xs[i + 1] - 2} y2={36} stroke={live ? LIME : DIM} strokeWidth="2" strokeDasharray="3 3" className={live ? "gp-flow" : undefined} />;
         })}
         {nodes.map((n, i) => (
           <g key={n.id} className={flashing.has(n.id) ? "pop-in" : undefined}>
@@ -79,7 +79,7 @@ export function Overview({ board, unlocked, built, flashing }: { board: Board; u
           </g>
         ))}
         {/* the workers, busy and idle, in logical ticks */}
-        <text x={12} y={96} fontSize="10" fill={TEXT} fontFamily="monospace">WORKERS · busy / idle in ticks</text>
+        <text x={12} y={96} fontSize="11" fill={TEXT} fontFamily="monospace">WORKERS · busy / idle in ticks</text>
         {on("gp-gantt") && built && bestRun ? (
           <g>
             {Array.from({ length: bestRun.workers }, (_, w) => (
@@ -90,7 +90,7 @@ export function Overview({ board, unlocked, built, flashing }: { board: Board; u
                 ))}
               </g>
             ))}
-            <text x={OVERVIEW_W - 12} y={106 + bestRun.workers * 22 + 10} textAnchor="end" fontSize="10" fill={TEXT} fontFamily="monospace">done at tick {bestRun.makespan} · peak queue {bestRun.peakQueue}</text>
+            <text x={OVERVIEW_W - 12} y={106 + bestRun.workers * 22 + 10} textAnchor="end" fontSize="11" fill={TEXT} fontFamily="monospace">done at tick {bestRun.makespan} · peak queue {bestRun.peakQueue}</text>
           </g>
         ) : (
           <g>
@@ -102,7 +102,7 @@ export function Overview({ board, unlocked, built, flashing }: { board: Board; u
         {chips.map((c) => (
           <span
             key={c.id}
-            className={`inline-flex h-6 max-w-full items-center rounded-full border px-2.5 font-mono text-[10.5px] ${has(c.id) ? (c.bad ? "border-[#f87171]/45 bg-[#f87171]/10 text-[#fecaca]" : "border-[#c5ee8a]/45 bg-[#c5ee8a]/10 text-[#e0f6c1]") : on(c.id) ? "border-white/15 text-white/55" : "border-dashed border-white/15 text-white/35"}`}
+            className={`inline-flex h-[26px] max-w-full items-center rounded-full border px-2.5 font-mono text-[11.5px] ${has(c.id) ? (c.bad ? "border-[#f87171]/45 bg-[#f87171]/10 text-[#fecaca]" : "border-[#c5ee8a]/45 bg-[#c5ee8a]/10 text-[#e0f6c1]") : on(c.id) ? "border-white/15 text-white/55" : "border-dashed border-white/15 text-white/35"}`}
           >
             <span className="truncate">{c.text}</span>
           </span>

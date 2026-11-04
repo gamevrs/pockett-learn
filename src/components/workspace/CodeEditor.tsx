@@ -153,10 +153,12 @@ function addCallParens(editor: EditorInstance, monaco: MonacoInstance) {
         const model = editor.getModel();
         const pos = editor.getPosition();
         if (!item || !model || !pos) return;
-        const word = model.getWordUntilPosition(pos).word.toLowerCase();
+        const typed = model.getWordUntilPosition(pos).word;
+        const word = typed.toLowerCase();
         const label = typeof item.completion.label === "string" ? item.completion.label : item.completion.label.label;
         const exactSnippet = item.completion.kind === monaco.languages.CompletionItemKind.Snippet && label.toLowerCase() === word;
-        if (word && (!label.toLowerCase().startsWith(word) || exactSnippet)) controller?.cancelSuggestWidget?.(); // Tab expands a snippet, Enter stays a new line
+        const complete = !!typed && label === typed; // the word is already typed in full (`self.battery`): Enter ends the line, it must not add `()` or pick a neighbour
+        if (word && (!label.toLowerCase().startsWith(word) || exactSnippet || complete)) controller?.cancelSuggestWidget?.(); // Tab expands a snippet, Enter stays a new line
       } catch {
         /* leave Enter to Monaco */
       }
@@ -193,6 +195,77 @@ function addCallParens(editor: EditorInstance, monaco: MonacoInstance) {
   } catch {
     /* a Monaco build without this contribution: completions simply insert the name */
   }
+}
+
+/** Languages whose blocks are closed by a bracket the editor inserts for you (not Python or SQL). */
+const BRACE_LANGUAGES = new Set(["go", "rust", "cpp", "c", "csharp", "java", "javascript", "typescript"]);
+
+/** Counts one kind of bracket in a source text, ignoring comments, string and character literals (good enough for a balance check). */
+function countBrackets(text: string, open: string, close: string): { opens: number; closes: number } {
+  let opens = 0;
+  let closes = 0;
+  let inBlock = false;
+  for (const line of text.split("\n")) {
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inBlock) {
+        if (c === "*" && line[i + 1] === "/") {
+          inBlock = false;
+          i++;
+        }
+      } else if (c === "/" && line[i + 1] === "/") break;
+      else if (c === "/" && line[i + 1] === "*") {
+        inBlock = true;
+        i++;
+      } else if (c === '"' || c === "`") {
+        let j = i + 1;
+        while (j < line.length && line[j] !== c) j += line[j] === "\\" && c === '"' ? 2 : 1;
+        if (j >= line.length) break;
+        i = j;
+      } else if (c === "'") {
+        const m = /^'(\\.|[^\\'])'/.exec(line.slice(i));
+        if (m) i += m[0].length - 1;
+      } else if (c === open) opens++;
+      else if (c === close) closes++;
+    }
+  }
+  return { opens, closes };
+}
+
+/**
+ * Typing `{` and Enter leaves the editor's own `}` on the line below the caret. A learner who then types the `}` they
+ * think is missing used to end up with a second one, and the extras piled up at the end of the file. When a closing
+ * bracket is typed on an otherwise empty line, the same bracket starts the next line and the file already has enough of
+ * them, step over that one instead: the empty line goes away and the caret lands just after the existing bracket.
+ */
+function stepOverClosers(editor: EditorInstance, monaco: MonacoInstance) {
+  const pairs: Record<string, string> = { "}": "{", ")": "(", "]": "[" };
+  editor.onKeyDown((e) => {
+    try {
+      const key = e.browserEvent.key;
+      const open = pairs[key];
+      if (!open || e.ctrlKey || e.metaKey || e.altKey) return;
+      const model = editor.getModel();
+      const selections = editor.getSelections();
+      if (!model || !BRACE_LANGUAGES.has(model.getLanguageId()) || !selections || selections.length !== 1 || !selections[0].isEmpty()) return;
+      const { lineNumber, column } = selections[0].getPosition();
+      const line = model.getLineContent(lineNumber);
+      if (line.trim() !== "" || column !== line.length + 1 || lineNumber >= model.getLineCount()) return;
+      const next = model.getLineContent(lineNumber + 1);
+      const lead = next.length - next.trimStart().length;
+      if (next[lead] !== key) return;
+      const { opens, closes } = countBrackets(model.getValue(), open, key);
+      if (closes < opens) return; // this bracket is really missing
+      e.preventDefault();
+      e.stopPropagation();
+      editor.pushUndoStop();
+      const caret = new monaco.Selection(lineNumber, lead + 2, lineNumber, lead + 2);
+      editor.executeEdits("pockett-step-over", [{ range: new monaco.Range(lineNumber, 1, lineNumber + 1, 1), text: "" }], [caret]);
+      editor.pushUndoStop();
+    } catch {
+      /* leave the key to Monaco */
+    }
+  });
 }
 
 export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorMessage, revealKey, context, language = "python" }: CodeEditorProps) {
@@ -267,6 +340,7 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
       onSubmitRef.current();
     });
     addCallParens(editor, monaco);
+    stepOverClosers(editor, monaco);
     const model = editor.getModel();
     if (model) {
       model.setEOL(monaco.editor.EndOfLineSequence.LF); // typed newlines were CRLF on Windows, mixed with the LF starters

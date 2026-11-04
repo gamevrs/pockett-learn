@@ -661,11 +661,11 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
             </p>
           </div>
           {next ? (
-            <Link href={lessonPath(next.id)} className="btn btn-primary shrink-0 !h-10 !px-5">
+            <Link href={lessonPath(next.id)} className="btn btn-primary shrink-0 !h-10 !px-5 max-sm:order-last max-sm:basis-full">
               Continue <ArrowRight className="h-4 w-4" />
             </Link>
           ) : (
-            <Link href={`/projects/${project.slug}`} className="btn btn-primary shrink-0 !h-10 !px-5">
+            <Link href={`/projects/${project.slug}`} className="btn btn-primary shrink-0 !h-10 !px-5 max-sm:order-last max-sm:basis-full">
               See your build <ArrowRight className="h-4 w-4" />
             </Link>
           )}
@@ -719,7 +719,7 @@ function FeedbackBar({ tone, onDismiss, children }: { tone: "good" | "bad"; onDi
       data-testid="feedback-bar"
       className={`pop-in z-[70] shrink-0 border-t ${tone === "good" ? "border-brand/40 bg-tint" : "border-bad/30 bg-surface"}`}
     >
-      <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3">
+      <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3 px-3 py-2.5 sm:flex-nowrap sm:gap-4 sm:px-4 sm:py-3">
         {children}
         <button onClick={onDismiss} aria-label="Dismiss" className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-3 hover:bg-surface-2 hover:text-ink">
           <X className="h-4 w-4" />

@@ -143,11 +143,11 @@ ws.onmessage = (m) => {
     consoleErrors.push(`${e.source}: ${e.text}${e.url ? ` (${e.url})` : ""}`.slice(0, 300));
   }
 };
-const send = (method, params = {}) =>
+const send = (method, params = {}, sessionId) =>
   new Promise((resolve) => {
     const id = ++nextId;
     pending.set(id, resolve);
-    ws.send(JSON.stringify({ id, method, params }));
+    ws.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
   });
 async function evaluate(expression) {
   const r = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
@@ -173,6 +173,8 @@ async function waitFor(fn, arg, timeout = 15000, step = 150) {
 
 await send("Page.enable");
 await send("Runtime.enable");
+// the Next dev-mode indicator (a fixed badge) can sit on top of controls and swallow clicks; it is not part of the product
+await send("Page.addScriptToEvaluateOnNewDocument", { source: `document.addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "nextjs-portal{display:none!important}"; document.head.appendChild(s); });` });
 await send("Log.enable");
 
 async function configure(theme, width) {
@@ -462,9 +464,17 @@ async function checkEditor() {
       record("editor", `${label}: interpolation and name token types are produced`, true);
     }
 
-    const probe = await inPage(
-      ({ probes }) => {
-        const lines = [...document.querySelectorAll(".monaco-editor .view-lines .view-line")].sort((a, b) => parseFloat(a.style.top) - parseFloat(b.style.top));
+    const probeTokens = () => inPage(
+      async ({ probes }) => {
+        const ed = window.monaco.editor.getEditors()[0];
+        const raf = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        // Monaco only renders the rows in view: bring each probed line into view, then find its row by its vertical position
+        const rowFor = async (n) => {
+          ed.revealLine(n, 1);
+          await raf();
+          const want = ed.getTopForLineNumber(n) - ed.getScrollTop();
+          return [...document.querySelectorAll(".monaco-editor .view-lines .view-line")].find((l) => Math.abs(parseFloat(l.style.top) - want) < 2) ?? null;
+        };
         const editorEl = document.querySelector(".monaco-editor");
         const bg = getComputedStyle(editorEl.querySelector(".monaco-editor-background") ?? editorEl).backgroundColor;
         const ghost = document.createElement("span");
@@ -472,19 +482,30 @@ async function checkEditor() {
         editorEl.querySelector(".view-lines")?.appendChild(ghost);
         const defaultFg = getComputedStyle(ghost).color;
         ghost.remove();
-        const found = probes.map((p) => {
-          const leaves = [...(lines[p.line - 1]?.querySelectorAll("span > span") ?? [])];
+        const found = [];
+        for (const p of probes) {
+          const row = await rowFor(p.line);
+          const leaves = [...(row?.querySelectorAll("span > span") ?? [])];
           const txt = (s) => s.textContent.replace(/ /g, " "); // Monaco renders spaces as non-breaking
           const exact = leaves.find((s) => txt(s).trim() === p.text);
           const partial = leaves.filter((s) => txt(s).includes(p.text)).sort((a, b) => txt(a).length - txt(b).length)[0];
           const el = exact ?? partial;
-          return { ...p, color: el ? getComputedStyle(el).color : null, seen: el ? el.textContent : null };
-        });
-        const everyToken = lines.flatMap((l) => [...l.querySelectorAll("span > span")]).filter((s) => s.textContent.trim()).map((s) => ({ text: s.textContent.slice(0, 24), color: getComputedStyle(s).color }));
+          found.push({ ...p, color: el ? getComputedStyle(el).color : null, seen: el ? el.textContent : null });
+        }
+        ed.revealLine(1, 1);
+        await raf();
+        const everyToken = [...document.querySelectorAll(".monaco-editor .view-lines .view-line")].flatMap((l) => [...l.querySelectorAll("span > span")]).filter((s) => s.textContent.trim()).map((s) => ({ text: s.textContent.slice(0, 24), color: getComputedStyle(s).color }));
         return { bg, defaultFg, found, everyToken };
       },
       sample,
     );
+    // tokens render a moment after the model is set (and later on a busy machine): poll until every probe has a rendered token
+    let probe;
+    for (const t0 = Date.now(); ; ) {
+      probe = await probeTokens();
+      if (probe.found.every((p) => p.color) || Date.now() - t0 > 12000) break;
+      await sleep(250);
+    }
     const bgc = parseRgb(probe.bg);
     const byRole = new Map();
     const problems = [];

@@ -21,7 +21,8 @@ const RUN_LESSON = "/projects/csharp-basics/csharp-basics-1-hello"; // a compile
 const OK_RESULT = { stdout: "Cinder Street Depot\n", stderr: "", exitCode: 0, compileError: null };
 
 export async function checkWorkspace(h) {
-  const { send, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, onEvent, getCtx, BASE, OUT } = h;
+  const { send: rawSend, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, onEvent, getCtx, BASE, OUT } = h;
+  const send = (m, p) => rawSend(m, p);
   const ctx = getCtx();
   const mobile = ctx.width < 700;
   const shotsDir = process.env.WORKSPACE_SHOTS || join(OUT, "workspace");
@@ -51,6 +52,8 @@ export async function checkWorkspace(h) {
   const stopEvents = onEvent(async (msg) => {
     if (msg.method !== "Fetch.requestPaused") return;
     const { requestId, request } = msg.params;
+    const sid = msg.sessionId; // set when the request comes from the cross-origin code frame (its own target)
+    const send = (m, p) => rawSend(m, p, sid);
     const rule = net.rules.find((r) => request.url.includes(r.match));
     const act = rule?.action ?? "continue";
     if (rule) net.hits.push({ url: request.url, at: Date.now(), body: request.postData });
@@ -58,7 +61,7 @@ export async function checkWorkspace(h) {
       if (act === "continue") await send("Fetch.continueRequest", { requestId });
       else if (act === "fail") await send("Fetch.failRequest", { requestId, errorReason: "ConnectionFailed" });
       else if (act === "offline") await send("Fetch.failRequest", { requestId, errorReason: "InternetDisconnected" });
-      else if (act === "hold") net.held.push(requestId);
+      else if (act === "hold") net.held.push({ requestId, sid });
       else if (act.delay) {
         await sleep(act.delay);
         await send("Fetch.continueRequest", { requestId });
@@ -81,13 +84,50 @@ export async function checkWorkspace(h) {
   };
   const runHits = () => net.hits.filter((x) => x.url.includes("/api/run")).length;
   const releaseHeld = async (json = OK_RESULT) => {
-    for (const requestId of net.held.splice(0)) {
-      await send("Fetch.fulfillRequest", { requestId, responseCode: 200, responseHeaders: [{ name: "Content-Type", value: "application/json" }], body: b64(json) }).catch(() => {});
+    for (const { requestId, sid } of net.held.splice(0)) {
+      await rawSend("Fetch.fulfillRequest", { requestId, responseCode: 200, responseHeaders: [{ name: "Content-Type", value: "application/json" }], body: b64(json) }, sid).catch(() => {});
     }
   };
   const RUNNER = (action) => ({ match: "/api/run", action });
-  await send("Fetch.enable", { patterns: [{ urlPattern: "*/api/run*" }, { urlPattern: "*cdn.jsdelivr.net*" }] });
+  const FETCH_PATTERNS = { patterns: [{ urlPattern: "*/api/run*" }, { urlPattern: "*cdn.jsdelivr.net*" }] };
+  await send("Fetch.enable", FETCH_PATTERNS);
+  // Learner Python/JS runs in a cross-origin iframe (its own target), and the Pyodide CDN request is made from there, so
+  // attach to child targets as they appear, turn on the same interception, then let them start.
+  const frames = new Set(); // CDP sessions of the attached cross-origin iframes (the 3D stage and the code runner live there)
+  const stopAttach = onEvent(async (msg) => {
+    if (msg.method === "Target.detachedFromTarget") frames.delete(msg.params.sessionId);
+    if (msg.method !== "Target.attachedToTarget") return;
+    const { sessionId, targetInfo, waitingForDebugger } = msg.params;
+    if (targetInfo?.type === "iframe") frames.add(sessionId);
+    if (targetInfo?.type === "iframe" || targetInfo?.type === "worker") {
+      await rawSend("Fetch.enable", FETCH_PATTERNS, sessionId);
+      await rawSend("Network.enable", {}, sessionId);
+      await rawSend("Network.setCacheDisabled", { cacheDisabled: true }, sessionId);
+    }
+    if (waitingForDebugger) await rawSend("Runtime.runIfWaitingForDebugger", {}, sessionId);
+  });
+  await send("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: true });
   await send("Network.enable");
+
+  /** Runs a function in every attached cross-origin frame; returns each frame's result (falsy results dropped). */
+  const inFrames = async (fn, arg) => {
+    const out = [];
+    for (const sessionId of [...frames]) {
+      const r = await rawSend("Runtime.evaluate", { expression: `(${fn.toString()})(${JSON.stringify(arg ?? null)})`, returnByValue: true, awaitPromise: true }, sessionId).catch(() => null);
+      const v = r?.result?.result?.value;
+      if (v) out.push(v);
+    }
+    return out;
+  };
+  const waitInFrames = async (fn, arg, timeout = 25000, step = 250) => {
+    const t0 = Date.now();
+    while (Date.now() - t0 < timeout) {
+      const r = await inFrames(fn, arg);
+      if (r.length) return r;
+      await sleep(step);
+    }
+    return [];
+  };
 
   // ───────────── page helpers ─────────────
   const rectOf = (sel) =>
@@ -356,14 +396,16 @@ export async function checkWorkspace(h) {
       // timed inside the page (a MutationObserver stamps when the download starts and when the notice appears): the 3D stage
       // keeps a software-rendered browser so busy that a DevTools poll can answer 30 s late, which would skew a Node-side clock
       const stamp = await send("Page.addScriptToEvaluateOnNewDocument", {
-        source: `(() => { const t = (window.__pyTimes = {}); new MutationObserver(() => { const now = performance.now(); if (!t.script && [...document.scripts].some((s) => /pyodide/.test(s.src))) t.script = now; if (t.script && !t.notice && document.querySelector("[data-testid=service-notice][data-kind=engine]")) t.notice = now; }).observe(document, { childList: true, subtree: true }); })();`,
+        source: `(() => { const t = (window.__pyTimes = {}); new MutationObserver(() => { if (!t.notice && document.querySelector("[data-testid=service-notice][data-kind=engine]")) t.notice = performance.timeOrigin + performance.now(); }).observe(document, { childList: true, subtree: true }); })();`,
       });
       await send("Page.navigate", { url: `${BASE}/projects/garage/garage-1-ignition` });
       await sleep(1500);
       const hung = await waitNotice("engine", 120000);
       await send("Page.removeScriptToEvaluateOnNewDocument", { identifier: stamp.result?.identifier }).catch(() => {});
       const times = await inPage(() => window.__pyTimes);
-      const took = times?.script && times?.notice ? times.notice - times.script : null;
+      // the download starts inside the code frame (its own document), so its start is the intercepted request; the notice is stamped in the page
+      const started = net.hits.find((x) => x.url.includes("cdn.jsdelivr.net/pyodide"))?.at;
+      const took = started && times?.notice ? times.notice - started : null;
       await check("Python hanging: gives up after ~30 s with the same message and Retry", hung && took !== null && took > 29000 && took < 34000 && !!(await rectOf("[data-testid=service-retry]")), `notice: ${hung}; ${took === null ? "no timestamps" : Math.round(took)}ms after the download started`);
       const loaded = await waitFor(() => document.readyState === "complete", null, 8000, 200);
       await check("Python hanging: the abandoned download no longer blocks the page", !!loaded);
@@ -440,11 +482,17 @@ export async function checkWorkspace(h) {
         await sleep(350);
         await evaluate(`localStorage.clear(); localStorage.setItem("pockett_theme_mode", ${JSON.stringify(ctx.theme)});`);
         await open(path, 1800);
-        const stage = await inPage(() => {
-          const t = document.body.innerText;
+        // the 3D stage loads lazily (slowly under software rendering): wait for its status pill before reading the page
+        if (path !== "/") await waitInFrames(() => !!document.querySelector("[data-testid=stage-hint]"));
+        const frameInfo = (await inFrames(() => {
           const pill = document.querySelector("[data-testid=stage-hint]");
-          return { pressRun: /Press Run/i.test(t), hasRunButton: !!document.querySelector("[data-testid=run-button]"), pill: pill?.innerText.trim() ?? null, pillIcon: pill?.querySelector("svg")?.getAttribute("class") ?? "", cursor: pill ? getComputedStyle(pill).cursor : null };
-        });
+          return { text: document.body.innerText, pill: pill?.innerText.trim() ?? null, pillIcon: pill?.querySelector("svg")?.getAttribute("class") ?? "", cursor: pill ? getComputedStyle(pill).cursor : null };
+        })).find((f) => f.pill) ?? (await inFrames(() => ({ text: document.body.innerText })))[0] ?? {};
+        const stage = await inPage((f) => {
+          const t = document.body.innerText + " " + (f.text ?? "");
+          const pill = document.querySelector("[data-testid=stage-hint]");
+          return { pressRun: /Press Run/i.test(t), hasRunButton: !!document.querySelector("[data-testid=run-button]"), pill: pill?.innerText.trim() ?? f.pill ?? null, pillIcon: pill?.querySelector("svg")?.getAttribute("class") ?? f.pillIcon ?? "", cursor: pill ? getComputedStyle(pill).cursor : f.cursor ?? null };
+        }, frameInfo);
         await check(`${label}: no 'Press Run' hint where there is no Run button`, !stage.pressRun, JSON.stringify(stage));
         return stage;
       };
@@ -455,7 +503,8 @@ export async function checkWorkspace(h) {
       // the workspace does have a Run button, so its blueprint hint is right to mention it
       await lesson("/projects/garage/garage-1-ignition", { editor: false });
       await mobileTab("Live");
-      const ws = await inPage(() => ({ hint: document.querySelector("[data-testid=stage-hint]")?.innerText.trim(), car: document.body.innerText.includes("Press Run to boot the car") }));
+      const wsFrame = (await waitInFrames(() => document.body.innerText.includes("Press Run to boot the car") && { hint: document.querySelector("[data-testid=stage-hint]")?.innerText.trim(), car: true }))[0] ?? {};
+      const ws = { hint: wsFrame.hint, car: !!wsFrame.car };
       await check("lesson workspace: the blueprint hint points at the Run button", /Press Run/.test(ws.hint ?? "") && ws.car, JSON.stringify(ws));
 
       // touch vs keyboard on the landing demo (autopilot starts on; turn it off with a real tap/click)
@@ -537,6 +586,8 @@ export async function checkWorkspace(h) {
   } finally {
     stopEvents();
     await send("Fetch.disable").catch(() => {});
+    await send("Target.setAutoAttach", { autoAttach: false, waitForDebuggerOnStart: false, flatten: true }).catch(() => {});
+    stopAttach();
     await send("Network.setCacheDisabled", { cacheDisabled: false }).catch(() => {});
     await send("Emulation.setUserAgentOverride", { userAgent: "", platform: "" }).catch(() => {});
   }

@@ -133,6 +133,9 @@ function panelMeta(id: string, b: Board): string | undefined {
 /** Space the stage shell keeps for its own label and expand button along the top edge. */
 const SHELL_TOP = 44;
 
+/** Breathing room kept at the left and right edge so the title and the right-hand label never touch the stage frame. */
+const SIDE_PAD = 16;
+
 /** Short and wide stages (the project hub, the landing page) get the one-screen overview. */
 const isCompact = (box: { w: number; h: number } | null) => box !== null && box.w >= 420 && box.h <= 600 && box.w / box.h >= 1.2;
 
@@ -191,7 +194,7 @@ export default function GoPipelineScene({ program, unlocked, focus, celebration,
 
   if (box && isCompact(box)) {
     const availH = Math.max(box.h - SHELL_TOP, 120);
-    const scale = Math.min(box.w / OVERVIEW_W, availH / OVERVIEW_H);
+    const scale = Math.min((box.w - SIDE_PAD * 2) / OVERVIEW_W, availH / OVERVIEW_H);
     return (
       <div ref={measure} className="absolute inset-0 overflow-hidden">
         <div

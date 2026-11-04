@@ -673,6 +673,23 @@ const CODES: Record<string, CodeInfo> = {
     fixes: ["impl From<ParseIntError> for CatalogError so ? can convert", "impl fmt::Display (and Error) for your error type", "#[derive(Debug)] for {:?}", "Sort floats with total_cmp, not sort() or max()"],
     diagram: "trait",
   },
+  E0038: {
+    headline: "Trait cannot be used as dyn",
+    meaning:
+      "A dyn value hides its real type, and each call is looked up in a table at run time. Every method has to work without knowing that type. A method that returns Self, has its own type parameter or takes no self cannot be put in the table, so the trait is not dyn compatible (older books say object safe).",
+    fixes: [
+      "Return a plain type or Box<dyn Trait> instead of Self",
+      "Move the awkward method into a second trait and keep the dyn trait small",
+      "Add where Self: Sized to that one method: dyn hides it, concrete types keep it",
+      "Or use a generic <T: Trait> if you never needed a mixed list",
+    ],
+  },
+  E0191: {
+    headline: "Name the associated type",
+    meaning:
+      "The trait has a placeholder type inside it (type Cargo;). A dyn value hides the real type, so the compiler cannot guess what Cargo is unless you say it.",
+    fixes: ["Fill the placeholder in: dyn Source<Cargo = u32>", "Every value in that Vec then has to use the same Cargo type", "If the cargo should differ between items, make the function generic instead: <S: Source>"],
+  },
   E0369: {
     headline: "Operator not supported",
     meaning: "== , + or another operator is not implemented for this type.",
