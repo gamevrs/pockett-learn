@@ -1,7 +1,7 @@
 // pockett UI check suite: drives headless Chrome over CDP (no dependencies beyond Node and a Chrome install).
 //
 //   node scripts/ui-check.mjs                          full run against http://localhost:3100
-//   node scripts/ui-check.mjs --base http://localhost:3000 --only editor,prose
+//   node scripts/ui-check.mjs --base http://localhost:3100 --only editor,prose
 //   node scripts/ui-check.mjs --quick                  dark theme, 1440 px only
 //   npm run ui:check -- --only layout
 //

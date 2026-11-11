@@ -4,7 +4,7 @@ Free, interactive Python. You pick a **project** (a car, a rocket, a drum machin
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:3000
+pnpm dev          # http://localhost:3100 (matches ui:check; 3000 is often taken by other local tools)
 pnpm typecheck    # tsc
 pnpm validate     # runs every lesson's solution + starter through the real Python engine
 pnpm build
