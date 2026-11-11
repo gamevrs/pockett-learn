@@ -178,6 +178,9 @@ await send("Page.addScriptToEvaluateOnNewDocument", { source: `document.addEvent
 await send("Log.enable");
 
 async function configure(theme, width) {
+  // a headless tab can report document.visibilityState === "hidden": the browser then never delivers ResizeObserver callbacks, so the
+  // lesson workspace (whose panels mount only once it has measured its box) renders no panels and the checks read an empty page
+  await send("Emulation.setFocusEmulationEnabled", { enabled: true });
   const mobile = width < 700;
   await send("Emulation.setDeviceMetricsOverride", { width, height: mobile ? 844 : 900, deviceScaleFactor: 1, mobile });
   await send("Emulation.setTouchEmulationEnabled", { enabled: mobile });
