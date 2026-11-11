@@ -87,7 +87,6 @@ export async function checkLearn(h) {
   }
 
   // ───────────────────────── motion explainers ─────────────────────────
-  const STAGE = "[data-widget] > div > svg[aria-hidden]";
   /** Everything the explainer checks read, in one page round trip. */
   const player = () =>
     inPage(() => {
