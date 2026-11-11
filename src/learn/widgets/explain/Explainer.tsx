@@ -46,9 +46,25 @@ export function Explainer({ scenes, width = 360, height = 240, label }: Explaine
   const sc = scenes[Math.min(scene, last)];
   const dur = sc.durationMs;
 
+  // reduced motion: no clock at all. Playing just moves to the next finished scene after a reading pause.
+  useEffect(() => {
+    if (!playing || !reduced) return;
+    const id = window.setTimeout(() => {
+      if (scene < last) {
+        tRef.current = 0;
+        setT(0);
+        setScene(scene + 1);
+      } else {
+        setPlaying(false);
+        setEnded(true);
+      }
+    }, Math.max(4000, sc.caption.length * 25));
+    return () => window.clearTimeout(id);
+  }, [playing, reduced, scene, last, sc.caption.length]);
+
   // the animation clock: advances t while playing, moves on to the next scene, stops at the end
   useEffect(() => {
-    if (!playing) return;
+    if (!playing || reduced) return;
     let raf = 0;
     let prev = performance.now();
     const tick = (now: number) => {
@@ -73,7 +89,7 @@ export function Explainer({ scenes, width = 360, height = 240, label }: Explaine
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, scene, dur, last]);
+  }, [playing, reduced, scene, dur, last]);
 
   const jump = (i: number, at: number) => {
     tRef.current = at;
@@ -90,10 +106,11 @@ export function Explainer({ scenes, width = 360, height = 240, label }: Explaine
       return;
     }
     if (ended) jump(0, 0);
-    else if (t >= 1) jump(scene, 0);
+    else if (t >= 1 && !reduced) jump(scene, 0);
     setPlaying(true);
   };
 
+  // with reduced motion every scene is its finished picture, so the progress bars say so too
   const shown = reduced ? 1 : t;
   const label2 = playing ? "Pause" : ended ? "Replay" : "Play";
 
@@ -107,7 +124,7 @@ export function Explainer({ scenes, width = 360, height = 240, label }: Explaine
 
       <div className="mt-3 flex items-stretch gap-1" role="group" aria-label="Scenes">
         {scenes.map((s, i) => {
-          const fill = i < scene ? 1 : i === scene ? t : 0;
+          const fill = i < scene ? 1 : i === scene ? shown : 0;
           return (
             <button
               key={s.id}
@@ -125,22 +142,24 @@ export function Explainer({ scenes, width = 360, height = 240, label }: Explaine
         })}
       </div>
 
-      <label className="mt-1 block">
-        <span className="sr-only">Scrub through this scene</span>
-        <input
-          type="range"
-          min={0}
-          max={1000}
-          value={Math.round(t * 1000)}
-          onChange={(e) => {
-            setPlaying(false);
-            tRef.current = Number(e.target.value) / 1000;
-            setT(tRef.current);
-            setEnded(false);
-          }}
-          className="h-10 w-full cursor-pointer accent-[var(--brand)]"
-        />
-      </label>
+      {!reduced && (
+        <label className="mt-1 block">
+          <span className="sr-only">Scrub through this scene</span>
+          <input
+            type="range"
+            min={0}
+            max={1000}
+            value={Math.round(shown * 1000)}
+            onChange={(e) => {
+              setPlaying(false);
+              tRef.current = Number(e.target.value) / 1000;
+              setT(tRef.current);
+              setEnded(false);
+            }}
+            className="h-10 w-full cursor-pointer accent-[var(--brand)]"
+          />
+        </label>
+      )}
 
       <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
         <button type="button" className="btn btn-ghost !h-10 !w-10 !p-0" onClick={() => go(scene - 1)} disabled={scene === 0} aria-label="Previous scene" title="Previous scene">

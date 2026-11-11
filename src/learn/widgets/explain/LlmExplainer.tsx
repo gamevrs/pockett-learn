@@ -111,7 +111,7 @@ const ATTN: number[][] = [
 
 const hsl = (h: number) => `hsl(${h} 70% 52%)`;
 
-function transformer(t: number): React.ReactNode {
+function transformer(t: number, reduced: boolean): React.ReactNode {
   const tokensIn = ease(seg(t, 0, 0.1));
   const LAYER_START = 0.12;
   const LAYER_LEN = 0.25;
@@ -124,7 +124,8 @@ function transformer(t: number): React.ReactNode {
       })}
       {[0, 1, 2].map((k) => {
         const a = LAYER_START + k * LAYER_LEN;
-        const attn = ease(seg(t, a, a + 0.1)) * (1 - ease(seg(t, a + 0.17, a + LAYER_LEN)));
+        // the finished picture keeps every layer's attention lines, as the caption describes them
+        const attn = reduced ? 1 : ease(seg(t, a, a + 0.1)) * (1 - ease(seg(t, a + 0.17, a + LAYER_LEN)));
         const y = ROW_Y[k];
         return (
           <g key={k}>
@@ -250,7 +251,8 @@ const BAR_Y = 92;
 const BAR_STEP = 34;
 const isPunct = (w: string) => /^[.,!?;:]$/.test(w);
 
-function nextToken(t: number): React.ReactNode {
+function nextToken(at: number, reduced: boolean): React.ReactNode {
+  const t = reduced ? 0.42 : at; // the finished picture is the first pass, the one the caption describes
   return (
     <g>
       {PASSES.map((p, pi) => {
@@ -307,7 +309,7 @@ function nextToken(t: number): React.ReactNode {
           </g>
         );
       })}
-      <text x={W - 10} y={H - 10} textAnchor="end" fontSize={14} fill={INK3} opacity={seg(t, 0.9, 1)}>
+      <text x={W - 10} y={H - 10} textAnchor="end" fontSize={14} fill={INK3} opacity={reduced ? 1 : seg(t, 0.9, 1)}>
         add it, then predict again
       </text>
     </g>
