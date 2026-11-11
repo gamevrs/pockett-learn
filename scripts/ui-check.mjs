@@ -61,6 +61,29 @@ if (!CHROME) {
   console.error("No Chrome found. Set CHROME=/path/to/chrome.");
   process.exit(2);
 }
+// Python, JavaScript and the 3D stages run in /frame on the *other* local origin (localhost <-> 127.0.0.1, see
+// src/engine/frame/origin.ts). If something else owns that address (another process on the same port, a server bound to
+// one IP family only) every code run and every stage check fails in confusing ways, so check it before starting.
+{
+  const base = new URL(BASE);
+  const other = { localhost: "127.0.0.1", "127.0.0.1": "localhost" }[base.hostname];
+  if (other) {
+    const frameUrl = `${base.protocol}//${other}${base.port ? `:${base.port}` : ""}/frame`;
+    let problem = null;
+    try {
+      const res = await fetch(frameUrl, { signal: AbortSignal.timeout(30000) });
+      const body = await res.text();
+      if (!res.ok || !body.includes("/_next/")) problem = `answered ${res.status} without the app (${body.replace(/\s+/g, " ").slice(0, 80)})`;
+    } catch (e) {
+      problem = `did not answer (${e.cause?.code ?? e.message})`;
+    }
+    if (problem) {
+      console.error(`The code frame is served from ${frameUrl}, but that address ${problem}.`);
+      console.error(`Learner Python/JavaScript and the stages cannot load, so the run would only produce misleading failures. Another process may own port ${base.port || 80} on ${other}: start the app on a free port (next dev -p 3100) and pass --base.`);
+      process.exit(2);
+    }
+  }
+}
 const FAIL_DIR = join(OUT, "failures"); // wiped at the start of every run
 rmSync(FAIL_DIR, { recursive: true, force: true });
 mkdirSync(FAIL_DIR, { recursive: true });
