@@ -7,10 +7,20 @@
 //   resume   closing a lesson half-way and reopening resumes at that step ("Start over" goes back to step 1; finishing clears it).
 //   leave    closing a code step with typed code asks first; closing an untouched step does not; the code is not kept.
 //   checks   a project check never shows a raw TypeError (pit-wall: submit the untouched starter).
+//   explain  the motion explainers (src/learn/widgets/explain) in fnd-ai-0b-inside and fnd-asm-9-decompile: the player mounts with an SVG stage and
+//            a caption, starts paused, Play <-> Pause moves the scene progress, Next / Previous change the counter and caption (Next is disabled on
+//            the last scene), reduced motion draws the finished picture and keeps the stage still, and on phones (390, 320) the player does not
+//            overflow and every control is at least 40 x 40.
 
 const LESSON = "fnd-bits-1-switches";
 const POSITION_KEY = "pockett_lesson_position_v1"; // legacy bare-number format, still read
 const POSITION_KEY_V2 = "pockett_lesson_position_v2";
+
+// lessons with motion explainers: [lesson id, 0-based step index of each explain step that holds a player, scenes in that player]
+const EXPLAINER_LESSONS = [
+  ["fnd-ai-0b-inside", [[0, 4], [1, 1], [3, 1], [5, 1], [7, 1]]],
+  ["fnd-asm-9-decompile", [[0, 1], [2, 1], [4, 1], [6, 1]]],
+];
 
 export async function checkLearn(h) {
   const { send, evaluate, inPage, waitFor, sleep, clickAt, record, open, screenshot, getCtx, BASE } = h;
@@ -75,6 +85,172 @@ export async function checkLearn(h) {
     await open(path, 900);
     return waitFor(() => !!document.querySelector('[aria-label^="Step "]'), null, 30000, 150);
   }
+
+  // ───────────────────────── motion explainers ─────────────────────────
+  const STAGE = "[data-widget] > div > svg[aria-hidden]";
+  /** Everything the explainer checks read, in one page round trip. */
+  const player = () =>
+    inPage(() => {
+      const svg = document.querySelector("[data-widget] > div > svg[aria-hidden]");
+      if (!svg) return null;
+      const root = svg.closest("[data-widget]");
+      const btns = [...root.querySelectorAll("button")];
+      const named = (re) => btns.find((b) => re.test(b.getAttribute("aria-label") || b.textContent.trim()));
+      const play = btns.find((b) => /^(Play|Pause|Replay)$/.test(b.textContent.trim()));
+      const bar = root.querySelector("[aria-current=step] span span");
+      const caption = root.querySelector("[aria-live=polite]");
+      const small = [...root.querySelectorAll("button, input")]
+        .map((el) => [el, el.getBoundingClientRect()])
+        .filter(([, r]) => r.width > 0 && (r.width < 39.5 || r.height < 39.5))
+        .map(([el, r]) => `${el.getAttribute("aria-label") || el.textContent.trim() || el.type} ${Math.round(r.width)}x${Math.round(r.height)}`);
+      const rect = root.getBoundingClientRect();
+      return {
+        stage: svg.innerHTML,
+        counter: root.querySelector('[aria-label^="Scene "][aria-label*=" of "]')?.textContent.replace(/\s+/g, " ").trim() ?? "",
+        title: caption?.querySelector("p")?.textContent ?? "",
+        caption: caption?.textContent ?? "",
+        play: play?.textContent.trim() ?? "",
+        fill: parseFloat(bar?.style.width ?? "0"),
+        prevDisabled: !!named(/^Previous scene$/)?.disabled,
+        nextDisabled: !!named(/^Next scene$/)?.disabled,
+        scrubber: !!root.querySelector("input[type=range]"),
+        small,
+        overflow: document.documentElement.scrollWidth > innerWidth + 1 || rect.right > innerWidth + 1 || rect.left < -1,
+      };
+    });
+  const widgetButton = (re) =>
+    clickWhere(
+      (src) => [...document.querySelectorAll("[data-widget] button")].find((b) => new RegExp(src).test(b.getAttribute("aria-label") || b.textContent.trim()) && b.getBoundingClientRect().width > 0 && !b.disabled),
+      re,
+    );
+  const phone = (width) => send("Emulation.setDeviceMetricsOverride", { width, height: 844, deviceScaleFactor: 1, mobile: true });
+  const media = (reduce) =>
+    send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: ctx.theme }, { name: "prefers-reduced-motion", value: reduce ? "reduce" : "no-preference" }] });
+  /** Open one explainer step of a lesson and wait for its stage. */
+  async function explainerAt(lesson, step) {
+    await fresh(`/learn/${lesson}`, { [lesson]: step });
+    await waitFor(() => !!document.querySelector("[data-widget] > div > svg[aria-hidden]"), null, 20000, 100);
+    await sleep(200);
+    return player();
+  }
+  const settleFalse = (name, fails) => t(name, fails.length === 0, fails.join("\n"));
+
+  async function checkExplainers() {
+    for (const [lesson, steps] of EXPLAINER_LESSONS) {
+      const tag = lesson.replace(/^fnd-/, "");
+      const fails = { mount: [], paused: [], play: [], still: [], single: [] };
+      for (const [step, scenes] of steps) {
+        const at = `step ${step + 1}`;
+        const p0 = await explainerAt(lesson, step);
+        if (!p0 || !p0.stage.length || p0.caption.trim().length < 40 || p0.counter !== `1 / ${scenes}`) {
+          fails.mount.push(`${at}: ${p0 ? `stage ${p0.stage.length} chars, caption ${p0.caption.trim().length} chars, counter "${p0.counter}"` : "no stage"}`);
+          continue;
+        }
+        // starts paused: Play on offer, nothing advancing
+        await sleep(450);
+        const p1 = await player();
+        if (p1.play !== "Play" || p1.stage !== p0.stage || p1.fill !== p0.fill) fails.paused.push(`${at}: label "${p1.play}", stage ${p1.stage === p0.stage ? "still" : "moved"}, progress ${p0.fill} -> ${p1.fill}`);
+        // Play: the label flips to Pause, the progress bar fills, the stage changes; Pause freezes it again
+        await widgetButton("^Play$");
+        await sleep(900);
+        let p2 = await player();
+        if (p2.stage === p1.stage) {
+          await sleep(2500); // some scenes hold their first picture for a moment
+          p2 = await player();
+        }
+        await widgetButton("^Pause$");
+        await sleep(150);
+        const p3 = await player();
+        await sleep(450);
+        const p4 = await player();
+        if (p2.play !== "Pause" || !(p2.fill > p1.fill) || p2.stage === p1.stage) fails.play.push(`${at}: playing: label "${p2.play}", progress ${p1.fill} -> ${p2.fill}, stage ${p2.stage === p1.stage ? "unchanged" : "changed"}`);
+        else if (p3.play !== "Play" || p4.stage !== p3.stage || p4.fill !== p3.fill) fails.play.push(`${at}: Pause: label "${p3.play}", stage ${p4.stage === p3.stage ? "still" : "kept moving"}`);
+        if (scenes === 1 && !(p0.prevDisabled && p0.nextDisabled)) fails.single.push(`${at}: a one-scene player has Previous disabled=${p0.prevDisabled}, Next disabled=${p0.nextDisabled}`);
+      }
+      await settleFalse(`explain ${tag}: the player mounts with an SVG stage and a caption (every explainer step)`, fails.mount);
+      await settleFalse(`explain ${tag}: it starts paused and nothing moves`, fails.paused);
+      await settleFalse(`explain ${tag}: Play flips to Pause and the scene progress advances; Pause freezes it`, fails.play);
+      await settleFalse(`explain ${tag}: a one-scene player has Previous and Next disabled`, fails.single);
+
+      // the multi-scene player: stepping changes the counter and the caption, and Next stops at the last scene
+      const [mStep, mScenes] = steps.find(([, n]) => n > 1) ?? [];
+      if (mScenes) {
+        const first = await explainerAt(lesson, mStep);
+        const seen = [first];
+        const problems = [];
+        if (!first.prevDisabled) problems.push("Previous is enabled on scene 1");
+        for (let i = 2; i <= mScenes; i++) {
+          await widgetButton("^Next scene$");
+          await sleep(150);
+          const q = await player();
+          seen.push(q);
+          if (q.counter !== `${i} / ${mScenes}`) problems.push(`Next: counter "${q.counter}", wanted "${i} / ${mScenes}"`);
+          if (q.caption === seen[i - 2].caption) problems.push(`Next to scene ${i}: caption did not change`);
+          if (q.stage === seen[i - 2].stage) problems.push(`Next to scene ${i}: stage did not change`);
+        }
+        const end = seen[seen.length - 1];
+        if (!end.nextDisabled) problems.push("Next is still enabled on the last scene");
+        await widgetButton("^Previous scene$");
+        await sleep(150);
+        const back = await player();
+        if (back.counter !== `${mScenes - 1} / ${mScenes}` || back.caption !== seen[mScenes - 2].caption) problems.push(`Previous: counter "${back.counter}", caption ${back.caption === seen[mScenes - 2].caption ? "back" : "not back"}`);
+        if (back.nextDisabled) problems.push("Next is disabled again after going back");
+        await settleFalse(`explain ${tag}: Next and Previous change the scene counter and caption; Next is disabled on the last scene`, problems);
+      }
+
+      // reduced motion: every scene is its finished picture, the stage holds still, Play steps through the scenes
+      await media(true);
+      try {
+        const rm = [];
+        for (const [step, scenes] of steps) {
+          const at = `step ${step + 1}`;
+          const a = await explainerAt(lesson, step);
+          await sleep(400);
+          const b = await player();
+          if (a.stage !== b.stage) rm.push(`${at}: the stage changed between two samples with nothing pressed`);
+          if (b.fill !== 100) rm.push(`${at}: the progress bar shows ${b.fill}%, not the finished scene`);
+          if (b.scrubber) rm.push(`${at}: the scrubber is shown (there is nothing to scrub)`);
+          await widgetButton("^Play$");
+          await sleep(250);
+          const c = await player();
+          await sleep(400);
+          const d = await player();
+          if (c.stage !== d.stage) rm.push(`${at}: the stage changed while playing (a tween is running)`);
+          if (c.play !== "Pause") rm.push(`${at}: Play did not turn into Pause`);
+          await widgetButton("^Pause$");
+          if (scenes > 1) {
+            await widgetButton("^Next scene$");
+            await sleep(150);
+            const e = await player();
+            if (e.counter !== `2 / ${scenes}` || e.fill !== 100) rm.push(`${at}: Next under reduced motion: counter "${e.counter}", progress ${e.fill}%`);
+          }
+        }
+        await settleFalse(`explain ${tag}: with reduced motion each scene is finished and the stage stays still, also while playing`, rm);
+      } finally {
+        await media(false);
+      }
+
+      // phones: no horizontal overflow and every control at least 40 x 40
+      for (const width of [390, 320]) {
+        await phone(width);
+        try {
+          const bad = [];
+          for (const [step] of steps) {
+            const q = await explainerAt(lesson, step);
+            if (!q) bad.push(`step ${step + 1}: no stage`);
+            else {
+              if (q.overflow) bad.push(`step ${step + 1}: the page or the player is wider than the ${width}px screen`);
+              if (q.small.length) bad.push(`step ${step + 1}: controls under 40px: ${q.small.join(", ")}`);
+            }
+          }
+          await settleFalse(`explain ${tag}: no horizontal overflow and all controls at least 40px at ${width}px`, bad);
+        } finally {
+          await send("Emulation.setDeviceMetricsOverride", { width: ctx.width, height: 900, deviceScaleFactor: 1, mobile: false });
+        }
+      }
+    }
+  }
+  await checkExplainers();
 
   // ───────────────────────── Enter submits, Space toggles ─────────────────────────
   if (!(await fresh(`/learn/${LESSON}`))) return t("lesson player mounts", false, "no step indicator");
