@@ -75,3 +75,34 @@ python scripts/foundations/gentrace.py scripts/foundations/specs.py src/content/
 ```
 
 `--list NAME` prints one program's steps, so you can attach notes to the right step in `specs.py`.
+
+## Motion explainers
+
+Step-through animations live in `src/learn/widgets/explain/` on the shared `Explainer` player
+(play / pause, previous / next, scrubber, caption). See `LlmExplainer.tsx` for a model.
+
+- **A scene is a pure `render(t, reduced)`** of progress `t` (0 to 1): no state, no timers, no
+  `Math.random`. Scrubbing, stepping and playing then all draw the same picture. Helpers (`seg`,
+  `ease`, `lerp`, `r2`) are in `anim.ts`; round computed coordinates with `r2` so server and browser
+  print the same numbers. `reduced` is true under reduced motion, where `t` is always 1: the
+  finished picture must show everything the caption talks about (draw a representative frame if the
+  animation ends on an empty one).
+- **Durations**: 8 to 12 s per scene. Stage one idea at a time and let one thing finish before the
+  next starts (nothing fading out while something else flies in).
+- **The caption carries the meaning.** The stage is `aria-hidden`; the plain-text `caption` must say
+  everything the picture shows, so someone who never sees it loses nothing.
+- **Subsets**: export one component taking `props.scenes` (ids, in order; unknown ids are ignored,
+  none means all). Use the full set in an opening step and one scene per later step, so each idea
+  gets a step and a question.
+- **Drawing**: one `viewBox` (360 wide, height as needed) that scales to the card. SVG text is at
+  least 14 units so it stays about 14px on a phone. Use theme variables (`var(--ink)`, `--ink-2`,
+  `--ink-3`, `--brand`, `--surface`, `--line-strong`) so both themes work; hardcode a colour only
+  for a second data hue that must be the same in both (check it on dark and light).
+- **Registering**: add the component to `EXPLAIN_WIDGETS` in `explain/index.ts` as a key prefixed
+  `ex-` in the literal form `"ex-name": { Component: Name },`. The validator finds widget types
+  with a regex over that file, so no computed keys, spreads or shorthand.
+- **Pair each explainer step with a question** that checks the idea it just showed. Vary the
+  position of the right answer across the lesson: choice options are shown in the order you
+  write them, never shuffled.
+- Check it at 390 and 320 wide, with reduced motion on, and add the lesson to `EXPLAINER_LESSONS`
+  in `scripts/ui-check-learn.mjs` so `ui:check` covers it.
