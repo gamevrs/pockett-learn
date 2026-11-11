@@ -578,7 +578,18 @@ const KEYS = {
   Home: [36, "Home"],
   End: [35, "End"],
 };
-const MOD = { alt: 1, ctrl: 2, shift: 8 };
+const MOD = { alt: 1, ctrl: 2, meta: 4, shift: 8 };
+
+// Monaco's shortcuts follow the platform: Cmd on macOS (Ctrl+Z, Ctrl+D, Ctrl+/ do other things there), Ctrl on Windows and Linux.
+// The headless Chrome reports the host's platform, so ask it instead of assuming, and press what a learner on this OS would press.
+let primaryModifier = null;
+async function primaryMod() {
+  if (primaryModifier === null) {
+    const mac = await inPage(() => /mac|iphone|ipad|ipod/i.test(navigator.userAgentData?.platform || navigator.platform || ""));
+    primaryModifier = mac ? MOD.meta : MOD.ctrl;
+  }
+  return primaryModifier;
+}
 
 async function press(name, modifiers = 0) {
   const [vk, code, text] = KEYS[name];
@@ -586,8 +597,9 @@ async function press(name, modifiers = 0) {
   await send("Input.dispatchKeyEvent", { type: "keyUp", key: name, code, windowsVirtualKeyCode: vk, nativeVirtualKeyCode: vk, modifiers });
   await sleep(60);
 }
-/** Ctrl+<letter> or Ctrl+<symbol>. */
-async function chord(letter, modifiers = MOD.ctrl) {
+/** <primary modifier>+<letter> or <primary modifier>+<symbol> (Cmd on macOS, Ctrl elsewhere). */
+async function chord(letter, modifiers) {
+  modifiers ??= await primaryMod();
   const up = letter.toUpperCase();
   const isLetter = /[a-z]/i.test(letter);
   const vk = isLetter ? up.charCodeAt(0) : letter === "/" ? 191 : 0;
@@ -811,16 +823,14 @@ async function checkSmartEditing() {
   await tool("python: brackets and quotes close automatically", v === 'print("")', JSON.stringify(v));
 
   await inPage(prepareModel, { lang: "python", code: "x = 1" });
-  await key("rawKeyDown", "/", "Slash", 191, 2);
-  await key("keyUp", "/", "Slash", 191, 2);
-  await sleep(200);
+  await chord("/");
+  await sleep(120);
   v = await valueOf();
   await tool("python: Ctrl+/ comments the line", /^# x = 1/.test(v), JSON.stringify(v));
 
   await inPage(prepareModel, { lang: "cpp", code: "int x = 1;" });
-  await key("rawKeyDown", "/", "Slash", 191, 2);
-  await key("keyUp", "/", "Slash", 191, 2);
-  await sleep(200);
+  await chord("/");
+  await sleep(120);
   v = await valueOf();
   await tool("cpp: Ctrl+/ comments the line", /^\/\/ int x = 1;/.test(v), JSON.stringify(v));
 
@@ -935,7 +945,8 @@ async function checkKeyboardUX() {
   await chord("z");
   s = await editorState();
   await t("Ctrl+Z undoes typing", s.text === "", JSON.stringify(s.text));
-  await chord("y");
+  if ((await primaryMod()) === MOD.meta) await chord("z", MOD.meta | MOD.shift); // macOS: Cmd+Shift+Z
+  else await chord("y");
   s = await editorState();
   await t("Ctrl+Y redoes it", s.text === "hello", JSON.stringify(s.text));
 
@@ -1090,19 +1101,23 @@ async function checkLessonKeyboard() {
   await t("Escape closes the list and keeps the typed text", !s.widget && s.line === "hor", JSON.stringify({ widget: s.widget, line: s.line }));
   await clearLine();
 
-  await typeChars("hor");
-  await waitFor(() => !!document.querySelector(".suggest-widget.visible"), null, 5000, 100);
-  await send("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, modifiers: MOD.ctrl });
-  await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, modifiers: MOD.ctrl });
-  await sleep(600);
-  s = await editorState();
-  await t("Ctrl+Enter closes the list and does not insert a newline or a suggestion", !s.widget && s.line === "hor", JSON.stringify({ widget: s.widget, line: s.line }));
-  await inPage(() => {
-    // running moves a phone to the results tab: come back to the editor
-    if (window.innerWidth < 800) [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Code" && b.getBoundingClientRect().width > 0)?.click();
-  });
-  await sleep(500);
-  await clearLine();
+  // the platform's own Run chord (Cmd on a Mac, Ctrl elsewhere); a Mac also runs on Ctrl+Enter, so that must close the list too
+  const primary = await primaryMod();
+  for (const [label, runMod] of primary === MOD.meta ? [["Ctrl+Enter", MOD.meta], ["Ctrl+Enter on a Mac (not Cmd)", MOD.ctrl]] : [["Ctrl+Enter", MOD.ctrl]]) {
+    await typeChars("hor");
+    await waitFor(() => !!document.querySelector(".suggest-widget.visible"), null, 5000, 100);
+    await send("Input.dispatchKeyEvent", { type: "rawKeyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, modifiers: runMod });
+    await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, nativeVirtualKeyCode: 13, modifiers: runMod });
+    await sleep(600);
+    s = await editorState();
+    await t(`${label} closes the list and does not insert a newline or a suggestion`, !s.widget && s.line === "hor", JSON.stringify({ widget: s.widget, line: s.line }));
+    await inPage(() => {
+      // running moves a phone to the results tab: come back to the editor
+      if (window.innerWidth < 800) [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Code" && b.getBoundingClientRect().width > 0)?.click();
+    });
+    await sleep(500);
+    await clearLine();
+  }
 
   // Enter with no list open: newline plus the right indent
   await typeChars("for i in range(3):");

@@ -7,6 +7,7 @@ import { useTheme } from "@/lib/theme/ThemeProvider";
 import { YOUR_TURN_MARKER } from "@/engine/types";
 import { INTERPOLATION_LANGUAGES, ensureInterpolationGrammar } from "./monaco-interpolation";
 import { registerEditorTools, setModelContext } from "./monaco-tools";
+import { detectMac } from "@/lib/ui/platform";
 
 function EditorLoading() {
   return (
@@ -339,6 +340,17 @@ export function CodeEditor({ value, onChange, onRun, onSubmit, errorLine, errorM
       editor.trigger("pockett", "hideSuggestWidget", null);
       onSubmitRef.current();
     });
+    if (detectMac()) {
+      // the page also runs on Ctrl+Enter on a Mac (muscle memory from other platforms): close the list for that chord too
+      editor.addCommand(monaco.KeyMod.WinCtrl | monaco.KeyCode.Enter, () => {
+        editor.trigger("pockett", "hideSuggestWidget", null);
+        onRunRef.current();
+      });
+      editor.addCommand(monaco.KeyMod.WinCtrl | monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => {
+        editor.trigger("pockett", "hideSuggestWidget", null);
+        onSubmitRef.current();
+      });
+    }
     addCallParens(editor, monaco);
     stepOverClosers(editor, monaco);
     const model = editor.getModel();
