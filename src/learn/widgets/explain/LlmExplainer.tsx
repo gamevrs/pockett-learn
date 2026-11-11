@@ -54,8 +54,10 @@ const GROUP_COLOUR = { animal: BRAND, vehicle: ORANGE };
 const VECTOR = ["0.9", "0.2", "-0.4"];
 
 function embeddings(t: number): React.ReactNode {
-  const intro = 1 - seg(t, 0.28, 0.4); // the word-to-numbers panel fades out as the map comes in
-  const map = seg(t, 0.3, 0.42);
+  // one thing at a time: the word-to-numbers panel is gone before the map (and its word chips) appears,
+  // and the chips only start moving once the map is fully there
+  const intro = 1 - seg(t, 0.26, 0.32);
+  const map = seg(t, 0.33, 0.39);
   return (
     <g>
       <g opacity={intro}>
@@ -87,7 +89,7 @@ function embeddings(t: number): React.ReactNode {
           vehicles
         </text>
         {WORDS.map((d, i) => {
-          const u = ease(seg(t, 0.42 + i * 0.06, 0.72 + i * 0.06));
+          const u = ease(seg(t, 0.4 + i * 0.05, 0.68 + i * 0.05));
           return <Tag key={d.w} word={d.w} x={r2(lerp(d.from[0], d.to[0], u))} y={r2(lerp(d.from[1], d.to[1], u))} stroke={u > 0.99 ? GROUP_COLOUR[d.group] : LINE} />;
         })}
       </g>
