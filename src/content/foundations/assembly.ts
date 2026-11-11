@@ -66,7 +66,7 @@ export const assemblyModule: Module = {
   id: "assembly",
   part: "hood",
   title: "Assembly: talking to the CPU",
-  blurb: "Registers, instructions, jumps and loops on a toy CPU you program and step through.",
+  blurb: "Registers, jumps and loops on a toy CPU you step through, then read a compiled program backwards (disassembling and decompiling).",
   icon: "microchip",
   lessons: [
     // ── Lesson 1 ──

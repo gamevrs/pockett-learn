@@ -5,7 +5,8 @@ import { aiLessonsC } from "./ai-systems-c.ts";
 import { aiLessonsD } from "./ai-systems-d.ts";
 
 /**
- * Module: shipping AI features. A language-model primer, embeddings and vector search, indexes,
+ * Module: shipping AI features. A language-model primer, what happens inside a model (embeddings, attention, training,
+ * next-token prediction), embeddings and vector search, indexes,
  * tokens and the context window, filters, RAG, hybrid search and reranking, evaluation, agents,
  * and tool servers (MCP).
  * Scenarios: a school library assistant, a bike help desk and a clinic booking system.
@@ -39,7 +40,7 @@ export const aiSystemsModule: Module = {
   id: "ai-systems",
   part: "systems",
   title: "Shipping AI features",
-  blurb: "Embeddings and vector search, RAG, evaluation, inference and cost, agents, and tool servers.",
+  blurb: "How a model works inside, embeddings and vector search, RAG, evaluation, inference and cost, agents, and tool servers.",
   icon: "bot",
   lessons,
 };
