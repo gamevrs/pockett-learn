@@ -39,8 +39,15 @@ export function SoundControl({ variant = "navbar", className = "" }: { variant?:
     const onDown = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
+    // a click in a different document never reaches this one: the stage's control lives in the code frame, and the page around
+    // it (or the page's own control, when this is the page and the stage was clicked) only shows up here as the window losing focus
+    const onWindowBlur = () => setOpen(false);
     document.addEventListener("pointerdown", onDown, true);
-    return () => document.removeEventListener("pointerdown", onDown, true);
+    window.addEventListener("blur", onWindowBlur);
+    return () => {
+      document.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("blur", onWindowBlur);
+    };
   }, [open]);
 
   const toggleMute = () => {
