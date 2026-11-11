@@ -2,6 +2,7 @@ import type { ConceptLesson, Module } from "../../learn/types.ts";
 import { aiLessonsA } from "./ai-systems-a.ts";
 import { aiLessonsB } from "./ai-systems-b.ts";
 import { aiLessonsC } from "./ai-systems-c.ts";
+import { aiLessonsD } from "./ai-systems-d.ts";
 
 /**
  * Module: shipping AI features. A language-model primer, embeddings and vector search, indexes,
@@ -12,9 +13,10 @@ import { aiLessonsC } from "./ai-systems-c.ts";
  * Teaching order differs from file order: the tokens and context-window lesson (fnd-ai-8) comes
  * before filters and RAG, which rely on those words. Lesson ids never change.
  */
-const byId = new Map<string, ConceptLesson>([...aiLessonsA, ...aiLessonsB, ...aiLessonsC].map((l) => [l.id, l]));
+const byId = new Map<string, ConceptLesson>([...aiLessonsA, ...aiLessonsB, ...aiLessonsC, ...aiLessonsD].map((l) => [l.id, l]));
 const ORDER = [
   "fnd-ai-0-llm-primer",
+  "fnd-ai-0b-inside",
   "fnd-ai-1-meaning",
   "fnd-ai-2-searching",
   "fnd-ai-3-index",

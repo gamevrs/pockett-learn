@@ -17,6 +17,7 @@ import { SHIP_WIDGETS } from "./ship";
 import { OBS_WIDGETS } from "./obs";
 import { SECURITY_WIDGETS } from "./security";
 import { AI_WIDGETS } from "./ai";
+import { EXPLAIN_WIDGETS } from "./explain";
 
 /** Every widget a concept lesson can use, keyed by WidgetSpec.type. One registry per module. */
 export const WIDGETS: WidgetRegistry = {
@@ -38,6 +39,7 @@ export const WIDGETS: WidgetRegistry = {
   ...OBS_WIDGETS,
   ...SECURITY_WIDGETS,
   ...AI_WIDGETS,
+  ...EXPLAIN_WIDGETS,
 };
 
 export function getWidget(type: string): WidgetDef | undefined {
