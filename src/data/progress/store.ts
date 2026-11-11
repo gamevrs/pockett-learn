@@ -13,6 +13,16 @@ const repo = getRepository();
 const listeners = new Set<() => void>();
 let cache: ProgressState | null = null;
 let repoUnsubscribe: (() => void) | null = null;
+let followStorage = true;
+
+/**
+ * The code frame's copy of the settings is fed by the page's messages only. Two frames share one origin (a hidden runner and a
+ * stage), so each one's writes would otherwise reach the other through the storage event, late and out of order, and an older
+ * value could overwrite a newer one.
+ */
+export function stopFollowingStorage() {
+  followStorage = false;
+}
 
 function read(): ProgressState {
   if (!cache) cache = repo.load();
@@ -33,6 +43,7 @@ function subscribe(listener: () => void) {
   listeners.add(listener);
   if (!repoUnsubscribe) {
     repoUnsubscribe = repo.subscribe(() => {
+      if (!followStorage) return;
       cache = null;
       emit();
     });

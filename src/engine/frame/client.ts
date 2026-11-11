@@ -244,6 +244,17 @@ export class FrameConnection {
     else this.queue.push(message);
   }
 
+  /** The sound settings this frame is known to have (sent to it, or received from it); null until it has been told. */
+  private audioKnown: { enabled: boolean; volume: number } | null = null;
+
+  /** Tells this frame the page's sound settings unless it already has them (a change that came from this very frame is not echoed). */
+  syncAudio(next: { enabled: boolean; volume: number }) {
+    if (this.audioKnown && this.audioKnown.enabled === next.enabled && this.audioKnown.volume === next.volume) return;
+    if (!this.ready || this.closed) return; // it gets the current settings in its init message
+    this.audioKnown = { enabled: next.enabled, volume: next.volume };
+    this.send({ type: "audio", enabled: next.enabled, volume: next.volume });
+  }
+
   /** Sends only if the frame is up (settings that it also gets on start). */
   postIfReady(message: ToFrame) {
     if (this.ready && !this.closed) this.send(message);
@@ -332,6 +343,7 @@ export class FrameConnection {
           dark: document.documentElement.classList.contains("dark"),
           audio: { enabled: getProgress().audio.enabled, volume: getProgress().audio.volume },
         });
+        this.audioKnown = { enabled: getProgress().audio.enabled, volume: getProgress().audio.volume };
         if (this.project) this.send({ type: "project", project: this.project });
         if (this.props) this.send({ type: "props", props: this.props });
         const queued = this.queue;
@@ -379,7 +391,7 @@ export class FrameConnection {
         }
         return;
       case "audio":
-        audioKnown = { enabled: message.enabled, volume: message.volume }; // the frame already has this: don't send it back (see installGlobalSync)
+        this.audioKnown = { enabled: message.enabled, volume: message.volume }; // this frame already has it: not sent back (see syncAudio)
         setAudio({ enabled: message.enabled, volume: message.volume });
         return;
     }
@@ -389,8 +401,6 @@ export class FrameConnection {
 // ───────────── routing, theme and sound ─────────────
 
 let globalSyncInstalled = false;
-/** The sound settings the frames are known to have (sent to them, or received from them). */
-let audioKnown: { enabled: boolean; volume: number } | null = null;
 
 function installGlobalSync() {
   if (globalSyncInstalled || typeof window === "undefined") return;
@@ -413,14 +423,12 @@ function installGlobalSync() {
     connections.forEach((c) => c.postIfReady({ type: "theme", dark: now }));
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-  // Only changes that start on this side are sent. A value that just arrived from the frame is recorded in audioKnown first, so
-  // the store update it causes is not echoed back: an echo reaches the frame after it has moved on and puts the slider back.
-  audioKnown = { enabled: getProgress().audio.enabled, volume: getProgress().audio.volume };
+  // Every frame is told about a change unless it already has the value: one that just arrived from a frame is recorded on that
+  // connection first, so it is not echoed back to its source (the echo lands after the learner moved the slider again and puts
+  // it back), while every other frame still hears about it.
   subscribeProgress(() => {
-    const next = getProgress().audio;
-    if (audioKnown && next.enabled === audioKnown.enabled && next.volume === audioKnown.volume) return;
-    audioKnown = { enabled: next.enabled, volume: next.volume };
-    connections.forEach((c) => c.postIfReady({ type: "audio", enabled: next.enabled, volume: next.volume }));
+    const { enabled, volume } = getProgress().audio;
+    connections.forEach((c) => c.syncAudio({ enabled, volume }));
   });
 }
 

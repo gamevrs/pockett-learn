@@ -2,7 +2,7 @@ import type { ProgramHandle } from "../program";
 import { isServiceError } from "../runtimes/service-error";
 import { getRuntimeState, subscribeRuntimeState } from "../runtimes/status";
 import { loadLocalRuntime, markInsideCodeFrame } from "../runtimes";
-import { getProgress, setAudio, subscribeProgress } from "@/data/progress/store";
+import { getProgress, setAudio, stopFollowingStorage, subscribeProgress } from "@/data/progress/store";
 import { isTrustedParentOrigin } from "./origin";
 import {
   parseToFrame,
@@ -66,6 +66,7 @@ class FrameHost {
     if (this.started) return;
     this.started = true;
     markInsideCodeFrame();
+    stopFollowingStorage();
     window.addEventListener("message", this.onMessage);
     // Run / Submit shortcuts pressed while the stage has focus belong to the page
     window.addEventListener(
