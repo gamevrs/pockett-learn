@@ -379,6 +379,7 @@ export class FrameConnection {
         }
         return;
       case "audio":
+        audioKnown = { enabled: message.enabled, volume: message.volume }; // the frame already has this: don't send it back (see installGlobalSync)
         setAudio({ enabled: message.enabled, volume: message.volume });
         return;
     }
@@ -388,6 +389,8 @@ export class FrameConnection {
 // ───────────── routing, theme and sound ─────────────
 
 let globalSyncInstalled = false;
+/** The sound settings the frames are known to have (sent to them, or received from them). */
+let audioKnown: { enabled: boolean; volume: number } | null = null;
 
 function installGlobalSync() {
   if (globalSyncInstalled || typeof window === "undefined") return;
@@ -410,11 +413,13 @@ function installGlobalSync() {
     connections.forEach((c) => c.postIfReady({ type: "theme", dark: now }));
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-  let audio = getProgress().audio;
+  // Only changes that start on this side are sent. A value that just arrived from the frame is recorded in audioKnown first, so
+  // the store update it causes is not echoed back: an echo reaches the frame after it has moved on and puts the slider back.
+  audioKnown = { enabled: getProgress().audio.enabled, volume: getProgress().audio.volume };
   subscribeProgress(() => {
     const next = getProgress().audio;
-    if (next.enabled === audio.enabled && next.volume === audio.volume) return;
-    audio = next;
+    if (audioKnown && next.enabled === audioKnown.enabled && next.volume === audioKnown.volume) return;
+    audioKnown = { enabled: next.enabled, volume: next.volume };
     connections.forEach((c) => c.postIfReady({ type: "audio", enabled: next.enabled, volume: next.volume }));
   });
 }

@@ -39,6 +39,7 @@ function toWire(err: unknown): WireError {
 class FrameHost {
   private started = false;
   private parentOrigin: string | null = null;
+  private audioKnown = { enabled: false, volume: 0 };
   private snapshot: HostSnapshot = EMPTY;
   private listeners = new Set<() => void>();
   private programs = new Map<string, { program: ProgramHandle; unsubscribe: () => void }>();
@@ -89,11 +90,13 @@ class FrameHost {
       }
     });
     // the sound control inside the stage changes the page's settings
-    let audio = getProgress().audio;
+    // (a value that just came from the page is recorded first, so it is not echoed back: the echo arrives after the learner has
+    // moved the slider again and would put it back)
+    this.audioKnown = { enabled: getProgress().audio.enabled, volume: getProgress().audio.volume };
     subscribeProgress(() => {
       const next = getProgress().audio;
-      if (next.enabled === audio.enabled && next.volume === audio.volume) return;
-      audio = next;
+      if (next.enabled === this.audioKnown.enabled && next.volume === this.audioKnown.volume) return;
+      this.audioKnown = { enabled: next.enabled, volume: next.volume };
       this.post({ type: "audio", enabled: next.enabled, volume: next.volume });
     });
     window.parent.postMessage({ type: "ready" } satisfies FromFrame, "*");
@@ -122,6 +125,7 @@ class FrameHost {
     switch (message.type) {
       case "init":
         this.setDark(message.dark);
+        this.audioKnown = { enabled: message.audio.enabled, volume: message.audio.volume };
         setAudio({ enabled: message.audio.enabled, volume: message.audio.volume });
         this.update({ mode: message.mode });
         return;
@@ -129,6 +133,7 @@ class FrameHost {
         this.setDark(message.dark);
         return;
       case "audio":
+        this.audioKnown = { enabled: message.enabled, volume: message.volume };
         setAudio({ enabled: message.enabled, volume: message.volume });
         return;
       case "project":
