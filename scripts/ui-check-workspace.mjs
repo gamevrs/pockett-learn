@@ -512,6 +512,9 @@ export async function checkWorkspace(h) {
       await sleep(350);
       await evaluate(`localStorage.clear(); localStorage.setItem("pockett_theme_mode", ${JSON.stringify(ctx.theme)});`);
       await open("/", 2500);
+      // the demo boots its autopilot a moment after the button shows up ("Autopilot off" for ~1 s on a fast machine, longer in a
+      // software-rendered headless tab): wait for it to come on instead of sampling at a fixed time
+      await waitFor(() => [...document.querySelectorAll("button")].some((x) => /^Auto(pilot)? on/.test(x.innerText.trim())), null, 30000, 200);
       const hero = await inPage(() => { const b = [...document.querySelectorAll("button")].find((x) => /^Auto(pilot)? (on|off)/.test(x.innerText.trim())); if (!b) return null; b.scrollIntoView({ block: "center" }); const r = b.getBoundingClientRect(); return { cx: r.x + r.width / 2, cy: r.y + r.height / 2, label: b.innerText.trim(), aria: b.getAttribute("aria-label") }; });
       await check("autopilot toggle reads 'Auto(pilot) on' with a full accessible name, not just 'On'", !!hero && /^Auto(pilot)? on$/.test(hero.label) && /Autopilot on/.test(hero.aria ?? ""), JSON.stringify(hero));
       if (hero) {
@@ -549,10 +552,13 @@ export async function checkWorkspace(h) {
       await lesson("/projects/garage/garage-1-ignition", { editor: false });
       const mac = await inPage(() => ({ runTitle: document.querySelector("[data-testid=run-button]").title, kbd: [...document.querySelectorAll("[data-testid=run-button] kbd, [data-testid=submit-button] kbd")].map((k) => k.textContent.trim()), body: document.body.innerText.includes("Ctrl") }));
       await check("macOS: shortcut labels show ⌘, not Ctrl", /⌘ \+ Enter/.test(mac.runTitle) && mac.kbd.join("|") === "⌘ ↵|⌘ ⇧ ↵" && !mac.body, JSON.stringify(mac));
-      await send("Emulation.setUserAgentOverride", { userAgent: "", platform: "" });
+      // an empty override would fall back to this machine's own platform (a Mac here), so say Windows explicitly
+      const WIN = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+      await send("Emulation.setUserAgentOverride", { userAgent: WIN, platform: "Win32", userAgentMetadata: { platform: "Windows", platformVersion: "10.0.0", architecture: "x86", model: "", mobile: false, brands: [{ brand: "Chromium", version: "130" }] } });
       await lesson("/projects/garage/garage-1-ignition", { editor: false });
       const win = await inPage(() => ({ runTitle: document.querySelector("[data-testid=run-button]").title, kbd: [...document.querySelectorAll("[data-testid=run-button] kbd, [data-testid=submit-button] kbd")].map((k) => k.textContent.trim()) }));
       await check("Windows/Linux: shortcut labels keep Ctrl", /Ctrl \+ Enter/.test(win.runTitle) && win.kbd.join("|") === "Ctrl ↵|Ctrl ⇧ ↵", JSON.stringify(win));
+      await send("Emulation.setUserAgentOverride", { userAgent: "", platform: "" }); // back to this machine's own platform
     }
 
     }
