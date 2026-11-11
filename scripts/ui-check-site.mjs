@@ -31,7 +31,7 @@ const TAP_ROUTES = MAIN_ROUTES.filter(([name]) => name !== "account");
 const MIN_TAP = 40;
 
 export async function checkSite(h) {
-  const { send, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, getCtx, BASE } = h;
+  const { send, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, getCtx } = h;
   const ctx = getCtx();
   const mobile = ctx.width < 700;
 
