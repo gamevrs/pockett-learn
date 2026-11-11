@@ -46,7 +46,7 @@ const SPY = `(() => {
 const gainFor = (v) => 1.2 * Math.pow(Math.min(1, Math.max(0, v)), 1.5);
 
 export async function checkAudio(h) {
-  const { send, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, getCtx, BASE, PORT, OUT } = h;
+  const { send, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, onEvent, getCtx, BASE, PORT, OUT } = h;
   const shotsDir = process.env.AUDIO_SHOTS || join(OUT, "audio");
   mkdirSync(shotsDir, { recursive: true });
   const ctx = getCtx();
@@ -79,27 +79,113 @@ export async function checkAudio(h) {
     await open(path);
   }
 
-  const au = () => inPage(() => ({ contexts: window.__au?.ctxs.length ?? -1, nodes: window.__au?.dest.length ?? -1, gain: window.__au?.dest[0] ? (window.__au.dest[0].gain.__target ?? window.__au.dest[0].gain.value) : null, actual: window.__au?.dest[0]?.gain.value ?? null, state: window.__au?.ctxs[0]?.state ?? null }));
+  // ── the stage (sound control, Beat Lab, its AudioContext) lives in the code frame, a different origin and its own CDP target ──
+  // Attach to every iframe before it runs anything, put the same audio spy into it, and let the helpers below look in the page
+  // first and then in each frame, so the checks read the way they did when everything was one document.
+  const frames = new Set(); // CDP sessions of the attached iframes
+  const stopAttach = onEvent(async (msg) => {
+    if (msg.method === "Target.detachedFromTarget") frames.delete(msg.params.sessionId);
+    if (msg.method !== "Target.attachedToTarget") return;
+    const { sessionId, targetInfo, waitingForDebugger } = msg.params;
+    if (targetInfo?.type === "iframe") {
+      frames.add(sessionId);
+      await send("Page.enable", {}, sessionId);
+      await send("Page.addScriptToEvaluateOnNewDocument", { source: SPY }, sessionId);
+    }
+    if (waitingForDebugger) await send("Runtime.runIfWaitingForDebugger", {}, sessionId);
+  });
+  await send("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: true });
+
+  /** Runs fn in the page (sid null) or in one frame; any failure (navigating, detached) reads as null. */
+  const evalIn = async (sid, fn, arg) => {
+    const expression = `(${fn.toString()})(${JSON.stringify(arg ?? null)})`;
+    try {
+      if (!sid) return await evaluate(expression);
+      const r = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true }, sid);
+      return r.result?.result?.value ?? null;
+    } catch {
+      return null;
+    }
+  };
+  const scopes = () => [null, ...frames];
+  /** The first non-empty answer from the page, then each frame. */
+  const anywhere = async (fn, arg) => {
+    for (const sid of scopes()) {
+      const v = await evalIn(sid, fn, arg);
+      if (v !== null && v !== undefined && v !== false) return v;
+    }
+    return null;
+  };
+  const poll = async (cond, timeout = 15000, step = 100) => {
+    const t0 = Date.now();
+    while (Date.now() - t0 < timeout) {
+      if (await cond()) return true;
+      await sleep(step);
+    }
+    return false;
+  };
+  const waitAny = (fn, arg, timeout = 15000, step = 150) => poll(() => anywhere(fn, arg), timeout, step);
+
+  const AU = () => (window.__au ? { contexts: window.__au.ctxs.length, nodes: window.__au.dest.length, gain: window.__au.dest[0] ? (window.__au.dest[0].gain.__target ?? window.__au.dest[0].gain.value) : null, actual: window.__au.dest[0]?.gain.value ?? null, state: window.__au.ctxs[0]?.state ?? null } : null);
+  /** Everything audible across the page and its frames: the app must still have ONE context and ONE master gain in total. */
+  const au = async () => {
+    const parts = [];
+    for (const sid of scopes()) {
+      const p = await evalIn(sid, AU);
+      if (p) parts.push(p);
+    }
+    if (!parts.length) return { contexts: -1, nodes: -1, gain: null, actual: null, state: null };
+    const master = parts.find((x) => x.gain !== null);
+    return { parts, contexts: parts.reduce((n, x) => n + x.contexts, 0), nodes: parts.reduce((n, x) => n + x.nodes, 0), gain: master?.gain ?? null, actual: master?.actual ?? null, state: parts.find((x) => x.contexts > 0)?.state ?? null };
+  };
   const stored = () => inPage(() => { try { return JSON.parse(localStorage.getItem("pockett_progress_v2") ?? "null")?.audio ?? null; } catch { return null; } });
-  const peak = (ms = 1400) => evaluate(`window.__au.peak(${ms})`);
-  const waitGain = (expected, timeout = 3500) => waitFor((e) => { const p = window.__au?.dest[0]?.gain; const g = p && (p.__target ?? p.value); return typeof g === "number" && Math.abs(g - e) < 0.03; }, expected, timeout, 80);
+  /** The loudest output of any document (the page's UI sounds and the stage's scene each have their own graph). */
+  const peak = async (ms = 1400) => {
+    const live = [];
+    for (const sid of scopes()) if ((await evalIn(sid, () => window.__au?.dest.length ?? 0)) > 0) live.push(sid);
+    if (!live.length) return null;
+    const all = await Promise.all(live.map((sid) => evalIn(sid, (m) => window.__au.peak(m), ms)));
+    return Math.max(...all.map((v) => v ?? 0));
+  };
+  const waitGain = (expected, timeout = 3500) => poll(async () => { const g = (await au()).gain; return typeof g === "number" && Math.abs(g - expected) < 0.03; }, timeout, 80);
   /** The value the audio thread is really applying (needs a running context with something playing through it). */
-  const waitActual = (expected, timeout = 3500) => waitFor((e) => { const g = window.__au?.dest[0]?.gain.value; return typeof g === "number" && Math.abs(g - e) < 0.03; }, expected, timeout, 80);
-  const text = (sel) => inPage((s) => document.querySelector(s)?.textContent?.trim() ?? null, sel);
-  const label = (sel) => inPage((s) => document.querySelector(s)?.getAttribute("aria-label") ?? null, sel);
-  const value = (sel) => inPage((s) => { const e = document.querySelector(s); return e ? Number(e.value) : null; }, sel);
-  const rectOf = (sel) => inPage((s) => {
-    const e = document.querySelector(s);
-    if (!e) return null;
-    const r = e.getBoundingClientRect();
-    return { x: r.x, y: r.y, w: r.width, h: r.height, cx: r.x + r.width / 2, cy: r.y + r.height / 2, right: r.right, bottom: r.bottom };
-  }, sel);
-  const hudButton = (t) => inPage((t) => {
-    const b = [...document.querySelectorAll("button.hud-btn")].find((x) => x.textContent.trim().startsWith(t));
-    if (!b) return null;
-    const r = b.getBoundingClientRect();
-    return { cx: r.x + r.width / 2, cy: r.y + r.height / 2 };
-  }, t);
+  const waitActual = (expected, timeout = 3500) => poll(async () => { const g = (await au()).actual; return typeof g === "number" && Math.abs(g - expected) < 0.03; }, timeout, 80);
+  const text = (sel) => anywhere((s) => document.querySelector(s)?.textContent?.trim() ?? null, sel);
+  const label = (sel) => anywhere((s) => document.querySelector(s)?.getAttribute("aria-label") ?? null, sel);
+  const value = (sel) => anywhere((s) => { const e = document.querySelector(s); return e ? Number(e.value) : null; }, sel);
+  /** Rectangle in PAGE coordinates (a frame's own coordinates plus where its iframe sits). */
+  const rectOf = async (sel) => {
+    const RECT = (s) => {
+      const e = document.querySelector(s);
+      if (!e) return null;
+      const r = e.getBoundingClientRect();
+      return { x: r.x, y: r.y, w: r.width, h: r.height, cx: r.x + r.width / 2, cy: r.y + r.height / 2, right: r.right, bottom: r.bottom };
+    };
+    const inPageRect = await evalIn(null, RECT, sel);
+    if (inPageRect) return inPageRect;
+    for (const sid of frames) {
+      const r = await evalIn(sid, RECT, sel);
+      if (!r) continue;
+      const at = await inPage(() => { const f = [...document.querySelectorAll("iframe")].find((x) => /live demo/.test(x.title) && x.getBoundingClientRect().width > 0); const b = f?.getBoundingClientRect(); return b ? { x: b.x, y: b.y } : null; });
+      if (!at) continue;
+      return { ...r, x: r.x + at.x, y: r.y + at.y, cx: r.cx + at.x, cy: r.cy + at.y, right: r.right + at.x, bottom: r.bottom + at.y };
+    }
+    return null;
+  };
+  /** A stage button by its label ("Stop", "Play", "Sound on"): marked inside the frame so rectOf can place it. */
+  const hudButton = async (t) => {
+    for (const sid of frames) {
+      const found = await evalIn(sid, (t) => {
+        const all = [...document.querySelectorAll("button.hud-btn")];
+        all.forEach((x) => x.removeAttribute("data-pk-hud"));
+        const b = all.find((x) => x.textContent.trim().startsWith(t));
+        b?.setAttribute("data-pk-hud", "1");
+        return !!b;
+      }, t);
+      if (found) return rectOf('button.hud-btn[data-pk-hud="1"]');
+    }
+    return null;
+  };
   const clickEl = async (sel) => {
     const r = await rectOf(sel);
     if (!r) throw new Error(`no element ${sel}`);
@@ -111,7 +197,7 @@ export async function checkAudio(h) {
   const NAV_SLIDER = `${NAV} [data-sound-slider]`;
   const STAGE_SLIDER = `${STAGE} [data-sound-slider]`;
   const toggleLabel = (scope) => label(`${scope} [data-sound-toggle]`);
-  const focusedIs = (sel) => inPage((s) => document.activeElement === document.querySelector(s), sel);
+  const focusedIs = async (sel) => !!(await anywhere((s) => document.activeElement === document.querySelector(s), sel));
 
   /** Real mouse drag along a range input, from a fraction of its width to another. */
   async function dragSlider(sel, from, to) {
@@ -169,13 +255,15 @@ export async function checkAudio(h) {
   } finally {
     await other?.close();
     await send("Page.removeScriptToEvaluateOnNewDocument", { identifier: spy });
+    await send("Target.setAutoAttach", { autoAttach: false, waitForDebuggerOnStart: false, flatten: true }).catch(() => {});
+    stopAttach();
   }
 
   // ───────────────────────── desktop ─────────────────────────
   async function desktopFlows() {
     // 1. true first visit: nothing is on, nothing exists
     await freshPage("/projects/beatlab", null);
-    await waitFor((s) => !!document.querySelector(s), STAGE, 30000);
+    await waitAny((s) => !!document.querySelector(s), STAGE, 30000);
     let a = await au();
     await check("fresh profile: no AudioContext created on load", a.contexts === 0, JSON.stringify(a));
     await check("fresh profile: navbar says sound is off", (await toggleLabel(NAV)) === "Unmute sound", String(await toggleLabel(NAV)));
@@ -185,6 +273,7 @@ export async function checkAudio(h) {
     a = await au();
     await check("fresh profile: clicking around the page still creates no AudioContext", a.contexts === 0, JSON.stringify(a));
     await freshPage("/projects/garage", null);
+    await waitAny(() => !!document.querySelector("canvas"), null, 30000); // the stage has loaded, so its absence of a sound control means something
     await check("scenes without sound have no stage sound control", !(await rectOf(STAGE)), "found a stage sound control on the garage");
 
     // 2. a visitor from before this change: the old flag said soundEnabled=true, they never chose it
@@ -197,7 +286,7 @@ export async function checkAudio(h) {
 
     // 3. Beat Lab while muted
     await freshPage("/projects/beatlab", legacy);
-    const hint = await waitFor(() => !!document.querySelector('[data-testid="beatlab-sound-hint"]'), null, 150000, 300);
+    const hint = await waitAny(() => !!document.querySelector('[data-testid="beatlab-sound-hint"]'), null, 150000, 300);
     await check("Beat Lab playing while muted shows the 'Sound is off' hint", hint, "hint never appeared (did the program boot?)");
     if (!hint) return;
     await check("hint text offers to turn sound on", /Sound is off/.test((await text('[data-testid="beatlab-sound-hint"]')) ?? ""), String(await text('[data-testid="beatlab-sound-hint"]')));
@@ -205,7 +294,7 @@ export async function checkAudio(h) {
     // Stop, then Play again with a real click on the stage button
     await clickAt((await hudButton("Stop")).cx, (await hudButton("Stop")).cy);
     await sleep(500);
-    const stopped = await inPage(() => !document.querySelector('[data-testid="beatlab-sound-hint"]'));
+    const stopped = !(await rectOf('[data-testid="beatlab-sound-hint"]'));
     await check("hint goes away when playback stops", stopped);
     const play = await hudButton("Play");
     await clickAt(play.cx, play.cy);
@@ -298,7 +387,8 @@ export async function checkAudio(h) {
     await check("stage chip gone after unmuting", !(await rectOf(`${STAGE} [data-sound-chip]`)));
     await check("Beat Lab is audible again after unmuting", (await peak(2200)) > 0.005);
     a = await au();
-    await check("still exactly one node feeds the destination (everything shares the master)", a.nodes === 1 && a.contexts === 1, JSON.stringify(a));
+    // each document (the page for UI sounds, the code frame for the scene) is its own audio graph: inside each, one context and one master
+    await check("still exactly one node feeds the destination (everything shares the master)", a.nodes >= 1 && a.parts.every((p) => p.nodes === 1 && p.contexts === 1), JSON.stringify(a));
 
     // 6. persistence and a second tab
     await open("/projects/beatlab");
@@ -310,7 +400,7 @@ export async function checkAudio(h) {
     await press("Escape");
     // Beat Lab boots Python on its own; once it is playing, either it is waiting for a click ("Sound on") or the
     // browser already let it start (the click above counts as user activation), and then it is simply running
-    const booted = await waitFor(() => [...document.querySelectorAll("button.hud-btn")].some((b) => /^(Sound on|Stop)/.test(b.textContent.trim())), null, 150000, 300);
+    const booted = await waitAny(() => [...document.querySelectorAll("button.hud-btn")].some((b) => /^(Sound on|Stop)/.test(b.textContent.trim())), null, 150000, 300);
     await check("reload: Beat Lab boots and plays", booted, "no Stop / Sound on button");
     const waiting = await hudButton("Sound on");
     if (waiting) {

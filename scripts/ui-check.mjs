@@ -1534,7 +1534,7 @@ try {
       }
       if (ONLY.has("audio")) {
         const { checkAudio } = await import("./ui-check-audio.mjs");
-        await checkAudio({ send, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, getCtx: () => ctx, BASE, PORT, OUT });
+        await checkAudio({ send, evaluate, inPage, waitFor, sleep, clickAt, press, record, open, screenshot, getCtx: () => ctx, onEvent: (fn) => (eventListeners.add(fn), () => eventListeners.delete(fn)), BASE, PORT, OUT });
       }
     }
   }
