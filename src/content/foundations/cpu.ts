@@ -1,4 +1,6 @@
 import type { Module } from "../../learn/types.ts";
+import { cpuLessonsA } from "./cpu-a.ts";
+import { cpuLessonsB } from "./cpu-b.ts";
 
 /**
  * Module: How a CPU runs your code. Spec: docs/HARDWARE_PATH.md (lesson list, levels, accuracy rules).
@@ -16,5 +18,5 @@ export const cpuModule: Module = {
   blurb:
     "From logic gates to an adder, then pipelines, branch prediction, out-of-order execution, many cores and SIMD, ending with how to measure a real CPU.",
   icon: "microchip",
-  lessons: [],
+  lessons: [...cpuLessonsA, ...cpuLessonsB],
 };
