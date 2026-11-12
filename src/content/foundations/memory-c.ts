@@ -481,9 +481,9 @@ use(data);                                        // guaranteed to see 42
         kind: "explain",
         title: "Which limit are you hitting?",
         body: P(
-          "A program can be limited by two things: how fast the processor can do arithmetic, or how fast memory can feed it numbers. Which one depends on how much work you do on each byte you fetch. That ratio is the **arithmetic intensity**: operations per byte moved.",
+          "A program can be limited by two things: how fast the processor can do arithmetic, or how fast memory can feed it numbers. Which one depends on how much work you do on each byte you fetch. That ratio is the **arithmetic intensity**: operations per byte moved (FLOPs per byte, when the operations are floating-point maths).",
           "The **roofline** picture shows it. The sloped part of the line is the memory limit (bandwidth × intensity); the flat part is the compute limit. The corner is the **ridge**. A kernel to the left of the ridge is **memory-bound** (faster arithmetic won't help); to the right it is **compute-bound** (faster memory won't help).",
-          "The machine below is a toy desktop: about 1 TFLOP/s single-precision peak and 50 GB/s of memory bandwidth, so the ridge sits at 20 operations per byte. Try the kernels. The *Your own* slider lets you choose any intensity.",
+          "The machine below is a toy desktop: about 1 TFLOP/s single-precision peak and 50 GB/s of memory bandwidth, so the ridge sits at 20 operations per byte. Try the kernels. The *Your own* slider lets you choose any intensity. (GPUs have far more peak maths per byte of bandwidth, so their ridge sits much further right: the GPU module's *GPUs for AI* lesson draws it.)",
         ),
         widget: { type: "memsys-roofline", props: { peak: 1000, bw: 50, kernel: "add", free: true } },
       },

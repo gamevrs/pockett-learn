@@ -149,7 +149,7 @@ L3 cache     8-64 MB         ~ 15 ns
 RAM (DRAM)   8-64 GB         ~ 80-100 ns
 SSD          0.5-4 TB        ~ 10-100 us
 `),
-          "You met this ladder in *Inside the computer*. This module goes further: how each rung really works, and how to write code that stays on the upper ones.",
+          "You met this ladder in *Inside the computer*, where RAM was rounded to 100 ns; the sums in this module use 90 ns, a typical middle of the 80 to 100 ns range. This module goes further: how each rung really works, and how to write code that stays on the upper ones.",
         ),
       },
       {

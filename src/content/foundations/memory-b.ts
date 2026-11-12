@@ -389,7 +389,7 @@ def struct_size(types):
           prompt: "Pick the layout that fetches one line for the x values.",
           hint: "Where would the 16 x values live if each field had its own array?",
         },
-        explanation: "As a struct of arrays, the 16 `x` values are packed into **one** 64-byte line. As an array of structs, they are spread 32 bytes apart across **all 8** lines, and you fetch seven other fields you never use for every x. Struct-of-arrays also lines values up for SIMD instructions (see the SIMD lesson in the CPU module).",
+        explanation: "As a struct of arrays, the 16 `x` values are packed into **one** 64-byte line. As an array of structs, they are spread 32 bytes apart across **all 8** lines, and you fetch seven other fields you never use for every x. Struct-of-arrays also lines values up for SIMD instructions (see the SIMD lesson in the CPU module) and is the layout GPUs prefer, so neighbouring threads read neighbouring addresses (the GPU module's *Coalescing* lesson).",
       },
       {
         kind: "question",

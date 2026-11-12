@@ -359,7 +359,7 @@ export const cpuLessonsB: ConceptLesson[] = [
         title: "Even worse in real life",
         body: P(
           "Amdahl's law is the *kind* picture. Real programs also lose speed to:",
-          "- **Waiting for each other**: locks and other synchronisation make threads queue.\n- **Shared memory bandwidth**: all cores pull from the same memory, so memory-hungry code stops scaling long before the cores run out.\n- **Cache sharing and coherence**: cores that touch the same data keep invalidating each other's caches (more on this in the memory module).\n- **Overheads**: starting threads, splitting work and combining results all take time.",
+          "- **Waiting for each other**: locks and other synchronisation make threads queue.\n- **Shared memory bandwidth**: all cores pull from the same memory, so memory-hungry code stops scaling long before the cores run out.\n- **Cache sharing and coherence**: cores that touch the same data keep invalidating each other's caches (more in the memory module's *Many cores, one memory* lesson).\n- **Overheads**: starting threads, splitting work and combining results all take time.",
           "On the other hand, for many problems the data keeps getting bigger as machines grow, and the parallel share keeps growing too. So more cores are still very worthwhile: just not by magic, and not for every program.",
         ),
       },
@@ -409,7 +409,7 @@ export const cpuLessonsB: ConceptLesson[] = [
         title: "A wider register",
         body: P(
           "Adding two arrays element by element, `c[i] = a[i] + b[i]`, runs the same tiny step again and again. **SIMD** (single instruction, multiple data) is the CPU's answer: a **vector register** holds several numbers side by side, and **one instruction** adds all of them at once. Each slot is called a **lane**.",
-          "A 128-bit vector register holds four 32-bit numbers, so one add does the work of four. Pick the number of lanes and watch the instruction count fall.",
+          "A 128-bit vector register holds four 32-bit numbers, so one add does the work of four. Pick the number of lanes and watch the instruction count fall. (GPUs take the same idea much further, with 32 lanes per warp: see *Warps and divergence* in the GPU module.)",
         ),
         widget: { type: "cpuarch-simd", props: { lanes: [1, 4, 8], n: 16 } },
       },
