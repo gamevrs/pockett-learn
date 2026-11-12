@@ -74,24 +74,25 @@ export function Counters({ props, onChange }: WidgetProps<CountersProps>) {
       </div>
       <p className="mt-2 text-sm text-ink-2">{s.what}</p>
 
-      <div className="mt-2 overflow-x-auto rounded-xl border border-[var(--line-strong)] bg-[#16181d] p-3 font-mono whitespace-pre text-[12.5px] leading-relaxed text-[#e6e8ec]" tabIndex={0} aria-label="Counter printout">
+      <div className="mt-2 rounded-xl border border-[var(--line-strong)] bg-[#16181d] p-3 font-mono text-[12.5px] leading-relaxed text-[#e6e8ec]" role="group" aria-label="Counter printout">
         <p className="text-[#9aa3b2]">Counters for: {s.title.toLowerCase()}</p>
-        <p>
-          {fmt(s.cycles).padStart(14)} cycles
-        </p>
-        <p>
-          {fmt(s.instructions).padStart(14)} instructions
-          {showDerived && <span className="text-[#9aa3b2]">{`   # ${d.ipc.toFixed(2)} insn per cycle`}</span>}
-        </p>
-        <p>{fmt(s.branches).padStart(14)} branches</p>
-        <p>
-          {fmt(s.branchMisses).padStart(14)} branch-misses
-          {showDerived && <span className="text-[#9aa3b2]">{`   # ${(d.missRate * 100).toFixed(2)}% of branches`}</span>}
-        </p>
-        <p>
-          {fmt(s.cacheMisses).padStart(14)} cache-misses
-          {showDerived && <span className="text-[#9aa3b2]">{`   # ${d.cachePerK.toFixed(1)} per 1000 instr`}</span>}
-        </p>
+        {(
+          [
+            [s.cycles, "cycles", null],
+            [s.instructions, "instructions", `${d.ipc.toFixed(2)} insn per cycle`],
+            [s.branches, "branches", null],
+            [s.branchMisses, "branch-misses", `${(d.missRate * 100).toFixed(2)}% of branches`],
+            [s.cacheMisses, "cache-misses", `${d.cachePerK.toFixed(1)} per 1000 instr`],
+          ] as [number, string, string | null][]
+        ).map(([n, name, note]) => (
+          <div key={name} className="mt-0.5">
+            <div className="flex items-baseline gap-2">
+              <span className="min-w-[6.6rem] text-right tabular-nums">{fmt(n)}</span>
+              <span className="min-w-0 break-words">{name}</span>
+            </div>
+            {showDerived && note && <div className="pl-[7.4rem] text-[#9aa3b2]"># {note}</div>}
+          </div>
+        ))}
       </div>
 
       {showDerived && (
@@ -155,16 +156,16 @@ export const DEFAULT_TREE: FlameNode = {
   name: "main",
   total: 100,
   children: [
-    { name: "load_file", total: 20 },
+    { name: "load", total: 20 },
     {
       name: "crunch",
-      total: 65,
+      total: 60,
       children: [
         { name: "parse", total: 20 },
-        { name: "hash", total: 45, children: [{ name: "sha_round", total: 35 }] },
+        { name: "hash", total: 40, children: [{ name: "sha", total: 30 }] },
       ],
     },
-    { name: "save", total: 15 },
+    { name: "save", total: 20 },
   ],
 };
 
@@ -218,7 +219,7 @@ export function Flame({ props, onChange }: WidgetProps<FlameProps>) {
               title={`${l.node.name}: ${l.node.total}% total, ${l.self}% own time`}
               aria-label={`${l.node.name}, ${l.node.total} percent of samples including callees`}
               aria-pressed={sel === l.node.name}
-              className={`absolute h-10 overflow-hidden rounded-md border px-1 text-left font-mono text-[12px] font-medium transition-colors ${
+              className={`absolute h-10 overflow-hidden rounded-md border px-0.5 text-left font-mono text-[12px] font-medium transition-colors ${
                 sel === l.node.name ? "border-transparent bg-primary text-primary-ink" : "border-[var(--line-strong)] bg-tint text-ink hover:bg-surface"
               }`}
               style={{ left: `calc(${l.left}% + 1px)`, width: `calc(${l.node.total}% - 2px)`, bottom: `${l.depth * 44}px` }}
@@ -241,7 +242,7 @@ export function Flame({ props, onChange }: WidgetProps<FlameProps>) {
   );
 }
 
-/** goal: { selected: "sha_round" }. */
+/** goal: { selected: "sha" }. */
 export function checkFlame(state: unknown, goal: Record<string, unknown>) {
   const s = state as FlameState | undefined;
   if (!s) return false;

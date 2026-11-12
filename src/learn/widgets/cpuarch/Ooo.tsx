@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import type { WidgetProps } from "@/learn/widget";
-import { Caption, Note, Readout, Seg } from "../computer/ui";
+import { Note, Readout, Seg } from "../computer/ui";
+import { CycleGrid } from "./CycleGrid";
 import { scheduleIssue, type OooIns } from "./sim";
 
 export interface OooProps {
@@ -66,50 +67,25 @@ export function Ooo({ props, onChange }: WidgetProps<OooProps>) {
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface-2 p-2" tabIndex={0} aria-label="Schedule, instructions by cycle">
-        <table className="border-separate border-spacing-x-0.5 border-spacing-y-1 font-mono text-[11px]" style={{ minWidth: `${8.2 + cols * 2.5}rem` }}>
-          <thead>
-            <tr>
-              <th className="sticky left-0 z-10 bg-surface-2 pr-1 text-left">
-                <Caption>Cycle</Caption>
-              </th>
-              {Array.from({ length: cols }, (_, c) => (
-                <th key={c} className="w-10 min-w-10 text-center font-medium text-ink-3">
-                  {c + 1}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ins.map((x, i) => (
-              <tr key={i}>
-                <td className="sticky left-0 z-10 bg-surface-2 pr-2">
-                  <span className="block w-[7rem] truncate text-[12px] text-ink" title={x.text}>
-                    {x.text}
-                  </span>
-                  <span className="block text-[10px] leading-none text-ink-3">{x.deps.length ? `needs ${x.deps.map((d) => ins[d].text.split(" ")[0]).join(", ")}` : "needs nothing"}</span>
-                </td>
-                {Array.from({ length: cols }, (_, c) => {
-                  const cyc = c + 1;
-                  const running = cyc >= r.issue[i] && cyc < r.done[i];
-                  const first = cyc === r.issue[i];
-                  return (
-                    <td
-                      key={c}
-                      className={`h-10 w-10 min-w-10 rounded-md border text-center ${
-                        running ? (first ? "border-transparent bg-primary text-primary-ink" : "border-line bg-tint text-ink") : "border-transparent"
-                      }`}
-                    >
-                      {running ? (first ? "go" : "…") : ""}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-1 text-xs text-ink-3">&quot;go&quot; is the cycle an instruction starts; &quot;…&quot; is it still working. Rows are in program order.</p>
+      <CycleGrid
+        label="Schedule, instructions by cycle"
+        cols={cols}
+        rows={ins.map((x, i) => ({
+          label: x.text,
+          sub: x.deps.length ? `needs ${x.deps.map((d) => ins[d].text.split(" ")[0]).join(", ")}` : "needs nothing",
+          cells: Array.from({ length: cols }, (_, c) => {
+            const cyc = c + 1;
+            const running = cyc >= r.issue[i] && cyc < r.done[i];
+            const first = cyc === r.issue[i];
+            return {
+              long: running ? (first ? "go" : "…") : "",
+              short: running ? (first ? "g" : "·") : "",
+              cls: running ? (first ? "border-transparent bg-primary text-primary-ink" : "border-line bg-tint text-ink") : "border-transparent",
+            };
+          }),
+        }))}
+      />
+      <p className="mt-1 text-xs text-ink-3">&quot;go&quot; (g) is the cycle an instruction starts; &quot;…&quot; (·) is it still working. Rows are in program order.</p>
 
       <div className="mt-3 flex flex-wrap justify-center gap-2">
         <Readout label="Total cycles" value={r.total} accent />

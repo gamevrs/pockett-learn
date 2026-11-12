@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { WidgetProps } from "@/learn/widget";
-import { Caption, Note, Readout, Seg } from "../computer/ui";
+import { Note, Readout, Seg } from "../computer/ui";
+import { CycleGrid } from "./CycleGrid";
 import { canSwap, idealCycles, schedulePipeline, STAGES, unpipelinedCycles, type Cell, type PipeIns } from "./sim";
 
 export interface PipelineProps {
@@ -28,6 +29,8 @@ export interface PipelineState {
   pipelined: boolean;
   order: string[];
 }
+
+const SHORT: Record<string, string> = { IF: "F", ID: "D", EX: "X", MEM: "M", WB: "W" };
 
 const cellCls = (c: Cell | null) =>
   !c
@@ -112,63 +115,41 @@ export function Pipeline({ props, onChange }: WidgetProps<PipelineProps>) {
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface-2 p-2" tabIndex={0} aria-label="Pipeline diagram, instructions by cycle">
-        <table className="border-separate border-spacing-x-0.5 border-spacing-y-1 font-mono text-[11px]" style={{ minWidth: `${(props.reorder ? 12.4 : 8.6) + cols * 2.5}rem` }}>
-          <thead>
-            <tr>
-              <th className="sticky left-0 z-10 bg-surface-2 pr-1 text-left font-medium text-ink-3">
-                <Caption>Cycle</Caption>
-              </th>
-              {Array.from({ length: cols }, (_, c) => (
-                <th key={c} className="w-10 min-w-10 text-center font-medium text-ink-3">
-                  {c + 1}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ins.map((x, i) => (
-              <tr key={`${x.text}-${i}`}>
-                <td className="sticky left-0 z-10 bg-surface-2 pr-1">
-                  <div className="flex items-center gap-1">
-                    <span className={`shrink-0 truncate text-[12px] text-ink ${props.reorder ? "w-[7rem]" : "w-[8.2rem]"}`} title={x.text}>
-                      {x.text}
-                    </span>
-                    {props.reorder && (
-                      <span className="flex gap-0.5">
-                        <button
-                          type="button"
-                          className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-surface text-ink-2 disabled:opacity-30"
-                          disabled={i === 0 || !canSwap(ins, i - 1)}
-                          onClick={() => swap(i - 1)}
-                          aria-label={`Move ${x.text} up`}
-                        >
-                          <ArrowUp className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-surface text-ink-2 disabled:opacity-30"
-                          disabled={i === ins.length - 1 || !canSwap(ins, i)}
-                          onClick={() => swap(i)}
-                          aria-label={`Move ${x.text} down`}
-                        >
-                          <ArrowDown className="h-4 w-4" />
-                        </button>
-                      </span>
-                    )}
-                  </div>
-                </td>
-                {res.rows[i].map((c, k) => (
-                  <td key={k} className={`h-10 w-10 min-w-10 rounded-md border text-center ${cellCls(c)}`}>
-                    {c ? (c.stall ? "wait" : c.label) : ""}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-1 text-xs text-ink-3">IF fetch · ID decode · EX execute · MEM memory · WB write back</p>
+      <CycleGrid
+        label="Pipeline diagram, instructions by cycle"
+        cols={cols}
+        rows={ins.map((x, i) => ({
+          label: x.text,
+          cells: res.rows[i].map((c) => ({
+            long: c ? (c.stall ? "wait" : c.label) : "",
+            short: c ? (c.stall ? "S" : SHORT[c.label]) : "",
+            cls: cellCls(c),
+          })),
+          extra: props.reorder ? (
+            <span className="flex gap-0.5">
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-surface text-ink-2 disabled:opacity-30"
+                disabled={i === 0 || !canSwap(ins, i - 1)}
+                onClick={() => swap(i - 1)}
+                aria-label={`Move ${x.text} up`}
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-line bg-surface text-ink-2 disabled:opacity-30"
+                disabled={i === ins.length - 1 || !canSwap(ins, i)}
+                onClick={() => swap(i)}
+                aria-label={`Move ${x.text} down`}
+              >
+                <ArrowDown className="h-4 w-4" />
+              </button>
+            </span>
+          ) : undefined,
+        }))}
+      />
+      <p className="mt-1 text-xs text-ink-3">IF (F) fetch · ID (D) decode · EX (X) execute · MEM (M) memory · WB (W) write back · wait (S) stalled</p>
 
       <div className="mt-3 flex flex-wrap justify-center gap-2">
         <Readout label="Total cycles" value={res.total} accent />

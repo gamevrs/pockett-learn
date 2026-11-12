@@ -580,8 +580,8 @@ for (int i = 1; i < n; i++)
         title: "Find the hot spot",
         body: "Tap the function with the most **self** time: the one whose *own* code is hottest.",
         widget: { type: "cpuarch-flame", props: {} },
-        question: { type: "widget", goal: { selected: "sha_round" }, prompt: "Tap the block with the highest self time.", hint: "Total time includes everything a function calls. Look for the biggest self number, not the widest block near the bottom." },
-        explanation: "`sha_round` has 35% self time: that is where the CPU is really working. `main` and `crunch` are wide, but almost all their time is spent inside the functions they call, so tuning them directly would change little.",
+        question: { type: "widget", goal: { selected: "sha" }, prompt: "Tap the block with the highest self time.", hint: "Total time includes everything a function calls. Look for the biggest self number, not the widest block near the bottom." },
+        explanation: "`sha` has 30% self time: that is where the CPU is really working. `main` and `crunch` are wide, but almost all their time is spent inside the functions they call, so tuning them directly would change little.",
       },
       {
         kind: "question",

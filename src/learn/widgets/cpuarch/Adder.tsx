@@ -190,14 +190,14 @@ export function Adder({ props, onChange }: WidgetProps<AdderProps>) {
         </div>
       )}
       <div className="rounded-xl border border-line bg-surface-2 p-2.5">
-        <div className="grid items-center gap-x-1.5 gap-y-1.5" style={{ gridTemplateColumns: "3.2rem repeat(5, minmax(0, 1fr))" }}>
-          <Caption className="leading-tight">Carry</Caption>
+        <div className="grid items-center gap-x-1.5 gap-y-1.5" style={{ gridTemplateColumns: "1.9rem repeat(4, minmax(2.5rem, 1fr))" }}>
+          <Caption className="col-span-5 -mb-0.5">Carry (the first chip is the carry out)</Caption>
           <Chip v={r.carries[4]} hot label={`Carry out: ${r.carries[4]}`} />
           {order.map((i) => (
             <Chip key={i} v={r.carries[i]} hot label={`Carry into bit ${i}: ${r.carries[i]}`} />
           ))}
 
-          <Caption>A</Caption>
+          <Caption className="col-span-5 -mb-0.5 mt-1">A</Caption>
           <span />
           {order.map((i) => (
             <button key={i} type="button" className={bitBtn(Boolean((a >> i) & 1))} onClick={() => flip("a", i)} aria-label={`A bit ${i}: ${(a >> i) & 1}, tap to flip`} aria-pressed={Boolean((a >> i) & 1)}>
@@ -205,7 +205,7 @@ export function Adder({ props, onChange }: WidgetProps<AdderProps>) {
             </button>
           ))}
 
-          <Caption>{useOp === "add" ? "B" : "NOT B"}</Caption>
+          <Caption className="col-span-5 -mb-0.5 mt-1">{useOp === "add" ? "B" : "NOT B (B flipped)"}</Caption>
           <span />
           {order.map((i) =>
             useOp === "add" ? (
@@ -219,7 +219,7 @@ export function Adder({ props, onChange }: WidgetProps<AdderProps>) {
             ),
           )}
 
-          <Caption>{useOp === "cmp" ? "A − B" : "Result"}</Caption>
+          <Caption className="col-span-5 -mb-0.5 mt-1">{useOp === "cmp" ? "A − B" : "Result"}</Caption>
           <span />
           {order.map((i) => (
             <Chip key={i} v={r.sum[i]} hot label={`Result bit ${i}: ${r.sum[i]}`} />
