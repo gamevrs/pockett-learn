@@ -343,7 +343,7 @@ export function Race({ props, onChange, revealed }: WidgetProps<RaceProps>) {
       <p className="mt-2 text-center text-xs text-ink-3">
         Both threads run <code className="font-mono">counter++</code>. You decide whose next instruction runs.
       </p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2">
         {[0, 1].map((i) => (
           <div key={i} className="rounded-xl border border-line bg-surface-2 p-2">
             <Caption className="mb-1.5">Thread {i + 1}</Caption>

@@ -3,7 +3,7 @@
 import React from "react";
 
 /** Shared kit for the memory-system widgets: the "Inside the computer" controls plus a slider, and number formatting. */
-export { Btn, Caption, Field, Note, Readout, Seg, Stepper, clamp } from "../computer/ui";
+export { Btn, Caption, Field, Note, Readout, Stepper, clamp } from "../computer/ui";
 export { Slider, Meter } from "../ai/ui";
 
 /** Nanoseconds as a readable time ("85 ns", "12 µs", "3.2 ms", "1.5 s"). */
@@ -54,4 +54,44 @@ export function Chip({ children, tone = "plain", className = "" }: { children: R
           ? "border-line bg-surface-2 text-ink-3"
           : "border-line bg-surface text-ink";
   return <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[0.78rem] font-semibold ${t} ${className}`}>{children}</span>;
+}
+
+/** Choice pills that wrap onto several lines on narrow screens (radio group, every pill at least 40 x 40). */
+export function Seg<T extends string | number>({
+  options,
+  value,
+  onChange,
+  label,
+  disabled,
+  className = "",
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  label: string;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className={`flex flex-wrap justify-center gap-1.5 ${className}`}>
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <button
+            key={String(o.value)}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            disabled={disabled}
+            onClick={() => onChange(o.value)}
+            className={`min-h-10 min-w-10 rounded-full border px-3.5 text-[0.82rem] font-medium transition-colors disabled:cursor-not-allowed ${
+              on ? "border-transparent bg-primary text-primary-ink" : "border-line bg-surface text-ink-2 hover:border-[var(--line-strong)] hover:bg-surface-2 hover:text-ink"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }

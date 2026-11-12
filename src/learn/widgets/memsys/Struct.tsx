@@ -239,7 +239,7 @@ export function Frag({ props, onChange, revealed }: WidgetProps<FragProps>) {
   return (
     <div className="w-full">
       <Caption className="mb-1.5">Heap · {CELLS} cells · tap a block to free it</Caption>
-      <div className="grid gap-[3px] rounded-xl border border-line bg-surface-2 p-2" style={{ gridTemplateColumns: "repeat(6, minmax(0, 1fr))" }}>
+      <div className="grid gap-[3px] rounded-xl border border-line bg-surface-2 p-2" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
         {owner.map((b, i) => {
           const first = b && b.start === i;
           return b ? (

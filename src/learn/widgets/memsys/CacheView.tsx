@@ -96,12 +96,12 @@ export function Addr({ props, onChange, revealed }: WidgetProps<AddrProps>) {
                 value={lineBytes}
                 onChange={(v) => apply(v, setBits, ways, addr)}
                 disabled={locked}
-                options={[16, 32, 64, 128].map((v) => ({ value: v, label: `${v}` }))}
+                options={[16, 32, 64, 128].map((v) => ({ value: v, label: `${v} B` }))}
               />
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-ink-3">Ways</span>
-              <Seg label="Ways per set" value={ways} onChange={(v) => apply(lineBytes, setBits, v, addr)} disabled={locked} options={[1, 2, 4, 8].map((v) => ({ value: v, label: `${v}` }))} />
+              <Seg label="Ways per set" value={ways} onChange={(v) => apply(lineBytes, setBits, v, addr)} disabled={locked} options={[1, 2, 4, 8].map((v) => ({ value: v, label: `${v}-way` }))} />
             </div>
           </div>
           <div className="flex items-center justify-center gap-2">
@@ -276,7 +276,7 @@ export function CacheSim({ props, onChange, revealed }: WidgetProps<CacheSimProp
       {props.chooseWays && (
         <div className="mb-2 flex items-center justify-center gap-2">
           <span className="text-xs text-ink-3">Ways per set</span>
-          <Seg label="Ways per set" value={ways} onChange={pickWays} disabled={locked} options={waysOptions.map((w) => ({ value: w, label: w === 1 ? "1 (direct)" : w === lines ? `${w} (full)` : `${w}` }))} />
+          <Seg label="Ways per set" value={ways} onChange={pickWays} disabled={locked} options={waysOptions.map((w) => ({ value: w, label: w === 1 ? "1 (direct)" : w === lines ? `${w} (full)` : `${w}-way` }))} />
         </div>
       )}
       <p className="mb-1.5 text-center text-xs text-ink-3">
