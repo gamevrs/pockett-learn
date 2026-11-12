@@ -135,6 +135,15 @@ if (!only || only === "foundations") {
   }
   for (const p of partIds) if (!FOUNDATIONS.modules.some((m) => m.part === p)) problems.push(`foundations: part "${p}" has no modules`);
   for (const mod of FOUNDATIONS.modules) {
+    // optional lesson levels: a known tier, never going backwards within a module
+    let lastTier = -1;
+    for (const lesson of mod.lessons) {
+      if (lesson.level === undefined) continue;
+      const ti = TIERS.indexOf(lesson.level);
+      if (ti < 0) problems.push(`foundations/${lesson.id}: level "${lesson.level}" must be one of ${TIERS.join(", ")}`);
+      else if (ti < lastTier) problems.push(`foundations/${lesson.id}: level "${lesson.level}" goes backwards in module "${mod.id}" (after ${TIERS[lastTier]})`);
+      else lastTier = ti;
+    }
     for (const lesson of mod.lessons) {
       const tag = `foundations/${lesson.id}`;
       if (!lesson.id.startsWith("fnd-")) problems.push(`${tag}: lesson ids must start with "fnd-"`);

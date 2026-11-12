@@ -113,6 +113,59 @@ export async function checkSite(h) {
     await check(`no horizontal overflow: ${name}`, o.scroll <= o.vw, `scrollWidth ${o.scroll} > ${o.vw}\n${o.off.join("\n")}`);
   }
 
+  // ───────────── Foundations hub: Hardware part, level labels, level chip ─────────────
+  await open("/learn", 1500);
+  {
+    const hub = await inPage(() => {
+      const modules = ["cpu", "memory", "gpu"].map((id) => {
+        const card = document.getElementById(id);
+        return {
+          id,
+          present: !!card,
+          title: card?.querySelector("h3")?.textContent?.trim() ?? "",
+          lessons: card ? card.querySelectorAll("a[data-lesson-level], a[href^='/learn/fnd-']").length : 0,
+          dividers: card ? [...card.querySelectorAll("[data-level-divider]")].map((e) => ({ text: e.textContent.trim(), w: e.getBoundingClientRect().width, h: e.getBoundingClientRect().height })) : [],
+          range: card?.querySelector("[data-level-range]")?.textContent.trim() ?? null,
+          soon: card?.querySelector("[data-coming-soon]")?.textContent.replace(/\s+/g, " ").trim() ?? null,
+          sooner: (() => {
+            const e = card?.querySelector("[data-coming-soon]");
+            const r = e?.getBoundingClientRect();
+            return r ? r.right <= innerWidth + 1 && r.left >= -1 : null;
+          })(),
+        };
+      });
+      const parts = [...document.querySelectorAll("section h2")].map((h) => h.textContent.trim());
+      const levelled = document.querySelector("a[data-lesson-level]")?.getAttribute("href") ?? null;
+      return { modules, parts, levelled, hardwareIdx: parts.findIndex((t) => /^Hardware:/.test(t)), buildingIdx: parts.findIndex((t) => /^Building well/.test(t)), hoodIdx: parts.findIndex((t) => /^Under the hood/.test(t)) };
+    });
+    await check(
+      "foundations hub: Hardware part sits between Under the hood and Building well, with the CPU, memory and GPU modules",
+      hub.hardwareIdx > hub.hoodIdx && hub.hardwareIdx < hub.buildingIdx && hub.modules.every((m) => m.present),
+      JSON.stringify({ parts: hub.parts, modules: hub.modules.map((m) => [m.id, m.present]) }),
+    );
+    for (const m of hub.modules) {
+      if (!m.present) continue;
+      if (m.lessons > 0) {
+        const first = m.dividers[0];
+        await check(`foundations hub: ${m.id} shows its first level label and a level range`, !!first && /^(Beginner|Intermediate|Advanced|Professional)$/.test(first.text) && first.w > 0 && first.h > 0 && !!m.range, JSON.stringify({ dividers: m.dividers, range: m.range }));
+      } else {
+        await check(`foundations hub: ${m.id} has no lessons yet and its empty state reads "Coming soon"`, !!m.soon && /coming soon/i.test(m.soon) && m.sooner === true, `empty state: ${m.soon} (inside viewport: ${m.sooner})`);
+      }
+    }
+    // a lesson page with a level shows the chip
+    if (!hub.levelled) {
+      console.log("site: SKIPPED lesson level chip check: no lesson carries a `level` yet (hardware lessons not written); it will run once one does");
+    } else {
+      await open(hub.levelled, 1500);
+      const chip = await inPage(() => {
+        const c = document.querySelector("[data-lesson-level-chip]");
+        const r = c?.getBoundingClientRect();
+        return c ? { text: c.textContent.trim(), w: r.width, right: r.right, vw: innerWidth } : null;
+      });
+      await check("lesson page: a levelled lesson shows its level chip inside the viewport", !!chip && /^(Beginner|Intermediate|Advanced|Professional)$/.test(chip.text) && chip.w > 0 && chip.right <= chip.vw + 1, JSON.stringify(chip));
+    }
+  }
+
   // ───────────── skip link ─────────────
   await open("/", 600);
   {

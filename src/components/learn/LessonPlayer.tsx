@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Flame, Lightbulb, Play, RotateCcw, Sparkles, X, Zap } from "lucide-react";
 import type { ConceptContext } from "@/content/foundations";
 import type { Step } from "@/learn/types";
-import type { TestResult } from "@/engine/types";
+import type { Difficulty, TestResult } from "@/engine/types";
 import { getWidget } from "@/learn/widgets";
 import { ModuleIcon } from "@/learn/module-icons";
 import { languageInfo } from "@/engine/languages";
@@ -116,6 +116,7 @@ function Player({ ctx }: { ctx: ConceptContext }) {
           seed={`${lesson.id}-${index}`}
           moduleIcon={module.icon}
           moduleTitle={module.title}
+          level={lesson.level}
           lessonTitle={lesson.title}
           first={index === 0}
           last={index === total - 1}
@@ -162,6 +163,7 @@ function StepFrame({
   seed,
   moduleIcon,
   moduleTitle,
+  level,
   lessonTitle,
   first,
   last,
@@ -173,6 +175,7 @@ function StepFrame({
   seed: string;
   moduleIcon: string;
   moduleTitle: string;
+  level?: Difficulty;
   lessonTitle: string;
   first: boolean;
   last: boolean;
@@ -317,8 +320,13 @@ function StepFrame({
             </div>
           )}
           {(first || resume) && (
-            <p className="mb-6 flex items-center gap-2 text-xs font-medium text-ink-3">
+            <p className="mb-6 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs font-medium text-ink-3">
               <ModuleIcon icon={moduleIcon} className="h-3.5 w-3.5" /> {moduleTitle} · {lessonTitle}
+              {level && (
+                <span data-lesson-level-chip className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-ink-2">
+                  {level}
+                </span>
+              )}
             </p>
           )}
           {step.kind !== "recap" && step.title && <h1 className="font-display text-[1.75rem] leading-tight sm:text-[2.1rem]">{step.title}</h1>}

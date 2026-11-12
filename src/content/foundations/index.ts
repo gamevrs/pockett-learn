@@ -8,6 +8,9 @@ import { assemblyModule } from "./assembly.ts";
 import { cModule } from "./c.ts";
 import { unixModule } from "./unix.ts";
 import { networkModule } from "./network.ts";
+import { cpuModule } from "./cpu.ts";
+import { memoryModule } from "./memory.ts";
+import { gpuModule } from "./gpu.ts";
 import { dsaModule } from "./dsa.ts";
 import { observabilityModule } from "./observability.ts";
 import { reliabilityModule } from "./reliability.ts";
@@ -26,6 +29,11 @@ export const FOUNDATIONS: Track = {
   parts: [
     { id: "start", title: "Start here: bits, the computer and your first programs", blurb: "Begin with a single bit, meet the computer that runs everything, then write your first programs in Python." },
     { id: "hood", title: "Under the hood: assembly, C, the OS and the network", blurb: "Go below Python: the machine's own language, a small and speedy language called C, the operating system, and how computers talk to each other." },
+    {
+      id: "hardware",
+      title: "Hardware: how the CPU, memory and GPU really work",
+      blurb: "From logic gates to pipelines, caches, virtual memory and GPU kernels: how the machine runs your code fast, from beginner to professional.",
+    },
     { id: "building", title: "Building well: data structures, OOP and patterns", blurb: "Learn how to organise data, shape code into objects, and reuse ideas that good programmers have trusted for years." },
     { id: "systems", title: "How production systems work", blurb: "Timeouts, retries, rate limits, caches, databases, deploys, observability, security and AI systems: what it takes for software to survive real traffic." },
   ],
@@ -37,6 +45,9 @@ export const FOUNDATIONS: Track = {
     cModule,
     unixModule,
     networkModule,
+    cpuModule,
+    memoryModule,
+    gpuModule,
     dsaModule,
     oopModule,
     patternsModule,

@@ -1,4 +1,4 @@
-import type { LanguageId, TestCase } from "../engine/types.ts";
+import type { Difficulty, LanguageId, TestCase } from "../engine/types.ts";
 
 /**
  * Foundations: concept lessons made of small interactive steps (Brilliant-style). One idea per
@@ -75,6 +75,11 @@ export interface ConceptLesson {
   summary: string;
   minutes: number;
   xp: number;
+  /**
+   * Optional difficulty tier (Beginner < Intermediate < Advanced < Professional). When a module's lessons
+   * carry levels the hub shows a divider before each new level; levels never go backwards within a module.
+   */
+  level?: Difficulty;
   steps: Step[];
 }
 

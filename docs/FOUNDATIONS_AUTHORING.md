@@ -15,6 +15,15 @@ idea per step, and every step asks the learner to *do* something.
 | Module order and which part each module sits in | `src/content/foundations/index.ts` (the `part` is set there, not in the module file; `validate-content` checks parts stay contiguous) |
 | Reference lesson and widget | `content/foundations/bits.ts` (lesson 1), `learn/widgets/bits/Bits.tsx` |
 
+## Lesson levels
+
+A lesson may set an optional `level` (`"Beginner" | "Intermediate" | "Advanced" | "Professional"`, the
+`Difficulty` type from `src/engine/types.ts`). When a module's lessons carry levels, the hub shows a level
+divider before the first lesson of each level, a "Beginner → Professional" range chip on the module card,
+and a level chip on the lesson page. Levels must never go backwards within a module (`validate-content`
+errors on an unknown level or a lower level after a higher one). Lessons without `level` are unaffected.
+The Hardware path (CPU, memory, GPU) uses levels throughout: see [HARDWARE_PATH.md](./HARDWARE_PATH.md).
+
 ## Steps
 
 - `explain`: prose (mini-markdown, see `src/components/ui/Prose.tsx`) plus an optional widget to play with.

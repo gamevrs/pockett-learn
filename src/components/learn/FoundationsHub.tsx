@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Clock } from "lucide-react";
 import { FOUNDATIONS } from "@/content/foundations";
+import { TIERS, type Difficulty } from "@/engine/types";
 import { trackLessons, type Module } from "@/learn/types";
 import { ModuleIcon } from "@/learn/module-icons";
 import { useProgress } from "@/data/progress/store";
@@ -106,6 +107,17 @@ export function FoundationsHub() {
   );
 }
 
+/** Four pips filled up to `level`, like the tier bar on a project. */
+function TierBar({ level }: { level: Difficulty }) {
+  return (
+    <span className="flex gap-0.5" aria-hidden>
+      {TIERS.map((t, i) => (
+        <span key={t} className={`h-1.5 w-3.5 rounded-full ${i <= TIERS.indexOf(level) ? "bg-primary" : "bg-[var(--line-strong)]"}`} />
+      ))}
+    </span>
+  );
+}
+
 function ModuleCard({
   module: m,
   index,
@@ -119,6 +131,9 @@ function ModuleCard({
   anyDone: boolean;
   completed: Record<string, unknown>;
 }) {
+  const levels = m.lessons.flatMap((l) => (l.level ? [l.level] : []));
+  const first = levels[0];
+  const last = levels[levels.length - 1];
   return (
     <div id={m.id} className="card scroll-mt-24 p-5 sm:p-7">
       <div className="flex flex-wrap items-start gap-4">
@@ -129,20 +144,44 @@ function ModuleCard({
           <p className="text-xs font-medium text-ink-3">Module {index + 1}</p>
           <h3 className="mt-0.5 text-xl font-semibold tracking-tight">{m.title}</h3>
           <p className="mt-1 text-sm text-ink-2">{m.blurb}</p>
+          {first && last && (
+            <p
+              data-level-range
+              className="mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-xs font-medium text-ink-2"
+              title={`Lessons run from ${first} to ${last}`}
+            >
+              <TierBar level={last} />
+              {first === last ? first : `${first} \u2192 ${last}`}
+            </p>
+          )}
         </div>
       </div>
       {m.lessons.length === 0 ? (
-        <p className="mt-6 rounded-xl border border-dashed border-[var(--line-strong)] p-4 text-sm text-ink-3">Lessons for this module are on the way.</p>
+        <div data-coming-soon className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-dashed border-[var(--line-strong)] p-4 text-sm text-ink-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-tint px-2.5 py-1 text-xs font-medium text-brand">
+            <Clock className="h-3 w-3" aria-hidden /> Coming soon
+          </span>
+          <span className="min-w-0">This module is still being written. Check back soon.</span>
+        </div>
       ) : (
         <ol className="mt-6">
           {m.lessons.map((l, li) => {
             const complete = Boolean(completed[l.id]);
             const isNext = nextId === l.id;
             const last = li === m.lessons.length - 1;
+            const newLevel = l.level && l.level !== m.lessons[li - 1]?.level ? l.level : null;
             return (
-              <li key={l.id} className="relative">
+              <React.Fragment key={l.id}>
+              {newLevel && (
+                <li data-level-divider={newLevel} role="presentation" className={`relative flex items-center gap-2 ${li === 0 ? "pb-3" : "pb-3 pt-1"}`}>
+                  <TierBar level={newLevel} />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-ink-2">{newLevel}</span>
+                  <span className="h-px flex-1 bg-[var(--line)]" aria-hidden />
+                </li>
+              )}
+              <li className="relative">
                 {!last && <span className={`absolute left-[25px] top-[50px] h-[calc(100%-46px)] w-0.5 rounded-full ${complete ? "bg-primary" : "bg-[var(--line)]"}`} />}
-                <Link href={`/learn/${l.id}`} prefetch={false} className={`group flex items-center gap-4 rounded-2xl p-1 ${last ? "" : "pb-5"}`}>
+                <Link href={`/learn/${l.id}`} prefetch={false} data-lesson-level={l.level} className={`group flex items-center gap-4 rounded-2xl p-1 ${last ? "" : "pb-5"}`}>
                   <span
                     className={`grid h-11 w-11 shrink-0 place-items-center rounded-full border font-mono text-sm transition-colors ${
                       complete
@@ -168,6 +207,7 @@ function ModuleCard({
                   {isNext && <span className="btn btn-primary btn-sm hidden shrink-0 sm:inline-flex">{anyDone ? "Continue" : "Start"}</span>}
                 </Link>
               </li>
+              </React.Fragment>
             );
           })}
         </ol>

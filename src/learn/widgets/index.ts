@@ -17,6 +17,9 @@ import { SHIP_WIDGETS } from "./ship";
 import { OBS_WIDGETS } from "./obs";
 import { SECURITY_WIDGETS } from "./security";
 import { AI_WIDGETS } from "./ai";
+import { CPUARCH_WIDGETS } from "./cpuarch";
+import { MEMSYS_WIDGETS } from "./memsys";
+import { GPU_WIDGETS } from "./gpu";
 import { EXPLAIN_WIDGETS } from "./explain";
 
 /** Every widget a concept lesson can use, keyed by WidgetSpec.type. One registry per module. */
@@ -39,6 +42,9 @@ export const WIDGETS: WidgetRegistry = {
   ...OBS_WIDGETS,
   ...SECURITY_WIDGETS,
   ...AI_WIDGETS,
+  ...CPUARCH_WIDGETS,
+  ...MEMSYS_WIDGETS,
+  ...GPU_WIDGETS,
   ...EXPLAIN_WIDGETS,
 };
 
