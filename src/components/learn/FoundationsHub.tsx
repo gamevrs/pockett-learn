@@ -174,7 +174,15 @@ function ModuleCard({
               <React.Fragment key={l.id}>
               {newLevel && (
                 <li data-level-divider={newLevel} role="presentation" className={`relative flex items-center gap-2 ${li === 0 ? "pb-3" : "pb-3 pt-1"}`}>
-                  <TierBar level={newLevel} />
+                  {li > 0 && (
+                    <span
+                      aria-hidden
+                      className={`absolute -bottom-1 left-[25px] top-0 w-0.5 rounded-full ${completed[m.lessons[li - 1].id] ? "bg-primary" : "bg-[var(--line)]"}`}
+                    />
+                  )}
+                  <span className="relative">
+                    <TierBar level={newLevel} />
+                  </span>
                   <span className="text-xs font-semibold uppercase tracking-wide text-ink-2">{newLevel}</span>
                   <span className="h-px flex-1 bg-[var(--line)]" aria-hidden />
                 </li>

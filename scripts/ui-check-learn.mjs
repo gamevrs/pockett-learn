@@ -20,6 +20,7 @@ const POSITION_KEY_V2 = "pockett_lesson_position_v2";
 const EXPLAINER_LESSONS = [
   ["fnd-ai-0b-inside", [[0, 4], [1, 1], [3, 1], [5, 1], [7, 1]]],
   ["fnd-asm-9-decompile", [[0, 1], [2, 1], [4, 1], [6, 1]]],
+  ["fnd-gpu-2-graphics-pipeline", [[0, 3], [1, 1], [2, 1], [3, 1]]],
 ];
 
 export async function checkLearn(h) {
