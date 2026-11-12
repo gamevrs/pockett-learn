@@ -74,14 +74,14 @@ export function Counters({ props, onChange }: WidgetProps<CountersProps>) {
       </div>
       <p className="mt-2 text-sm text-ink-2">{s.what}</p>
 
-      <div className="mt-2 overflow-x-auto rounded-xl border border-[var(--line-strong)] bg-[#16181d] p-3 font-mono text-[12.5px] leading-relaxed text-[#e6e8ec]" tabIndex={0} aria-label="Counter printout">
+      <div className="mt-2 overflow-x-auto rounded-xl border border-[var(--line-strong)] bg-[#16181d] p-3 font-mono whitespace-pre text-[12.5px] leading-relaxed text-[#e6e8ec]" tabIndex={0} aria-label="Counter printout">
         <p className="text-[#9aa3b2]">Counters for: {s.title.toLowerCase()}</p>
         <p>
           {fmt(s.cycles).padStart(14)} cycles
         </p>
         <p>
           {fmt(s.instructions).padStart(14)} instructions
-          {showDerived && <span className="text-[#9aa3b2]">{`   # ${d.ipc.toFixed(2)} per cycle`}</span>}
+          {showDerived && <span className="text-[#9aa3b2]">{`   # ${d.ipc.toFixed(2)} insn per cycle`}</span>}
         </p>
         <p>{fmt(s.branches).padStart(14)} branches</p>
         <p>

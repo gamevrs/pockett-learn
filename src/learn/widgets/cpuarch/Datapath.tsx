@@ -149,7 +149,7 @@ export function Datapath({ props, onChange }: WidgetProps<DatapathProps>) {
         {box(
           "dmem",
           "Data memory",
-          <div className="grid grid-cols-4 gap-x-1.5">
+          <div className="grid grid-cols-2 gap-x-2 sm:grid-cols-4">
             {s.mem.map((v, i) => (
               <span key={i} className={s.ir && (s.ir.op === "STORE" || s.ir.op === "LOAD") && s.ir.addr === i ? "font-semibold text-[var(--brand)]" : ""}>
                 [{i}]={v}

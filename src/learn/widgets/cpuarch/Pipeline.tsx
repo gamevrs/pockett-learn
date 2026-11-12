@@ -113,7 +113,7 @@ export function Pipeline({ props, onChange }: WidgetProps<PipelineProps>) {
       )}
 
       <div className="overflow-x-auto rounded-xl border border-line bg-surface-2 p-2" tabIndex={0} aria-label="Pipeline diagram, instructions by cycle">
-        <table className="border-separate border-spacing-x-0.5 border-spacing-y-1 font-mono text-[11px]" style={{ minWidth: `${6.6 + cols * 2.5}rem` }}>
+        <table className="border-separate border-spacing-x-0.5 border-spacing-y-1 font-mono text-[11px]" style={{ minWidth: `${(props.reorder ? 12.4 : 8.6) + cols * 2.5}rem` }}>
           <thead>
             <tr>
               <th className="sticky left-0 z-10 bg-surface-2 pr-1 text-left font-medium text-ink-3">
@@ -131,7 +131,7 @@ export function Pipeline({ props, onChange }: WidgetProps<PipelineProps>) {
               <tr key={`${x.text}-${i}`}>
                 <td className="sticky left-0 z-10 bg-surface-2 pr-1">
                   <div className="flex items-center gap-1">
-                    <span className="w-[5.4rem] shrink-0 truncate text-[12px] text-ink" title={x.text}>
+                    <span className={`shrink-0 truncate text-[12px] text-ink ${props.reorder ? "w-[7rem]" : "w-[8.2rem]"}`} title={x.text}>
                       {x.text}
                     </span>
                     {props.reorder && (
