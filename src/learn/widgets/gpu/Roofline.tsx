@@ -80,7 +80,7 @@ export function Roofline({ props, onChange }: WidgetProps<RooflineProps>) {
     { id: "B", name: "Naive matmul", i: 0.25, colour: ORANGE },
     { id: "C", name: "Tiled matmul (32 × 32 tiles)", i: 8, colour: ORANGE },
     { id: "D", name: `LLM decode, batch ${batch}`, i: batch, colour: BLUE },
-    { id: "E", name: `LLM prefill, ${tokens.toLocaleString("en-US")}-token prompt`, i: tokens, colour: "var(--brand)" },
+    { id: "E", name: `LLM prefill, ${tokens.toLocaleString("en-US")}-token prompt`, i: tokens, colour: "var(--primary)" },
   ];
   const decode = kernels[3];
   const prefill = kernels[4];

@@ -53,11 +53,7 @@ export function Tiled({ props, onChange }: WidgetProps<TiledProps>) {
           const inA = Math.floor(r / tile) === cTile.r && Math.floor(c / tile) === phase;
           const inB = Math.floor(r / tile) === phase && Math.floor(c / tile) === cTile.c;
           const colour = kind === "C" ? (inC ? "var(--brand)" : "") : kind === "A" ? (inA ? BLUE : "") : inB ? ORANGE : "";
-          const base = <span key={k} className="aspect-square" style={{ background: colour || "var(--surface)" }} />;
-          if (kind !== "C") return base;
-          return (
-            <button key={k} type="button" aria-label={`Pick the output tile containing row ${r}, column ${c}`} onClick={() => { setCTile({ r: Math.floor(r / tile), c: Math.floor(c / tile) }); setPhase(0); }} className="aspect-square" style={{ background: colour || "var(--surface)" }} />
-          );
+          return <span key={k} className="aspect-square" style={{ background: colour || "var(--surface)" }} />;
         })}
       </div>
     </div>
@@ -70,6 +66,15 @@ export function Tiled({ props, onChange }: WidgetProps<TiledProps>) {
           <Caption className="mb-1">Tile size (T × T)</Caption>
           <Seg label="Tile size" value={tile} onChange={pickTile} options={[1, 2, 4, 8].map((v) => ({ value: v, label: v === 1 ? "1 (naive)" : `${v} × ${v}` }))} />
         </div>
+        {phases > 1 && (
+          <div>
+            <Caption className="mb-1">Output tile (row, column)</Caption>
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              <Stepper label="Tile row" value={cTile.r + 1} min={1} max={phases} onChange={(v) => { setCTile({ ...cTile, r: v - 1 }); setPhase(0); }} />
+              <Stepper label="Tile column" value={cTile.c + 1} min={1} max={phases} onChange={(v) => { setCTile({ ...cTile, c: v - 1 }); setPhase(0); }} />
+            </div>
+          </div>
+        )}
         <div>
           <Caption className="mb-1">Phase (which slice of the sum)</Caption>
           <Stepper label="Phase" value={phase + 1} min={1} max={phases} onChange={(v) => setPhase(v - 1)} format={(v) => `${v} / ${phases}`} wide />
@@ -79,7 +84,7 @@ export function Tiled({ props, onChange }: WidgetProps<TiledProps>) {
       <div className="flex flex-wrap items-start justify-center gap-x-4 gap-y-3">
         {grid("A (input)", "A")}
         {grid("B (input)", "B")}
-        {grid("C = A × B (tap a spot)", "C")}
+        {grid("C = A × B", "C")}
       </div>
       <p className="mt-2 text-xs text-ink-3">
         Green: the {tile} × {tile} piece of C one block computes. <span style={{ color: BLUE }}>■</span> blue and <span style={{ color: ORANGE }}>■</span> orange: the tiles of A and B it copies into shared memory in this phase and reuses {tile} times each.
