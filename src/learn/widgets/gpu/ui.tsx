@@ -41,7 +41,7 @@ export function Seg<T extends string | number>({
   className?: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className={`inline-flex flex-wrap rounded-3xl border border-line bg-surface-2 p-0.5 ${className}`}>
+    <div role="radiogroup" aria-label={label} className={`inline-flex max-w-full flex-wrap rounded-3xl border border-line bg-surface-2 p-0.5 ${className}`}>
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -51,7 +51,7 @@ export function Seg<T extends string | number>({
             role="radio"
             aria-checked={on}
             onClick={() => onChange(o.value)}
-            className={`min-h-10 min-w-10 flex-1 whitespace-nowrap rounded-full px-3 text-xs font-medium transition-colors sm:text-[0.8rem] ${
+            className={`min-h-10 min-w-10 flex-auto whitespace-nowrap rounded-full px-3 text-xs font-medium transition-colors sm:text-[0.8rem] ${
               on ? "bg-surface text-ink shadow-[0_0_0_1px_var(--line-strong)]" : "text-ink-3 hover:text-ink"
             }`}
           >

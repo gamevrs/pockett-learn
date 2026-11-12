@@ -24,11 +24,11 @@ export interface WarpState {
   diverged: boolean;
 }
 
-const BRANCHES: { value: Branch; label: string; code: (k: number) => string }[] = [
+const BRANCHES: { value: Branch; label: string; code: (k: number) => string; note?: string }[] = [
   { value: "below", label: "lane < k", code: (k) => `if (lane < ${k})` },
   { value: "even", label: "even lanes", code: () => "if (lane % 2 == 0)" },
   { value: "every8", label: "every 8th", code: () => "if (lane % 8 == 0)" },
-  { value: "uniform", label: "all agree", code: () => "if (n > 0)  // same for everyone" },
+  { value: "uniform", label: "all agree", code: () => "if (n > 0)", note: "n is the same for every lane" },
 ];
 
 /** One warp of 32 lanes meets an if/else: lanes that disagree make the warp run both paths, one after the other. */
@@ -91,7 +91,8 @@ export function Warp({ props, onChange }: WidgetProps<WarpProps>) {
         </div>
       )}
 
-      <p className="mb-2 rounded-lg bg-surface-2 px-3 py-2 font-mono text-[13px] text-ink">
+      <p className="mb-2 whitespace-pre-wrap break-words rounded-lg bg-surface-2 px-3 py-2 font-mono text-[13px] text-ink">
+        {spec.note ? `// ${spec.note}\n` : ""}
         {spec.code(k)} {"{ A } else { B }"}
       </p>
       <div className="space-y-2">

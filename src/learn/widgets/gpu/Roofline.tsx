@@ -26,8 +26,8 @@ export interface RooflineState {
 }
 
 const PRESETS = {
-  dc: { label: "Data-centre card", peak: 1000, bw: 3 },
-  pc: { label: "Gaming card", peak: 80, bw: 1 },
+  dc: { label: "Data centre", peak: 1000, bw: 3 },
+  pc: { label: "Gaming", peak: 80, bw: 1 },
 };
 
 const BATCHES = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024];
