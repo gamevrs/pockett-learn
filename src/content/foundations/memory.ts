@@ -1,14 +1,18 @@
-import type { Module } from "../../learn/types.ts";
+import type { ConceptLesson, Module } from "../../learn/types.ts";
+import { memoryLessonsA } from "./memory-a.ts";
+import { memoryLessonsB } from "./memory-b.ts";
+import { memoryLessonsC } from "./memory-c.ts";
 
 /**
  * Module: Memory: from bytes to the hierarchy. Spec: docs/HARDWARE_PATH.md (lesson list, levels, accuracy rules).
  *
- * Authors: put the lessons in the `lessons` array below (or, if the file grows large, split them into
- * memory-a.ts / memory-b.ts exporting ConceptLesson[] and spread them here, like ai-systems.ts).
- * Lesson ids are `fnd-mem-N-slug`, each lesson sets `level` ("Beginner" | "Intermediate" | "Advanced" |
- * "Professional"), and levels must never go backwards within the module (the validator checks it).
- * Widgets: register them in src/learn/widgets/memsys/index.ts with keys prefixed "memsys-".
+ * Twelve lessons from Beginner to Professional: inside a memory chip, the hierarchy, latency vs bandwidth, cache lines and
+ * locality, how a cache finds data, the three kinds of miss, alignment and layout, virtual memory, the TLB and page faults,
+ * cache coherence, memory ordering and atomics, and memory performance in practice.
+ * Widgets: src/learn/widgets/memsys/ (keys prefixed "memsys-").
  */
+const lessons: ConceptLesson[] = [...memoryLessonsA, ...memoryLessonsB, ...memoryLessonsC];
+
 export const memoryModule: Module = {
   id: "memory",
   part: "hardware",
@@ -16,5 +20,5 @@ export const memoryModule: Module = {
   blurb:
     "What a memory chip is, why caches exist, cache lines and locality, virtual memory, coherence and memory ordering, and how to measure memory performance.",
   icon: "memory",
-  lessons: [],
+  lessons,
 };
