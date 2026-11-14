@@ -157,7 +157,7 @@ export function Stackup({ props, onChange, revealed }: WidgetProps<StackupProps>
         </Note>
       </div>
       <p className="mt-2 text-[0.82rem] leading-snug text-ink-2">
-        {stack.note} Dielectric: FR-4 glass-epoxy (εr ≈ 4.2 to 4.7, typical). 1 oz of copper per ft² spreads to about {UM_PER_OZ} µm (often rounded to 35 µm). Blind, buried and micro vias add drilling and lamination steps (HDI), so they cost more.
+        {stack.note} Dielectric: FR-4 glass-epoxy (εr ≈ 4.2 to 4.7, typical). 1 oz of copper per ft² spreads to about {UM_PER_OZ} µm (typical). Blind, buried and micro vias add drilling and lamination steps (HDI), so they cost more.
       </p>
       <ToyNote>Thicknesses are typical and not to scale; your fab publishes its own stack-up, and real inner layers are often 0.5 oz.</ToyNote>
     </div>
