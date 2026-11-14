@@ -166,7 +166,7 @@ export function Decap({ props, onChange }: WidgetProps<DecapProps>) {
           ns
         </text>
       </svg>
-      <p className="mt-1 text-center text-[0.8rem] text-ink-3">Volts at the chip pin. The shaded band is the example ±5 % budget (3.135 to 3.465 V).</p>
+      <p className="mt-1 text-center text-[0.8rem] text-ink-3">Volts at the chip pin. The shaded band is the example ±5% budget (3.135 to 3.465 V).</p>
 
       <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
         <Readout label="Loop L" value={`${r.loopNh.toFixed(1)} nH`} accent />
@@ -183,7 +183,7 @@ export function Decap({ props, onChange }: WidgetProps<DecapProps>) {
       </div>
       <Caption className="mt-2 text-center">Toy model</Caption>
       <ToyNote>
-        About 1 nH per mm of loop path, plus 0.8 to 1.1 nH for the capacitor body, pad and via (typical, bigger values sit in bigger packages). Load step 50 mA in 1 ns, held for 20 ns. First-order only: real supplies also ring. 3.3 V ± 5 % is an example budget.
+        About 1 nH per mm of loop path, plus 0.8 to 1.1 nH for the capacitor body, pad and via (typical, bigger values sit in bigger packages). Load step 50 mA in 1 ns, held for 20 ns. First-order only: real supplies also ring. 3.3 V ± 5% is an example budget.
       </ToyNote>
     </div>
   );

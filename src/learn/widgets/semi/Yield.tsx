@@ -268,7 +268,7 @@ export function Chiplet({ props, onChange }: WidgetProps<ChipletProps>) {
         </Note>
       </div>
       <Toy>
-        Toy numbers: a {area} mm² design, an illustrative $10,000 wafer, Poisson yield, dies per wafer from the formula. Each chiplet gets 10 % extra area for the links between chiplets. Packaging and testing several chiplets costs extra and is not included.
+        Toy numbers: a {area} mm² design, an illustrative $10,000 wafer, Poisson yield, dies per wafer from the formula. Each chiplet gets 10% extra area for the links between chiplets. Packaging and testing several chiplets costs extra and is not included.
       </Toy>
     </div>
   );

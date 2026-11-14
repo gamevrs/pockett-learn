@@ -61,7 +61,7 @@ function sand(t: number) {
       <g opacity={b}>
         <path d="M268 166 L284 128 L314 122 L336 146 L326 172 L286 178 Z" fill="#8a96a3" stroke={INK} strokeWidth={1.2} />
         <Label x={302} y={196}>silicon,</Label>
-        <Label x={302} y={214}>98–99 % pure</Label>
+        <Label x={302} y={214}>98–99% pure</Label>
       </g>
       <Label x={180} y={32} bold>
         Sand + carbon + heat → silicon
@@ -95,7 +95,7 @@ function purify(t: number) {
       <rect x={r2(200 - lerp(2, 12, rod))} y={r2(176 - lerp(10, 96, rod))} width={r2(lerp(4, 24, rod))} height={r2(lerp(10, 96, rod))} rx={3} fill="#8a96a3" stroke={INK} strokeWidth={1} />
       <Label x={200} y={208}>polysilicon rod grows</Label>
       <g opacity={rod}>
-        <Label x={306} y={110}>99.9999999 %</Label>
+        <Label x={306} y={110}>99.9999999%</Label>
         <Label x={306} y={130}>&quot;nine nines&quot;</Label>
         <Label x={306} y={150}>or purer</Label>
       </g>

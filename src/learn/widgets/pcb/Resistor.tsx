@@ -258,7 +258,7 @@ export function Resistor({ props, onChange, revealed, status, goal }: WidgetProp
       <p className="mt-2 text-xs text-ink-3">
         Band 1 is the band closest to an end. The tolerance band is usually set a little apart from the others, which tells you where to start reading. If you cannot tell, the value that is a standard one is the likely reading.
       </p>
-      <ToyNote>Typical colour code (IEC 60062). Gold and silver as a multiplier are ×0.1 and ×0.01; as tolerance they are ±5 % and ±10 %.</ToyNote>
+      <ToyNote>Typical colour code (IEC 60062). Gold and silver as a multiplier are ×0.1 and ×0.01; as tolerance they are ±5% and ±10%.</ToyNote>
     </div>
   );
 }
@@ -391,7 +391,7 @@ export function Smd({ props, onChange, status, goal }: WidgetProps<SmdProps>) {
       </div>
 
       <details className="mt-3 rounded-xl border border-line bg-surface p-3">
-        <summary className="min-h-6 cursor-pointer text-[0.86rem] font-medium text-ink">EIA-96 tables (for 1 % chips with a letter)</summary>
+        <summary className="min-h-6 cursor-pointer text-[0.86rem] font-medium text-ink">EIA-96 tables (for 1% chips with a letter)</summary>
         <p className="mt-2 text-xs text-ink-3">Two digits pick a value from the table (01 is 100, 96 is 976), the letter picks the multiplier.</p>
         <p className="mt-1 text-xs text-ink-2">
           {Object.entries(EIA96_MULT).map(([l, m]) => `${l} ×${m}`).join(" · ")}
@@ -405,7 +405,7 @@ export function Smd({ props, onChange, status, goal }: WidgetProps<SmdProps>) {
           ))}
         </ol>
       </details>
-      <ToyNote>Markings follow the usual conventions (EIA-96 for 1 % chips, 3 or 4 digits for others). Makers differ, and tiny chips such as 0402 are often not marked at all.</ToyNote>
+      <ToyNote>Markings follow the usual conventions (EIA-96 for 1% chips, 3 or 4 digits for others). Makers differ, and tiny chips such as 0402 are often not marked at all.</ToyNote>
     </div>
   );
 }

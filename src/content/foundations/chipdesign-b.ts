@@ -425,7 +425,7 @@ V      supply voltage        f   clock frequency
           prompt: "Dynamic power at most 0.05 W with the clock at 1000 MHz or faster.",
           hint: "Power is proportional to V². Which input can you lower, while the toy still allows 1000 MHz?",
         },
-        explanation: "At 0.7 V: 0.1 × 0.7² = 0.049 W, and the toy's speed limit at 0.7 V is still 1500 MHz, so 1000 MHz is fine. Cutting activity α (for example by **clock gating** idle blocks, which in the toy saves 30 % at 60 % idle) or capacitance also helps, but voltage is the strongest lever because of the square.",
+        explanation: "At 0.7 V: 0.1 × 0.7² = 0.049 W, and the toy's speed limit at 0.7 V is still 1500 MHz, so 1000 MHz is fine. Cutting activity α (for example by **clock gating** idle blocks, which in the toy saves 30% at 60% idle) or capacitance also helps, but voltage is the strongest lever because of the square.",
       },
       {
         kind: "code",
@@ -480,15 +480,15 @@ V      supply voltage        f   clock frequency
       {
         kind: "question",
         title: "Ninety per cent",
-        body: "Reach at least **90 %** functional coverage on the ALU. Mix directed taps and random runs however you like.",
+        body: "Reach at least **90%** functional coverage on the ALU. Mix directed taps and random runs however you like.",
         widget: { type: "chip-coverage", props: { formal: false } },
-        question: { type: "widget", goal: { minCoverage: 0.9 }, prompt: "Hit at least 90 % of the 25 bins.", hint: "Random runs get most bins quickly. For the last few rare ones, switch on the bias or tap the bins directly." },
-        explanation: "Uniform random with this seed needs about 2,400 tests for 90 %, and thousands more for the last corner cases (carry and equality bins are rare when 8-bit operands are drawn at random). Biased generation, which weights stimulus toward special values like 0 and 255, gets there in a few hundred. Directed tests for the rare bins plus random for everything else is the usual mix.",
+        question: { type: "widget", goal: { minCoverage: 0.9 }, prompt: "Hit at least 90% of the 25 bins.", hint: "Random runs get most bins quickly. For the last few rare ones, switch on the bias or tap the bins directly." },
+        explanation: "Uniform random with this seed needs about 2,400 tests for 90%, and thousands more for the last corner cases (carry and equality bins are rare when 8-bit operands are drawn at random). Biased generation, which weights stimulus toward special values like 0 and 255, gets there in a few hundred. Directed tests for the rare bins plus random for everything else is the usual mix.",
       },
       {
         kind: "question",
         title: "What coverage means",
-        body: "A regression reports **100 % functional coverage** on all bins. What can you conclude?",
+        body: "A regression reports **100% functional coverage** on all bins. What can you conclude?",
         question: {
           type: "choice",
           options: [
@@ -505,7 +505,7 @@ V      supply voltage        f   clock frequency
             3: "Regressions are re-run after every change to catch new bugs; a passing history is not a reason to stop.",
           },
         },
-        explanation: "Coverage is only as good as its **bins** and the **checkers** behind the tests. A bin hit by a test that never compares the output proves nothing. Teams track coverage together with pass rates, bug-discovery trends and review, and treat 100 % as a milestone, not a guarantee.",
+        explanation: "Coverage is only as good as its **bins** and the **checkers** behind the tests. A bin hit by a test that never compares the output proves nothing. Teams track coverage together with pass rates, bug-discovery trends and review, and treat 100% as a milestone, not a guarantee.",
       },
       {
         kind: "question",
@@ -555,7 +555,7 @@ V      supply voltage        f   clock frequency
           prompt: "Identify the faulty net and the value it is stuck at.",
           hint: "Find a pattern whose response differs from the expected one, then ask which nets could change those captured bits when stuck.",
         },
-        explanation: "This is what ATPG does at scale: choose patterns that make a fault's effect show up at an observable flop. The toy's six internal nets have 12 single stuck-at faults, all distinguishable, and just three patterns (0000, 1101, 0110) detect every one (100 % **fault coverage**). Real designs use compressed scan and need thousands of patterns for tens of millions of faults.",
+        explanation: "This is what ATPG does at scale: choose patterns that make a fault's effect show up at an observable flop. The toy's six internal nets have 12 single stuck-at faults, all distinguishable, and just three patterns (0000, 1101, 0110) detect every one (100% **fault coverage**). Real designs use compressed scan and need thousands of patterns for tens of millions of faults.",
       },
       {
         kind: "question",
@@ -576,7 +576,7 @@ V      supply voltage        f   clock frequency
       {
         kind: "recap",
         points: [
-          "**Verification** shows the design matches the spec, and is often the biggest share of a chip project. **Constrained-random** tests plus a **reference model**, measured by **coverage** bins; 100 % coverage is a milestone, not proof.",
+          "**Verification** shows the design matches the spec, and is often the biggest share of a chip project. **Constrained-random** tests plus a **reference model**, measured by **coverage** bins; 100% coverage is a milestone, not proof.",
           "**Formal** proves a property for **all** inputs (SAT/SMT solvers, not brute force) or returns a **counterexample**; it needs well-bounded blocks and honest assumptions.",
           "**DFT** targets manufacturing defects: **scan chains** make flops controllable and observable, **ATPG** generates patterns for a fault model like **stuck-at**, **BIST** self-tests memories.",
           "Those tests run on automatic test equipment at **wafer sort** and **final test**. Open tools to start with: Icarus Verilog, Verilator, cocotb, SymbiYosys.",
@@ -652,10 +652,10 @@ below V*  the FPGA is cheaper     above V*  the ASIC is cheaper
       {
         kind: "question",
         title: "The price of a bug",
-        body: "Switch on **respin** in the widget (a bug escapes to silicon: a second mask set and rework, +30 % of the ASIC NRE in this toy). With the other defaults unchanged, what is the new crossover volume, in **units**?",
+        body: "Switch on **respin** in the widget (a bug escapes to silicon: a second mask set and rework, +30% of the ASIC NRE in this toy). With the other defaults unchanged, what is the new crossover volume, in **units**?",
         widget: { type: "chip-crossover", props: {} },
         question: { type: "number", answer: 144000, tolerance: 50, unit: "units", hint: "ASIC NRE becomes 1.3 × 5,000,000 = 6,500,000. Subtract the FPGA NRE, then divide by 45." },
-        explanation: "(6,500,000 − 20,000) ÷ 45 = **144,000**. One escaped bug moves the break-even up by about 30 %: a very good reason for the verification effort of the last lesson, and for FPGA prototyping and emulation before tape-out.",
+        explanation: "(6,500,000 − 20,000) ÷ 45 = **144,000**. One escaped bug moves the break-even up by about 30%: a very good reason for the verification effort of the last lesson, and for FPGA prototyping and emulation before tape-out.",
       },
       {
         kind: "code",

@@ -138,7 +138,7 @@ export const DECAP = {
   riseS: 1e-9,
   holdS: 20e-9,
   vdd: 3.3,
-  /** Example budget: ±5 % of 3.3 V. */
+  /** Example budget: ±5% of 3.3 V. */
   budgetV: 0.165,
 };
 
@@ -272,7 +272,7 @@ export interface Bounce {
   source: { t: number; v: number }[];
   /** Largest load voltage above the final value, percent of the final value (0 when the final value is 0). */
   overshootPct: number;
-  /** Load voltage stays within 5 % of its final value from 4T on, up to 8T. */
+  /** Load voltage stays within 5% of its final value from 4T on, up to 8T. */
   settled: boolean;
   tEndNs: number;
 }
@@ -346,7 +346,7 @@ export function z0Valid(w: number, h: number, er: number): boolean {
 
 /** Toy scale: noise at the largest possible coupling, percent of the aggressor swing. */
 export const XT_MAX_PCT = 24;
-/** Parallel length at which coupling is about 63 % saturated (for a roughly 1 ns edge), cm. */
+/** Parallel length at which coupling is about 63% saturated (for a roughly 1 ns edge), cm. */
 export const XT_SAT_CM = 8;
 /** Trace width in units of the dielectric height (about a 50 Ω microstrip). */
 export const XT_W_OVER_H = 1.5;

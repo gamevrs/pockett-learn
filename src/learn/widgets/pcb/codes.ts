@@ -139,7 +139,7 @@ export const E96 = [
 export type ESeriesName = "E6" | "E12" | "E24" | "E96";
 
 /** Typical tolerance usually sold with each series (typical, not a rule). */
-export const SERIES_TOL: Record<ESeriesName, string> = { E6: "20 %", E12: "10 %", E24: "5 %", E96: "1 %" };
+export const SERIES_TOL: Record<ESeriesName, string> = { E6: "20%", E12: "10%", E24: "5%", E96: "1%" };
 
 /** Which E series contain this value (mantissa compared to the series, any decade). */
 export function eSeriesOf(ohms: number): ESeriesName[] {
@@ -216,12 +216,12 @@ export function decodeSmd(raw: string): SmdReading {
     const mult = EIA96_MULT[m[2]];
     return { ok: true, ohms: roundSig(base * mult), scheme: "EIA-96", working: `index ${m[1]} = ${base}, letter ${m[2]} = ×${mult}  →  ${base} × ${mult}`, error: "" };
   }
-  // two digits then R: R notation (47R = 47 Ω); on a 1 % chip it could be EIA-96 with the ×0.01 letter
+  // two digits then R: R notation (47R = 47 Ω); on a 1% chip it could be EIA-96 with the ×0.01 letter
   m = /^(\d\d)R$/.exec(code);
   if (m) {
     const ohms = Number(m[1]);
     const idx = ohms;
-    const alt = idx >= 1 && idx <= 96 ? `If this is a 1 % chip it could instead be EIA-96: index ${m[1]} = ${E96[idx - 1]}, R = ×0.01, so ${roundSig(E96[idx - 1] * 0.01)} Ω.` : undefined;
+    const alt = idx >= 1 && idx <= 96 ? `If this is a 1% chip it could instead be EIA-96: index ${m[1]} = ${E96[idx - 1]}, R = ×0.01, so ${roundSig(E96[idx - 1] * 0.01)} Ω.` : undefined;
     return { ok: true, ohms, scheme: "R", working: `${m[1]}R: the R sits where the decimal point would be, so ${ohms} Ω`, error: "", alt };
   }
   // R notation: 4R7, R47, 1R0, 100R, 0R22

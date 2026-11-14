@@ -246,7 +246,7 @@ export function TestFlow({ onChange }: WidgetProps) {
       <ol className="mt-3 space-y-1.5">
         <Stage name="Fab" detail={`${whole(TEST.dies)} dies, of which ${good} work (${TEST.waferYield * 100} % yield)`} />
         <Stage name="Wafer sort" detail={sort ? `probe needles test each die: ${TEST.dies - good} failures marked and never packaged` : "skipped: bad dies go on to packaging"} tone={sort ? "plain" : "skip"} />
-        <Stage name="Dice and package" detail={`${whole(r.packaged)} dies packaged${r.wastedPackages ? `, ${r.wastedPackages} of them already dead` : ""}; about 1 % are damaged on the way`} tone={r.wastedPackages ? "bad" : "plain"} />
+        <Stage name="Dice and package" detail={`${whole(r.packaged)} dies packaged${r.wastedPackages ? `, ${r.wastedPackages} of them already dead` : ""}; about 1% are damaged on the way`} tone={r.wastedPackages ? "bad" : "plain"} />
         <Stage name="Final test" detail={`rejects ${r.finalRejects} (${r.wastedPackages ? "dead dies plus " : ""}packaging damage)`} />
         <Stage name="Burn-in" detail={burnIn ? `${r.burnInRejects} weak parts fail early here, in the factory` : "skipped: weak parts pass every test today"} tone={burnIn ? "plain" : "skip"} />
         <Stage name="Ship" detail={`${r.shipped} parts, sorted into speed bins: ${binCounts(r.shipped).map((n, i) => `${n} ${BINS[i].name.toLowerCase()}`).join(", ")}`} />
@@ -268,7 +268,7 @@ export function TestFlow({ onChange }: WidgetProps) {
         </Note>
       </div>
       <Toy>
-        Toy lot with illustrative numbers: {whole(TEST.dies)} dies, $10 each to make, ${TEST.sortCost.toFixed(2)} to probe, $4 to package, $0.50 to final-test, $2 to burn in, $50 per field return. 2 % of good parts are weak. Every hard failure is caught by the first test that sees it; real tests miss a few.
+        Toy lot with illustrative numbers: {whole(TEST.dies)} dies, $10 each to make, ${TEST.sortCost.toFixed(2)} to probe, $4 to package, $0.50 to final-test, $2 to burn in, $50 per field return. 2% of good parts are weak. Every hard failure is caught by the first test that sees it; real tests miss a few.
       </Toy>
     </div>
   );

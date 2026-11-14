@@ -58,7 +58,7 @@ const num = (v: unknown): v is number => typeof v === "number" && isFinite(v);
 
 /**
  * goal: { volumeAtLeastCrossover?: true, cheaper?: "asic" | "fpga", findCrossover?: true, tol? }.
- * findCrossover: the chosen volume is within tol (default 10 %) of V*. Recomputed from the state's inputs.
+ * findCrossover: the chosen volume is within tol (default 10%) of V*. Recomputed from the state's inputs.
  */
 export function checkCrossover(state: unknown, goal: Record<string, unknown>): boolean {
   const s = state as Partial<CrossState> | undefined;

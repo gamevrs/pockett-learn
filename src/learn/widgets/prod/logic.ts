@@ -229,7 +229,7 @@ export function fsmStep(r: FsmRun, phoneNear: boolean, intervalS = 900): FsmRun 
     case "measure":
       spend("measure");
       n.state = "send";
-      n.log.push("sample: moisture 41 %, light 320 lx");
+      n.log.push("sample: moisture 41%, light 320 lx");
       break;
     case "send":
       spend("send");

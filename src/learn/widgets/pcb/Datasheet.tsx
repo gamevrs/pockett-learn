@@ -215,7 +215,7 @@ export function Datasheet({ props, onChange, revealed, status, goal }: WidgetPro
       {show("features") && (
         <Section id="features">
           <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-[0.86rem] text-ink-2">
-            <li>Fixed 3.3 V output, ±2 % at 25 °C</li>
+            <li>Fixed 3.3 V output, ±2% at 25 °C</li>
             <li>Up to 500 mA output current, internal current limit</li>
             <li>Low dropout: 0.6 V typical at 500 mA</li>
             <li>Stable with a 10 µF output capacitor</li>

@@ -79,7 +79,7 @@ export function Critical({ props, onChange }: WidgetProps<CriticalProps>) {
       </div>
       <div className="mt-2 grid gap-1 sm:grid-cols-2 sm:gap-4">
         <Slider
-          label="Rise time (10 to 90 %)"
+          label="Rise time (10 to 90%)"
           value={idx}
           min={0}
           max={RISE_STEPS_NS.length - 1}
@@ -316,7 +316,7 @@ export function Bounce({ props, onChange }: WidgetProps<BounceProps>) {
         </li>
         <li className="flex items-center gap-1.5">
           <span aria-hidden className="inline-block h-3 w-5 rounded-sm bg-[var(--brand)] opacity-25" />
-          Final value ± 5 %
+          Final value ± 5%
         </li>
       </ul>
 
@@ -473,7 +473,7 @@ export function Z0({ props, onChange }: WidgetProps<Z0Props>) {
         </Note>
       </div>
       <ToyNote>
-        IPC-2141 approximation: Z0 = 87 / √(εr + 1.41) × ln(5.98 h / (0.8 w + t)); good to a few percent up to about ±5 to 10 %. εr_eff uses (εr + 1)/2 + (εr − 1)/2 × (1 + 12 h/w)^−0.5. Fabs use field solvers and your real stackup.
+        IPC-2141 approximation: Z0 = 87 / √(εr + 1.41) × ln(5.98 h / (0.8 w + t)); good to a few percent up to about ±5 to 10%. εr_eff uses (εr + 1)/2 + (εr − 1)/2 × (1 + 12 h/w)^−0.5. Fabs use field solvers and your real stackup.
       </ToyNote>
     </div>
   );

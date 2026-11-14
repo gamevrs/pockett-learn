@@ -74,7 +74,7 @@ export const EC: TableRow[] = [
   },
   {
     param: "Dropout voltage",
-    cond: "IOUT = 500 mA, VOUT 2 % below nominal",
+    cond: "IOUT = 500 mA, VOUT 2% below nominal",
     cells: [{ id: "ec-dropout-typ", tag: "typ", text: "0.6 V" }, { id: "ec-dropout-max", tag: "max", text: "1.0 V" }],
   },
   {
@@ -106,9 +106,9 @@ export const MEANINGS: Record<string, string> = {
   "rec-iout-max": "Up to 500 mA is the guaranteed load current.",
   "rec-tj-min": "Coldest junction temperature at which the specs are guaranteed.",
   "rec-tj-max": "Hottest junction temperature at which the specs are guaranteed: 125 °C. The 150 °C absolute maximum is the damage line; this is the working line.",
-  "ec-vout-min": "Lowest output you can get from a good part under the stated conditions: 3.234 V (2 % below 3.3 V).",
+  "ec-vout-min": "Lowest output you can get from a good part under the stated conditions: 3.234 V (2% below 3.3 V).",
   "ec-vout-typ": "Typical output: 3.3 V. A typical value is what a part usually does, not something guaranteed.",
-  "ec-vout-max": "Highest output you can get from a good part under the stated conditions: 3.366 V (2 % above 3.3 V).",
+  "ec-vout-max": "Highest output you can get from a good part under the stated conditions: 3.366 V (2% above 3.3 V).",
   "ec-line-typ": "Typical change in output when the input moves across its range.",
   "ec-line-max": "At most 10 mV of output change when the input moves from 4.5 to 12 V.",
   "ec-load-typ": "Typical change in output when the load goes from 10 to 500 mA.",

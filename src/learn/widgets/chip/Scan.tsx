@@ -309,7 +309,7 @@ export function Scan({ props, onChange, goal, status }: WidgetProps<ScanProps>) 
             <strong className="text-ink">ATPG</strong> (automatic test pattern generation) is software that picks patterns so that each modelled fault, such as a net stuck at 0 or 1, produces a different response from a healthy chip. The &quot;ATPG&quot; button here does it for this toy.
           </p>
           <p>
-            <strong className="text-ink">Fault coverage</strong> is the share of modelled faults that the pattern set exposes. Here 12 faults (6 nets × 2 values) are covered completely by only 3 well-chosen patterns, but a real chip has millions of faults and production test sets target 95 % or more of them.
+            <strong className="text-ink">Fault coverage</strong> is the share of modelled faults that the pattern set exposes. Here 12 faults (6 nets × 2 values) are covered completely by only 3 well-chosen patterns, but a real chip has millions of faults and production test sets target 95% or more of them.
           </p>
           <p>
             <strong className="text-ink">BIST</strong> (built-in self-test) puts the tester on the chip: a pattern generator such as an LFSR (linear-feedback shift register) feeds the logic, and a signature compressor squeezes the responses into a short number that is compared with the expected one. Memory BIST for SRAMs is the common example, since memories are too big and regular for scan alone.

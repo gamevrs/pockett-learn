@@ -33,7 +33,7 @@ export const semisLessonsB: ConceptLesson[] = [
           type: "order",
           items: [
             "Quartz sand heated with carbon in an arc furnace",
-            "Metallurgical-grade silicon, about 98–99 % pure",
+            "Metallurgical-grade silicon, about 98–99% pure",
             "Distilled as a gas (trichlorosilane)",
             "Deposited as ultra-pure polysilicon",
             "Melted and pulled into a single-crystal ingot",
@@ -140,7 +140,7 @@ export const semisLessonsB: ConceptLesson[] = [
       {
         kind: "recap",
         points: [
-          "Sand → metallurgical silicon (98–99 %) → distilled gas → **polysilicon** (nine nines or better) → **single-crystal ingot** (Czochralski, from a seed at 1,414 °C) → **wafers**.",
+          "Sand → metallurgical silicon (98–99%) → distilled gas → **polysilicon** (nine nines or better) → **single-crystal ingot** (Czochralski, from a seed at 1,414 °C) → **wafers**.",
           "Single crystal: no grain boundaries, the same lattice for every transistor; a notch marks its direction.",
           "Modern wafers are **300 mm** (about 707 cm², 0.775 mm thick); many older fabs run 200 mm.",
           "**Cleanrooms** are rated ISO 1 to ISO 9 by ISO 14644-1 (limit = 10^N × (0.1/D)^2.08 per m³); sealed carriers keep wafers cleaner still.",
@@ -350,7 +350,7 @@ export const semisLessonsB: ConceptLesson[] = [
         title: "EUV: 13.5 nm",
         body: P(
           "**Extreme ultraviolet** lithography jumps from 193 nm to **13.5 nm**. Nothing is transparent at that wavelength, not even air or glass, so an EUV scanner is very different:",
-          "- the light comes from **tin droplets** hit by a powerful laser tens of thousands of times a second, making a plasma that glows at 13.5 nm,\n- the whole light path is in **vacuum**,\n- **mirrors** replace lenses, each a stack of dozens of molybdenum and silicon layers, and each reflects only about 70 % of the light, so most of it is lost on the way,\n- even the mask is a mirror.",
+          "- the light comes from **tin droplets** hit by a powerful laser tens of thousands of times a second, making a plasma that glows at 13.5 nm,\n- the whole light path is in **vacuum**,\n- **mirrors** replace lenses, each a stack of dozens of molybdenum and silicon layers, and each reflects only about 70% of the light, so most of it is lost on the way,\n- even the mask is a mirror.",
           "Today's EUV tools have **NA 0.33**; **high-NA EUV** at **NA 0.55** is entering use (as of 2025). As of 2025 a single company, ASML, builds all EUV scanners, and each one is reported to cost well over a hundred million dollars (high-NA several hundred million). Pick EUV below.",
         ),
         widget: { type: "semi-litho", props: { source: "euv", k1: 0.4, sources: ["arfi", "euv", "euvh"] } },
@@ -442,16 +442,16 @@ export const semisLessonsB: ConceptLesson[] = [
       },
       {
         kind: "question",
-        title: "Biggest die at 80 %",
-        body: "At **D0 = 0.2 per cm²**, find the **largest square die** whose Poisson yield is still at least **80 %**.",
+        title: "Biggest die at 80%",
+        body: "At **D0 = 0.2 per cm²**, find the **largest square die** whose Poisson yield is still at least **80%**.",
         widget: { type: "semi-yield", props: { side: 16, d0: 0.2 } },
         question: {
           type: "widget",
           goal: { d0: 0.2, minYieldPct: 80, minSide: 10 },
-          prompt: "Keep D0 at 0.20 and pick the biggest die size that keeps the Poisson yield at 80 % or above.",
+          prompt: "Keep D0 at 0.20 and pick the biggest die size that keeps the Poisson yield at 80% or above.",
           hint: "e^(−A × 0.2) ≥ 0.8 means A ≤ ln(1/0.8) / 0.2. Work out that area in cm², then in mm².",
         },
-        explanation: "A ≤ ln(1.25) / 0.2 ≈ 1.12 cm², so **10 × 10 mm** (1 cm², 81.9 %) is the biggest whole-millimetre square; 11 × 11 mm gives 78.5 %. Yield falls **exponentially** with area: doubling the die does not halve the yield, it squares it.",
+        explanation: "A ≤ ln(1.25) / 0.2 ≈ 1.12 cm², so **10 × 10 mm** (1 cm², 81.9%) is the biggest whole-millimetre square; 11 × 11 mm gives 78.5%. Yield falls **exponentially** with area: doubling the die does not halve the yield, it squares it.",
       },
       {
         kind: "code",
@@ -469,8 +469,8 @@ def poisson_yield(area_cm2, d0):
     return math.exp(-area_cm2 * d0)
 `,
         tests: [
-          { id: "big", description: "A 6 cm² die at D0 0.1 yields about 54.9 %", assertionCode: `v = poisson_yield(6, 0.1)\nassert abs(v - 0.5488) < 0.001, f"expected about 0.549, got {v}"` },
-          { id: "one", description: "1 cm² at D0 0.2 yields about 81.9 %", assertionCode: `v = poisson_yield(1, 0.2)\nassert abs(v - 0.8187) < 0.001, f"expected about 0.819, got {v}"` },
+          { id: "big", description: "A 6 cm² die at D0 0.1 yields about 54.9%", assertionCode: `v = poisson_yield(6, 0.1)\nassert abs(v - 0.5488) < 0.001, f"expected about 0.549, got {v}"` },
+          { id: "one", description: "1 cm² at D0 0.2 yields about 81.9%", assertionCode: `v = poisson_yield(1, 0.2)\nassert abs(v - 0.8187) < 0.001, f"expected about 0.819, got {v}"` },
           { id: "zero", description: "With no defects every die works", assertionCode: `v = poisson_yield(4, 0)\nassert v == 1, f"expected 1, got {v}"` },
         ],
         hints: ["math.exp(x) is e to the power x.", "The exponent is negative: minus area times defect density."],
@@ -517,9 +517,9 @@ def dies_per_wafer(diameter_mm, die_area_mm2):
       {
         kind: "question",
         title: "Cost per good die",
-        body: "A wafer costs **$10,000** (an illustrative round figure). It holds **90** dies of 600 mm², and the yield is **55 %**. What does one **working** die cost? Work it out in dollars.",
+        body: "A wafer costs **$10,000** (an illustrative round figure). It holds **90** dies of 600 mm², and the yield is **55%**. What does one **working** die cost? Work it out in dollars.",
         question: { type: "number", answer: 202, tolerance: 2, unit: "$", hint: "Good dies = dies per wafer × yield. Then divide the wafer cost by that." },
-        explanation: "90 × 0.55 = 49.5 good dies; $10,000 / 49.5 ≈ **$202**. Compare a 100 mm² die on the same wafer: 640 dies at 90.5 % yield is about 579 good dies, $17 each. Six times the area, about twelve times the cost: big chips are expensive twice over.",
+        explanation: "90 × 0.55 = 49.5 good dies; $10,000 / 49.5 ≈ **$202**. Compare a 100 mm² die on the same wafer: 640 dies at 90.5% yield is about 579 good dies, $17 each. Six times the area, about twelve times the cost: big chips are expensive twice over.",
       },
       {
         kind: "explain",
@@ -542,7 +542,7 @@ def dies_per_wafer(diameter_mm, die_area_mm2):
           prompt: "Keep D0 at 0.10 and choose how many chiplets to use so the silicon per product is $130 or less.",
           hint: "One big die costs about $202 of silicon. Try two chiplets, then more.",
         },
-        explanation: "**Four chiplets** of 165 mm² (with 10 % extra area for the links) yield about 85 % and bring silicon cost to about **$125**, against $202 for one die; eight get to about $111. The gains shrink with each split while packaging, testing and the links between chiplets cost more, so real products settle on a handful of chiplets, connected through standards such as UCIe (as of the mid-2020s).",
+        explanation: "**Four chiplets** of 165 mm² (with 10% extra area for the links) yield about 85% and bring silicon cost to about **$125**, against $202 for one die; eight get to about $111. The gains shrink with each split while packaging, testing and the links between chiplets cost more, so real products settle on a handful of chiplets, connected through standards such as UCIe (as of the mid-2020s).",
       },
       {
         kind: "question",

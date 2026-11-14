@@ -60,7 +60,7 @@ export function riseRolloff(fHz: number, riseNs: number): number {
   return x < 1e-9 ? 1 : Math.abs(Math.sin(x) / x);
 }
 
-/** Odd harmonics n·f of a 50 % duty clock with amplitude 2·I/(nπ), inside the 30 MHz to 1 GHz scan. */
+/** Odd harmonics n·f of a 50% duty clock with amplitude 2·I/(nπ), inside the 30 MHz to 1 GHz scan. */
 export function spectrum(p: EmcParams): Line[] {
   const r = p.rM ?? 3;
   const f0 = p.freqMHz * 1e6;

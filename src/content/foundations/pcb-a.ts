@@ -22,7 +22,7 @@ export const pcbLessonsA: ConceptLesson[] = [
         body: P(
           "A **resistor** limits current. In *Electronics from zero: circuits* (the lesson \"Ohm's law\") you met V = I × R: for a fixed voltage, a bigger resistance means a smaller current. On a board, resistors set the current through an LED, split one voltage into two, and hold a signal line at a known level when nothing drives it.",
           "A small through-hole resistor has no room for printed numbers, so its value is written in **colour bands**. Read from the end the bands are closest to:\n- **4 bands:** two digits, a multiplier, then the tolerance.\n- **5 bands (precision parts):** three digits, a multiplier, then the tolerance.",
-          "The **tolerance** is how far the real value may be from the printed one: gold means ±5 %, so a 4.7 kΩ part may be anywhere from 4.465 to 4.935 kΩ. The tolerance band is usually set a little apart from the others, which tells you which end to start from.",
+          "The **tolerance** is how far the real value may be from the printed one: gold means ±5%, so a 4.7 kΩ part may be anywhere from 4.465 to 4.935 kΩ. The tolerance band is usually set a little apart from the others, which tells you which end to start from.",
           "Pick a band, pick a colour, and watch the value. Gold and silver can also be a multiplier (×0.1 and ×0.01) for values below 10 Ω. Try the 5-band setting too.",
         ),
         widget: { type: "pcb-resistor", props: { mode: "decode", bands: 4, toggle: true, initial: ["yellow", "violet", "red", "gold"] } },
@@ -39,27 +39,27 @@ export const pcbLessonsA: ConceptLesson[] = [
           unit: "kΩ",
           hint: "Look up the first two colours in the chart as digits, then multiply by the value of the third (multiplier) band.",
         },
-        explanation: "Green = 5, blue = 6, so the digits are **56**. Orange as the multiplier is **× 1000**, so 56 × 1000 = 56 000 Ω = **56 kΩ**. Gold is the tolerance, ±5 %, which puts the real value between about 53.2 and 58.8 kΩ.",
+        explanation: "Green = 5, blue = 6, so the digits are **56**. Orange as the multiplier is **× 1000**, so 56 × 1000 = 56 000 Ω = **56 kΩ**. Gold is the tolerance, ±5%, which puts the real value between about 53.2 and 58.8 kΩ.",
       },
       {
         kind: "question",
         title: "Build a precision resistor",
-        body: "Now the other direction. Set the bands of a **5-band** resistor to **47.5 kΩ, ±1 %**. Three digits first (475), then the multiplier, then the tolerance.",
+        body: "Now the other direction. Set the bands of a **5-band** resistor to **47.5 kΩ, ±1%**. Three digits first (475), then the multiplier, then the tolerance.",
         widget: { type: "pcb-resistor", props: { mode: "encode", bands: 5, target: { ohms: 47500, tolerancePct: 1 } } },
         question: {
           type: "widget",
           goal: { ohms: 47500, tolerancePct: 1, count: 5 },
-          prompt: "Choose the five colours so the value reads 47.5 kΩ with ±1 % tolerance.",
-          hint: "Write 47.5 kΩ as a three-digit number times a power of ten, then find each digit, the multiplier and the ±1 % colour in the chart.",
+          prompt: "Choose the five colours so the value reads 47.5 kΩ with ±1% tolerance.",
+          hint: "Write 47.5 kΩ as a three-digit number times a power of ten, then find each digit, the multiplier and the ±1% colour in the chart.",
         },
-        explanation: "47.5 kΩ is 475 × 100, so the bands are **yellow (4), violet (7), green (5), red (× 100), brown (±1 %)**. Five bands exist for exactly this reason: two digits cannot write 475.",
+        explanation: "47.5 kΩ is 475 × 100, so the bands are **yellow (4), violet (7), green (5), red (× 100), brown (±1%)**. Five bands exist for exactly this reason: two digits cannot write 475.",
       },
       {
         kind: "explain",
         title: "Tiny chips print codes",
         body: P(
-          "A surface-mount (SMD) resistor is the size of a grain of rice or smaller, so it carries a printed **code** instead of stripes. Four schemes are common:\n- **3 digits:** the first two are the value, the third is the number of zeros. **472** = 47 followed by 2 zeros = 4700 Ω = 4.7 kΩ.\n- **4 digits:** three digits then the zero count. **4701** = 470 followed by 1 zero = 4.7 kΩ.\n- **R notation:** the R is the decimal point. **4R7** = 4.7 Ω, **R47** = 0.47 Ω.\n- **EIA-96 (1 % chips):** two digits pick a value from a table of 96, then a letter picks the multiplier. **01C** = 100 × 100 = 10 kΩ.",
-          "That table is the **E96 series**, one of the standard value series (E-series). Resistors are not made in every value: E12 has 12 values per decade (10, 12, 15, 18, 22, 27, 33, 39, 47, 56, 68, 82, typically ±10 %), E24 has 24 (typically ±5 %) and E96 has 96 (typically ±1 %). You choose the nearest standard value, and the tolerance covers the gap.",
+          "A surface-mount (SMD) resistor is the size of a grain of rice or smaller, so it carries a printed **code** instead of stripes. Four schemes are common:\n- **3 digits:** the first two are the value, the third is the number of zeros. **472** = 47 followed by 2 zeros = 4700 Ω = 4.7 kΩ.\n- **4 digits:** three digits then the zero count. **4701** = 470 followed by 1 zero = 4.7 kΩ.\n- **R notation:** the R is the decimal point. **4R7** = 4.7 Ω, **R47** = 0.47 Ω.\n- **EIA-96 (1% chips):** two digits pick a value from a table of 96, then a letter picks the multiplier. **01C** = 100 × 100 = 10 kΩ.",
+          "That table is the **E96 series**, one of the standard value series (E-series). Resistors are not made in every value: E12 has 12 values per decade (10, 12, 15, 18, 22, 27, 33, 39, 47, 56, 68, 82, typically ±10%), E24 has 24 (typically ±5%) and E96 has 96 (typically ±1%). You choose the nearest standard value, and the tolerance covers the gap.",
           "A code of **000** is a **zero-ohm jumper**: a wire link shaped like a resistor so a machine can place it. Tiny sizes such as 0402 are usually not marked at all. Try the examples and your own codes.",
         ),
         widget: { type: "pcb-smd", props: { examples: ["472", "4701", "4R7", "R47", "68B", "000"] } },
@@ -67,7 +67,7 @@ export const pcbLessonsA: ConceptLesson[] = [
       {
         kind: "question",
         title: "Write a code",
-        body: "A 1 % chip resistor is **10 kΩ**. Type the **EIA-96 code** for it. (Hint for the table: 10 kΩ = 100 × 100. Open the EIA-96 tables under the chip.)",
+        body: "A 1% chip resistor is **10 kΩ**. Type the **EIA-96 code** for it. (Hint for the table: 10 kΩ = 100 × 100. Open the EIA-96 tables under the chip.)",
         widget: { type: "pcb-smd", props: { examples: ["472", "4R7", "68B"] } },
         question: {
           type: "widget",
@@ -75,7 +75,7 @@ export const pcbLessonsA: ConceptLesson[] = [
           prompt: "Type a two-digit-plus-letter code that decodes to 10 kΩ.",
           hint: "Find 100 in the EIA-96 table (its index is the first two digits). Then pick the letter whose multiplier turns 100 into 10 000.",
         },
-        explanation: "100 sits at index **01** in the table, and 100 × 100 = 10 000, so the letter is **C** (× 100). **01C** = 10 kΩ. The ordinary 3-digit code for the same value is **103** (10 followed by 3 zeros), used on 5 % and 10 % chips.",
+        explanation: "100 sits at index **01** in the table, and 100 × 100 = 10 000, so the letter is **C** (× 100). **01C** = 10 kΩ. The ordinary 3-digit code for the same value is **103** (10 followed by 3 zeros), used on 5% and 10% chips.",
       },
       {
         kind: "question",

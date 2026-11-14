@@ -77,7 +77,7 @@ f = frequency of the current's changes`),
         kind: "explain",
         title: "A clock is a pile of harmonics",
         body: P(
-          "Why is the chart full of lines up to 1 GHz when the clock is only 30 MHz? A square-ish wave is not one frequency. It is the sum of the clock frequency **f** plus its **odd harmonics**: 3f, 5f, 7f and so on (a 50 % duty clock has no even ones). Harmonic *n* has an amplitude of about 2·I/(nπ) for a clock current I, so they get smaller as *n* grows.",
+          "Why is the chart full of lines up to 1 GHz when the clock is only 30 MHz? A square-ish wave is not one frequency. It is the sum of the clock frequency **f** plus its **odd harmonics**: 3f, 5f, 7f and so on (a 50% duty clock has no even ones). Harmonic *n* has an amplitude of about 2·I/(nπ) for a clock current I, so they get smaller as *n* grows.",
           "What cuts them down faster is the **edge**. In *Signal integrity* you saw that rise time, not clock frequency, decides how fast the signal really changes. A slower edge rounds the corners and removes the high harmonics. The toy uses the standard trapezoid envelope, |sin(x)/x| with x = nπ·f·tr, multiplied onto each harmonic.",
           "Then each line goes through Ott's small-loop estimate, **E ≈ 263×10⁻¹⁶ · f² · A · I ÷ r** (E in V/m, f in Hz, A in m², I in A, r = 3 m; differential mode, with the ground-plane reflection included). It is an **estimate**: good for comparing layouts, not for promising a pass.",
           "Try this: with the default clock, switch the loop to **Over a plane**, then try the edges at **10 ns**, and turn the toy filter on and off. Watch which lines drop most.",

@@ -148,7 +148,7 @@ export function Emc({ props, onChange, revealed }: WidgetProps<EmcProps>) {
         </Note>
       </div>
       <ToyNote>
-        A toy estimate: one clock loop, Ott&apos;s small-loop formula E ≈ 263×10⁻¹⁶·f²·A·I/r (differential mode, r = 3 m, ground reflection included), a 50 % duty trapezoid with a sin(x)/x rise-time envelope, and a first-order low-pass (corner {FILTER_FC_HZ / 1e6} MHz) for the filter. Real emissions are often dominated by common-mode currents on cables, which this ignores. Only a test lab gives a real result.
+        A toy estimate: one clock loop, Ott&apos;s small-loop formula E ≈ 263×10⁻¹⁶·f²·A·I/r (differential mode, r = 3 m, ground reflection included), a 50% duty trapezoid with a sin(x)/x rise-time envelope, and a first-order low-pass (corner {FILTER_FC_HZ / 1e6} MHz) for the filter. Real emissions are often dominated by common-mode currents on cables, which this ignores. Only a test lab gives a real result.
       </ToyNote>
     </div>
   );
