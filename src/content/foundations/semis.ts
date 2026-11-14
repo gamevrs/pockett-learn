@@ -1,14 +1,16 @@
-import type { Module } from "../../learn/types.ts";
+import type { ConceptLesson, Module } from "../../learn/types.ts";
+import { semisLessonsA } from "./semis-a.ts";
+import { semisLessonsB } from "./semis-b.ts";
 
 /**
  * Module: Semiconductors: physics to fab. Spec: docs/ELECTRONICS_PATH.md (lesson list, levels, accuracy rules).
  *
- * Authors: put the lessons in the `lessons` array below (or, if the file grows large, split them into
- * semis-a.ts / semis-b.ts exporting ConceptLesson[] and spread them here, like ai-systems.ts).
- * Lesson ids are `fnd-semi-N-slug`, each lesson sets `level` ("Beginner" | "Intermediate" | "Advanced" |
- * "Professional"), and levels must never go backwards within the module (the validator checks it).
- * Widgets: register them in src/learn/widgets/semi/index.ts with keys prefixed "semi-".
+ * Ten lessons from Beginner to Professional: conductors, insulators and semiconductors; doping; the PN junction; the MOSFET;
+ * scaling and Moore's law; making a wafer; the fab process loop; lithography; yield and cost; packaging and test.
+ * Widgets: src/learn/widgets/semi/ (keys prefixed "semi-").
  */
+const lessons: ConceptLesson[] = [...semisLessonsA, ...semisLessonsB];
+
 export const semisModule: Module = {
   id: "semis",
   part: "semiconductors",
@@ -16,5 +18,5 @@ export const semisModule: Module = {
   blurb:
     "Why silicon conducts, doping, the PN junction and the MOSFET, scaling and node names, making wafers, the fab process loop, lithography, yield and cost, packaging and test.",
   icon: "atom",
-  lessons: [],
+  lessons,
 };
