@@ -352,9 +352,9 @@
   font-size: 12px;
   font-weight: 500;
   backdrop-filter: blur(8px);
-  transition:
-    background-color 0.15s,
-    border-color 0.15s;
+  /* background must NOT transition: .hud-btn-on swaps text colour instantly, so a fading background leaves
+     #0a0a0a text on the old dark pill (or #f4f4f4 on the old green one) for ~150ms. */
+  transition: border-color 0.15s;
   white-space: nowrap;
 }
 .hud-btn:hover {
