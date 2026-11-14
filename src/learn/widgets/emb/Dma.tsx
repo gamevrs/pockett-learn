@@ -223,7 +223,7 @@ export interface DBufState {
   lostPerBlock: number;
 }
 
-export function DBuf({ props, onChange, revealed }: WidgetProps<DBufProps>) {
+export function DBuf({ props, onChange, revealed, status }: WidgetProps<DBufProps>) {
   const rateHz = props.rateHz ?? 48_000;
   const [mode, setMode] = useState<"single" | "double">(props.mode ?? "single");
   const [half, setHalf] = useState(props.halfSamples ?? 256);
@@ -351,7 +351,8 @@ export function DBuf({ props, onChange, revealed }: WidgetProps<DBufProps>) {
       <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
         <Readout label="Fill time per block" value={fmtSec(r.fillMs / 1000)} />
         <Readout label="Processing" value={fmtSec(proc / 1000)} />
-        <Readout label="Verdict" value={<span className={verdictBad ? "text-[var(--bad)]" : ""}>{verdict}</span>} accent />
+        {/* The verdict answers a question's goal: it waits for Check (status "idle"). Explain steps pass no status. */}
+        {status !== "idle" && <Readout label="Verdict" value={<span className={verdictBad ? "text-[var(--bad)]" : ""}>{verdict}</span>} accent />}
         <Readout label="Samples lost per block" value={r.lostPerBlock} />
       </div>
 
@@ -415,7 +416,7 @@ function Arrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Cache({ props, onChange, revealed }: WidgetProps<CacheProps>) {
+export function Cache({ props, onChange, revealed, status }: WidgetProps<CacheProps>) {
   const [scenario, setScenario] = useState<"tx" | "rx">(props.scenario ?? "tx");
   const [st, setSt] = useState<CacheState>(cacheStart());
   const [actions, setActions] = useState<string[]>([]);
@@ -451,6 +452,9 @@ export function Cache({ props, onChange, revealed }: WidgetProps<CacheProps>) {
   let result: { ok: boolean; text: string } | null = null;
   if (tx && st.sent !== null) result = st.sent === "HI!!" ? { ok: true, text: "UART sent 'HI!!' ✓" } : { ok: false, text: `UART sent '${st.sent}': the old data! The new bytes were still only in the cache.` };
   if (!tx && st.read !== null) result = st.read === "OK!!" ? { ok: true, text: "CPU got 'OK!!' ✓" } : { ok: false, text: `CPU got '${st.read}': a stale cached copy.` };
+  // In a question, report what happened without a verdict (no tick, no explanation, no green/red) until Check.
+  const quiet = status === "idle";
+  if (result && quiet) result = { ok: true, text: tx ? `UART sent '${st.sent}'` : `CPU got '${st.read}'` };
   const last = st.log.slice(-5);
 
   return (
@@ -508,7 +512,7 @@ export function Cache({ props, onChange, revealed }: WidgetProps<CacheProps>) {
       </ul>
 
       {result && (
-        <p className={`mt-2 rounded-xl border px-3.5 py-2.5 text-[0.9rem] font-medium leading-snug ${result.ok ? "border-[var(--brand)]/40 bg-tint text-ink" : "border-[var(--bad)] bg-surface text-[var(--bad)]"}`} role="status">
+        <p className={`mt-2 rounded-xl border px-3.5 py-2.5 text-[0.9rem] font-medium leading-snug ${quiet ? "border-line bg-surface text-ink" : result.ok ? "border-[var(--brand)]/40 bg-tint text-ink" : "border-[var(--bad)] bg-surface text-[var(--bad)]"}`} role="status">
           {result.text}
         </p>
       )}

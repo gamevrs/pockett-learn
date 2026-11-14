@@ -253,6 +253,9 @@ export function bounceEdges(pressAt: number, releaseAt: number, bounceMs: number
 }
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
+const r2 = (x: number) => Math.round(x * 100) / 100;
+/** Phase of the debounce sampling clock, ms (see debounce()). */
+export const SAMPLE_PHASE_MS = 0.05;
 
 /** The level at time t given a list of edges. */
 export function levelAt(edges: Edge[], t: number): 0 | 1 {
@@ -289,8 +292,10 @@ export function debounce(raw: Edge[], sampleMs: number, stable: number, totalMs:
   let accepted: 0 | 1 = raw[0]?.level ?? 1;
   const edges: Edge[] = [{ t: 0, level: accepted }];
   let run = 0;
+  // Samples sit at k·sampleMs + 0.05 ms. Raw edges are on a 0.1 ms grid and every sampleMs offered is a multiple
+  // of 0.5 ms, so a sample can never land exactly on an edge (no zero-delay "free" read of the press).
   for (let k = 1; k * sampleMs <= totalMs + 1e-9; k++) {
-    const t = r1(k * sampleMs);
+    const t = r2(k * sampleMs + SAMPLE_PHASE_MS);
     const lv = levelAt(raw, t);
     samples.push({ t, raw: lv });
     if (lv !== accepted) {
@@ -309,7 +314,7 @@ export function debounce(raw: Edge[], sampleMs: number, stable: number, totalMs:
     edges,
     presses: fallingEdges(edges),
     rawPresses: fallingEdges(raw),
-    delayMs: firstRaw && firstAcc ? r1(firstAcc.t - firstRaw.t) : null,
+    delayMs: firstRaw && firstAcc ? r2(firstAcc.t - firstRaw.t) : null,
   };
 }
 
@@ -966,12 +971,15 @@ export function linkLayout(sz: SectionSizes, flashBase = 0x0000_0000, flashSize 
   return { ok: !error, error, flash, ram, flashUsed, ramUsed, flashSize, ramSize, initialSp: top, resetVector: flashBase + align4(sz.vectors) };
 }
 
+/** Step indices (0-based) that the Boot widget and its skip toggles depend on. */
+export const BOOT_DATA_STEP = 3;
+export const BOOT_BSS_STEP = 4;
 export const BOOT_STEPS = [
   "Reset: the CPU loads the stack pointer from the first word of the vector table",
   "It loads the program counter from the second word: the reset handler",
+  "SystemInit sets up the clocks (and the FPU)",
   "The startup code copies .data's initial values from flash to RAM",
   "It fills .bss with zeros",
-  "It sets up the clocks (and, on some chips, the FPU and memory)",
   "It calls main()",
 ] as const;
 
