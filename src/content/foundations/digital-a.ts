@@ -28,8 +28,8 @@ export const digitalLessonsA: ConceptLesson[] = [
       {
         kind: "question",
         title: "Input high",
-        body: "The input of the inverter is **high** (1). Which transistor conducts, and what is the output?",
-        widget: { type: "digi-inverter", props: { mode: "switch" }, live: true },
+        body: "The input of the inverter is **high** (1). Which transistor conducts, and what is the output? (Answer first; then the widget lets you check it.)",
+        widget: { type: "digi-inverter", props: { mode: "switch" }, after: true },
         question: {
           type: "choice",
           options: ["The PMOS conducts, so the output is 1", "The NMOS conducts, so the output is 0", "Both conduct, so the output is 0", "Neither conducts, so the output floats"],
@@ -49,9 +49,8 @@ export const digitalLessonsA: ConceptLesson[] = [
         body: P(
           "Why not one transistor and a resistor? The transistor would pull the output down, the resistor would pull it up, and whenever the transistor was on, current would flow through the resistor to ground. Constant waste and heat.",
           "**CMOS** (*complementary* MOS) uses a PMOS to pull **up** and an NMOS to pull **down**, and arranges that **exactly one is on at a time**. The output is always firmly connected to either the supply (called **VDD**, the 1 level) or ground (0 V), and no steady current can flow from one to the other.",
-          "Now use the slider to move the input slowly through the middle. A real input is never perfect: it takes a moment to cross from 0 to 1, and in that moment something interesting happens.",
+          "A real input is never perfect, though: it takes a moment to cross from 0 to 1, and in that moment something interesting happens. In the next step a slider moves the input slowly through the middle.",
         ),
-        widget: { type: "digi-inverter", props: { mode: "ramp" } },
       },
       {
         kind: "question",
@@ -67,7 +66,7 @@ export const digitalLessonsA: ConceptLesson[] = [
         body: "A CMOS inverter has held its output at 1 for a whole minute. Ignoring tiny leakage currents, how much current flows from the supply?",
         question: {
           type: "choice",
-          options: ["Essentially none", "A steady current, as long as the output is 1", "A steady current, as long as the output is 0", "Half the maximum, because one transistor is always on"],
+          options: ["None: the path to ground is always broken", "A steady current, as long as the output is 1", "A steady current, as long as the output is 0", "Half the maximum, because one transistor is on"],
           answer: 0,
           hint: "Look at the stack: is there ever a closed path from VDD to ground when the input is steady?",
           feedback: {
@@ -152,17 +151,17 @@ export const digitalLessonsA: ConceptLesson[] = [
       {
         kind: "question",
         title: "Never wire it like this",
-        body: "Put **both** networks in **parallel**, then try the four input rows. What goes wrong?",
-        widget: { type: "digi-cmos-gate", props: { pu: "parallel", pd: "parallel" }, live: true },
+        body: "Suppose **both** networks are wired in **parallel**: two PMOS side by side on top, two NMOS side by side below. Think through the four input rows. What goes wrong? (The widget opens after you answer, so you can try it.)",
+        widget: { type: "digi-cmos-gate", props: { pu: "parallel", pd: "parallel" }, after: true },
         question: {
           type: "choice",
-          options: ["The output floats whenever A = B = 1", "Nothing: it is a perfectly good XOR gate", "For A ≠ B both networks conduct: a short circuit from VDD to ground", "The output is always 0"],
-          answer: 2,
+          options: ["The output floats whenever A = B = 1", "Nothing: it behaves as a working XOR gate", "The output is stuck at 0 for every input", "When A ≠ B, both networks conduct: a short"],
+          answer: 3,
           hint: "Check the row A = 0, B = 1. Is one PMOS on? Is one NMOS on?",
           feedback: {
             0: "At A = B = 1 both NMOS are on and both PMOS are off, so the output is pulled low firmly, not floating.",
             1: "XOR needs no short circuits. Look at the rows A ≠ B: both networks conduct there.",
-            3: "Not always: for A = B = 0 only the pull-up conducts, and the output is 1.",
+            2: "Not stuck: for A = B = 0 only the pull-up conducts, and the output is 1.",
           },
         },
         explanation: "When A ≠ B one PMOS and one NMOS are both on, with nothing in series to stop it: a direct path from VDD to ground. A real gate would burn power and might fail. The rule for a valid static CMOS gate: for **every** input row, **exactly one** network conducts. Parallel + parallel breaks the first half, series + series breaks the second (the output floats).",
@@ -180,10 +179,10 @@ export const digitalLessonsA: ConceptLesson[] = [
       {
         kind: "question",
         title: "Count the NANDs",
-        body: "The classic XOR built only from NAND gates takes how many NAND gates? (Pick **XOR** in the widget to see it.)",
-        widget: { type: "digi-nand-net", props: { mode: "xor", pick: true }, live: true },
-        question: { type: "number", answer: 4, tolerance: 0, hint: "Count the boxes in the XOR drawing. One of them takes A and B first; two more combine each input with that result." },
-        explanation: "**Four**: n1 = NAND(A, B), then n2 = NAND(A, n1) and n3 = NAND(B, n1), and finally n4 = NAND(n2, n3). Real designs often use XOR cells directly, but the point is that the single NAND cell is enough, which is why early chip designers and chip libraries love it.",
+        body: "Using only the recipes above (NOT is a NAND with its inputs tied together, and De Morgan turns OR into a NAND of the two inverted inputs), how many NAND gates does an **OR** take? The widget opens on the OR circuit after you answer.",
+        widget: { type: "digi-nand-net", props: { mode: "or", pick: true }, after: true },
+        question: { type: "number", answer: 3, tolerance: 0, hint: "A OR B = NAND(NOT A, NOT B). Count one NAND for each NOT, plus the one that combines them." },
+        explanation: "**Three**: one NAND inverts A, one inverts B, and a third combines them: NAND(NOT A, NOT B) = A OR B. XOR takes four (pick it in the widget): n1 = NAND(A, B), then NAND(A, n1) and NAND(B, n1), and a last NAND of those two. Real designs often use OR and XOR cells directly, but the single NAND cell is enough. Why NAND rather than NOR, when both are universal? A NOR puts its two **PMOS** transistors in series, and a PMOS is typically about 2 to 3 times weaker than an NMOS of the same size (holes move more slowly than electrons), so a NOR has to be drawn bigger or it is slower. A NAND puts the stronger NMOS in series instead, which is why cell libraries lean on NAND.",
       },
       {
         kind: "question",
@@ -191,22 +190,22 @@ export const digitalLessonsA: ConceptLesson[] = [
         body: "A CMOS NAND gate takes 4 transistors. A CMOS AND gate takes 6. Why?",
         question: {
           type: "choice",
-          options: ["AND needs a bigger voltage", "AND is a NAND followed by an inverter, and CMOS stages are naturally inverting", "AND has three inputs inside", "NAND is slower, so it needs fewer transistors"],
-          answer: 1,
+          options: ["AND needs a higher supply voltage to switch", "AND has three inputs hidden inside it", "AND is a NAND plus an inverter", "NAND is slower, so it can use fewer parts"],
+          answer: 2,
           hint: "Look at the pull-up and pull-down networks: when an input rises, which way does the output move?",
           feedback: {
             0: "The supply is the same for every gate. The difference is in how many stages it has.",
-            2: "Both gates have two inputs. The extra transistors are an extra stage, not an extra input.",
+            1: "Both gates have two inputs. The extra transistors are an extra stage, not an extra input.",
             3: "Fewer transistors does not mean slower here. The gates differ in structure, not in who is faster.",
           },
         },
-        explanation: "A CMOS stage is **inverting**: a rising input can only pull the output down. So the cheapest gates are the inverting ones (NOT, NAND, NOR) and AND/OR are built as NAND/NOR plus an inverter: 4 + 2 = 6 transistors.",
+        explanation: "A CMOS stage is **inverting**: a rising input can only pull the output down. So the cheapest gates are the inverting ones (NOT, NAND, NOR), and AND/OR are built as NAND/NOR followed by an inverter: 4 + 2 = 6 transistors.",
       },
       {
         kind: "code",
         title: "XOR from nothing but NAND",
         body: P(
-          "`nand(a, b)` is given. Write `xor_gate(a, b)` using **only calls to `nand`**, with the four-gate layout you just saw: `n1 = nand(a, b)`, `n2 = nand(a, n1)`, `n3 = nand(b, n1)`, then `nand(n2, n3)`.",
+          "`nand(a, b)` is given. Write `xor_gate(a, b)` using **only calls to `nand`**, with the four-gate layout from the last explanation: one gate combines the two inputs, two gates each combine one input with that result, and a last gate merges those two.",
         ),
         language: "python",
         starter: `def nand(a, b):
@@ -214,6 +213,7 @@ export const digitalLessonsA: ConceptLesson[] = [
 
 def xor_gate(a, b):
     # use only nand() calls, no ^, &, | or not
+    # your code here
     return None
 `,
         solution: `def nand(a, b):
@@ -311,7 +311,7 @@ def xor_gate(a, b):
         body: P(
           "Wire a mux's **data inputs to constants** (0s and 1s) and its **select inputs** become the function's inputs. The mux then just looks up the answer: the data inputs *are* the output column of a truth table. This is a **lookup table** (LUT). Any function of 3 inputs fits in an 8-input mux with 8 stored bits.",
           "FPGAs (chips you can reprogram) are made largely of small LUTs, each with a few inputs, wired together by programmable connections. \"Reprogramming\" rewrites the stored bits.",
-          "Below, A, B and C pick a row, and each row's output bit is yours to set. Remember the full adder: its **sum** bit is 1 when an odd number of inputs is 1.",
+          "Below, A, B and C pick a row, and each row's output bit is yours to set. Try an AND of all three inputs, then an OR.",
         ),
         widget: { type: "digi-mux", props: { mode: "lut" } },
       },
@@ -386,11 +386,11 @@ def xor_gate(a, b):
       {
         kind: "question",
         title: "The forbidden state",
-        body: "Raise S **and** R together (S = R = 1), then lower them at the same time. What does the SR latch do?",
-        widget: { type: "digi-latch", props: { mode: "sr" }, live: true },
+        body: "Suppose S **and** R are raised together (S = R = 1), then lowered at the same time. What does the SR latch do? Predict it; the widget opens afterwards so you can try.",
+        widget: { type: "digi-latch", props: { mode: "sr" }, after: true },
         question: {
           type: "choice",
-          options: ["It keeps the old value", "It goes to Q = 1", "It goes to Q = 0", "It ends up in an unpredictable state"],
+          options: ["It keeps the value it held before", "It always settles to Q = 1", "It always settles to Q = 0", "It settles unpredictably"],
           answer: 3,
           hint: "With S = R = 1 both outputs are forced low. When both inputs release together, both gates try to rise at once.",
           feedback: {
@@ -442,12 +442,13 @@ def xor_gate(a, b):
         body: "Which statement about latches and flip-flops is correct?",
         question: {
           type: "choice",
-          options: ["A flip-flop is transparent for the whole time the clock is high", "A latch only looks at D at the clock edge", "A flip-flop samples D at the clock edge and ignores it otherwise", "A flip-flop needs S and R inputs to be safe"],
-          answer: 2,
+          options: ["A flip-flop samples D at the clock edge only", "A flip-flop is transparent while the clock is high", "A latch samples D only at the clock edge", "A flip-flop needs S and R inputs to be safe"],
+          answer: 0,
           hint: "Think about the word edge. Which of the two looks at a single instant?",
           feedback: {
-            0: "That describes a latch. A flip-flop is closed except at the edge.",
-            1: "The other way round: a latch is transparent for a whole clock phase, a flip-flop looks at one instant.",
+            1: "That describes a latch. A flip-flop is closed except at the edge.",
+            2: "The other way round: a latch is transparent for a whole clock phase, a flip-flop looks at one instant.",
+
             3: "The D flip-flop has a single data input and no forbidden state. S and R belong to the SR latch.",
           },
         },
