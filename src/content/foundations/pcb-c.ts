@@ -11,9 +11,9 @@ export const pcbLessonsC: ConceptLesson[] = [
   {
     id: "fnd-pcb-6-power-ground",
     title: "Power and ground",
-    summary: "Every current goes round a loop. Return paths, ground planes, slots that break them, where to put decoupling capacitors, star versus plane grounding, and copper and thermal vias as a heat sink.",
-    minutes: 14,
-    xp: 85,
+    summary: "Every current goes round a loop. Return paths, ground planes, slots that break them, where to put decoupling capacitors, and star versus plane grounding.",
+    minutes: 11,
+    xp: 75,
     level: "Advanced",
     steps: [
       {
@@ -145,52 +145,6 @@ bottom   signals and parts`),
           "The usual advice is **one solid ground plane with partitioned placement**: keep analog and digital areas apart and make sure digital return currents have a path that avoids the analog area. A split cuts the return paths of every signal that crosses it. Star grounding still earns its place at low frequency (audio, sensors, separating a heavy power return), but for most digital boards one solid plane plus careful placement wins. Always check the converter's datasheet for its own layout advice.",
       },
       {
-        kind: "explain",
-        title: "The board is the heat sink",
-        body: P(
-          "In *Reading a datasheet* you used TJ = TA + P × θJA, and were warned that a datasheet's θJA holds only for **its own test board**. Now you can see why. A power chip cannot shed heat from its plastic body alone (a **toy** figure here: about 150 °C/W, weak). Nearly all of it leaves **down through the chip into your board's copper**, which spreads it out and hands it to the air. So the copper you give it sets the θJA you really get.",
-          "Many power chips come with an **exposed pad** (also called a thermal pad): a bare metal square under a QFN or DFN, or the metal tab of the PK3302's SOT-223, which you solder to copper on purpose. Two layout levers then do the work:\n- **Copper area.** A bigger pour around the pad sheds more heat, with diminishing returns. Still air carries away only about **22 W per m² per kelvin** from a copper face (typical, natural convection and radiation).\n- **Thermal vias.** A **thermal via** is a plated hole under or beside the pad that carries heat to copper on the other face or an inner plane. One plain 0.3 mm via through a 1.6 mm board is about **150 °C/W** (typical, 100 to 200), a thin copper tube. So you use a small grid of them side by side (the datasheet's land pattern often shows one), which puts them in parallel.",
-          "More vias help only until the copper is the limit: past that, extra holes buy almost nothing. One trap: a via open in the pad can wick solder away from the joint during reflow. Fabs offer tented, plugged or filled vias for this, and the datasheet's land pattern says what the maker expects. *Manufacturing the board* returns to this. **Safety:** a working power chip, and the copper around it, can be hot enough to burn.",
-          "The widget is a **toy** with typical values. A chip turns **1.2 W** into heat in a box at **50 °C**, and we want the junction at **105 °C or lower**, so there is margin below the 125 °C rating. Start with the little pad and no vias, and try the controls.",
-        ),
-        widget: { type: "pcb-thermal", props: { area: 2, vias: 0 } },
-      },
-      {
-        kind: "question",
-        title: "Cool the chip, spend little board",
-        body: "The same chip, 1.2 W in a 50 °C box. You can spare at most **6 cm² of copper** for it. Choose the copper area and the number of thermal vias so that **TJ is 105 °C or lower**.",
-        widget: { type: "pcb-thermal", props: {} },
-        question: {
-          type: "widget",
-          goal: { maxTj: 105, maxAreaCm2: 6, minVias: 1 },
-          prompt: "Junction at 105 °C or lower, using no more than 6 cm² of copper and at least one thermal via.",
-          hint: "Copper alone at 6 cm² is not enough. Which second lever carries heat to a second copper face?",
-        },
-        explanation: "At 6 cm² with no vias the junction reaches about **114 °C**. Four vias join the far-side copper and bring it to about **97 °C**, passing. Nine vias give about 95 °C and sixteen about 94 °C, so the returns fade fast: copper is the limit by then. Ten cm² with no vias would also pass (about 97 °C), but it spends board space you did not have. These are toy values; a real design checks the datasheet's θJA curves for copper area and measures a prototype with a thermocouple or thermal camera.",
-      },
-      {
-        kind: "question",
-        title: "What are the via grid and pad for?",
-        body: "A QFN's datasheet shows a **3 × 3 grid of 0.3 mm vias** inside its exposed-pad land pattern, with the note \"connect to a copper area\". What is the grid for?",
-        question: {
-          type: "choice",
-          options: [
-            "They carry the chip's supply current to the inner power plane",
-            "They let flux gas escape during reflow, and nothing else",
-            "They tie the pad to ground so the chip is shielded",
-            "They move heat from the pad to copper on the other layers",
-          ],
-          answer: 3,
-          hint: "The pad is bare metal under the chip, and its job is to get heat out. Which of these is about heat?",
-          feedback: {
-            0: "Supply current uses the chip's pins, not the exposed pad. The pad is a heat path.",
-            1: "Gas escape is a side effect at best. The grid is there to carry heat.",
-            2: "The pad is often grounded, but the vias in a grid of this kind are placed to carry heat, not to shield.",
-          },
-        },
-        explanation: "The vias are **thermal vias**: nine in parallel are about 17 °C/W (150 ÷ 9, typical) instead of 150 °C/W for one, so the heat can reach copper on the other layers and spread there. The same note warns that open vias in the pad can steal solder, so check what your fab and the datasheet recommend (tented, plugged or filled).",
-      },
-      {
         kind: "recap",
         points: [
           "Every current goes round a **loop**: the signal out and a **return path** back. Small loops mean low inductance, little radiation and little pickup.",
@@ -198,7 +152,6 @@ bottom   signals and parts`),
           "Keep a **solid ground plane** under fast signals. A slot forces a long detour; avoid crossing it, or add a stitching capacitor as a patch. Power planes and pours need the same care.",
           "**Decoupling:** ΔV = L × ΔI/Δt, about 1 nH per mm of loop path. Put a 100 nF capacitor right at each supply pin, with its via in the pad. Placement beats value.",
           "**Star grounding** suits low-frequency and heavy-current separation. For most digital and mixed-signal boards: one solid plane, with analog and digital parts placed apart.",
-          "**Heat:** the board is the heat sink. Copper area and a grid of **thermal vias** under an exposed pad lower θJA, with diminishing returns (toy and typical values here), so a datasheet's θJA only holds for its own test board.",
         ],
       },
     ],

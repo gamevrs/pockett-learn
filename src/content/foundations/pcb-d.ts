@@ -5,7 +5,7 @@ const txt = (s: string) => "~~~text\n" + s.trim() + "\n~~~";
 /** Paragraphs joined with blank lines. */
 const P = (...paras: string[]) => paras.join("\n\n");
 
-/** Lessons 8 and 9 of "Components and PCB design": EMC, and manufacturing the board. */
+/** Lessons 8, 10 and 9 of "Components and PCB design", in that order: EMC, heat, and manufacturing the board (ids keep their numbers; array position sets the order). */
 export const pcbLessonsD: ConceptLesson[] = [
   // ─────────────────────────────── 8. EMC ───────────────────────────────
   {
@@ -167,6 +167,116 @@ def field_dbuv(f_hz, area_mm2, i_ma, r_m=3.0):
           "Keep the **return path** under the trace, never route a fast signal across a plane split, and use **slower edges** (fewer harmonics) where speed is not needed.",
           "Filters (resistor, ferrite, RC at connectors) and shields help, but **cables** carrying common-mode current are often the real antenna. The toy ignores them; only measurement tells the truth.",
           "Test cheap-to-expensive: **near-field probe and analyser**, a lab **pre-scan**, then the **formal test**.",
+        ],
+      },
+    ],
+  },
+
+  // ─────────────────────────────── 10. Heat ───────────────────────────────
+  {
+    id: "fnd-pcb-10-thermal",
+    title: "Heat: the board is the heat sink",
+    summary: "From P and θJA to junction temperature, then how copper area and thermal vias under an exposed pad lower θJA, with a via-in-pad solder trap.",
+    minutes: 10,
+    xp: 70,
+    level: "Advanced",
+    steps: [
+      {
+        kind: "explain",
+        title: "Where the heat comes from",
+        body: P(
+          "Every part wastes some power as heat, and heat is what kills boards. A linear regulator wastes **(VIN − VOUT) × IOUT**; a chip wastes more the faster it runs. The datasheet's **θJA** (junction to ambient, in °C per watt) turns watts into degrees: **TJ = TA + P × θJA**, with TJ the junction temperature and TA the air around the board. You met it in *Reading a datasheet*.",
+          "Two cautions. TJ must stay under the part's rated maximum (often 125 °C or 150 °C), and good designs leave margin, because parts age faster when hot. And the θJA in a datasheet was measured on **the maker's own test board**, usually a small, standardised one. Yours will be better or worse, and the next steps show what changes it. **Safety:** a working power part can burn fingers, so let it cool before touching.",
+        ),
+      },
+      {
+        kind: "explain",
+        title: "The board is the heat sink",
+        body: P(
+          "A datasheet's θJA holds only for **its own test board**, so here is why yours differs. A power chip cannot shed heat from its plastic body alone (a **toy** figure here: about 150 °C/W, weak). Nearly all of it leaves **down through the chip into your board's copper**, which spreads it out and hands it to the air. So the copper you give it sets the θJA you really get.",
+          "Many power chips come with an **exposed pad** (also called a thermal pad): a bare metal square under a QFN or DFN, or the metal tab of the PK3302's SOT-223, which you solder to copper on purpose. Two layout levers then do the work:\n- **Copper area.** A bigger pour around the pad sheds more heat, with diminishing returns. Still air carries away only about **22 W per m² per kelvin** from a copper face (typical, natural convection and radiation).\n- **Thermal vias.** A **thermal via** is a plated hole under or beside the pad that carries heat to copper on the other face or an inner plane. One plain 0.3 mm via through a 1.6 mm board is about **150 °C/W** (typical, 100 to 200), a thin copper tube. So you use a small grid of them side by side (the datasheet's land pattern often shows one), which puts them in parallel.",
+          "More vias help only until the copper is the limit: past that, extra holes buy almost nothing. One trap: a via open in the pad can wick solder away from the joint during reflow. Fabs offer tented, plugged or filled vias for this, and the datasheet's land pattern says what the maker expects. *Manufacturing the board* returns to this. **Safety:** a working power chip, and the copper around it, can be hot enough to burn.",
+          "The widget is a **toy** with typical values. A chip turns **1.2 W** into heat in a box at **50 °C**, and we want the junction at **105 °C or lower**, so there is margin below the 125 °C rating. Start with the little pad and no vias, and try the controls.",
+        ),
+        widget: { type: "pcb-thermal", props: { area: 2, vias: 0 } },
+      },
+      {
+        kind: "question",
+        title: "TJ from a datasheet θJA",
+        body: "A QFN's datasheet gives **θJA = 45 °C/W** on its test board. In your design it wastes **1.2 W** inside a box where the air is **50 °C**. What is the junction temperature TJ, in °C? (Assume your board behaves like the test board.)",
+        question: {
+          type: "number",
+          answer: 104,
+          tolerance: 0.5,
+          unit: "°C",
+          hint: "TJ = TA + P × θJA: multiply the watts by the degrees per watt, then add the air temperature.",
+        },
+        explanation: "TJ = 50 + 1.2 × 45 = 50 + 54 = **104 °C**, under a 125 °C rating but with only 21 °C of margin, and only if your board really cools like the test board. A smaller copper area would raise θJA and TJ.",
+      },
+      {
+        kind: "question",
+        title: "Cool the chip, spend little board",
+        body: "The same chip, 1.2 W in a 50 °C box. You can spare at most **6 cm² of copper** for it. Choose the copper area and the number of thermal vias so that **TJ is 105 °C or lower**.",
+        widget: { type: "pcb-thermal", props: {} },
+        question: {
+          type: "widget",
+          goal: { maxTj: 105, maxAreaCm2: 6, minVias: 1 },
+          prompt: "Junction at 105 °C or lower, using no more than 6 cm² of copper and at least one thermal via.",
+          hint: "Copper alone at 6 cm² is not enough. Which second lever carries heat to a second copper face?",
+        },
+        explanation: "At 6 cm² with no vias the junction reaches about **114 °C**. Four vias join the far-side copper and bring it to about **97 °C**, passing. Nine vias give about 95 °C and sixteen about 94 °C, so the returns fade fast: copper is the limit by then. Ten cm² with no vias would also pass (about 97 °C), but it spends board space you did not have. These are toy values; a real design checks the datasheet's θJA curves for copper area and measures a prototype with a thermocouple or thermal camera.",
+      },
+      {
+        kind: "question",
+        title: "What are the via grid and pad for?",
+        body: "A QFN's datasheet shows a **3 × 3 grid of 0.3 mm vias** inside its exposed-pad land pattern, with the note \"connect to a copper area\". What is the grid for?",
+        question: {
+          type: "choice",
+          options: [
+            "They carry the chip's supply current to the inner power plane",
+            "They let flux gas escape during reflow, and nothing else",
+            "They tie the pad to ground so the chip is shielded",
+            "They move heat from the pad to copper on the other layers",
+          ],
+          answer: 3,
+          hint: "The pad is bare metal under the chip, and its job is to get heat out. Which of these is about heat?",
+          feedback: {
+            0: "Supply current uses the chip's pins, not the exposed pad. The pad is a heat path.",
+            1: "Gas escape is a side effect at best. The grid is there to carry heat.",
+            2: "The pad is often grounded, but the vias in a grid of this kind are placed to carry heat, not to shield.",
+          },
+        },
+        explanation: "The vias are **thermal vias**: nine in parallel are about 17 °C/W (150 ÷ 9, typical) instead of 150 °C/W for one, so the heat can reach copper on the other layers and spread there. The same note warns that open vias in the pad can steal solder, so check what your fab and the datasheet recommend (tented, plugged or filled).",
+      },
+      {
+        kind: "question",
+        title: "Vias in the pad",
+        body: "A layout puts open thermal vias straight through a QFN's exposed pad. What can go wrong when the board goes through reflow?",
+        question: {
+          type: "choice",
+          options: [
+            "The vias melt and short the layers together",
+            "Flux fills the holes and traps heat inside the board",
+            "Solder can wick down the holes and leave a weak joint",
+            "The stencil clogs because the pad has holes in it",
+          ],
+          answer: 2,
+          hint: "Molten solder flows toward hot copper. What does an open hole under the pad offer it?",
+          feedback: {
+            0: "The vias are copper tubes, and copper does not melt at reflow temperatures. The trouble is with the solder.",
+            1: "Flux does not seal a hole or trap heat. The problem is where the molten solder goes.",
+            3: "A stencil prints paste over the pad's openings; holes in the pad do not clog it. The solder itself is the issue.",
+          },
+        },
+        explanation: "Molten solder wets copper and can **wick down an open via**, leaving too little under the chip: a weak, voided joint with worse heat flow. The usual fixes are tented, plugged or filled vias, or smaller vias, and the datasheet's land pattern and your fab's rules say which. *Manufacturing the board* covers reflow and X-ray inspection of such joints.",
+      },
+      {
+        kind: "recap",
+        points: [
+          "**TJ = TA + P × θJA.** Keep TJ below the rating with margin, and remember a datasheet's θJA holds only for its own test board.",
+          "Heat leaves mostly **down through the exposed pad** into board copper. **Copper area** and a grid of **thermal vias** lower θJA, with diminishing returns once the copper is the limit (toy and typical values here).",
+          "Open vias in a pad can **wick solder** during reflow: tent, plug or fill them as the datasheet and fab advise.",
+          "Hot parts and the copper around them can burn: measure before you touch.",
         ],
       },
     ],
