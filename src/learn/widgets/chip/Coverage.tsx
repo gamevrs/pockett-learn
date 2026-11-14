@@ -26,6 +26,10 @@ export interface CoverageState {
   randomRuns: number;
   binsHit: string[];
   formalRun?: boolean;
+  /** The formal check was run on the correct adder (it proved the property). */
+  formalCleanRun?: boolean;
+  /** The formal check was run with the planted bug (it returned a counterexample). */
+  formalBugRun?: boolean;
 }
 
 interface Sim {
@@ -61,7 +65,8 @@ export function Coverage({ props, onChange, goal, status }: WidgetProps<Coverage
   const [biased, setBiased] = useState(props.biased === true);
   const [target, setTarget] = useState<string | null>(null);
   const [bug, setBug] = useState(false);
-  const [formalRun, setFormalRun] = useState(false);
+  const [formalRuns, setFormalRuns] = useState({ clean: false, bug: false });
+  const formalRun = formalRuns.clean || formalRuns.bug;
   const [formalRes, setFormalRes] = useState<{ bug: boolean; res: FormalResult } | null>(null);
 
   const hitSet = useMemo(() => new Set(sim.hit), [sim.hit]);
@@ -69,8 +74,8 @@ export function Coverage({ props, onChange, goal, status }: WidgetProps<Coverage
   const curves = useMemo(() => ({ plain: curve(seed, false), biased: curve(seed, true) }), [seed]);
 
   const state = useMemo<CoverageState>(
-    () => ({ coverage, testsRun: sim.directed + sim.random, directedRuns: sim.directed, randomRuns: sim.random, binsHit: [...sim.hit].sort(), ...(props.formal === false ? {} : { formalRun }) }),
-    [coverage, sim, formalRun, props.formal]
+    () => ({ coverage, testsRun: sim.directed + sim.random, directedRuns: sim.directed, randomRuns: sim.random, binsHit: [...sim.hit].sort(), ...(props.formal === false ? {} : { formalRun, formalCleanRun: formalRuns.clean, formalBugRun: formalRuns.bug }) }),
+    [coverage, sim, formalRun, formalRuns, props.formal]
   );
   const cb = useRef(onChange);
   useEffect(() => {
@@ -290,7 +295,7 @@ export function Coverage({ props, onChange, goal, status }: WidgetProps<Coverage
               primary
               onClick={() => {
                 setFormalRes({ bug, res: formalCheck(bug) });
-                setFormalRun(true);
+                setFormalRuns((r) => (bug ? { ...r, bug: true } : { ...r, clean: true }));
               }}
             >
               Run formal check
