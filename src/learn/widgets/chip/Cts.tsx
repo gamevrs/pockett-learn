@@ -140,7 +140,7 @@ export function Cts({ props, onChange, goal, status }: WidgetProps<CtsProps>) {
                 }}
                 className="cursor-pointer"
               >
-                <circle cx={X(p.x)} cy={Y(p.y)} r={24} fill="transparent" />
+                <circle cx={X(p.x)} cy={Y(p.y)} r={30} fill="transparent" />
                 <circle cx={X(p.x)} cy={Y(p.y)} r={17} fill={sinkFill(i)} stroke={isL ? "var(--brand)" : isC ? ORANGE : "var(--ink-3)"} strokeWidth={isL || isC ? 4 : 1.5} />
                 <text x={X(p.x)} y={Y(p.y) + 5} textAnchor="middle" fontSize={14} fontWeight={600} fill="var(--ink)">
                   {i}

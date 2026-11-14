@@ -105,7 +105,7 @@ export function Place({ props, onChange, goal, status }: WidgetProps<PlaceProps>
                     </span>
                   )}
                   {showCong && (
-                    <span className={`pointer-events-none absolute right-0.5 top-0 font-mono text-[0.62rem] tabular-nums ${bad ? "font-bold text-bad" : "text-ink-3"}`} aria-hidden>
+                    <span className={`pointer-events-none absolute right-0.5 top-0 font-mono text-[0.62rem] tabular-nums ${bad ? "font-bold text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]" : "text-ink-3"}`} aria-hidden>
                       {d}{bad ? "!" : ""}
                     </span>
                   )}

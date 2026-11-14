@@ -68,7 +68,9 @@ export function Sta({ props, onChange }: WidgetProps<StaProps>) {
   const p = staPreset(cfg.preset);
   const a = analyzeSta(cfg);
   const base = analyzeSta({ ...cfg, regAfter: { ...p.regAfter }, upsized: [], buffers: {} });
-  const selId = p.paths.some((x) => x.id === sel) ? sel : (p.paths.find((x) => x.id === a.rows.find((r) => r.key === a.worstKey)?.pathId) ?? p.paths[0]).id;
+  // default: the path with the worst setup slack, or, when setup is fine but hold fails, the path with the worst hold slack
+  const holdWorst = a.setupMet && !a.holdMet ? a.rows.reduce((w, r) => (r.holdSlackPs < w.holdSlackPs ? r : w), a.rows[0]) : undefined;
+  const selId = p.paths.some((x) => x.id === sel) ? sel : (p.paths.find((x) => x.id === (holdWorst ?? a.rows.find((r) => r.key === a.worstKey))?.pathId) ?? p.paths[0]).id;
   const path = p.paths.find((x) => x.id === selId) ?? p.paths[0];
   const k = cfg.regAfter[path.id];
   const n = path.gates.length;
@@ -77,6 +79,7 @@ export function Sta({ props, onChange }: WidgetProps<StaProps>) {
 
   const apply = (next: StaConfig) => {
     const c = normalize(next);
+    setSel(selId); // keep editing the same path after a fix changes which one is "worst"
     setCfg(c);
     onChange?.(stateOfSta(c));
   };
@@ -100,8 +103,8 @@ export function Sta({ props, onChange }: WidgetProps<StaProps>) {
             value={cfg.preset}
             options={STA_PRESETS.map((x) => ({ value: x.id, label: x.label }))}
             onChange={(id) => {
-              setSel("");
               apply(defaultConfig(id, { skewPs: props.showSkew ? props.skewPs : undefined }));
+              setSel("");
             }}
             className="flex-wrap"
           />
@@ -151,10 +154,10 @@ export function Sta({ props, onChange }: WidgetProps<StaProps>) {
                   </button>
                 </td>
                 <td className="px-2 py-1.5 font-mono text-ink">{Math.round(r.arrivalPs)}</td>
-                <td className={`px-2 py-1.5 font-mono font-semibold ${r.setupSlackPs < 0 ? "text-bad" : "text-good"}`}>
+                <td className={`px-2 py-1.5 font-mono font-semibold ${r.setupSlackPs < 0 ? "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]" : "text-[color-mix(in_srgb,var(--good)_70%,var(--ink))]"}`}>
                   {slackPs(r.setupSlackPs)} {r.setupSlackPs < 0 ? "VIOLATED" : "ok"}
                 </td>
-                <td className={`px-2 py-1.5 font-mono font-semibold ${r.holdSlackPs < 0 ? "text-bad" : "text-good"}`}>
+                <td className={`px-2 py-1.5 font-mono font-semibold ${r.holdSlackPs < 0 ? "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]" : "text-[color-mix(in_srgb,var(--good)_70%,var(--ink))]"}`}>
                   {slackPs(r.holdSlackPs)} {r.holdSlackPs < 0 ? "VIOLATED" : "ok"}
                 </td>
               </tr>

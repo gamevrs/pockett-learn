@@ -72,7 +72,7 @@ function StageCard({ stage, mode, fabHref, onGo }: { stage: FlowStage; mode: "ex
         {stage.id === "fab" && (
           <Row label="Learn more">
             {fabHref ? (
-              <a href={fabHref} className="font-semibold text-brand underline underline-offset-2">
+              <a href={fabHref} className="inline-flex min-h-10 items-center font-semibold text-brand underline underline-offset-2">
                 See the Semiconductors module: the fab process loop
               </a>
             ) : (

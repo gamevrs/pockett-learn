@@ -23,7 +23,7 @@ export interface SynthProps {
 
 export { checkSynth };
 
-const TONE: Record<string, string> = { ok: "text-good", ignored: "text-ink-2", no: "text-bad", warn: "text-bad" };
+const TONE: Record<string, string> = { ok: "text-[color-mix(in_srgb,var(--good)_70%,var(--ink))]", ignored: "text-ink-2", no: "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]", warn: "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]" };
 
 export function Synth({ props, onChange, status, goal }: WidgetProps<SynthProps>) {
   const first = presetById(props.preset ?? "ao") ?? SYNTH_PRESETS[0];
@@ -124,20 +124,20 @@ export function Synth({ props, onChange, status, goal }: WidgetProps<SynthProps>
 
       <Caption className="mb-1 mt-3">Area against speed for this design</Caption>
       <div className="overflow-x-auto rounded-xl border border-line">
-        <table className="w-full min-w-[19rem] border-collapse text-left text-[0.86rem]">
+        <table className="w-full border-collapse text-left text-[0.86rem] sm:min-w-[19rem]">
           <caption className="sr-only">Cells, area and longest-path delay for each architecture of this design</caption>
           <thead>
             <tr className="bg-surface-2 text-xs text-ink-3">
-              <th className="px-2 py-1.5 font-medium">Architecture</th>
-              <th className="px-2 py-1.5 font-medium">Cells</th>
-              <th className="px-2 py-1.5 font-medium">Area</th>
-              <th className="px-2 py-1.5 font-medium">Delay</th>
+              <th className="px-1.5 py-1.5 sm:px-2 font-medium">Architecture</th>
+              <th className="hidden px-1.5 py-1.5 font-medium sm:table-cell sm:px-2">Cells</th>
+              <th className="px-1.5 py-1.5 sm:px-2 font-medium">Area</th>
+              <th className="px-1.5 py-1.5 sm:px-2 font-medium">Delay</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.arch} className={`border-t border-line ${r.arch === arch ? "bg-tint" : ""}`}>
-                <td className="px-2 py-1.5 text-ink">
+                <td className="px-1.5 py-1.5 sm:px-2 text-ink">
                   <button
                     type="button"
                     onClick={() => {
@@ -150,12 +150,12 @@ export function Synth({ props, onChange, status, goal }: WidgetProps<SynthProps>
                     {r.label}
                   </button>
                 </td>
-                <td className="px-2 py-1.5 font-mono text-ink">{r.cells}</td>
-                <td className="min-w-[5.5rem] px-2 py-1.5 font-mono text-ink">
+                <td className="hidden px-1.5 py-1.5 font-mono text-ink sm:table-cell sm:px-2">{r.cells}</td>
+                <td className="min-w-[5.3rem] sm:min-w-[5.5rem] px-1.5 py-1.5 sm:px-2 font-mono text-ink">
                   {r.area} µm²
                   <Meter frac={r.area / maxArea} tone="muted" label={`Area ${r.area} of at most ${maxArea}`} />
                 </td>
-                <td className="min-w-[5.5rem] px-2 py-1.5 font-mono text-ink">
+                <td className="min-w-[4.6rem] sm:min-w-[5.5rem] px-1.5 py-1.5 sm:px-2 font-mono text-ink">
                   {r.delayPs} ps
                   <Meter frac={r.delayPs / maxDelay} label={`Delay ${r.delayPs} of at most ${maxDelay}`} />
                 </td>

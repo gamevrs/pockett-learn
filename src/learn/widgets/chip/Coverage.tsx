@@ -114,7 +114,7 @@ export function Coverage({ props, onChange, goal, status }: WidgetProps<Coverage
         onClick={() => setTarget(on ? null : id)}
         aria-pressed={on}
         aria-label={`${binLabel(id)}: ${hit ? "hit" : "not hit yet"}${on ? ", selected for a directed test" : ""}`}
-        className={`min-h-10 rounded-lg border px-1 text-[0.78rem] font-medium leading-tight ${hit ? "border-[var(--brand)] bg-tint text-ink" : "border-dashed border-[var(--line-strong)] bg-surface text-ink-3"} ${on ? "outline outline-2 outline-offset-1 outline-[var(--brand)]" : ""} ${className}`}
+        className={`min-h-10 min-w-10 rounded-lg border px-0.5 text-[0.78rem] sm:px-1 font-medium leading-tight ${hit ? "border-[var(--brand)] bg-tint text-ink" : "border-dashed border-[var(--line-strong)] bg-surface text-ink-3"} ${on ? "outline outline-2 outline-offset-1 outline-[var(--brand)]" : ""} ${className}`}
       >
         {hit ? "✓ " : ""}
         {children}
@@ -136,8 +136,8 @@ export function Coverage({ props, onChange, goal, status }: WidgetProps<Coverage
         The design under test is an 8-bit ALU with four operations. Each box is a coverage bin: a situation the testbench must have exercised at least once. Tap a box to pick it as the target of a directed test.
       </p>
 
-      <div className="mt-3 rounded-xl border border-line bg-surface p-2">
-        <div className="grid gap-1" style={{ gridTemplateColumns: "2.6rem repeat(5, minmax(0, 1fr))" }} role="group" aria-label="Coverage bins, operation by operand class">
+      <div className="mt-3 rounded-xl border border-line bg-surface p-1 sm:p-2">
+        <div className="grid gap-0.5 sm:gap-1 [grid-template-columns:1.9rem_repeat(5,minmax(2.5rem,1fr))] sm:[grid-template-columns:2.6rem_repeat(5,minmax(0,1fr))]" role="group" aria-label="Coverage bins, operation by operand class">
           <span />
           {CLASSES.map((c) => (
             <span key={c} className="text-center text-[0.7rem] font-medium text-ink-3">
