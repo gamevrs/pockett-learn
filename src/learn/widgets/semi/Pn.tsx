@@ -186,7 +186,7 @@ export function Pn({ props, onChange }: WidgetProps<PnProps>) {
 
   return (
     <div className="w-full" data-widget>
-      <Slider label="Battery voltage across the junction (+ on the p side is forward)" value={v} min={props.min ?? -5} max={0.75} step={0.05} onChange={set} format={(x) => `${x > 0 ? "+" : ""}${x.toFixed(2).replace("-", "−")} V`} />
+      <Slider label="Battery voltage (+ on p = forward)" value={v} min={props.min ?? -5} max={0.75} step={0.05} onChange={set} format={(x) => `${x > 0 ? "+" : ""}${x.toFixed(2).replace("-", "−")} V`} />
       <div className="mt-3">
         <Junction v={v} w={w} />
       </div>

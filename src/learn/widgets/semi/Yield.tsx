@@ -168,7 +168,7 @@ export function Yield({ props, onChange }: WidgetProps<YieldProps>) {
       <div className="mt-3">
         <Note tone="accent">
           {`A ${side * side} mm² die is ${(side * side) / 100} cm², so it collects on average ${((side * side) / 100 * d0).toFixed(2)} defects. The chance it gets none is e^(−${((side * side) / 100 * d0).toFixed(2)}) = ${(r.y * 100).toFixed(1)} %. `}
-          {side >= 20 ? "Big dies lose out twice: fewer fit on the wafer, and each is more likely to catch a defect." : "Small dies dodge most defects: a defect only kills the one die it lands on."}
+          {r.y < 0.6 ? "Big dies lose out twice: fewer fit on the wafer, and each is more likely to catch a defect." : "Small dies dodge most defects: a defect only kills the one die it lands on."}
         </Note>
       </div>
       <Toy>

@@ -108,7 +108,7 @@ function purify(t: number) {
 
 function crystal(t: number, reduced: boolean) {
   const grow = ease(seg(t, 0.15, 0.9));
-  const len = lerp(6, 92, grow);
+  const len = lerp(6, 76, grow);
   const spin = reduced ? 0 : t * 4;
   return (
     <g>
@@ -120,7 +120,9 @@ function crystal(t: number, reduced: boolean) {
       {/* ingot */}
       <rect x={150} y={r2(176 - len - 34)} width={60} height={r2(len)} rx={4} fill="#8a96a3" stroke={INK} strokeWidth={1.2} />
       <path d={`M150 ${r2(176 - 34)} Q180 ${r2(176 - 22)} 210 ${r2(176 - 34)}`} fill="none" stroke={INK} strokeWidth={1.2} />
-      <path d={`M${r2(166 + 8 * Math.sin(spin))} 64 a 14 5 0 1 0 28 0`} fill="none" stroke={BRAND} strokeWidth={2} />
+      {/* turning: an arc round the pull rod just above the ingot, with an arrowhead that slides while playing */}
+      <path d={`M164 ${r2(176 - len - 44)} a 16 6 0 1 0 32 0`} fill="none" stroke={BRAND} strokeWidth={2} />
+      <circle cx={r2(180 + 16 * Math.cos(spin))} cy={r2(176 - len - 44 + 6 * Math.abs(Math.sin(spin)))} r={3} fill={BRAND} />
       {/* crucible and melt */}
       <path d="M110 140 V196 Q110 210 124 210 H236 Q250 210 250 196 V140" fill="none" stroke={INK} strokeWidth={2} />
       <rect x={112} y={146} width={136} height={60} rx={8} fill={HOT} opacity={0.75} />

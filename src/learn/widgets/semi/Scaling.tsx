@@ -376,21 +376,21 @@ export interface GatesState {
 const INFO: Record<Structure, { name: string; sides: string; control: number; when: string; text: string }> = {
   planar: {
     name: "Planar",
-    sides: "1 (top only)",
+    sides: "1 side (top)",
     control: 0.35,
     when: "the only kind from the 1960s until about 2011",
     text: "The gate sits on top of a flat channel. When the channel gets very short, the drain starts to pull on the channel from below, where the gate cannot reach: the transistor no longer turns fully off and leaks.",
   },
   finfet: {
     name: "FinFET",
-    sides: "3 (top and both sides)",
+    sides: "3 sides",
     control: 0.75,
     when: "in volume production from 2011; leading-edge standard through the 2010s",
     text: "The channel is a thin vertical fin and the gate drapes over it on three sides. The gate now controls almost the whole channel, so it switches off much more cleanly. Taller fins carry more current in the same footprint.",
   },
   gaa: {
     name: "Gate-all-around",
-    sides: "4 (all the way round)",
+    sides: "4 sides (all round)",
     control: 0.95,
     when: "in volume production from about 2022; spreading to the leading edge (as of 2025)",
     text: "The channel is a stack of thin horizontal sheets, and the gate fills the space around every one of them. Full wrap-around gives the best control yet. Designers can also choose the sheet width to trade current against size.",
@@ -478,7 +478,7 @@ export function Gates({ props, onChange }: WidgetProps<GatesProps>) {
         </div>
       )}
       <div className="mt-3 flex flex-wrap justify-center gap-2">
-        <Readout label="Sides the gate touches" value={info.sides} accent={s !== "planar"} />
+        <Readout label="Gate touches" value={info.sides} accent={s !== "planar"} />
       </div>
       <div className="mt-3">
         <div className="mb-1 flex justify-between text-[13px] text-ink-2">
