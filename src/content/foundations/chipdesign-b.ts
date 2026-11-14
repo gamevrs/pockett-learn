@@ -162,7 +162,7 @@ export const chipdesignLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "Every path, every time",
         body: P(
-          "*Digital logic from transistors* explained setup and hold for one flip-flop. A real chip has billions of paths, and you cannot simulate them all with every input. **Static timing analysis (STA)** adds up delays along each path **without simulating any inputs**, and checks every one against the clock.",
+          "*Timing: how fast can the clock go?* in *Digital logic from transistors* explained setup and hold for one flip-flop. A real chip has billions of paths, and you cannot simulate them all with every input. **Static timing analysis (STA)** adds up delays along each path **without simulating any inputs**, and checks every one against the clock.",
           "A **path** runs from a launching flip-flop through gates to a capturing flip-flop. Two numbers per path:",
           txt(`
 arrival  = tcq + sum of gate delays        when the data actually gets there
@@ -242,8 +242,9 @@ setup slack = required - arrival           negative = violation
         body: P(
           "Setup asks: does the data arrive **before** the next edge? **Hold** asks: does the *old* data stay **long enough after the same edge** that captures it? If the next flop's clock arrives late (**skew**) and the path between the flops is very short, the new data races through and overwrites the old before the capture flop has finished looking.",
           txt(`
-hold slack = (tcq + shortest path) - (th + skew)
+hold slack = (tcq + shortest path) - (thold + skew)
 
+thold    the capturing flop's hold time
 negative = violation, and T does not appear in it
 `),
           "The period T is not in the formula: hold is checked at the **same edge**, so a slower clock does not help. The fix is to **add delay** to the short path with buffers. This preset has skew 500 ps and a nearly direct flop-to-flop wire: setup is fine, hold fails.",
@@ -291,7 +292,7 @@ negative = violation, and T does not appear in it
           "**STA** checks every path against the clock by adding delays, no input vectors needed.",
           "**Setup slack = required − arrival**, with required = T + skew − tsu and arrival = tcq + gate delays. Negative is a violation; **WNS** is the worst path, **TNS** the sum of the negative ones.",
           "**fmax** (MHz) = 1000 / minimum period (ns). Fix setup by shortening the path: upsizing, restructuring, **retiming**, **pipelining** (more latency, more throughput).",
-          "**Hold** is checked at the **same edge**: slack = tcq + short path − (th + skew). Slowing the clock does **not** fix it; add delay to the short path.",
+          "**Hold** is checked at the **same edge**: slack = tcq + short path − (thold + skew). Slowing the clock does **not** fix it; add delay to the short path.",
         ],
       },
     ],
@@ -371,8 +372,8 @@ sign-off    STA again with real wire delays, plus DRC and LVS
       {
         kind: "question",
         title: "Skew eats the hold margin",
-        body: "A launching flop and a capturing flop have tcq = 50 ps, th = 20 ps and the shortest path between them is 40 ps. The capture clock arrives **100 ps later** than the launch clock. What is the **hold slack**, in ps?",
-        question: { type: "number", answer: -30, tolerance: 1, unit: "ps", hint: "hold slack = tcq + shortest path − th − skew = 50 + 40 − 20 − 100." },
+        body: "A launching flop and a capturing flop have tcq = 50 ps, thold = 20 ps and the shortest path between them is 40 ps. The capture clock arrives **100 ps later** than the launch clock. What is the **hold slack**, in ps?",
+        question: { type: "number", answer: -30, tolerance: 1, unit: "ps", hint: "hold slack = tcq + shortest path − thold − skew = 50 + 40 − 20 − 100." },
         explanation: "50 + 40 − 20 − 100 = **−30 ps**: a violation. The same 100 ps skew would *help* setup (the data gets 100 ps more time), which is why a late capture clock is sometimes used on purpose (**useful skew**), but it eats hold margin directly. Tools fix it with hold buffers, as in the last lesson.",
       },
       {

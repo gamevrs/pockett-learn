@@ -18,7 +18,7 @@ export const digitalLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "A register is flip-flops with a shared clock",
         body: P(
-          "One flip-flop stores one bit. Put several side by side, share one clock between them, and you have a **register**. A 4-bit register stores a 4-bit number; the CPU's registers (from *The datapath* lesson) are 32 or 64 flip-flops wide.",
+          "One flip-flop stores one bit. Put several side by side, share one clock between them, and you have a **register**. A 4-bit register stores a 4-bit number; the CPU's registers (from *The datapath: one instruction, start to finish*) are 32 or 64 flip-flops wide.",
           "A register also has a **load** (or enable) input. On each rising clock edge, if LOAD is 1 every flip-flop copies its own data input at the same instant; if LOAD is 0 each one keeps its old value. Between edges the data inputs can change freely.",
           "Set the data inputs, then give the clock a pulse.",
         ),

@@ -482,7 +482,7 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
         title: "A switch, not a valve",
         body: P(
           "Digital circuits only use the two ends: gate at **0 V** (off) or at the **supply** (fully on). A MOSFET is a superb switch for three reasons:",
-          "- **No gate current.** The oxide is an insulator, so a steady gate voltage costs no steady current. Only charging and discharging the tiny gate capacitor takes energy.\n- **Tiny.** Modern transistors are tens of nanometres across, so billions fit on a chip.\n- **One voltage controls another.** The output of one transistor can drive the gates of the next, so logic can be chained.",
+          "- **No gate current.** The oxide is an insulator, so a steady gate voltage costs no steady current. Only charging and discharging the tiny gate capacitor takes energy.\n- **Tiny.** Modern transistors are tens of nanometres across, so billions fit on a chip.\n- **One voltage controls another.** The output of one transistor can drive the gates of the next, so logic can be chained.\n\nThe same physics, scaled up to amps, is the discrete **power MOSFET** a microcontroller pin uses to drive a motor or an LED strip: see *Transistors as switches* in the Analog module.",
           "The oxide has to be extremely thin for the gate to have strong control: in the 2000s it reached about 1.2 nm, a handful of atomic layers, and electrons began to tunnel straight through it. Chipmakers replaced it with thicker **high-k** materials (based on hafnium oxide) that control the channel just as strongly with less leakage.",
         ),
       },
@@ -585,7 +585,7 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
         title: "Dennard scaling: the free lunch",
         body: P(
           "Why was shrinking so attractive? In 1974 Robert Dennard and colleagues showed that if you shrink **every** dimension of a transistor and its **voltage** by the same factor, good things happen together:",
-          "- twice the transistors fit in the same area each generation,\n- each one switches faster (shorter distances, smaller capacitance),\n- and each uses less power (P = C · V² · f per transistor, with C and V both smaller),",
+          "- twice the transistors fit in the same area each generation,\n- each one switches faster (shorter distances, smaller capacitance),\n- and each uses less power (P ≈ α · C · V² · f per transistor, from *From switch to gate*, with C and V both smaller),",
           "so the **power per square centimetre stays the same**. Faster, denser and no hotter. Step through six generations below with both switches on.",
         ),
         widget: { type: "semi-dennard", props: { voltageScales: true, clockScales: true } },

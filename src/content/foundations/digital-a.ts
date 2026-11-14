@@ -20,7 +20,7 @@ export const digitalLessonsA: ConceptLesson[] = [
         body: P(
           "In the bits lessons, a logic gate was a box: bits in, a bit out. This module opens the box. Everything inside is built from one tiny part, the **transistor**.",
           "For digital logic, treat a transistor as a **switch controlled by a voltage**. A voltage on one terminal, the **gate**, decides whether current can flow between the other two. Nothing moves, nothing wears out, and it can flip billions of times a second.",
-          "There are two kinds. An **NMOS** transistor conducts when its gate is **high** (a 1). A **PMOS** transistor does the opposite: it conducts when its gate is **low** (a 0). *How* a gate voltage opens a channel in silicon is the story of the lesson *The MOSFET* in the Semiconductors part. Here we only need the switch behaviour.",
+          "There are two kinds. An **NMOS** transistor conducts when its gate is **high** (a 1). A **PMOS** transistor does the opposite: it conducts when its gate is **low** (a 0). *How* a gate voltage opens a channel in silicon is the story of the lesson *The MOSFET: a switch made of silicon* in the Semiconductors part. Here we only need the switch behaviour.",
           "Stack one PMOS over one NMOS, tie their gates together, and you have the simplest gate: the **inverter** (the NOT gate from *Logic gates*). Flip the input and see which transistor is on.",
         ),
         widget: { type: "digi-inverter", props: { mode: "switch" } },

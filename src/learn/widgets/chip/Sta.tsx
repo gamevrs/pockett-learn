@@ -122,10 +122,10 @@ export function Sta({ props, onChange }: WidgetProps<StaProps>) {
           <span className="font-semibold text-ink">Setup:</span> arrival = tcq + gate delays; required = T + skew − tsu = {Math.round(cfg.periodNs * 1000)} {cfg.skewPs >= 0 ? "+" : "−"} {Math.abs(cfg.skewPs)} − {p.tsu} = <span className="font-mono font-semibold text-ink">{Math.round(a.rows[0].requiredPs)} ps</span>; slack = required − arrival.
         </p>
         <p className="mt-1">
-          <span className="font-semibold text-ink">Hold:</span> slack = (tcq + path) − (th + skew) = (tcq + path) − {p.th + cfg.skewPs} ps. It does not contain T.
+          <span className="font-semibold text-ink">Hold:</span> slack = (tcq + path) − (thold + skew) = (tcq + path) − {p.th + cfg.skewPs} ps. It does not contain T.
         </p>
         <p className="mt-1">
-          <span className="font-semibold text-ink">Library:</span> tcq {p.tcq} ps, tsu {p.tsu} ps, th {p.th} ps. fmax = 1 / (tcq + longest path + tsu − skew) = 1 / {Math.round(a.minPeriodPs)} ps.
+          <span className="font-semibold text-ink">Library:</span> tcq {p.tcq} ps, tsu {p.tsu} ps, thold {p.th} ps. fmax = 1 / (tcq + longest path + tsu − skew) = 1 / {Math.round(a.minPeriodPs)} ps.
         </p>
       </div>
 
@@ -254,7 +254,7 @@ export function Sta({ props, onChange }: WidgetProps<StaProps>) {
           </div>
         </div>
       )}
-      <Toy>Toy timing model: one delay per gate, no wires, one clock edge, the same skew for every path, and made-up numbers (tcq {p.tcq} ps, tsu {p.tsu} ps, th {p.th} ps). Real signoff analyses millions of paths at several process, voltage and temperature corners.</Toy>
+      <Toy>Toy timing model: one delay per gate, no wires, one clock edge, the same skew for every path, and made-up numbers (tcq {p.tcq} ps, tsu {p.tsu} ps, thold {p.th} ps). Real signoff analyses millions of paths at several process, voltage and temperature corners.</Toy>
     </div>
   );
 }

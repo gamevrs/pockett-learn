@@ -129,7 +129,7 @@ def rc_voltage(v, r, c, t):
           "A **capacitor** stores charge on two plates: **Q = C × V**, with C in farads (usually µF or nF). Its voltage rating is a hard limit.",
           "Through a resistor it charges on a curve: fast at first, then slower, because the resistor sees less and less voltage.",
           "The **time constant τ = R × C** sets the speed. After 1τ a charging capacitor is at **63.2%**, after 2τ at 86.5% and after **5τ** at about **99.3%**. A discharging one is at **36.8%** after 1τ.",
-          "The ideal curve never reaches exactly full or empty, so \"five time constants\" is the practical rule. Big capacitors can hold a shock after power-off: discharge them through a resistor.",
+          "The ideal curve never reaches exactly full or empty, so \"five time constants\" is the practical rule. Big capacitors can hold a shock after power-off: discharge them through a resistor. One everyday job: a small ceramic beside each chip's supply pin (**decoupling**, 100 nF per pin is a common starting point) hands the chip quick gulps of charge; see *Power and ground* in the PCB module.",
         ],
       },
     ],

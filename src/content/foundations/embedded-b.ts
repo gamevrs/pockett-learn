@@ -115,7 +115,7 @@ export const embeddedLessonsB: ConceptLesson[] = [
             2: "During the address phase, the 9th bit is only ever the ACK or NACK.",
           },
         },
-        explanation: "A **NACK**: the pull-up kept SDA high because no chip pulled it low. Check the address (7-bit vs 8-bit form), the device's power, and that the pull-ups are fitted. An I²C bus scan, which tries every address and lists those that ACK, is often the first test on a new board.",
+        explanation: "A **NACK**: the pull-up kept SDA high because no chip pulled it low. Check the address (7-bit vs 8-bit form), the device's power, and that the pull-ups are fitted. An I²C bus scan, which tries every address and lists those that ACK, is often the first test on a new board. (*Debugging hardware* in *Building real products* tracks down a NACK like this one with a logic analyser.)",
       },
       {
         kind: "explain",
