@@ -1,15 +1,20 @@
-import type { Module } from "../../learn/types.ts";
+import type { ConceptLesson, Module } from "../../learn/types.ts";
+import { analogLessonsA } from "./analog-a.ts";
+import { analogLessonsB } from "./analog-b.ts";
+import { analogLessonsC } from "./analog-c.ts";
 
 /**
  * Module: Components in action: capacitors to op-amps. Spec: docs/ELECTRONICS_PATH.md (lesson list, levels, accuracy rules).
  *
- * Authors: put the lessons in the `lessons` array below (or, if the file grows large, split them into
- * analog-a.ts / analog-b.ts exporting ConceptLesson[] and spread them here, like ai-systems.ts).
+ * Ten lessons split across three files: analog-a.ts (lessons 1-4), analog-b.ts (5-7), analog-c.ts (8-10), each exporting
+ * ConceptLesson[] that are spread into `lessons` below (like memory.ts).
  * Lesson ids are `fnd-analog-N-slug`, each lesson sets `level` ("Beginner" | "Intermediate" | "Advanced" |
  * "Professional"), and levels must never go backwards within the module (the validator checks it).
  * Widgets: register them in src/learn/widgets/analog/index.ts with keys prefixed "analog-".
  * Shared circuit kit (schematic symbols, DC and transient solvers, SI formatting): src/learn/widgets/elec-kit/.
  */
+const lessons: ConceptLesson[] = [...analogLessonsA, ...analogLessonsB, ...analogLessonsC];
+
 export const analogModule: Module = {
   id: "analog",
   part: "electronics",
@@ -17,5 +22,5 @@ export const analogModule: Module = {
   blurb:
     "Capacitors, diodes and LEDs, inductors, alternating current, filters, power supplies, transistors as switches and amplifiers, op-amps, and converting between analog and digital.",
   icon: "activity",
-  lessons: [],
+  lessons,
 };
