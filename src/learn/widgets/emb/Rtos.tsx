@@ -59,7 +59,7 @@ function ranges(n: number, pred: (i: number) => boolean): [number, number][] {
   return out;
 }
 
-export function Rtos({ props, onChange, revealed }: WidgetProps<RtosProps>) {
+export function Rtos({ props, onChange, revealed, status }: WidgetProps<RtosProps>) {
   const deadline = props.deadline ?? 7;
   const [inherit, setInherit] = useState(Boolean(props.inherit));
   const [mediumWork, setMediumWork] = useState(Math.max(0, Math.min(10, props.mediumWork ?? 6)));
@@ -226,10 +226,11 @@ export function Rtos({ props, onChange, revealed }: WidgetProps<RtosProps>) {
       <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
         <Readout label="H response" value={highResponse === null ? "never" : `${highResponse} ticks`} accent />
         <Readout label="Deadline" value={`${deadline} ticks`} />
-        <Readout label="Result" value={meets ? "Deadline met" : highResponse === null ? "Missed" : `Missed by ${missedBy} ticks`} />
+        {/* In a question the verdict waits for Check (status "idle"); explain steps pass no status and show it. */}
+        {status !== "idle" && <Readout label="Result" value={meets ? "Deadline met" : highResponse === null ? "Missed" : `Missed by ${missedBy} ticks`} />}
       </div>
       <div className="mt-3">
-        <Note tone={meets ? "accent" : "plain"}>
+        <Note tone={meets && status !== "idle" ? "accent" : "plain"}>
           {inherit
             ? "Priority inheritance: while High waits for the mutex, Low is boosted to High's priority, so Medium cannot push in front. Low finishes its short critical section, lets go, and High runs."
             : mediumWork === 0
@@ -274,6 +275,8 @@ export interface PowerProps {
   activeMs?: number;
   periodS?: number;
   capacityMah?: number;
+  /** Hide the battery picker (the lesson fixes the cell). */
+  lockBattery?: boolean;
   task?: string;
 }
 
@@ -376,6 +379,7 @@ export function Power({ props, onChange, revealed }: WidgetProps<PowerProps>) {
             options={WAKE_OPTIONS}
           />
         </div>
+        {!props.lockBattery && (
         <div className="flex flex-col items-start gap-1">
           <Caption>Battery</Caption>
           <Seg
@@ -388,6 +392,7 @@ export function Power({ props, onChange, revealed }: WidgetProps<PowerProps>) {
             options={BATTERIES}
           />
         </div>
+        )}
       </fieldset>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -459,11 +464,12 @@ export function Power({ props, onChange, revealed }: WidgetProps<PowerProps>) {
   );
 }
 
-/** goal: { minDays, modeId, maxAvgMa } */
+/** goal: { minDays, modeId, maxAvgMa, capacityMah } */
 export function checkPower(state: unknown, goal: Record<string, unknown>): boolean {
   const s = state as PowerState | undefined;
   if (!s) return false;
   if (typeof goal.minDays === "number" && !(s.days >= goal.minDays)) return false;
+  if (typeof goal.capacityMah === "number" && s.capacityMah !== goal.capacityMah) return false;
   if (typeof goal.modeId === "string" && s.modeId !== goal.modeId) return false;
   if (typeof goal.maxAvgMa === "number" && !(s.avgMa <= goal.maxAvgMa)) return false;
   return true;

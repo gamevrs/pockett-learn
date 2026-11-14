@@ -420,9 +420,11 @@ function I2cView({ v, set, locked }: { v: Vals; set: (p: Partial<Vals>) => void;
 
 // ───────────────────────────── SPI ─────────────────────────────
 
-function SpiView({ v, set, locked, lockDevice }: { v: Vals; set: (p: Partial<Vals>) => void; locked: boolean; lockDevice: boolean }) {
+function SpiView({ v, set, locked, lockDevice, quiet }: { v: Vals; set: (p: Partial<Vals>) => void; locked: boolean; lockDevice: boolean; quiet: boolean }) {
   const w = spiWave(v.mosi, v.miso, v.mode);
   const compat = spiCompat(v.mode, v.deviceMode);
+  // In a question the match verdict (note, red rings) waits for Check; explain steps pass no status and show it.
+  const showVerdict = !quiet;
   const n = w.sclk.length; // 19
   const X0 = 46;
   const W = 308;
@@ -439,13 +441,13 @@ function SpiView({ v, set, locked, lockDevice }: { v: Vals; set: (p: Partial<Val
   const yMO = 104;
   const yMI = 154;
   const dev: number[] = [];
-  if (compat === "wrong-edge") {
+  if (showVerdict && compat === "wrong-edge") {
     const wantRising = edgeTxt(v.deviceMode) === "rising";
     for (let i = 2; i < n - 1; i++) if (w.sclk[i] !== w.sclk[i - 1] && (w.sclk[i] === 1) === wantRising) dev.push(i);
   }
   const bitX = w.sampleAt.map((s) => xAt(s));
   const stroke = { stroke: "var(--surface)", strokeWidth: 4, paintOrder: "stroke" } as const;
-  const aria = `SPI byte exchange in mode ${v.mode}: CS goes low, SCLK idles ${idleTxt(cpol)}, MOSI carries ${toHex(v.mosi, 2)} and MISO carries ${toHex(v.miso, 2)}, most significant bit first, sampled on the ${edgeTxt(v.mode)} edge. Device expects mode ${v.deviceMode}: ${compat}.`;
+  const aria = `SPI byte exchange in mode ${v.mode}: CS goes low, SCLK idles ${idleTxt(cpol)}, MOSI carries ${toHex(v.mosi, 2)} and MISO carries ${toHex(v.miso, 2)}, most significant bit first, sampled on the ${edgeTxt(v.mode)} edge. Device expects mode ${v.deviceMode}${showVerdict ? `: ${compat}` : ""}.`;
 
   return (
     <div>
@@ -501,7 +503,7 @@ function SpiView({ v, set, locked, lockDevice }: { v: Vals; set: (p: Partial<Val
           </text>
         </svg>
         <p className="px-1 pb-1 text-[0.8rem] leading-snug text-ink-3">
-          Green dots = where the controller samples. {compat === "wrong-edge" ? "Red rings = where the device samples with its mode: not where the data is stable. " : ""}CS low = this device is selected. Bits go out MSB first.
+          Green dots = where the controller samples. {showVerdict && compat === "wrong-edge" ? "Red rings = where the device samples with its mode: not where the data is stable. " : ""}CS low = this device is selected. Bits go out MSB first.
         </p>
       </div>
 
@@ -517,9 +519,9 @@ function SpiView({ v, set, locked, lockDevice }: { v: Vals; set: (p: Partial<Val
         </p>
       )}
       <div className="mt-3">
-        {compat === "match" && <Note tone="accent">✓ Match: controller and device use the same mode, so both sample the bits where they are stable.</Note>}
-        {compat === "idle-only" && <Note>Same sampling edge, different idle level: many devices accept both, but follow the datasheet.</Note>}
-        {compat === "wrong-edge" && (
+        {showVerdict && compat === "match" && <Note tone="accent">✓ Match: controller and device use the same mode, so both sample the bits where they are stable.</Note>}
+        {showVerdict && compat === "idle-only" && <Note>Same sampling edge, different idle level: many devices accept both, but follow the datasheet.</Note>}
+        {showVerdict && compat === "wrong-edge" && (
           <p className="rounded-xl border border-[var(--bad)] bg-surface px-3.5 py-2.5 text-[0.88rem] leading-snug text-ink" aria-live="polite">
             <b className="text-[var(--bad)]">Wrong edge:</b> the device samples on the edge where your controller changes the data: bits come out wrong (often shifted by one).
           </p>
@@ -531,7 +533,7 @@ function SpiView({ v, set, locked, lockDevice }: { v: Vals; set: (p: Partial<Val
 
 // ───────────────────────────── the widget ─────────────────────────────
 
-export function Proto({ props, onChange, revealed }: WidgetProps<ProtoProps>) {
+export function Proto({ props, onChange, revealed, status }: WidgetProps<ProtoProps>) {
   const locked = Boolean(revealed);
   const protocols: ProtoId[] = (props.protocols ?? ["uart", "i2c", "spi"]).filter((p): p is ProtoId => p === "uart" || p === "i2c" || p === "spi");
   const list: ProtoId[] = protocols.length ? protocols : ["uart", "i2c", "spi"];
@@ -572,7 +574,7 @@ export function Proto({ props, onChange, revealed }: WidgetProps<ProtoProps>) {
       )}
       {vals.proto === "uart" && <UartView v={vals} set={set} locked={locked} />}
       {vals.proto === "i2c" && <I2cView v={vals} set={set} locked={locked} />}
-      {vals.proto === "spi" && <SpiView v={vals} set={set} locked={locked} lockDevice={Boolean(props.lockDevice)} />}
+      {vals.proto === "spi" && <SpiView v={vals} set={set} locked={locked} lockDevice={Boolean(props.lockDevice)} quiet={status === "idle"} />}
       <ToyNote>Idealised logic levels and timing; real lines have rise times, and I²C runs at 100 or 400 kHz (standard / fast mode, typical).</ToyNote>
     </div>
   );

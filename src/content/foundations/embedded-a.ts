@@ -4,6 +4,9 @@ import type { ConceptLesson } from "../../learn/types.ts";
 const c = (s: string) => "~~~c\n" + s.trim() + "\n~~~";
 /** Paragraphs joined with blank lines. */
 const P = (...paras: string[]) => paras.join("\n\n");
+/** Check for a C program: find the line main printed under this label and compare it with the expected text. */
+const printed = (label: string, expected: string, msg: string) =>
+  `{ const l = lines.find((s) => s.startsWith(${JSON.stringify(label + " ")}));\nassertEqual(l ?? "(not printed)", ${JSON.stringify(label + " " + expected)}, ${JSON.stringify(msg)}); }`;
 
 /** Lessons 1 to 5: microcontrollers, registers, GPIO, timers and PWM, interrupts. */
 export const embeddedLessonsA: ConceptLesson[] = [
@@ -55,20 +58,20 @@ export const embeddedLessonsA: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "Editing 4K video",
-            "Running a web browser with dozens of tabs",
-            "Reading a temperature sensor once a second and switching a heater on or off, for years on batteries",
-            "Training a large neural network",
+            "Reading a thermostat sensor once a second on batteries",
+            "Decoding and editing 4K video from a camera",
+            "Running a web browser with dozens of open tabs",
+            "Training a neural network on a large photo set",
           ],
-          answer: 2,
+          answer: 0,
           hint: "Think about which task needs little computing but must be cheap, tiny and frugal with power.",
           feedback: {
-            0: "Video editing needs gigabytes of RAM and a lot of computing: that is PC or workstation work.",
-            1: "A modern browser needs an operating system and gigabytes of memory, far beyond a microcontroller.",
+            1: "Video editing needs gigabytes of RAM and a lot of computing: that is PC or workstation work.",
+            2: "A modern browser needs an operating system and gigabytes of memory, far beyond a microcontroller.",
             3: "Training needs GPUs and huge memory. A microcontroller might run a tiny, already-trained model, but never train a big one.",
           },
         },
-        explanation: "A thermostat does a little work, rarely, and must run for years on small batteries: exactly what an MCU is for. It can sleep almost all the time and wake once a second (you will measure this in the RTOS and power lesson).",
+        explanation: "A thermostat does a little work, rarely, and may have to run for years on small batteries: exactly what an MCU is for. It can sleep almost all the time and wake once a second (you will measure this in the RTOS and power lesson).",
       },
       {
         kind: "explain",
@@ -76,16 +79,19 @@ export const embeddedLessonsA: ConceptLesson[] = [
         body: P(
           "A microcontroller usually has no screen, so the first program does not print \"Hello, world\". It **blinks an LED** wired to one of the chip's pins. If it blinks, the toolchain works, the program was flashed, the clock runs and the pin is set up: a lot is proven at once.",
           c(`
+#include "stm32f4xx.h"          // the vendor header: a name for every register
 int main(void) {
-    led_init();            // make the LED's pin an output
-    while (1) {            // forever: there is no OS to return to
-        led_on();
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;                       // 1. switch on port A's clock
+    GPIOA->MODER = (GPIOA->MODER & ~(3u << 10)) | (1u << 10);  // 2. pin 5 = output (2 bits per pin)
+    while (1) {                    // forever: there is no OS to return to
+        GPIOA->BSRR = 1u << 5;     // pin 5 high: LED on
         delay_ms(500);
-        led_off();
+        GPIOA->BSRR = 1u << 21;    // pin 5 low: LED off
         delay_ms(500);
     }
 }
 `),
+          "This is real register-level C for an STM32 chip. Pin 5 of port A drives the user LED on many ST Nucleo boards (not all). The next lessons take every line apart: *Registers and memory-mapped I/O* explains the register writes and *Firmware in C* the C around them. `delay_ms` is a busy-wait for now: it just spins. *Timers and PWM* replaces it. To keep the widget readable, it shows the two BSRR lines under the friendly names `led_on()` and `led_off()`.",
           "Notice the `while (1)`. On a PC, `main` returns to the operating system. Firmware has nowhere to return to, so its main loop never ends. Drag the time slider and change the delay.",
         ),
         widget: { type: "emb-blink", props: { delayMs: 500 } },
@@ -119,9 +125,9 @@ int main(void) {
           type: "widget",
           goal: { freqHz: 1, secondDelay: true },
           prompt: "Put the second delay back and pick the delay for 1 blink per second.",
-          hint: "Without the second delay, how long does the LED stay off before led_on() runs again?",
+          hint: "Without the second delay, how long does the LED stay off before the next led_on() runs?",
         },
-        explanation: "Without the second delay, `led_off()` is followed at once by `led_on()` at the top of the loop. The LED is off for about a **microsecond** per loop, far too short to see, so it looks always on. With both delays at **500 ms** it blinks once per second.",
+        explanation: "Without the second delay, the LED-off line (`led_off()` in the widget) is followed at once by the LED-on line (`led_on()`) at the top of the loop. The LED is off for about a **microsecond** per loop, far too short to see, so it looks always on. With both delays at **500 ms** it blinks once per second.",
       },
       {
         kind: "question",
@@ -234,67 +240,121 @@ GPIOA_ODR ^=  (1u << 5);   // toggle bit 5
         question: {
           type: "choice",
           options: [
-            "Turns pin 5 on and leaves the others alone",
-            "Turns pin 5 on and turns every other pin of the port off, including the motor and buzzer",
-            "Nothing: you must use |= to write a register",
-            "Toggles pin 5",
+            "Turns pin 5 on and leaves the others as they were",
+            "Turns pin 5 on and every other pin off",
+            "Nothing: a register needs |= to be written",
+            "Toggles pin 5 and leaves the others alone",
           ],
           answer: 1,
           hint: "= writes the whole 32-bit number. Which bits of (1u << 5) are 1?",
           feedback: {
             0: "Only |= and &= ~ keep the other bits. = replaces the whole register with 0x20.",
             2: "= is a perfectly valid write. That is exactly the danger: it works, and it clears everything else.",
-            3: "Toggling needs ^=. This writes a fixed value.",
+            3: "Toggling needs ^=. This writes a fixed value, and the other bits do not survive it.",
           },
         },
-        explanation: "Plain `=` writes the whole register: 0x20 has only bit 5 set, so pins 0 and 7 are switched **off**. Use masks with `|=`, `&= ~` and `^=` to change only your bits. (Many GPIOs also have a **set/reset register**, often called BSRR, where writing a 1 sets or clears just that pin in one write, so two pieces of code cannot undo each other's changes.)",
+        explanation: "Plain `=` writes the whole register: 0x20 has only bit 5 set, so every other pin of the port, including the motor on pin 0 and the buzzer on pin 7, is switched **off**. Use masks with `|=`, `&= ~` and `^=` to change only your bits. (Many GPIOs also have a **set/reset register**, often called BSRR, where writing a 1 sets or clears just that pin in one write, so two pieces of code cannot undo each other's changes.)",
       },
       {
         kind: "code",
         title: "Bit helpers",
         body: P(
-          "Write the four helpers firmware uses all day. Each takes a register value `v` and a bit number `n` and returns the new value (or, for `read_bit`, 0 or 1).",
-          "Python's `|`, `&`, `^`, `~` and `<<` work just like C's.",
+          "Write the four helpers firmware uses all day, in C. Each takes a register value `v` and a bit number `n` and returns the new value (or, for `read_bit`, 0 or 1). Use the operators from the explain step above: `|`, `&`, `~`, `^`, `<<` and `>>`.",
+          "Build the mask with an **unsigned** 1, written `1u`. In C, shifting a signed 1 into the top bit (bit 31) is undefined behaviour, and registers are unsigned anyway.",
+          "The program's `main` calls your helpers on a few test values and prints the results; the checks read those lines.",
         ),
-        language: "python",
-        starter: `def set_bit(v, n):
-    return v
+        language: "cpp",
+        starter: `#include <cstdint>
+#include <cstdio>
 
-def clear_bit(v, n):
-    return v
+// v is the register value, n the bit number (0 to 31).
+uint32_t set_bit(uint32_t v, unsigned n) {
+    return v;  // your code here
+}
 
-def toggle_bit(v, n):
-    return v
+uint32_t clear_bit(uint32_t v, unsigned n) {
+    return v;  // your code here
+}
 
-def read_bit(v, n):
-    return -1
+uint32_t toggle_bit(uint32_t v, unsigned n) {
+    return v;  // your code here
+}
+
+unsigned read_bit(uint32_t v, unsigned n) {
+    return 0;  // your code here
+}
+
+// The checks read what main prints. Leave main as it is.
+int main() {
+    std::printf("set %u\\n", (unsigned)set_bit(0x81u, 5));
+    std::printf("set_top %u\\n", (unsigned)set_bit(0u, 31));
+    std::printf("clear %u\\n", (unsigned)clear_bit(0xFFu, 0));
+    std::printf("toggle_off %u\\n", (unsigned)toggle_bit(0x04u, 2));
+    std::printf("toggle_on %u\\n", (unsigned)toggle_bit(0u, 2));
+    std::printf("read_set %u\\n", read_bit(0x04u, 2));
+    std::printf("read_clear %u\\n", read_bit(0x04u, 1));
+    return 0;
+}
 `,
-        solution: `def set_bit(v, n):
-    return v | (1 << n)
+        solution: `#include <cstdint>
+#include <cstdio>
 
-def clear_bit(v, n):
-    return v & ~(1 << n)
+// v is the register value, n the bit number (0 to 31).
+uint32_t set_bit(uint32_t v, unsigned n) {
+    return v | (1u << n);
+}
 
-def toggle_bit(v, n):
-    return v ^ (1 << n)
+uint32_t clear_bit(uint32_t v, unsigned n) {
+    return v & ~(1u << n);
+}
 
-def read_bit(v, n):
-    return (v >> n) & 1
+uint32_t toggle_bit(uint32_t v, unsigned n) {
+    return v ^ (1u << n);
+}
+
+unsigned read_bit(uint32_t v, unsigned n) {
+    return (v >> n) & 1u;
+}
+
+// The checks read what main prints. Leave main as it is.
+int main() {
+    std::printf("set %u\\n", (unsigned)set_bit(0x81u, 5));
+    std::printf("set_top %u\\n", (unsigned)set_bit(0u, 31));
+    std::printf("clear %u\\n", (unsigned)clear_bit(0xFFu, 0));
+    std::printf("toggle_off %u\\n", (unsigned)toggle_bit(0x04u, 2));
+    std::printf("toggle_on %u\\n", (unsigned)toggle_bit(0u, 2));
+    std::printf("read_set %u\\n", read_bit(0x04u, 2));
+    std::printf("read_clear %u\\n", read_bit(0x04u, 1));
+    return 0;
+}
 `,
         tests: [
-          { id: "set", description: "set_bit(0b10000001, 5) is 0b10100001", assertionCode: `assert set_bit(0b10000001, 5) == 0b10100001, f"got {bin(set_bit(0b10000001, 5))}"` },
-          { id: "clear", description: "clear_bit(0xFF, 0) is 0xFE", assertionCode: `assert clear_bit(0xFF, 0) == 0xFE, f"got {hex(clear_bit(0xFF, 0))}"` },
-          { id: "toggle", description: "toggle_bit flips a bit both ways", assertionCode: `assert toggle_bit(0b0100, 2) == 0 and toggle_bit(0, 2) == 0b0100, "toggle_bit should flip bit 2"` },
-          { id: "read", description: "read_bit reads 1 and 0", assertionCode: `assert read_bit(0b0100, 2) == 1 and read_bit(0b0100, 1) == 0, "read_bit(0b0100, 2) is 1 and read_bit(0b0100, 1) is 0"` },
+          {
+            id: "set",
+            description: "set_bit(0x81, 5) is 0xA1, and bit 31 can be set",
+            assertionCode: printed("set", "161", "set_bit(0x81, 5) should be 0xA1 = 161") + "\n" + printed("set_top", "2147483648", "set_bit(0, 31) should be 0x80000000 = 2147483648: build the mask with an unsigned 1"),
+          },
+          { id: "clear", description: "clear_bit(0xFF, 0) is 0xFE", assertionCode: printed("clear", "254", "clear_bit(0xFF, 0) should be 0xFE = 254") },
+          {
+            id: "toggle",
+            description: "toggle_bit flips a bit both ways",
+            assertionCode: printed("toggle_off", "0", "toggle_bit(0x04, 2) should switch bit 2 off, giving 0") + "\n" + printed("toggle_on", "4", "toggle_bit(0, 2) should switch bit 2 on, giving 4"),
+          },
+          {
+            id: "read",
+            description: "read_bit reads 1 and 0",
+            assertionCode: printed("read_set", "1", "read_bit(0x04, 2) should be 1") + "\n" + printed("read_clear", "0", "read_bit(0x04, 1) should be 0"),
+          },
         ],
-        hints: ["The mask for bit n is 1 << n.", "Clear: AND with the mask's inverse, ~(1 << n). Read: shift right by n and keep the lowest bit with & 1."],
+        hints: ["The mask for bit n has a single 1 in position n: shift an unsigned 1 to the left by n places.", "Clearing needs the opposite of that mask. For reading, move bit n down to position 0, then keep only that one bit."],
       },
       {
         kind: "explain",
         title: "Why volatile",
         body: P(
           "A C compiler optimises: if it can prove a value cannot change, it reads it once and keeps it in a CPU register. That is great for normal variables, and wrong for hardware registers and for variables changed by an **interrupt**, which the compiler cannot see.",
-          "The keyword `volatile` tells it: *every read and every write in the source must really happen, in that order*. That is why the register pointer above is `volatile uint32_t *`. Try the flag below with and without volatile, at the optimisation levels -O0 (none) and -O2 (normal).",
+          "The keyword `volatile` tells it: *every read and every write of that variable must really happen, in the order written, relative to the other volatile accesses*. Ordinary variables can still be moved around them (*DMA: moving data without the CPU* shows when that matters). That is why the register pointer above is `volatile uint32_t *`. Try the flag below with and without volatile, at the optimisation levels -O0 (none) and -O2 (normal).",
+          "A word of warning about the name: this is C's `volatile`, an instruction to the compiler. It is not the \"volatile memory\" of *Inside a memory chip*, which means RAM that forgets its contents without power.",
         ),
         widget: { type: "emb-volatile", props: { initialVolatile: false, initialOpt: "O2" } },
       },
@@ -327,6 +387,7 @@ def read_bit(v, n):
           "Change single bits with a **mask**: `|=` sets, `&= ~` clears, `^=` toggles, `(v >> n) & 1` reads. Plain `=` overwrites every bit.",
           "`volatile` makes the compiler perform every read and write of a variable. Use it for registers and for data shared with interrupts.",
           "volatile is **not** atomicity and **not** ordering between cores.",
+          "`|=` on a register that an interrupt also changes is **not atomic** (read, modify, write). BSRR-style set/reset registers avoid the problem (see *Interrupts*).",
         ],
       },
     ],
@@ -346,31 +407,31 @@ def read_bit(v, n):
         title: "One pin, many settings",
         body: P(
           "A **GPIO** (general-purpose input/output) pin is set up through a few registers. The **mode** register gives each pin 2 bits: 00 input, 01 output, 10 alternate function (the pin is handed to a peripheral such as a UART), 11 analog (for the ADC). A **pull** register can connect a weak internal resistor to 3.3 V (**pull-up**) or to ground (**pull-down**).",
-          "Start here: the pin is an input with nothing connected and no pull resistor. Look at what it reads. Then try a pull-up or a pull-down.",
+          "Next comes a question about the trickiest case: an input with nothing connected and no pull resistor. Predict first. Then the pin appears, so you can check your answer and try a pull-up or a pull-down.",
         ),
-        widget: { type: "emb-gpio", props: { initial: { mode: "input", pull: "none", wiring: "none" } } },
       },
       {
         kind: "question",
         title: "Nothing connected",
         body: "An input pin has **nothing connected** and **no pull resistor**. What does reading it give?",
+        widget: { type: "emb-gpio", props: { initial: { mode: "input", pull: "none", wiring: "none" } }, after: true },
         question: {
           type: "choice",
           options: [
-            "Always 0, because no voltage means zero",
-            "Unpredictable values: the pin floats and picks up noise",
-            "Always 1",
-            "An error from the GPIO peripheral",
+            "Always 0, since no voltage means zero",
+            "Unpredictable: it floats and picks up noise",
+            "Always 1, since inputs rest at 3.3 V",
+            "An error flag from the GPIO peripheral",
           ],
           answer: 1,
           hint: "An input draws almost no current. What sets its voltage if nothing is connected?",
           feedback: {
             0: "An unconnected input is not at 0 V; it is at no defined voltage at all. It can read 0, 1 or flip between them.",
-            2: "Nothing pulls it high either, unless you enable a pull-up.",
+            2: "Nothing pulls it high either, unless you enable a pull-up. Inputs do not rest at the supply voltage.",
             3: "The hardware cannot tell; it simply reads whatever voltage happens to be on the pin.",
           },
         },
-        explanation: "A CMOS input is like a tiny capacitor with almost no leakage, so with nothing driving it the voltage **floats**: it drifts, picks up noise from nearby wires, even from your finger. Reads are random. A pull resistor gives the pin a defined level whenever nothing else drives it.",
+        explanation: "A CMOS input is like a tiny capacitor with almost no leakage, so with nothing driving it the voltage **floats**: it drifts, picks up noise from nearby wires, even from your finger. Reads are random. A pull resistor gives the pin a defined level whenever nothing else drives it. Now try it in the widget: switch on a pull-up, then a pull-down.",
       },
       {
         kind: "question",
@@ -431,11 +492,11 @@ def read_bit(v, n):
         widget: { type: "emb-debounce", props: { bounceMs: 5, sampleMs: 1, stable: 1 } },
         question: {
           type: "widget",
-          goal: { presses: 1, maxDelayMs: 10, minBounceMs: 5 },
+          goal: { presses: 1, maxDelayMs: 10, minAgreeMs: 5, seeds: [7, 12] },
           prompt: "Pick a read interval and a number of agreeing reads that filter the bounce but react within 10 ms.",
           hint: "The reads that must agree should cover more time than the bounce lasts, but not much more.",
         },
-        explanation: "Reading every 1 ms and requiring about 5 to 8 agreeing reads covers the bounce and still reacts within 10 ms. Too few reads lets bounces through as extra presses; too many, or reading too rarely, makes the button feel sluggish. People notice delays above about 50 to 100 ms, so there is room, but a 5 ms bounce needs at least 5 ms of agreement.",
+        explanation: "Two kinds of setting work. **Several quick reads that together cover the bounce**: 1 ms × 5 or 6, 2 ms × 3, or 0.5 ms × 10 (5 to 6 ms of agreement). Or **one read every 5 to 10 ms**: reads slower than the bounce lasts can only catch it once, so one read is enough. Too little agreement lets bounces through as extra presses; too much, or reading too rarely, makes the button sluggish (1 ms × 7 is already over 10 ms on some presses). People notice delays above about 50 to 100 ms, so there is room. The check tries your setting on six different bounce patterns, so a lucky one does not count.",
       },
       {
         kind: "question",
@@ -444,17 +505,17 @@ def read_bit(v, n):
         question: {
           type: "choice",
           options: [
-            "Each bounce fires its own interrupt, so one press is counted several times, unless the handler ignores further edges for a while",
-            "It works perfectly: interrupts are immune to bounce",
-            "The interrupt never fires, because bounces are too fast",
-            "The MCU resets",
+            "Each press fires exactly one interrupt, since edges are clean",
+            "The edge interrupt fires only after the contacts settle",
+            "One press is counted several times, once per bounce edge",
+            "It misses most presses, since bounces are too short to catch",
           ],
-          answer: 0,
+          answer: 2,
           hint: "The interrupt reacts to edges. How many falling edges does one bouncy press make?",
           feedback: {
-            1: "The interrupt hardware sees the same bouncing edges the polling code does, and reacts even faster.",
-            2: "Edge detection is fast enough to catch bounces of microseconds. That is the problem.",
-            3: "Nothing resets; the count is just wrong.",
+            0: "Mechanical contacts are not clean: every bounce is a real falling edge, and the interrupt hardware sees all of them.",
+            1: "The interrupt hardware knows nothing about settling. It reacts to each edge as it happens, which is why the handler has to do the waiting.",
+            3: "Edge detection is fast enough to catch bounces of microseconds. That is the problem: it catches them all.",
           },
         },
         explanation: "The interrupt fires on **every** bounce edge. Edge interrupts are still useful, for example to wake a sleeping chip, but the handler must then debounce: note the time and ignore edges for the next few milliseconds, or start a timer and read the settled level later. Hardware debouncing (a resistor-capacitor filter into a Schmitt-trigger input) is another option.",
@@ -539,8 +600,7 @@ def read_bit(v, n):
         body: "Write `pwm(clock, prescaler, arr, ccr)` that returns `(freq, duty)`: the PWM frequency in Hz and the duty cycle as a fraction from 0 to 1. A CCR above ARR means the output is always high (duty 1).",
         language: "python",
         starter: `def pwm(clock, prescaler, arr, ccr):
-    # freq = clock / ((prescaler + 1) * (arr + 1))
-    # duty = ccr / (arr + 1), at most 1
+    # your code here
     return (0, 0)
 `,
         solution: `def pwm(clock, prescaler, arr, ccr):
@@ -612,13 +672,14 @@ def read_bit(v, n):
         title: "Don't call us, we'll call you",
         body: P(
           "You met interrupts in *Input, output and interrupts*: instead of the CPU asking a device \"anything new?\" again and again (**polling**), the device raises a signal and the CPU drops what it is doing to handle it.",
-          "On a microcontroller, each interrupt source (a timer, a UART, a pin…) has an entry in the **vector table**, a list of handler addresses at the start of flash. When an interrupt fires, the hardware saves the registers the current code was using, looks up the address and jumps to the **interrupt service routine** (ISR). When the ISR returns, the registers are restored and the main code continues as if nothing had happened.",
+          "On a microcontroller, each interrupt source (a timer, a UART, a pin…) has an entry in the **vector table**, a list of handler addresses at the start of flash. When an interrupt fires, the hardware looks up the address and jumps to the **interrupt service routine** (ISR). First, on a Cortex-M core, it pushes 8 registers onto the stack: r0 to r3, r12, lr, pc and xPSR. Those are exactly the registers a C function may change freely, which is why an ISR on Cortex-M is an **ordinary C function**. If the ISR uses any other register, the compiler saves it, as in any function. When the ISR returns, the registers are restored and the main code continues as if nothing had happened.",
           c(`
 void TIM2_IRQHandler(void) {   // its address sits in the vector table
-    TIM2->SR &= ~TIM_SR_UIF;   // clear the flag, or it fires again at once
+    TIM2->SR = ~TIM_SR_UIF;   // rc_w0 bits: writing 1 changes nothing, so this clears only UIF
     ticks++;
 }
 `),
+          "The flag must be cleared, or the interrupt fires again the moment the ISR returns. On STM32 timers the status register SR is the one place where plain `=` is right and `&=` is wrong: the flags are \"rc_w0\" bits (read, clear by writing 0; writing 1 changes nothing), and with `&=` a flag set between the read and the write would be written back as 0 and lost. Compare *Registers and memory-mapped I/O* (\"The tempting shortcut\"), where `=` was the mistake.",
           "Below, a timer interrupt arrives while the main loop runs. Look at the timeline: entry, the ISR body, exit.",
         ),
         widget: { type: "emb-irq", props: { sources: ["tim"], lockNesting: true } },
@@ -649,7 +710,8 @@ void TIM2_IRQHandler(void) {   // its address sits in the vector table
         kind: "explain",
         title: "Priorities and nesting",
         body: P(
-          "With several interrupt sources, the **interrupt controller** decides who goes first. Each source gets a **priority**. On Arm Cortex-M (and in this widget) a **lower number means more urgent**. If a more urgent interrupt arrives while a less urgent ISR runs, it can **preempt** it: the running ISR is paused and the new one runs on top. That is **nesting**. Equal or lower priority waits until the running ISR finishes.",
+          "With several interrupt sources, the **interrupt controller** decides who goes first. Each source gets a **priority**. On Arm Cortex-M (and in this widget) a **lower number means more urgent**. If a more urgent interrupt arrives while a less urgent ISR runs, it **preempts** it: the running ISR is paused and the new one runs on top. Stacking ISRs like this is called **nesting**. Equal or lower priority waits until the running ISR finishes. When one ISR ends and another is already waiting, the core **tail-chains** them: it skips the unstacking and restacking in between (about 6 cycles on Cortex-M3 and M4). The widget does not model that.",
+          "On Cortex-M a more urgent priority group always preempts; there is no global nesting switch. The widget has a switch, **Preemption allowed**, to show the difference. Off behaves like an AVR microcontroller, which disables interrupts when it enters an ISR. On a Cortex-M you get that effect by giving sources the same group priority, or by masking interrupts with the BASEPRI or PRIMASK registers.",
           "The time from the request to the first instruction of the ISR is the **interrupt latency**. Here the timer ISR (10 µs) and a UART byte arrive at the same priority. Look at how long the UART waits.",
         ),
         widget: { type: "emb-irq", props: { sources: ["tim", "uart"] } },
@@ -657,15 +719,15 @@ void TIM2_IRQHandler(void) {   // its address sits in the vector table
       {
         kind: "question",
         title: "Don't lose the byte",
-        body: "The UART holds only one received byte. If its ISR does not start within **3 µs**, the next byte overwrites it. Make the UART's latency **3 µs or less**.",
+        body: "The UART holds only one received byte. If its ISR does not start within **3 µs**, the next byte overwrites it. Make the UART's latency **3 µs or less**. The timer ISR takes 10 µs.",
         widget: { type: "emb-irq", props: { sources: ["tim", "uart"], prios: { tim: 2, uart: 2 }, nesting: false } },
         question: {
           type: "widget",
           goal: { maxLatency: { uart: 3 } },
-          prompt: "Change priorities and nesting until the UART's latency is at most 3 µs.",
-          hint: "The UART must be allowed to interrupt the timer's ISR. That needs two things.",
+          prompt: "Change the priorities and the preemption switch until the UART's latency is at most 3 µs.",
+          hint: "The UART must be allowed to interrupt the timer's ISR. That needs two things: who is more urgent, and whether preempting is allowed at all.",
         },
-        explanation: "Give the UART a **more urgent priority** (a lower number than the timer) **and** allow **nesting**: then it preempts the timer ISR and starts after just the entry time. With equal priority, or nesting off, it waits for the whole 10 µs timer ISR. Rule of thumb: the shorter the deadline, the more urgent the priority.",
+        explanation: "Give the UART a **more urgent priority** (a lower number than the timer) **and** allow **preemption**: then it preempts the timer ISR and starts after just the entry time. With equal priority, or preemption off, it waits for the whole 10 µs timer ISR. Rule of thumb: the shorter the deadline, the more urgent the priority.",
       },
       {
         kind: "question",
@@ -675,17 +737,13 @@ void TIM2_IRQHandler(void) {   // its address sits in the vector table
         explanation: "12 ÷ 48,000,000 s = 0.00000025 s = **250 ns**. In practice the latency also includes any time interrupts are disabled and any higher-priority ISR running, which is why the next rule matters.",
       },
       {
-        kind: "explain",
-        title: "Rules for ISRs",
-        body: P(
-          "While an ISR runs, everything of equal or lower priority waits. So:",
-          "- **Keep it short**: grab the data, clear the flag, set a flag or put the data in a buffer, and return. Do the slow work in the main loop or a task.\n- **Never wait** inside an ISR: no `delay`, no waiting for another interrupt, no `printf` over a slow UART.\n- **Clear the interrupt flag**, or the ISR runs again the moment it returns.\n- Be careful with **shared data**: anything the ISR and the main code both touch needs `volatile`, and often more.",
-        ),
-      },
-      {
         kind: "question",
         title: "What belongs in the ISR?",
-        body: "A UART interrupt fires for every received byte. Which of these should the ISR do?",
+        body: P(
+          "While an ISR runs, everything of equal or lower priority waits. So there are rules:",
+          "- **Keep it short**: grab the data, clear the flag, set a flag or put the data in a buffer, and return. Do the slow work in the main loop or a task.\n- **Never wait** inside an ISR: no `delay`, no waiting for another interrupt, no `printf` over a slow UART.\n- **Clear the interrupt flag**, or the ISR runs again the moment it returns.\n- Be careful with **shared data**: anything the ISR and the main code both touch needs `volatile`, and often more.",
+          "Now apply them. A UART interrupt fires for every received byte. Which of these should the ISR do?",
+        ),
         question: {
           type: "choice",
           options: [
@@ -711,7 +769,7 @@ void TIM2_IRQHandler(void) {   // its address sits in the vector table
           "Both the main loop and a timer ISR do `count++` on the same variable. In *Memory: LOAD and STORE* you saw that the CPU cannot add to memory directly: `count++` is **three instructions** (load into a register, add 1, store back).",
           "If the interrupt lands **between** main's load and store, the ISR's increment is overwritten by main's stale value: one update is lost. It happens rarely, which makes it a nasty bug. Move the interrupt's arrival point and watch `count`.",
         ),
-        widget: { type: "emb-race", props: { fix: "none", irqAfter: 1 } },
+        widget: { type: "emb-race", props: { fix: "none", irqAfter: 1, lockFix: true } },
       },
       {
         kind: "question",
@@ -724,16 +782,48 @@ void TIM2_IRQHandler(void) {   // its address sits in the vector table
           prompt: "Pick a fix so the result is 7 whether the interrupt arrives before, between or after main's instructions.",
           hint: "volatile makes the loads and stores real, but does it stop the interrupt landing between them?",
         },
-        explanation: "**Interrupts off** around the three instructions makes them a **critical section**: the ISR waits until they are done (this adds latency, so keep such sections tiny). An **atomic** read-modify-write also works: Arm's exclusive load and store pair (LDREX/STREX, what C11 `atomic_fetch_add` compiles to on many cores) notices the interruption and retries. **volatile does not help**: the three steps are still separate.",
+        explanation: "**Interrupts off** around the three instructions makes them a **critical section**: the ISR waits until they are done (this adds latency, so keep such sections tiny). An **atomic** read-modify-write also works: Arm's exclusive load and store pair (LDREX/STREX, what C11 `atomic_fetch_add` compiles to on many cores) notices the interruption and retries. (Not on Cortex-M0 and M0+, which have no exclusive instructions: there the atomic helpers briefly disable interrupts.) **volatile does not help**: the three steps are still separate.",
+      },
+      {
+        kind: "question",
+        title: "Two writers, one port",
+        body: P(
+          "The main loop and a timer interrupt both change the same output register:",
+          c(`
+// main loop
+GPIOA->ODR |= (1u << 5);       // set pin 5
+
+// timer ISR, runs now and then
+GPIOA->ODR ^= (1u << 0);       // toggle pin 0
+`),
+          "Sometimes pin 0 misses a toggle. What is the best fix?",
+        ),
+        question: {
+          type: "choice",
+          options: [
+            "Write BSRR: set pin 5 with one store",
+            "Declare GPIOA->ODR as volatile",
+            "Add a short delay after the |=",
+            "Give the timer interrupt a lower priority",
+          ],
+          answer: 0,
+          hint: "`|=` on a register is a read, a modify and a write. What if the interrupt lands between the read and the write?",
+          feedback: {
+            1: "It already is volatile (the vendor's header says so). volatile makes every access happen, but it does not stop an interrupt landing between the read and the write.",
+            2: "The stale value was read before the interrupt ran, so a delay after the write changes nothing: the damage is already on its way.",
+            3: "On a Cortex-M any interrupt preempts the main program, whatever its priority, so it can still land between the read and the write.",
+          },
+        },
+        explanation: "Main's read-modify-write read ODR before the ISR toggled pin 0, then wrote that stale value of bit 0 back, undoing the toggle. **BSRR** (the bit set/reset register) sets or resets only the bits you write as 1, in a single store, so there is no read to go stale and nothing to interrupt. A critical section (interrupts off around the `|=`) also works, at a cost in latency.",
       },
       {
         kind: "recap",
         points: [
           "An interrupt makes the hardware save registers and jump to an **ISR** whose address is in the **vector table**.",
-          "Each source has a **priority** (on Cortex-M, lower number = more urgent). A more urgent interrupt can **preempt** a running ISR: nesting.",
+          "Each source has a **priority** (on Cortex-M, lower number = more urgent). A more urgent interrupt **preempts** a running ISR (nesting); ISRs that follow each other are tail-chained.",
           "**Latency** = request to first ISR instruction. Long, low-urgency ISRs add latency for everyone else.",
           "Keep ISRs **short**: clear the flag, store the data, set a flag; never wait.",
-          "Data shared with an ISR needs `volatile` **and** protection: a critical section (interrupts off briefly) or an atomic operation.",
+          "Read-modify-write of shared data (`count++`, `ODR |=`) needs a critical section or an atomic; a single aligned word written by one side and read by the other needs only `volatile`.",
         ],
       },
     ],
