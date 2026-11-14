@@ -11,12 +11,18 @@ export interface OccupancyProps {
   sharedKb?: number;
   /** Hide the latency-hiding part. */
   noLatency?: boolean;
+  /** Starting maths cycles between memory loads (default 40). */
+  math?: number;
+  /** Do not offer the maths slider: show the fixed value instead. */
+  lockMath?: boolean;
 }
 
 export interface OccupancyState {
   blockSize: number;
   regs: number;
   sharedKb: number;
+  /** Maths cycles between memory loads. */
+  math: number;
   blocksPerSm: number;
   warpsPerSm: number;
   /** Percent of the SM's warp slots in use. */
@@ -33,7 +39,7 @@ export function Occupancy({ props, onChange }: WidgetProps<OccupancyProps>) {
   const [bs, setBs] = useState(props.blockSize ?? 256);
   const [regs, setRegs] = useState(props.regs ?? 32);
   const [kb, setKb] = useState(props.sharedKb ?? 0);
-  const [math, setMath] = useState(40);
+  const [math, setMath] = useState(props.math ?? 40);
 
   const r = occupancy(bs, regs, kb * 1024);
   const perSched = r.warpsPerSm / SM.schedulers;
@@ -50,6 +56,7 @@ export function Occupancy({ props, onChange }: WidgetProps<OccupancyProps>) {
       blockSize: b,
       regs: g,
       sharedKb: k,
+      math: m,
       blocksPerSm: x.blocksPerSm,
       warpsPerSm: x.warpsPerSm,
       occupancy: Math.round(x.occupancy * 100),
@@ -77,7 +84,12 @@ export function Occupancy({ props, onChange }: WidgetProps<OccupancyProps>) {
           <Slider label="Registers per thread" value={regs} min={16} max={128} step={8} onChange={(v) => upd(bs, v, kb, math)} />
           <Slider label="Shared memory per block" value={kb} min={0} max={96} step={4} onChange={(v) => upd(bs, regs, v, math)} format={(v) => `${v} KB`} />
         </div>
-        {!props.noLatency && <Slider label="Maths cycles a warp does between memory loads" value={math} min={10} max={200} step={10} onChange={(v) => upd(bs, regs, kb, v)} />}
+        {!props.noLatency &&
+          (props.lockMath ? (
+            <p className="text-xs text-ink-3">Maths between loads: {math} cycles (fixed in this step)</p>
+          ) : (
+            <Slider label="Maths cycles a warp does between memory loads" value={math} min={10} max={200} step={10} onChange={(v) => upd(bs, regs, kb, v)} />
+          ))}
       </div>
 
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
@@ -119,13 +131,13 @@ export function Occupancy({ props, onChange }: WidgetProps<OccupancyProps>) {
         <Readout label="Limited by" value={r.limiter} accent />
       </div>
       <p className="mt-2 text-xs text-ink-3">
-        A simplified SM: {SM.maxThreads} threads, {SM.maxBlocks} blocks, 64K registers and 96 KB of shared memory max. Real GPUs differ by generation and also round allocations up; use your vendor&apos;s occupancy calculator for real numbers. Higher occupancy is not always faster.
+        A simplified, data-centre-class SM (round numbers): {SM.maxThreads.toLocaleString("en-US")} threads, {SM.maxBlocks} blocks, 64K registers and 96 KB of shared memory at most. Gaming cards hold fewer warps per SM (for example 48). Real GPUs also round allocations up; use your vendor&apos;s occupancy calculator for real numbers. Higher occupancy is not always faster.
       </p>
     </div>
   );
 }
 
-/** goal: { minOccupancy?: number, maxOccupancy?: number, limiter?: string, hidesLatency?: boolean, blockSize?: number }. */
+/** goal: { minOccupancy?: number, maxOccupancy?: number, limiter?: string, hidesLatency?: boolean, blockSize?: number, sharedKb?: number, math?: number } (sharedKb and math match exactly). */
 export function checkOccupancy(state: unknown, goal: Record<string, unknown>) {
   const s = state as OccupancyState | undefined;
   if (!s) return false;
@@ -134,5 +146,7 @@ export function checkOccupancy(state: unknown, goal: Record<string, unknown>) {
   if (typeof goal.limiter === "string" && s.limiter !== goal.limiter) return false;
   if (typeof goal.hidesLatency === "boolean" && s.hidesLatency !== goal.hidesLatency) return false;
   if (typeof goal.blockSize === "number" && s.blockSize !== goal.blockSize) return false;
+  if (typeof goal.sharedKb === "number" && s.sharedKb !== goal.sharedKb) return false;
+  if (typeof goal.math === "number" && s.math !== goal.math) return false;
   return true;
 }

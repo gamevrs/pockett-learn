@@ -152,7 +152,7 @@ export function coalesce(pattern: Pattern, stride: number, offset: number): Coal
 
 // ───────────────────────── 7. occupancy ─────────────────────────
 
-/** One SM of a typical modern NVIDIA-style GPU (round numbers). */
+/** One SM of a data-centre-class NVIDIA-style GPU (round, A100/H100-like numbers). Gaming cards' SMs hold fewer: for example 1,536 threads (48 warps). */
 export const SM = { maxThreads: 2048, maxBlocks: 32, registers: 65536, sharedBytes: 98304, maxWarps: 64, schedulers: 4 };
 
 export type Limiter = "threads" | "blocks" | "registers" | "shared memory";
@@ -227,6 +227,8 @@ export const FORMATS: Format[] = [
   { id: "bf16", label: "BF16", bits: 16, sign: 1, exp: 8, man: 7, max: "3.4 × 10^38" },
   { id: "fp8", label: "FP8 (E4M3)", bits: 8, sign: 1, exp: 4, man: 3, max: "448" },
   { id: "int8", label: "INT8", bits: 8, sign: 0, exp: 0, man: 0, max: "127" },
+  { id: "fp4", label: "FP4 (E2M1)", bits: 4, sign: 1, exp: 2, man: 1, max: "6" },
+  { id: "int4", label: "INT4", bits: 4, sign: 0, exp: 0, man: 0, max: "7" },
 ];
 
 /** Upper bound on decode speed: every token must stream all the weights from memory once. */
@@ -266,4 +268,80 @@ export function streams(copyIn: number, compute: number, copyOut: number, chunks
     slices.push({ lane: "copy in", chunk: k, start: inStart, end: inEnd }, { lane: "compute", chunk: k, start: cStart, end: cEnd }, { lane: "copy out", chunk: k, start: oStart, end: oEnd });
   }
   return { slices, total: freeOut, serial: copyIn + compute + copyOut };
+}
+
+// ───────────────────────── 11. shared-memory banks ─────────────────────────
+
+export const BANKS = 32;
+
+export type BankAccess = "row" | "column";
+
+export interface BankResult {
+  /** Word index each lane reads. */
+  words: number[];
+  /** Bank each lane hits. */
+  banks: number[];
+  /** Lanes whose word lives in each bank. */
+  lanesPerBank: number[];
+  /** Passes needed: most distinct words in any one bank (same word = broadcast, no conflict). Minimum 1. */
+  ways: number;
+}
+
+/** A warp reads 4-byte words of a row-major `float tile[32][cols]`: a row (tile[index][lane]) or a column (tile[lane][index]). */
+export function bankAccess(access: BankAccess, cols: number, index = 0): BankResult {
+  const words = Array.from({ length: WARP }, (_, l) => (access === "row" ? index * cols + l : l * cols + index));
+  const banks = words.map((w) => w % BANKS);
+  const lanesPerBank = Array.from({ length: BANKS }, (_, b) => banks.filter((x) => x === b).length);
+  let ways = 1;
+  for (let b = 0; b < BANKS; b++) {
+    const distinct = new Set(words.filter((_, l) => banks[l] === b)).size;
+    if (distinct > ways) ways = distinct;
+  }
+  return { words, banks, lanesPerBank, ways };
+}
+
+// ───────────────────────── 12. summing many numbers ─────────────────────────
+
+export type ReduceMethod = "plain" | "atomic" | "tree";
+
+export interface ReduceResult {
+  values: number[];
+  expected: number;
+  result: number;
+  correct: boolean;
+  /** One-at-a-time updates (atomic), rounds (tree), or 1 (plain). */
+  steps: number;
+  /** Updates overwritten and lost (plain only). */
+  lost: number;
+  /** atomic: [running totals]; tree: the partial sums after each round (first entry = the input); plain: empty. */
+  trace: number[][];
+}
+
+/** Thread i holds x[i] = i + 1. n must be a power of two. */
+export function reduceRun(method: ReduceMethod, n: number): ReduceResult {
+  const values = Array.from({ length: n }, (_, i) => i + 1);
+  const expected = (n * (n + 1)) / 2;
+  if (method === "plain") {
+    // Every thread reads sum (0) before any writes; the last writer wins.
+    const result = values[n - 1];
+    return { values, expected, result, correct: result === expected, steps: 1, lost: n - 1, trace: [] };
+  }
+  if (method === "atomic") {
+    const running: number[] = [];
+    let t = 0;
+    for (const v of values) {
+      t += v;
+      running.push(t);
+    }
+    return { values, expected, result: t, correct: t === expected, steps: n, lost: 0, trace: [running] };
+  }
+  const trace: number[][] = [values];
+  let cur = values;
+  while (cur.length > 1) {
+    const half = cur.length / 2;
+    const prev = cur;
+    cur = Array.from({ length: half }, (_, i) => prev[i] + prev[i + half]);
+    trace.push(cur);
+  }
+  return { values, expected, result: cur[0], correct: cur[0] === expected, steps: trace.length - 1, lost: 0, trace };
 }
