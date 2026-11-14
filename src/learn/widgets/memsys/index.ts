@@ -7,6 +7,7 @@ import { FalseShare, Mesi, checkFalseShare, checkMesi } from "./Mesi";
 import { Roofline, checkRoofline } from "./Roofline";
 import { Frag, Struct, checkFrag, checkStruct } from "./Struct";
 import { PageTable, Swap, Tlb, checkPageTable, checkSwap, checkTlb } from "./Vm";
+import { Ecc, Flash, WritePolicy, checkEcc, checkFlash, checkWritePolicy } from "./Tech";
 import { Layout, Walk, checkLayout, checkWalk } from "./Walk";
 
 /**
@@ -38,4 +39,7 @@ export const MEMSYS_WIDGETS: WidgetRegistry = {
   "memsys-litmus": { Component: Litmus, check: checkLitmus },
   "memsys-race": { Component: Race, check: checkRace },
   "memsys-roofline": { Component: Roofline, check: checkRoofline },
+  "memsys-writes": { Component: WritePolicy, check: checkWritePolicy },
+  "memsys-ecc": { Component: Ecc, check: checkEcc },
+  "memsys-flash": { Component: Flash, check: checkFlash },
 };

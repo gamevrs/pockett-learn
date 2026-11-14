@@ -16,7 +16,7 @@ export const memoryLessonsB: ConceptLesson[] = [
   {
     id: "fnd-mem-5-find",
     title: "How a cache finds data",
-    summary: "Splitting an address into tag, index and offset. Direct-mapped versus set-associative caches, hits, misses and LRU eviction.",
+    summary: "Splitting an address into tag, index and offset. Direct-mapped versus set-associative caches, LRU eviction, and write-back versus write-through.",
     minutes: 9,
     xp: 55,
     level: "Intermediate",
@@ -124,6 +124,19 @@ export const memoryLessonsB: ConceptLesson[] = [
         explanation: "The order of use is B (second read), then A (third read). **B** is the least recently used, so it makes way for C. Had the list been A, B, B, the answer would flip to A. Tracking \"who was used last\" is why each set keeps a little extra LRU state.",
       },
       {
+        kind: "question",
+        title: "Writes: now or later?",
+        body: P(
+          "So far every access was a read. A **write** changes the cache's copy, and then RAM's copy is out of date. There are two classic answers:",
+          "- **Write-through**: every write goes to the cache *and* on to RAM at once. RAM is always up to date, but every write costs RAM traffic.\n- **Write-back**: the write changes only the cache and sets the line's **dirty bit** (\"changed since it was fetched\"). RAM is written only when a dirty line is **evicted**. Many writes to one line cost a single write to RAM. Almost all CPU caches today are write-back.",
+          "Both usually **allocate on a write miss**: the line is fetched first, then changed. (CPUs also queue stores in a **store buffer** before they reach L1; it returns in the memory-ordering lesson.)",
+          "A 2-slot LRU cache, write-back, starts empty. The program does: **write A, write A, write A, write A, read B, write B, read C, write A**. How many times is **RAM written**?",
+        ),
+        widget: { type: "memsys-writes", props: { policy: "back" }, after: true },
+        question: { type: "number", answer: 2, tolerance: 0, unit: "writes", hint: "Under write-back RAM is written only when a dirty line is evicted. Find the evictions: which line is least recently used each time a third line arrives?" },
+        explanation: "Only **2**. The four writes to A just set its dirty bit. *Read C* needs a slot; A is least recently used and dirty, so it is written back (1). The last *write A* misses and evicts B, dirty from *write B* (2). A is dirty again at the end, so RAM's copy of A is stale until it is evicted. Write-through would have written RAM on all **6** writes: switch the widget to compare.",
+      },
+      {
         kind: "code",
         title: "Split an address",
         body: "Write `split_address(addr, offset_bits, index_bits)` that returns the tuple `(tag, index, offset)`.\n\nShifts and masks do it: shifting right by `n` drops the low `n` bits, and AND-ing with a mask of `n` one-bits keeps only them.",
@@ -153,6 +166,7 @@ export const memoryLessonsB: ConceptLesson[] = [
           "Offset bits = log₂(line size); index bits = log₂(number of sets); the tag is the rest.",
           "**Direct-mapped** = 1 way (fast, but lines collide). **N-way set-associative** = N slots per set. **Fully associative** = one big set.",
           "When a set is full, hardware evicts the **least recently used** line (or a close approximation).",
+          "**Write-through** sends every write on to RAM; **write-back** marks the line **dirty** and writes RAM only when the line is evicted, which is what CPU caches do.",
         ],
       },
     ],
