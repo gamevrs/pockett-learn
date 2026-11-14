@@ -8,6 +8,8 @@ import { Ooo, checkOoo } from "./Ooo";
 import { Pipeline, checkPipeline } from "./Pipeline";
 import { Counters, Flame, checkCounters, checkFlame } from "./Profile";
 import { Simd, checkSimd } from "./Simd";
+import { Syscall, checkSyscall } from "./Syscall";
+import { Mitigate, checkMitigate } from "./Mitigate";
 
 /**
  * Widgets for the "How a CPU runs your code" module. Every key MUST be prefixed "cpuarch-" so it stays unique
@@ -29,4 +31,6 @@ export const CPUARCH_WIDGETS: WidgetRegistry = {
   "cpuarch-simd": { Component: Simd, check: checkSimd },
   "cpuarch-counters": { Component: Counters, check: checkCounters },
   "cpuarch-flame": { Component: Flame, check: checkFlame },
+  "cpuarch-syscall": { Component: Syscall, check: checkSyscall },
+  "cpuarch-mitigate": { Component: Mitigate, check: checkMitigate },
 };

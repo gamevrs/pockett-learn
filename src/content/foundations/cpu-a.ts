@@ -21,62 +21,60 @@ export const cpuLessonsA: ConceptLesson[] = [
         kind: "explain",
         title: "Adding two bits",
         body: P(
-          "A CPU can add millions of numbers a second, yet it is built from tiny switches. You met the building blocks in the bits lessons: **logic gates**, little circuits that take bits in and put one bit out. Now you will see how a few of them add.",
-          "Add two single bits by hand: 0 + 0 = 0, 0 + 1 = 1, 1 + 0 = 1, and **1 + 1 = 10** (that is two, written in binary). The answer sometimes needs *two* bits: a **sum** bit (the right-hand digit) and a **carry** bit (the left-hand digit that does not fit).",
-          "A circuit that adds two bits and gives both outputs is a **half adder**. Tap A and B to see what comes out.",
+          "A CPU can add millions of numbers a second, yet it is built from tiny switches. In the bits lessons (*The half adder*) you already built the first piece: a **half adder**, where an XOR gate gives the **sum** bit and an AND gate gives the **carry** bit, because 1 + 1 = 10 in binary.",
+          "Here it is again as a quick reminder. Tap A and B. This lesson starts where that one stopped: what happens when a carry comes *in* as well.",
         ),
         widget: { type: "cpuarch-adder", props: { mode: "half" } },
-      },
-      {
-        kind: "question",
-        title: "Sum 0, carry 1",
-        body: "Set the inputs so the **sum is 0** but the **carry is 1**.",
-        widget: { type: "cpuarch-adder", props: { mode: "half" } },
-        question: { type: "widget", goal: { sum: 0, carry: 1 }, hint: "The carry is 1 only when you are adding 1 + 1." },
-        explanation: "1 + 1 = 10 in binary: the sum bit is 0 and the carry bit is 1. The **sum** is the XOR gate (1 when the inputs differ) and the **carry** is the AND gate (1 when both inputs are 1). Two gates make a half adder.",
       },
       {
         kind: "explain",
         title: "The full adder",
         body: P(
           "A half adder is not enough for longer numbers. When you add 25 + 17 by hand, the second column also has to add the **1 carried over** from the first. So each column adds *three* bits: A, B and the **carry in**.",
-          "A circuit that does that is a **full adder** (two half adders plus an OR gate). Its sum bit is 1 when an odd number of inputs are 1. Its carry out is 1 when **two or more** inputs are 1. Open the truth table and try every row.",
+          "A circuit that does that is a **full adder** (two half adders plus an OR gate). Its sum bit is 1 when an **odd number** of inputs are 1. Its carry out is 1 when **two or more** inputs are 1. You will drive one yourself in the next step.",
         ),
-        widget: { type: "cpuarch-adder", props: { mode: "full" } },
       },
       {
         kind: "question",
-        title: "1 + 1 + 1",
-        body: "A full adder gets A = 1, B = 1 and carry in = 1. What comes out?",
+        title: "Both outputs on",
+        body: "Set A, B and carry in so the full adder's **sum is 1** and its **carry out is 1**.",
+        widget: { type: "cpuarch-adder", props: { mode: "full" } },
+        question: { type: "widget", goal: { sum: 1, carry: 1 }, hint: "The carry needs two or more ones; the sum needs an odd number of ones. Which count of ones is both?" },
+        explanation: "Only **1 + 1 + 1** does it: three ones make 3, which is binary **11**, so the sum bit and the carry out are both 1. With two ones you get a carry but a sum of 0; with one you get a sum but no carry.",
+      },
+      {
+        kind: "question",
+        title: "A carry in on its own",
+        body: "A full adder gets A = 1, B = 0 and carry in = 1. What comes out?",
         question: {
           type: "choice",
-          options: ["Sum 0, carry out 1", "Sum 1, carry out 1", "Sum 1, carry out 0", "Sum 0, carry out 0"],
-          answer: 1,
-          hint: "Count the ones: 1 + 1 + 1 = 3, and 3 in binary is 11.",
+          options: ["Sum 1, carry out 0", "Sum 1, carry out 1", "Sum 0, carry out 0", "Sum 0, carry out 1"],
+          answer: 3,
+          hint: "Count the ones: 1 + 0 + 1 = 2, and 2 in binary is 10.",
           feedback: {
-            0: "That is what 1 + 1 + 0 gives (binary 10). With a third 1 the sum bit is 1 too.",
-            2: "Three ones make 3, which needs two bits (11). The carry out can not be 0.",
-            3: "Three ones certainly are not zero. 1 + 1 + 1 = 3, which is 11 in binary.",
+            0: "That is 1 + 0 + 0 (one input on). The carry in is a third input and adds 1 more.",
+            1: "Sum and carry both 1 needs three ones (binary 11). Here only two inputs are 1.",
+            2: "Two inputs are 1, so the total is 2, not 0. The carry out picks it up.",
           },
         },
-        explanation: "1 + 1 + 1 = 3 = binary **11**: sum bit 1, carry out 1. Odd number of ones gives a sum of 1; two or more ones give a carry.",
+        explanation: "1 + 0 + 1 = 2 = binary **10**: sum bit 0, carry out 1. A carry in counts exactly like a third input bit, which is why the full adder can sit in any column.",
       },
       {
         kind: "explain",
         title: "A row of full adders",
         body: P(
           "To add 4-bit numbers, line up **four full adders**. Each one adds one column and passes its carry out to the *next* adder's carry in, just like carrying on paper. This is a **ripple-carry adder**: the carry ripples from right to left.",
-          "Flip the A and B bits. The top row of chips shows the carry going into each column. Try 7 + 1 (0111 + 0001) and watch the carry run all the way across.",
+          "Flip the A and B bits. The top row of chips shows the carry going into each column. Here 3 + 1 (0011 + 0001) sends a carry through two columns in a row.",
         ),
-        widget: { type: "cpuarch-adder", props: { mode: "ripple", a: 3, b: 2 } },
+        widget: { type: "cpuarch-adder", props: { mode: "ripple", a: 3, b: 1 } },
       },
       {
         kind: "question",
         title: "Make the carry ripple",
         body: "Choose A and B so a carry passes through **at least 3 adders in a row** (the **Carry hops** count shows it).",
-        widget: { type: "cpuarch-adder", props: { mode: "ripple", a: 3, b: 2 } },
-        question: { type: "widget", goal: { minHops: 3 }, hint: "A carry keeps going while every column adds up to 2 or more. Try 0111 + 0001." },
-        explanation: "7 + 1 makes every column carry: 111 + 001 flips each column in turn. That is the weakness of a ripple adder: the last column has to **wait** for the carry to arrive, so wide adders are slow. Real CPUs use faster layouts (carry-lookahead) that work out the carries in parallel.",
+        widget: { type: "cpuarch-adder", props: { mode: "ripple", a: 4, b: 2 } },
+        question: { type: "widget", goal: { minHops: 3 }, hint: "A carry keeps going while each column adds up to 2 or more. Stretch the 3 + 1 idea by one more column." },
+        explanation: "For example 7 + 1 (0111 + 0001) makes each of the three low columns carry in turn. That is the weakness of a ripple adder: the last column has to **wait** for the carry to arrive, so wide adders are slow. Real CPUs use faster layouts (carry-lookahead) that work out the carries in parallel.",
       },
       {
         kind: "explain",
@@ -92,7 +90,7 @@ export const cpuLessonsA: ConceptLesson[] = [
         kind: "question",
         title: "Prove two numbers are equal",
         body: "Use **Compare** and pick A and B so the ALU reports they are **equal** (the Z flag is 1).",
-        widget: { type: "cpuarch-adder", props: { mode: "alu", a: 9, b: 5 } },
+        widget: { type: "cpuarch-adder", props: { mode: "alu", a: 12, b: 3 } },
         question: { type: "widget", goal: { op: "cmp", zero: true }, hint: "A compare subtracts. The result is zero when the two numbers are the same." },
         explanation: "If A − B is zero, then A = B. That is exactly how an `if (a == b)` in your code becomes hardware: a subtraction, then a branch on the Z flag, as you saw in the Assembly lessons with `CMP` and `JZ`.",
       },
@@ -101,11 +99,11 @@ export const cpuLessonsA: ConceptLesson[] = [
         title: "Build a full adder",
         body: P(
           "Write `full_adder(a, b, cin)` using only bit operators. It takes three bits (0 or 1) and returns `(sum, carry)`.",
-          "In Python, `^` is XOR, `&` is AND and `|` is OR. The sum is `a ^ b ^ cin`. The carry out is 1 when at least two inputs are 1: `(a & b) | (cin & (a ^ b))`.",
+          "In Python, `^` is XOR, `&` is AND and `|` is OR. Build it from the two rules above: the sum is 1 for an odd number of ones, and the carry out is 1 for two or more.",
         ),
         language: "python",
         starter: `def full_adder(a, b, cin):
-    # return (sum_bit, carry_out) using ^, & and |
+    # your code here
     return (0, 0)
 `,
         solution: `def full_adder(a, b, cin):
@@ -150,7 +148,17 @@ export const cpuLessonsA: ConceptLesson[] = [
           "- The **program counter (PC)** holds the number of the next instruction.\n- **Instruction memory** holds the program. The instruction being worked on sits in the **instruction register (IR)**.\n- The **control unit** reads the instruction and switches the right parts on.\n- The **registers** are a few ultra-fast boxes for numbers in use right now.\n- The **ALU** does the maths you built in the last lesson.\n- **Data memory** holds the program's numbers.",
           "This datapath runs the same toy instructions as the Assembly lessons. Press **Next step** and watch which block lights up.",
         ),
-        widget: { type: "cpuarch-datapath", props: {} },
+        widget: {
+          type: "cpuarch-datapath",
+          props: {
+            program: [
+              { op: "MOV", rd: 0, imm: 2 },
+              { op: "MOV", rd: 1, imm: 3 },
+              { op: "ADD", rd: 0, rs: 1 },
+              { op: "STORE", rs: 0, addr: 3 },
+            ],
+          },
+        },
       },
       {
         kind: "question",
@@ -166,12 +174,12 @@ export const cpuLessonsA: ConceptLesson[] = [
         body: "In the **decode** step, which part works out what the instruction means and which other parts to switch on?",
         question: {
           type: "choice",
-          options: ["The ALU", "The registers", "The control unit", "Data memory"],
-          answer: 2,
+          options: ["The control unit", "The ALU", "The registers", "Data memory"],
+          answer: 0,
           hint: "It is the part that orchestrates the others without doing any maths itself.",
           feedback: {
-            0: "The ALU does the arithmetic when told to. It does not read instructions.",
-            1: "Registers just hold numbers. They do what they are told.",
+            1: "The ALU does the arithmetic when told to. It does not read instructions.",
+            2: "Registers just hold numbers. They do what they are told.",
             3: "Data memory holds the program's numbers and answers reads and writes. It does not interpret instructions.",
           },
         },
@@ -278,24 +286,24 @@ export const cpuLessonsA: ConceptLesson[] = [
         body: "Hold the clock steady and change the instruction mix so the **average CPI is 1.5 or lower**.",
         widget: { type: "cpuarch-cpi", props: { controls: ["mix"] } },
         question: { type: "widget", goal: { maxCpi: 1.5 }, hint: "Look at which kinds of instruction cost the most cycles each, and ask for fewer of them." },
-        explanation: "The expensive instructions (divides, and loads that miss the cache) drag the average up far more than their share suggests: 2% of divides at 20 cycles adds 0.4 cycles to *every* instruction on average. Cheap instructions pull it down.",
+        explanation: "The expensive instructions (divides most of all) drag the average up far more than their share suggests: 2% of divides at 20 cycles adds 0.4 cycles to *every* instruction on average. Cheap instructions pull it down. Loads that miss the cache are worse still, as two steps on shows.",
       },
       {
         kind: "question",
-        title: "Fast clock or fast work?",
-        body: "Program A runs on a **4 GHz** CPU at an average CPI of **2.0**. Program B runs on a **2.5 GHz** CPU at CPI **1.0**. Both have the same number of instructions. Which finishes first?",
+        title: "Fewer instructions, slower ones",
+        body: "*Inside the computer* compared clock speed with work per tick. Here is a trade-off inside one chip. A new compiler setting cuts a program's instruction count by **20%**, but the instructions it picks are heavier, so the average CPI rises from **1.0 to 1.2**. Same clock. What happens to the run time?",
         question: {
           type: "choice",
-          options: ["A, because 4 GHz is the faster clock", "They tie", "B, because each instruction takes fewer ticks", "Can not tell without the instruction count"],
-          answer: 2,
-          hint: "Compare time per instruction: CPI ÷ GHz gives nanoseconds each.",
+          options: ["About 20% faster", "About 4% faster", "About 4% slower", "No change"],
+          answer: 1,
+          hint: "New time ÷ old time = (new instructions ÷ old) × (new CPI ÷ old CPI). Multiply 0.8 by 1.2.",
           feedback: {
-            0: "A ticks faster but spends 2 ticks per instruction: 2 ÷ 4 = 0.5 ns each. B needs 1 ÷ 2.5 = 0.4 ns.",
-            1: "They are close but not equal: A takes 0.5 ns per instruction, B takes 0.4 ns.",
-            3: "The instruction count is the same for both, so it cancels out. The comparison only needs CPI and clock.",
+            0: "That counts only the fewer instructions. Each one now costs 20% more cycles, which eats most of the gain.",
+            2: "Close, but check the direction: 0.8 × 1.2 = 0.96, which is under 1, so the new build is quicker.",
+            3: "The two changes nearly cancel, but not exactly: 0.8 × 1.2 = 0.96.",
           },
         },
-        explanation: "Per instruction, A needs 2 ÷ 4 = 0.5 ns and B needs 1 ÷ 2.5 = 0.4 ns. **A higher GHz number alone proves nothing.** What matters is clock speed *and* how much work each tick gets done.",
+        explanation: "Time scales with instructions × CPI: 0.8 × 1.2 = **0.96**, so the program runs in 96% of the old time, about **4% faster**. Improving one term while worsening another is common; only the product tells you whether you won.",
       },
       {
         kind: "question",
@@ -313,10 +321,10 @@ export const cpuLessonsA: ConceptLesson[] = [
         body: "Run time = instructions × CPI ÷ clock speed. Which changes make a program finish sooner? Pick **all** that apply.",
         question: {
           type: "choice",
-          options: ["Do the same job with fewer instructions (a better algorithm or compiler)", "Make each instruction take fewer cycles (fewer cache misses, no divides)", "Make the screen bigger", "Raise the clock speed"],
+          options: ["Do the same job with fewer instructions (a better algorithm or compiler)", "Make each instruction take fewer cycles (fewer cache misses, no divides)", "Add RAM when the program already fits in it", "Raise the clock speed"],
           answer: [0, 1, 3],
           hint: "Look at the three things on the right-hand side of the formula.",
-          feedback: { 2: "A bigger screen is not in the formula. Only instructions, CPI and clock speed are." },
+          feedback: { 2: "Once the data fits, spare RAM sits unused: it changes none of instructions, CPI or clock speed." },
         },
         explanation: "Every speed-up trick in this module attacks one of the three terms: fewer **instructions** (SIMD, better code), fewer **cycles per instruction** (pipelining, prediction, caches) or a faster **clock**. The next lessons are all about CPI.",
       },
@@ -326,7 +334,7 @@ export const cpuLessonsA: ConceptLesson[] = [
         body: "Write `run_time(instructions, cpi, ghz)` that returns the run time in **seconds**. One GHz is a billion (`1e9`) cycles per second.",
         language: "python",
         starter: `def run_time(instructions, cpi, ghz):
-    # seconds = instructions * cpi / (ghz * 1e9)
+    # your code here
     return instructions
 `,
         solution: `def run_time(instructions, cpi, ghz):
@@ -516,7 +524,7 @@ export const cpuLessonsA: ConceptLesson[] = [
         widget: {
           type: "cpuarch-pipeline",
           props: {
-            forwarding: true,
+            forwarding: false,
             program: [
               ins("ADD R1, R2, R3", "alu", 1, 2, 3),
               ins("SUB R4, R1, R5", "alu", 4, 1, 5),
@@ -551,18 +559,13 @@ export const cpuLessonsA: ConceptLesson[] = [
         title: "Forwarding: take a shortcut",
         body: P(
           "The ADD's answer is known at the **end of its EX stage**, long before it is written to the register file. **Forwarding** (also called *bypassing*) adds extra wires that send the result straight from the end of one EX to the start of the next.",
-          "Turn forwarding **on** and watch the stalls disappear.",
+          "Here is a two-instruction chain. Turn forwarding **on** and watch its stall disappear. The longer chain is yours to fix next.",
         ),
         widget: {
           type: "cpuarch-pipeline",
           props: {
             forwarding: true,
-            program: [
-              ins("ADD R1, R2, R3", "alu", 1, 2, 3),
-              ins("SUB R4, R1, R5", "alu", 4, 1, 5),
-              ins("AND R6, R4, R7", "alu", 6, 4, 7),
-              ins("OR R8, R6, R9", "alu", 8, 6, 9),
-            ],
+            program: [ins("ADD R1, R2, R3", "alu", 1, 2, 3), ins("SUB R4, R1, R5", "alu", 4, 1, 5)],
           },
         },
       },
@@ -590,14 +593,13 @@ export const cpuLessonsA: ConceptLesson[] = [
         title: "The one stall forwarding can not fix",
         body: P(
           "A **load** is different. Its value only arrives at the end of the **MEM** stage, one stage later than an ALU result. If the very next instruction needs it, even forwarding must wait one cycle. This is the **load-use stall**.",
-          "A smart compiler (or you) can often fix this by **reordering**: put an *unrelated* instruction between the load and its use. The arrows next to each row swap neighbours, but only when it is safe.",
+          "Below, forwarding is on and the ADD still waits one cycle for the load. A smart compiler (or you) can often fix this by **reordering**: put an *unrelated* instruction between the load and its use. In the next step, arrows next to each row swap neighbours, but only when it is safe.",
         ),
         widget: {
           type: "cpuarch-pipeline",
           props: {
             forwarding: "on",
-            reorder: true,
-            program: [ins("LW R1, [R2]", "load", 1, 2), ins("ADD R3, R1, R4", "alu", 3, 1, 4), ins("SUB R5, R6, R7", "alu", 5, 6, 7)],
+            program: [ins("LW R1, [R2]", "load", 1, 2), ins("ADD R3, R1, R4", "alu", 3, 1, 4)],
           },
         },
       },
