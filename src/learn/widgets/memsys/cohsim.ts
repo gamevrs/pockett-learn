@@ -177,8 +177,10 @@ function ordered(model: Model, a: Op, b: Op): boolean {
   if (model === "sc") return true;
   if (a.order === "seqcst" && b.order === "seqcst") return true;
   if (model === "tso") {
-    // x86-TSO: only store -> load may be reordered; a seq_cst store (xchg / mfence) drains the store buffer first
-    if (a.kind === "store" && b.kind === "load") return a.order === "seqcst";
+    // x86-TSO: only store -> load may be reordered. The orders are C++ (language-level) promises: a store -> load
+    // pair stays in order only if BOTH are seq_cst (handled above) or a fence sits between them. A seq_cst store
+    // before a relaxed or acquire load does not count: the compiler may move that load up past the store.
+    if (a.kind === "store" && b.kind === "load") return a.order === "seqcst" && b.order === "seqcst";
     return true;
   }
   // weak (ARM-like): reordering allowed unless an acquire load or a release store (or fence) pins it
