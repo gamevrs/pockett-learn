@@ -1,14 +1,13 @@
 import type { Module } from "../../learn/types.ts";
+import { productsLessonsA } from "./products-a.ts";
+import { productsLessonsB } from "./products-b.ts";
 
 /**
  * Module: Building real products. Spec: docs/ELECTRONICS_PATH.md (lesson list, levels, accuracy rules).
  *
- * Authors: put the lessons in the `lessons` array below (or, if the file grows large, split them into
- * products-a.ts / products-b.ts exporting ConceptLesson[] and spread them here, like ai-systems.ts).
- * Lesson ids are `fnd-prod-N-slug`, each lesson sets `level` ("Beginner" | "Intermediate" | "Advanced" |
- * "Professional"), and levels must never go backwards within the module (the validator checks it).
- * Widgets: register them in src/learn/widgets/prod/index.ts with keys prefixed "prod-".
- * Shared circuit kit (schematic symbols, DC and transient solvers, SI formatting): src/learn/widgets/elec-kit/.
+ * One running example, "Sprout" (a battery-powered plant monitor), goes from requirements to a hardware revision
+ * across nine lessons: products-a.ts holds lessons 1 to 5, products-b.ts lessons 6 to 9.
+ * Widgets: src/learn/widgets/prod/index.ts (keys prefixed "prod-"). Shared circuit kit: src/learn/widgets/elec-kit/.
  */
 export const productsModule: Module = {
   id: "products",
@@ -17,5 +16,5 @@ export const productsModule: Module = {
   blurb:
     "From an idea to requirements and an architecture, prototyping, firmware structure, bring-up, debugging, testing, certification and safety, to shipping and supporting a product in the field.",
   icon: "package",
-  lessons: [],
+  lessons: [...productsLessonsA, ...productsLessonsB],
 };
