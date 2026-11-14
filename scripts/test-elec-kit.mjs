@@ -13,6 +13,7 @@ const kit = (f) => import(pathToFileURL(path.join(HERE, "..", "src", "learn", "w
 const { solveDC } = await kit("solve.ts");
 const { simulate, waveAt, peakAfter, sampleAt } = await kit("transient.ts");
 const { formatSI, parseSI, toInputSI } = await kit("format.ts");
+const { pinsOf, markOf } = await kit("geometry.ts");
 
 let passed = 0;
 const failures = [];
@@ -412,6 +413,39 @@ for (const method of ["backward-euler", "trapezoidal"]) {
     }
   }
   check("format → parse round trips within 0.5% (3 significant digits)", worst <= 0.005, `worst relative error ${worst}`);
+}
+
+/* ───────────── symbol polarity (geometry the symbols draw from) ───────────── */
+{
+  const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+  // "+" / anode / arrow tail must sit at pin a, "−" / cathode / arrow head at pin b, for every rotation
+  const polarised = [
+    ["battery", "battery"],
+    ["battery-1", "battery"],
+    ["polar-capacitor", "polar-capacitor"],
+    ["dc-source", "dc-source"],
+    ["current-source", "current-source"],
+    ["diode", "diode"],
+    ["led", "led"],
+  ];
+  for (const [mark, kind] of polarised) {
+    for (const rot of [0, 90, 180, 270]) {
+      const x = 100;
+      const y = 120;
+      const { a, b } = pinsOf(kind, x, y, rot);
+      const plus = markOf(mark, "plus", x, y, rot);
+      const minus = markOf(mark, "minus", x, y, rot);
+      check(`symbol ${mark} rot ${rot}: + / anode / arrow tail is nearer pin a`, dist(plus, a) < dist(plus, b), JSON.stringify({ plus, a, b }));
+      check(`symbol ${mark} rot ${rot}: − / cathode / arrow head is nearer pin b`, dist(minus, b) < dist(minus, a), JSON.stringify({ minus, a, b }));
+    }
+  }
+  for (const flip of [false, true]) {
+    const pins = pinsOf("opamp", 100, 120, 0, { flip });
+    const plus = markOf("opamp", "plus", 100, 120, 0, { flip });
+    const minus = markOf("opamp", "minus", 100, 120, 0, { flip });
+    check(`op-amp${flip ? " flipped" : ""}: "+" sign sits beside the plus pin`, dist(plus, pins.plus) < dist(plus, pins.minus), JSON.stringify({ plus, pins }));
+    check(`op-amp${flip ? " flipped" : ""}: "−" sign sits beside the minus pin`, dist(minus, pins.minus) < dist(minus, pins.plus), JSON.stringify({ minus, pins }));
+  }
 }
 
 console.log(`elec-kit: ${passed} passed, ${failures.length} failed`);

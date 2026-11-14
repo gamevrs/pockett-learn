@@ -16,10 +16,10 @@
  * var(--elec-glow, #f5c518).
  */
 import type { ReactNode } from "react";
+import { MARKS, rotate, type Pt, type Rot } from "./geometry.ts";
 
-export const GRID = 20;
-export type Rot = 0 | 90 | 180 | 270;
-export type Pt = [number, number];
+// geometry (grid, pins, polarity marks) lives in geometry.ts so Node tests can check it without a DOM
+export { GRID, PIN_OFFSETS, MARKS, rotate, pinsOf, type Rot, type Pt, type SymbolKind } from "./geometry.ts";
 
 const INK = "var(--ink)";
 const HI = "var(--brand)";
@@ -43,30 +43,6 @@ export interface PartProps {
 }
 
 /* ───────────────────────── pin geometry ───────────────────────── */
-
-/** Pin positions in a part's own frame (rot 0). */
-export const PIN_OFFSETS = {
-  two: { a: [0, 0], b: [60, 0] },
-  gnd: { a: [0, 0] },
-  dot: { a: [0, 0] },
-  npn: { b: [0, 0], c: [40, -40], e: [40, 40] },
-  nmos: { g: [0, 0], d: [40, -40], s: [40, 40] },
-  pmos: { g: [0, 0], s: [40, -40], d: [40, 40] },
-  opamp: { minus: [0, -20], plus: [0, 20], out: [80, 0] },
-} as const satisfies Record<string, Record<string, Pt>>;
-
-export function rotate([px, py]: readonly [number, number], rot: Rot = 0): Pt {
-  switch (rot) {
-    case 0:
-      return [px, py];
-    case 90:
-      return [-py, px];
-    case 180:
-      return [-px, -py];
-    case 270:
-      return [py, -px];
-  }
-}
 
 /* ───────────────────────── shared bits ───────────────────────── */
 
@@ -141,10 +117,10 @@ function TwoPin({ x, y, rot = 0, label, value, highlight, labelFlip, leadA, lead
 
 /** A small "+" drawn with lines (crisper than a glyph at this size). */
 function Plus({ x, y, s = 4 }: { x: number; y: number; s?: number }) {
-  return <path d={`M${x - s} ${y}H${x + s}M${x} ${y - s}V${y + s}`} />;
+  return <path d={`M${x - s} ${y}H${x + s}M${x} ${y - s}V${y + s}`} data-mark="plus" />;
 }
 function Minus({ x, y, s = 4 }: { x: number; y: number; s?: number }) {
-  return <path d={`M${x - s} ${y}H${x + s}`} />;
+  return <path d={`M${x - s} ${y}H${x + s}`} data-mark="minus" />;
 }
 
 /* ───────────────────────── two-pin parts ───────────────────────── */
@@ -179,7 +155,7 @@ export function PolarCapacitor(p: PartProps) {
     <TwoPin {...p} leadA={26} leadB={32} gap={23}>
       <line x1={26} y1={-13} x2={26} y2={13} strokeWidth={2.5} />
       <path d="M37 -13 Q31 0 37 13" strokeWidth={2.5} />
-      <Plus x={17} y={-11} s={3.5} />
+      <Plus x={MARKS["polar-capacitor"].plus[0]} y={MARKS["polar-capacitor"].plus[1]} s={3.5} />
     </TwoPin>
   );
 }
@@ -210,7 +186,7 @@ export function Battery(p: PartProps & { cells?: 1 | 2 }) {
           <line x1={34} y1={-7} x2={34} y2={7} strokeWidth={4} strokeLinecap="butt" />
         </>
       )}
-      <Plus x={two ? 13 : 17} y={-11} s={3.5} />
+      <Plus x={(two ? MARKS.battery : MARKS["battery-1"]).plus[0]} y={(two ? MARKS.battery : MARKS["battery-1"]).plus[1]} s={3.5} />
     </TwoPin>
   );
 }
@@ -220,8 +196,8 @@ export function DCSource(p: PartProps) {
   return (
     <TwoPin {...p} leadA={16} leadB={44} gap={23}>
       <circle cx={30} cy={0} r={14} fill={BODY} />
-      <Plus x={23} y={0} s={3.5} />
-      <Minus x={37} y={0} s={3.5} />
+      <Plus x={MARKS["dc-source"].plus[0]} y={MARKS["dc-source"].plus[1]} s={3.5} />
+      <Minus x={MARKS["dc-source"].minus[0]} y={MARKS["dc-source"].minus[1]} s={3.5} />
     </TwoPin>
   );
 }
@@ -240,7 +216,8 @@ export function CurrentSource(p: PartProps) {
   return (
     <TwoPin {...p} leadA={16} leadB={44} gap={23}>
       <circle cx={30} cy={0} r={14} fill={BODY} />
-      <path d="M21 0H38M33 -5L39 0L33 5" />
+      <path d={`M${MARKS["current-source"].plus[0]} 0H38`} />
+      <path d={`M33 -5L${MARKS["current-source"].minus[0]} 0L33 5`} data-mark="arrowhead" />
     </TwoPin>
   );
 }
@@ -250,8 +227,8 @@ export function Diode(p: PartProps) {
   const c = stroke(p.highlight);
   return (
     <TwoPin {...p} leadA={20} leadB={40} gap={21}>
-      <path d="M20 -12L20 12L40 0Z" fill={c} />
-      <line x1={40} y1={-12} x2={40} y2={12} />
+      <path d={`M${MARKS.diode.plus[0]} -12L${MARKS.diode.plus[0]} 12L${MARKS.diode.minus[0]} 0Z`} fill={c} />
+      <line x1={MARKS.diode.minus[0]} y1={-12} x2={MARKS.diode.minus[0]} y2={12} data-mark="cathode" />
     </TwoPin>
   );
 }
@@ -262,8 +239,8 @@ export function LED(p: PartProps & { on?: boolean; color?: string }) {
   return (
     <TwoPin {...p} leadA={20} leadB={40} gap={p.rot === 90 || p.rot === 270 ? 26 : 29}>
       {p.on && <circle cx={30} cy={0} r={20} fill={lit} opacity={0.3} stroke="none" />}
-      <path d="M20 -12L20 12L40 0Z" fill={p.on ? lit : BODY} />
-      <line x1={40} y1={-12} x2={40} y2={12} />
+      <path d={`M${MARKS.led.plus[0]} -12L${MARKS.led.plus[0]} 12L${MARKS.led.minus[0]} 0Z`} fill={p.on ? lit : BODY} />
+      <line x1={MARKS.diode.minus[0]} y1={-12} x2={MARKS.diode.minus[0]} y2={12} data-mark="cathode" />
       <path d="M30 -12L37 -19M37 -19h-5M37 -19v5" />
       <path d="M37 -9L44 -16M44 -16h-5M44 -16v5" />
     </TwoPin>
@@ -446,7 +423,7 @@ function Mosfet(p: ThreePinProps & { type: "n" | "p"; bubble?: boolean }) {
 export function OpAmp({ x, y, label, value, highlight, flip }: Omit<PartProps, "rot"> & { flip?: boolean }) {
   const c = stroke(highlight);
   const [top, bottom] = flip ? ["+", "−"] : ["−", "+"];
-  const sign = (s: string, yy: number) => (s === "+" ? <Plus x={30} y={yy} s={4} /> : <Minus x={30} y={yy} s={4} />);
+  const sign = (s: string, yy: number) => (s === "+" ? <Plus x={MARKS.opamp.plus[0]} y={yy} s={4} /> : <Minus x={MARKS.opamp.minus[0]} y={yy} s={4} />);
   return (
     <g>
       <g transform={`translate(${x} ${y})`} stroke={c} strokeWidth={SW} fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -454,8 +431,8 @@ export function OpAmp({ x, y, label, value, highlight, flip }: Omit<PartProps, "
         <line x1={0} y1={-20} x2={20} y2={-20} />
         <line x1={0} y1={20} x2={20} y2={20} />
         <line x1={74} y1={0} x2={80} y2={0} />
-        {sign(top, -20)}
-        {sign(bottom, 20)}
+        {sign(top, MARKS.opamp.minus[1])}
+        {sign(bottom, MARKS.opamp.plus[1])}
       </g>
       {(label || value) && (
         <g fontSize={LABEL_SIZE}>
@@ -473,50 +450,4 @@ export function OpAmp({ x, y, label, value, highlight, flip }: Omit<PartProps, "
       )}
     </g>
   );
-}
-
-/* ───────────────────────── registry ───────────────────────── */
-
-export type SymbolKind =
-  | "resistor"
-  | "capacitor"
-  | "polar-capacitor"
-  | "inductor"
-  | "battery"
-  | "dc-source"
-  | "ac-source"
-  | "current-source"
-  | "diode"
-  | "led"
-  | "switch"
-  | "lamp"
-  | "ground"
-  | "junction"
-  | "npn"
-  | "nmos"
-  | "pmos"
-  | "opamp";
-
-const TWO_PIN: SymbolKind[] = ["resistor", "capacitor", "polar-capacitor", "inductor", "battery", "dc-source", "ac-source", "current-source", "diode", "led", "switch", "lamp"];
-
-/** Absolute pin positions of a part placed at (x, y). Two-pin parts: { a, b }; npn: { b, c, e }; nmos/pmos: { g, d, s }; opamp: { minus, plus, out }. */
-export function pinsOf(kind: SymbolKind, x: number, y: number, rot: Rot = 0, opts: { mirror?: boolean; flip?: boolean } = {}): Record<string, Pt> {
-  const table: Record<string, readonly [number, number]> =
-    TWO_PIN.includes(kind) ? PIN_OFFSETS.two
-    : kind === "ground" ? PIN_OFFSETS.gnd
-    : kind === "junction" ? PIN_OFFSETS.dot
-    : kind === "npn" ? PIN_OFFSETS.npn
-    : kind === "nmos" ? PIN_OFFSETS.nmos
-    : kind === "pmos" ? PIN_OFFSETS.pmos
-    : PIN_OFFSETS.opamp;
-  const out: Record<string, Pt> = {};
-  for (const [name, off] of Object.entries(table)) {
-    let o: Pt = [off[0], off[1]];
-    // op-amp `flip` puts + on top, so the input pins swap places
-    if (kind === "opamp" && opts.flip && name !== "out") o = [o[0], -o[1]];
-    if (opts.mirror && (kind === "npn" || kind === "nmos" || kind === "pmos")) o = [-o[0], o[1]];
-    const r = TWO_PIN.includes(kind) || kind === "ground" ? rotate(o, rot) : o;
-    out[name] = [x + r[0], y + r[1]];
-  }
-  return out;
 }

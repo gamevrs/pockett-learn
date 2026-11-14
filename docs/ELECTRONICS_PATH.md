@@ -248,6 +248,18 @@ Resistors use the zigzag (ANSI) style; `variant="box"` draws the IEC rectangle.
 - `NPN` (pins b, c, e), `NMOS` / `PMOS` (g, d, s; PMOS `bubble` for the digital-style gate), `OpAmp`
   (minus, plus, out; `flip` puts + on top). Transistors take `mirror` instead of `rot`.
 - `pinsOf(kind, x, y, rot, { mirror, flip })` gives absolute pin positions.
+- Geometry (grid, pin offsets, polarity marks, `pinsOf`, `markOf`) lives in `geometry.ts` (no React), re-exported
+  from `symbols.tsx`. `test:elec` checks that for every polarised symbol (battery 1 and 2 cells, polarised
+  capacitor, DC source, current source, diode, LED) at every rotation the "+" / anode / arrow tail sits at pin a
+  and the "−" / cathode / arrow head at pin b, and that the op-amp's signs sit at their pins (flipped or not).
+  So: wire **pin a** to the positive side. A source with `rot: 90` has + on top; `rot: 270` puts + at the bottom.
+
+**Labels.** Part labels (`label` / `value`) are placed automatically beside the part's middle: above (label)
+and below (value) a horizontal part, to the right of a vertical one; `labelFlip` moves them below / to the left.
+Net labels (`texts`) go exactly where you put them, and nothing checks for collisions, so keep them clear of part
+labels: put a net name at a wire end or bend, off to the side away from the part (e.g. "IN" under the left end
+of the input wire, not above the input resistor), use `anchor: "end"` for labels at the right edge, and use
+fractional cells (`[0, 5.2]`) for fine offsets. Check every layout at 390 px wide in both themes.
 
 `<Schematic>` lays out a whole circuit from data, in grid cells, with wires that can name pins:
 
