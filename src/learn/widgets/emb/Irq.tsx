@@ -245,19 +245,19 @@ export function Irq({ props, onChange, revealed }: WidgetProps<IrqProps>) {
         <table className="w-full table-fixed border-collapse text-left text-[0.8rem]">
           <thead>
             <tr className="bg-surface-2 text-ink-2">
-              <th scope="col" className="w-[28%] px-2 py-1.5 font-medium">
+              <th scope="col" className="w-[22%] px-2 py-1.5 font-medium">
                 Source
               </th>
-              <th scope="col" className="px-1 py-1.5 font-medium">
+              <th scope="col" className="w-[19%] px-1 py-1.5 font-medium">
                 Raised
               </th>
-              <th scope="col" className="px-1 py-1.5 font-medium">
+              <th scope="col" className="w-[21%] px-1 py-1.5 font-medium">
                 Started
               </th>
-              <th scope="col" className="px-1 py-1.5 font-medium">
+              <th scope="col" className="w-[22%] px-1 py-1.5 font-medium">
                 Latency
               </th>
-              <th scope="col" className="px-1 py-1.5 font-medium">
+              <th scope="col" className="w-[16%] px-1 py-1.5 font-medium">
                 Done
               </th>
             </tr>
