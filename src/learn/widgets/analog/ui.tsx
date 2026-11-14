@@ -107,6 +107,14 @@ export function Plot({ width = 360, height = 200, x, y, xLog, yLog, series, xTic
   const inX = (v: number) => ok(v, xLog) && px(v) >= L - 0.5 && px(v) <= L + pw + 0.5;
   const inY = (v: number) => ok(v, yLog) && py(v) >= T - 0.5 && py(v) <= T + ph + 0.5;
   const FS = 14;
+  // Tick labels near an edge are anchored inwards so a wide label is never clipped by the viewBox.
+  const xAnchor = (t: PlotTick) => {
+    const half = (t.label.length * FS * 0.6) / 2;
+    const at = px(t.value);
+    if (at - half < 1) return "start";
+    if (at + half > width - 1) return "end";
+    return "middle";
+  };
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img" aria-label={ariaLabel} style={{ display: "block", maxWidth: "100%", height: "auto" }}>
@@ -119,7 +127,7 @@ export function Plot({ width = 360, height = 200, x, y, xLog, yLog, series, xTic
       {xTicks.filter((t) => inX(t.value)).map((t) => (
         <g key={`x${t.value}`}>
           <line x1={r2(px(t.value))} x2={r2(px(t.value))} y1={r2(T)} y2={r2(T + ph)} stroke="var(--line)" />
-          <text x={r2(px(t.value))} y={r2(T + ph + 16)} textAnchor="middle" fontSize={FS} fill="var(--ink-3)">{t.label}</text>
+          <text x={r2(px(t.value))} y={r2(T + ph + 16)} textAnchor={xAnchor(t)} fontSize={FS} fill="var(--ink-3)">{t.label}</text>
         </g>
       ))}
       {yTicks.filter((t) => inY(t.value)).map((t) => (

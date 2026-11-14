@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import type { WidgetProps } from "@/learn/widget";
 import {
   Note,
@@ -59,8 +59,8 @@ export function AmpStage({
   const [vinMv, setVinMv] = useState(props.vinMv ?? 50);
 
   const params = { vcc, bias: biasPct / 100, gain, vinAmp: vinMv / 1000 };
-  const res = useMemo(() => ampAnalyse(params), [vcc, biasPct, gain, vinMv]); // eslint-disable-line react-hooks/exhaustive-deps
-  const wave = useMemo(() => ampWave(params), [vcc, biasPct, gain, vinMv]); // eslint-disable-line react-hooks/exhaustive-deps
+  const res = ampAnalyse(params);
+  const wave = ampWave(params);
 
   const report = (v: number, g: number, b: number, mv: number) => {
     const p = { vcc: v, bias: b / 100, gain: g, vinAmp: mv / 1000 };

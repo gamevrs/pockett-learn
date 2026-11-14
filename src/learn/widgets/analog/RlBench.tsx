@@ -207,7 +207,7 @@ export function RlBench({ props, onChange }: WidgetProps<RlBenchProps>) {
       </p>
 
       <div className="mt-3">
-        <ToyNote>Toy model: an ideal inductor and a perfect battery and switch. The opening switch is modelled as a closed switch plus a stand-in resistor, and the diode as a fixed {RL_VF} V drop (typical).</ToyNote>
+        <ToyNote>Toy model: an ideal inductor and a perfect battery and switch. The opening switch is modelled as a closed switch plus a stand-in resistor, and the diode as a fixed {RL_VF} V drop (typical). Because that stand-in is a resistor, the switch voltage settles a little below {RL_VS} V once the current has died away (it forms a divider with the coil&apos;s own winding resistance); a real open switch would settle at exactly {RL_VS} V.</ToyNote>
       </div>
     </div>
   );

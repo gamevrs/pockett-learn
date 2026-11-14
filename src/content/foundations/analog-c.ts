@@ -72,7 +72,7 @@ export const analogLessonsC: ConceptLesson[] = [
         kind: "explain",
         title: "A common-emitter stage",
         body: P(
-          "The classic one-transistor amplifier is the **common-emitter** stage (its MOSFET twin is the common-source stage). In words: the supply feeds the collector through a **collector resistor RC**; the emitter goes to ground through an **emitter resistor RE**; two resistors form a voltage divider (**The voltage divider and loading**) that sets the base's DC level; and a **coupling capacitor** sits at the input and another at the output.",
+          "The classic one-transistor amplifier is the **common-emitter** stage (its MOSFET twin is the common-source stage). In words: the supply feeds the collector through a **collector resistor RC**; the emitter goes to ground through an **emitter resistor RE**; two resistors form a voltage divider (see *The voltage divider and loading*) that sets the base's DC level; and a **coupling capacitor** sits at the input and another at the output.",
           "**Bias:** pick the divider so the collector rests at about **half the supply** (4.5 V on 9 V). Then the output has equal room to swing up and down.",
           "**Gain:** with an emitter resistor the gain is roughly **Av ≈ −RC / RE**. That is an approximation: the transistor's own tiny emitter resistance (roughly 25 mV divided by the emitter current, a room-temperature rule of thumb) adds to RE, so the real gain is a little lower. The minus sign means it **inverts**: when the input rises, more current flows, RC drops more voltage, and the collector falls.",
           "**Coupling capacitors:** a capacitor passes changes but blocks steady DC (**Capacitors: storing charge**). They let the signal in and out without disturbing the bias. With the resistors they also make a high-pass filter, so very slow signals are cut (**Impedance and filters**).",
@@ -258,7 +258,7 @@ export const analogLessonsC: ConceptLesson[] = [
         title: "Non-inverting amplifier and buffer",
         body: P(
           "Feed the signal to the **+** input instead, and let a divider of **Rf** (from the output) and **Rg** (to ground) set the − input. Rule 1 says V− = Vin, and V− is the divider's output, Vout × Rg / (Rg + Rf). Solve and you get **gain = 1 + Rf / Rg**: never below 1, and not inverted. The signal goes into the + input, so by rule 2 it draws almost no current.",
-          "Take it to the extreme (Rf = 0, no Rg) and the output is wired straight to the − input. The gain is exactly **1**: a **buffer**, or voltage follower. It copies the voltage but can supply real current. That matters when a source cannot be loaded, such as a voltage divider or a sensor: in **The voltage divider and loading** a load pulled the divider's output down, but a buffer's input draws almost nothing, so the divider keeps its voltage.",
+          "Take it to the extreme (Rf = 0, no Rg) and the output is wired straight to the − input. The gain is exactly **1**: a **buffer**, or voltage follower. It copies the voltage but can supply real current. That matters when a source cannot be loaded, such as a voltage divider or a sensor: in *The voltage divider and loading* a load pulled the divider's output down, but a buffer's input draws almost nothing, so the divider keeps its voltage.",
           "Switch between the modes and watch the output, V− and V+.",
         ),
         widget: {

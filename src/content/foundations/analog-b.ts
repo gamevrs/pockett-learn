@@ -47,7 +47,7 @@ export const analogLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "A filter is a divider with a capacitor in it",
         body: P(
-          "A **filter** passes some frequencies and blocks others. The simplest one is the voltage divider from the circuits module, with one resistor swapped for a capacitor. A divider shares the input voltage between its two parts in proportion to their opposition, and a capacitor's opposition changes with frequency.",
+          "A **filter** passes some frequencies and blocks others. The simplest one is the voltage divider (see *The voltage divider and loading* in the circuits module), with one resistor swapped for a capacitor. A divider shares the input voltage between its two parts in proportion to their opposition, and a capacitor's opposition changes with frequency.",
           "- **RC low-pass:** resistor in series, capacitor from the output to ground, and the output is taken **across the capacitor**. Slow signals: XC is large compared with R, so most of the voltage appears across C and passes. Fast signals: XC is tiny, so the capacitor short-circuits the output to ground and little survives.\n- **RC high-pass:** swap them. The capacitor is in series and the output is taken **across the resistor**. Fast signals pass; slow ones, and DC, are blocked.",
           "The boundary is the **cutoff frequency**, where XC equals R:",
           txt(`
@@ -273,7 +273,29 @@ efficiency ≈ Vout / Vin
         title: "How much heat?",
         body: "A **linear regulator** converts **12 V** to **5 V** for a load drawing **0.5 A**. How much power does the regulator itself turn into heat, in watts?",
         question: { type: "number", answer: 3.5, tolerance: 0.05, unit: "W", hint: "The regulator drops (Vin − Vout) while carrying the full load current." },
-        explanation: "P = (12 − 5) × 0.5 = **3.5 W**, while the load only receives 2.5 W: efficiency is just 5/12 ≈ 42%. A TO-220 package with no heatsink is typically good for around 1 W, so this part needs a heatsink or, better, a switching regulator.",
+        explanation: "P = (12 − 5) × 0.5 = **3.5 W** (voltage times current, as in *Power and heat*), while the load only receives 2.5 W: efficiency is just 5/12 ≈ 42%. A TO-220 package with no heatsink is typically good for around 1 W, so this part needs a heatsink or, better, a switching regulator.",
+      },
+      {
+        kind: "question",
+        title: "Which regulator?",
+        body: "You are powering a sensitive audio preamp that draws only **20 mA** from a **6 V** supply, and it needs a very clean **5 V**. Which regulator fits best?",
+        question: {
+          type: "choice",
+          options: [
+            "A switching (buck) regulator, because efficiency is always the top priority",
+            "A bare resistor in series, because it is the simplest part",
+            "A low-dropout linear regulator, because it adds no switching noise and wastes almost nothing here",
+            "No regulator: the ripple will be small enough anyway",
+          ],
+          answer: 2,
+          hint: "Compare the heat burned, (Vin − Vout) × I, with how much you care about switching noise.",
+          feedback: {
+            0: "A buck regulator would save only a tiny amount of heat here, and its switching noise can leak into audio. Efficiency is not always the top priority.",
+            1: "A series resistor gives a voltage that sags whenever the load current changes, so it does not regulate. It is not a regulator at all.",
+            3: "Rectifier ripple and load changes would pass straight into the preamp, which is exactly what a regulator is there to remove.",
+          },
+        },
+        explanation: "Burning (6 − 5) × 0.02 = **0.02 W** is nothing, so the linear regulator's inefficiency costs almost nothing, and it is quiet because nothing switches. A low-dropout part is needed because only 1 V of headroom is available. A buck regulator wins when the voltage gap or current is large.",
       },
       {
         kind: "recap",
