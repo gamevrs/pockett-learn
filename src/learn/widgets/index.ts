@@ -20,6 +20,14 @@ import { AI_WIDGETS } from "./ai";
 import { CPUARCH_WIDGETS } from "./cpuarch";
 import { MEMSYS_WIDGETS } from "./memsys";
 import { GPU_WIDGETS } from "./gpu";
+import { CIRC_WIDGETS } from "./circ";
+import { ANALOG_WIDGETS } from "./analog";
+import { DIGI_WIDGETS } from "./digi";
+import { PCB_WIDGETS } from "./pcb";
+import { EMB_WIDGETS } from "./emb";
+import { PROD_WIDGETS } from "./prod";
+import { SEMI_WIDGETS } from "./semi";
+import { CHIP_WIDGETS } from "./chip";
 import { EXPLAIN_WIDGETS } from "./explain";
 
 /** Every widget a concept lesson can use, keyed by WidgetSpec.type. One registry per module. */
@@ -45,6 +53,14 @@ export const WIDGETS: WidgetRegistry = {
   ...CPUARCH_WIDGETS,
   ...MEMSYS_WIDGETS,
   ...GPU_WIDGETS,
+  ...CIRC_WIDGETS,
+  ...ANALOG_WIDGETS,
+  ...DIGI_WIDGETS,
+  ...PCB_WIDGETS,
+  ...EMB_WIDGETS,
+  ...PROD_WIDGETS,
+  ...SEMI_WIDGETS,
+  ...CHIP_WIDGETS,
   ...EXPLAIN_WIDGETS,
 };
 

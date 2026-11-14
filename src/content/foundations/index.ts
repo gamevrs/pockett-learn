@@ -11,6 +11,14 @@ import { networkModule } from "./network.ts";
 import { cpuModule } from "./cpu.ts";
 import { memoryModule } from "./memory.ts";
 import { gpuModule } from "./gpu.ts";
+import { circuitsModule } from "./circuits.ts";
+import { analogModule } from "./analog.ts";
+import { digitalModule } from "./digital.ts";
+import { pcbModule } from "./pcb.ts";
+import { embeddedModule } from "./embedded.ts";
+import { productsModule } from "./products.ts";
+import { semisModule } from "./semis.ts";
+import { chipdesignModule } from "./chipdesign.ts";
 import { dsaModule } from "./dsa.ts";
 import { observabilityModule } from "./observability.ts";
 import { reliabilityModule } from "./reliability.ts";
@@ -34,6 +42,17 @@ export const FOUNDATIONS: Track = {
       title: "Hardware: how the CPU, memory and GPU really work",
       blurb: "From logic gates to pipelines, caches, virtual memory and GPU kernels: how the machine runs your code fast, from beginner to professional.",
     },
+    {
+      id: "electronics",
+      title: "Electronics: from a circuit to a finished product",
+      blurb:
+        "Voltage and current, the parts every circuit is made of, digital logic from transistors, designing a PCB, programming the chips on it, and taking a real product from idea to shelf.",
+    },
+    {
+      id: "semiconductors",
+      title: "Semiconductors: how chips are designed and made",
+      blurb: "Why silicon conducts, how a transistor switches, how a chip is drawn in code, checked, laid out and manufactured, then packaged and tested.",
+    },
     { id: "building", title: "Building well: data structures, OOP and patterns", blurb: "Learn how to organise data, shape code into objects, and reuse ideas that good programmers have trusted for years." },
     { id: "systems", title: "How production systems work", blurb: "Timeouts, retries, rate limits, caches, databases, deploys, observability, security and AI systems: what it takes for software to survive real traffic." },
   ],
@@ -48,6 +67,14 @@ export const FOUNDATIONS: Track = {
     cpuModule,
     memoryModule,
     gpuModule,
+    circuitsModule,
+    analogModule,
+    digitalModule,
+    pcbModule,
+    embeddedModule,
+    productsModule,
+    semisModule,
+    chipdesignModule,
     dsaModule,
     oopModule,
     patternsModule,

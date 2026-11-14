@@ -113,11 +113,11 @@ export async function checkSite(h) {
     await check(`no horizontal overflow: ${name}`, o.scroll <= o.vw, `scrollWidth ${o.scroll} > ${o.vw}\n${o.off.join("\n")}`);
   }
 
-  // ───────────── Foundations hub: Hardware part, level labels, level chip ─────────────
+  // ───────────── Foundations hub: Hardware, Electronics and Semiconductors parts, level labels, level chip ─────────────
   await open("/learn", 1500);
   {
     const hub = await inPage(() => {
-      const modules = ["cpu", "memory", "gpu"].map((id) => {
+      const modules = ["cpu", "memory", "gpu", "circuits", "analog", "digital", "pcb", "embedded", "products", "semis", "chipdesign"].map((id) => {
         const card = document.getElementById(id);
         return {
           id,
@@ -132,16 +132,23 @@ export async function checkSite(h) {
             const r = e?.getBoundingClientRect();
             return r ? r.right <= innerWidth + 1 && r.left >= -1 : null;
           })(),
+          // document order of the module card, to check the modules follow each other
+          pos: card ? [...document.querySelectorAll("[id]")].indexOf(card) : -1,
         };
       });
       const parts = [...document.querySelectorAll("section h2")].map((h) => h.textContent.trim());
       const levelled = document.querySelector("a[data-lesson-level]")?.getAttribute("href") ?? null;
-      return { modules, parts, levelled, hardwareIdx: parts.findIndex((t) => /^Hardware:/.test(t)), buildingIdx: parts.findIndex((t) => /^Building well/.test(t)), hoodIdx: parts.findIndex((t) => /^Under the hood/.test(t)) };
+      return { modules, parts, levelled, hardwareIdx: parts.findIndex((t) => /^Hardware:/.test(t)), buildingIdx: parts.findIndex((t) => /^Building well/.test(t)), hoodIdx: parts.findIndex((t) => /^Under the hood/.test(t)), elecIdx: parts.findIndex((t) => /^Electronics:/.test(t)), semiIdx: parts.findIndex((t) => /^Semiconductors:/.test(t)) };
     });
     await check(
       "foundations hub: Hardware part sits between Under the hood and Building well, with the CPU, memory and GPU modules",
-      hub.hardwareIdx > hub.hoodIdx && hub.hardwareIdx < hub.buildingIdx && hub.modules.every((m) => m.present),
+      hub.hardwareIdx > hub.hoodIdx && hub.hardwareIdx < hub.buildingIdx && hub.modules.slice(0, 3).every((m) => m.present),
       JSON.stringify({ parts: hub.parts, modules: hub.modules.map((m) => [m.id, m.present]) }),
+    );
+    await check(
+      "foundations hub: Electronics then Semiconductors follow Hardware (before Building well), with their eight modules in order after the GPU module",
+      hub.elecIdx === hub.hardwareIdx + 1 && hub.semiIdx === hub.elecIdx + 1 && hub.semiIdx < hub.buildingIdx && hub.modules.every((m) => m.present) && hub.modules.slice(2).every((m, i, a) => i === 0 || m.pos > a[i - 1].pos),
+      JSON.stringify({ parts: hub.parts, modules: hub.modules.slice(2).map((m) => [m.id, m.present, m.pos]) }),
     );
     for (const m of hub.modules) {
       if (!m.present) continue;

@@ -23,6 +23,8 @@ divider before the first lesson of each level, a "Beginner → Professional" ran
 and a level chip on the lesson page. Levels must never go backwards within a module (`validate-content`
 errors on an unknown level or a lower level after a higher one). Lessons without `level` are unaffected.
 The Hardware path (CPU, memory, GPU) uses levels throughout: see [HARDWARE_PATH.md](./HARDWARE_PATH.md).
+The Electronics and Semiconductors paths (circuits to products, physics to chip design) do too, and share a
+circuit kit (DC/transient solvers, SI formatting, schematic symbols): see [ELECTRONICS_PATH.md](./ELECTRONICS_PATH.md).
 
 ## Steps
 

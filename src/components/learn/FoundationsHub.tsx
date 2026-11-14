@@ -30,7 +30,7 @@ export function FoundationsHub() {
   return (
     <div>
       <section className="border-b border-line">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:items-end lg:py-16">
+        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:items-end lg:py-16">
           <div>
             <p className="eyebrow">Track</p>
             <h1 className="font-display mt-3 text-balance text-[2.5rem] sm:text-[3.25rem]">{FOUNDATIONS.title}</h1>
@@ -60,7 +60,7 @@ export function FoundationsHub() {
             {parts.map((p) => (
               <div key={p.id} className="mt-5">
                 <p className="text-xs font-medium text-ink-3">{p.title}</p>
-                <ul className="mt-1 grid gap-0 sm:mt-2 sm:gap-2">
+                <ul className="mt-1 grid grid-cols-[minmax(0,1fr)] gap-0 sm:mt-2 sm:gap-2">
                   {p.modules.map((m) => {
                     const n = m.lessons.filter((l) => progress.completed[l.id]).length;
                     return (
