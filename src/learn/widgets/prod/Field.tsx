@@ -9,6 +9,8 @@ import { Btn, Caption, Meter, Note, Readout, Seg, Toy } from "./ui";
 
 export interface OtaProps {
   scenario?: OtaScenario;
+  /** Which scenarios to offer. Default: all four. */
+  scenarios?: OtaScenario[];
 }
 
 export interface OtaState {
@@ -30,7 +32,8 @@ const SCENARIOS: { value: OtaScenario; label: string }[] = [
 
 /** An over-the-air update with two firmware slots: step through a good update and three ways it can go wrong. */
 export function Ota({ props, onChange }: WidgetProps<OtaProps>) {
-  const [scenario, setScenario] = useState<OtaScenario>(props.scenario ?? "good");
+  const offered = props.scenarios ? SCENARIOS.filter((x) => props.scenarios!.includes(x.value)) : SCENARIOS;
+  const [scenario, setScenario] = useState<OtaScenario>(props.scenario ?? offered[0].value);
   const [step, setStep] = useState(0);
   const [seen, setSeen] = useState<OtaScenario[]>([]);
 
@@ -75,7 +78,7 @@ export function Ota({ props, onChange }: WidgetProps<OtaProps>) {
 
   return (
     <div className="w-full" data-widget>
-      <Seg label="Scenario" value={scenario} onChange={pickScenario} options={SCENARIOS} />
+      <Seg label="Scenario" value={scenario} onChange={pickScenario} options={offered} />
       <div className="mt-3 grid grid-cols-2 gap-2">
         {slot("A", cur.a)}
         {slot("B", cur.b)}
@@ -117,6 +120,8 @@ export function checkOta(state: unknown, goal: Record<string, unknown>) {
 
 export interface ParetoProps {
   shipped?: number;
+  /** true: just read the chart, no fixing. */
+  readOnly?: boolean;
 }
 
 export interface ParetoState {
@@ -130,7 +135,7 @@ export interface ParetoState {
 const CAUSES = [
   { id: "coating", label: "Probe coating peels, water gets in", n: 71 },
   { id: "pair", label: "Phone pairing fails on some models", n: 54 },
-  { id: "cover", label: "Battery cover cracks", n: 38 },
+  { id: "cover", label: "Battery cover cracks, coin cell reachable (safety)", n: 38 },
   { id: "cold", label: "Resets in the cold (battery sag)", n: 22 },
   { id: "doa", label: "Dead on arrival (solder defect)", n: 17 },
   { id: "other", label: "Everything else", n: 9 },
@@ -159,7 +164,7 @@ export function Pareto({ props, onChange }: WidgetProps<ParetoProps>) {
   return (
     <div className="w-full" data-widget>
       <p className="text-xs leading-snug text-ink-3">
-        Last quarter: {shipped.toLocaleString("en-US")} units shipped, {TOTAL} came back. Tap a cause to mark it fixed in the next revision.
+        Last quarter: {shipped.toLocaleString("en-US")} units shipped, {TOTAL} came back.{props.readOnly ? "" : " Tap a cause to mark it fixed in the next revision."}
       </p>
       <ul className="mt-2 space-y-1.5">
         {rows.map((r) => {
@@ -168,9 +173,10 @@ export function Pareto({ props, onChange }: WidgetProps<ParetoProps>) {
             <li key={r.id}>
               <button
                 type="button"
-                aria-pressed={isFixed}
+                aria-pressed={props.readOnly ? undefined : isFixed}
+                disabled={props.readOnly}
                 onClick={() => toggle(r.id)}
-                className={`w-full min-h-10 rounded-xl border px-3 py-2 text-left transition-colors ${isFixed ? "border-[var(--good)] bg-tint" : "border-line bg-surface hover:bg-surface-2"}`}
+                className={`w-full min-h-10 rounded-xl border px-3 py-2 text-left transition-colors ${isFixed ? "border-[var(--good)] bg-tint" : props.readOnly ? "border-line bg-surface" : "border-line bg-surface hover:bg-surface-2"}`}
               >
                 <span className="flex items-baseline justify-between gap-2 text-[0.86rem] text-ink">
                   <span className={isFixed ? "line-through decoration-1" : ""}>{r.label}</span>
@@ -190,9 +196,9 @@ export function Pareto({ props, onChange }: WidgetProps<ParetoProps>) {
         <Readout label="Return rate" value={`${st.ratePercent.toFixed(2)}%`} accent />
       </div>
       <div className="mt-3">
-        <Note>The top two causes make up {Math.round(top2 * 100)}% of the returns. Fix the biggest bars first: a Pareto chart is a list of where your effort pays off most.</Note>
+        <Note>The top two causes make up {Math.round(top2 * 100)}% of the returns. Fix the biggest bars first, with one exception: a safety problem is fixed whatever its count.</Note>
       </div>
-      <Toy>Made-up return counts for a made-up product. The cold-reset cause is still here to show that one fix in Rev B does not remove it from units already in the field.</Toy>
+      <Toy>Made-up return counts for a made-up product. The cold resets that still come back are nearly empty cells used below Sprout&apos;s 0 °C rating, even with Rev B&apos;s 220 µF capacitor: a firmware low-battery warning helps there.</Toy>
     </div>
   );
 }
