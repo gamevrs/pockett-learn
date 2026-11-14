@@ -228,7 +228,8 @@ const fx = (n: number) => n.toFixed(1);
 
 export function Blink({ props, onChange, revealed }: WidgetProps<BlinkProps>) {
   const [delayMs, setDelayMs] = useState(DELAYS.includes(props.delayMs ?? 500) ? (props.delayMs ?? 500) : 500);
-  const [secondDelay, setSecondDelay] = useState(true);
+  // The "bug" variant starts with the second delay deleted, as the lesson describes.
+  const [secondDelay, setSecondDelay] = useState(!props.bug);
   const [time, setTime] = useState(600);
   const locked = Boolean(revealed);
 
@@ -243,8 +244,8 @@ export function Blink({ props, onChange, revealed }: WidgetProps<BlinkProps>) {
   };
 
   // pin trace over 0..2000 ms
-  const X0 = 66;
-  const W = 280;
+  const X0 = 100;
+  const W = 248;
   const xOf = (t: number) => X0 + (t / 2000) * W;
   const yHi = 22;
   const yLo = 50;
@@ -302,8 +303,8 @@ export function Blink({ props, onChange, revealed }: WidgetProps<BlinkProps>) {
 
       <div className="mt-2 rounded-xl border border-line bg-surface p-2">
         <svg viewBox="0 0 360 112" className="w-full" role="img" aria-label={`Pin level over 2 seconds with a ${delayMs} millisecond delay${secondDelay ? `: a square wave at ${+freq.toFixed(2)} hertz` : " and no second delay: the pin stays high"}. At ${(time / 1000).toFixed(2)} seconds the LED is ${on ? "on" : "off"}.`}>
-          <circle cx={30} cy={36} r={15} fill={on ? GLOW : "var(--surface-2)"} stroke="var(--line-strong)" strokeWidth={2} />
-          {on && <circle cx={30} cy={36} r={21} fill="none" stroke={GLOW} strokeWidth={2} opacity={0.5} />}
+          <circle cx={24} cy={36} r={14} fill={on ? GLOW : "var(--surface-2)"} stroke="var(--line-strong)" strokeWidth={2} />
+          {on && <circle cx={24} cy={36} r={19} fill="none" stroke={GLOW} strokeWidth={2} opacity={0.5} />}
           <text x={X0 - 8} y={yHi + 5} textAnchor="end" fontSize={14} fill="var(--ink-2)">
             high
           </text>
@@ -323,7 +324,7 @@ export function Blink({ props, onChange, revealed }: WidgetProps<BlinkProps>) {
             </g>
           ))}
           <line x1={cx} y1={10} x2={cx} y2={70} stroke="var(--ink)" strokeWidth={1.5} />
-          <text x={30} y={72} textAnchor="middle" fontSize={14} fill="var(--ink)">
+          <text x={24} y={76} textAnchor="middle" fontSize={14} fill="var(--ink)">
             {on ? "on" : "off"}
           </text>
           <text x={X0 + W / 2} y={108} textAnchor="middle" fontSize={14} fill="var(--ink-2)">

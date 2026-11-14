@@ -167,13 +167,13 @@ export function Rtos({ props, onChange, revealed }: WidgetProps<RtosProps>) {
             </g>
           )}
           <line x1={X0} x2={X0 + TOTAL * TW} y1={136} y2={136} stroke="var(--ink-3)" strokeWidth={1} />
-          {[0, 5, 10, 15, 20].map((t) => (
-            <text key={t} x={Math.max(X0 + 4, Math.min(350, xOf(t)))} y={154} fontSize={14} textAnchor="middle" fill="var(--ink-2)">
+          {[0, 5, 10, 15].map((t) => (
+            <text key={t} x={Math.max(X0 + 4, xOf(t))} y={154} fontSize={14} textAnchor="middle" fill="var(--ink-2)">
               {t}
             </text>
           ))}
-          <text x={X0 + (TOTAL * TW) / 2 + 40} y={154} fontSize={14} fill="var(--ink-2)">
-            ticks
+          <text x={Math.min(356, xOf(20) + 4)} y={154} fontSize={14} textAnchor="end" fill="var(--ink-2)">
+            20 ticks
           </text>
           {blockedRanges.length > 0 && (
             <g>

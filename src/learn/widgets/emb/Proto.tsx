@@ -263,7 +263,7 @@ function I2cView({ v, set, locked }: { v: Vals; set: (p: Partial<Vals>) => void;
   }
 
   const X0 = 40;
-  const dx = 7.6;
+  const DX = 7.6;
   const ROWH = 116;
   const H = rows.length * ROWH + 6;
   const colOf = (s: (typeof syms)[number]) => (s.kind === "start" || s.kind === "stop" ? "var(--brand)" : s.kind === "bit" ? (s.by === "controller" ? "var(--brand)" : ORANGE) : s.ack ? (s.by === "controller" ? "var(--brand)" : ORANGE) : "var(--ink-3)");
@@ -330,6 +330,8 @@ function I2cView({ v, set, locked }: { v: Vals; set: (p: Partial<Vals>) => void;
             const first = r === 0 ? 0 : ranges[row[0]][0];
             const last = ranges[row[row.length - 1]][1];
             const ns = last - first;
+            // A row that also carries STOP (e.g. no device answered) is 4 samples longer: shrink it to fit.
+            const dx = Math.min(DX, 316 / ns);
             const xAt = (i: number) => X0 + (i - first) * dx;
             const yS = oy + 22; // SCL top
             const yD = oy + 62; // SDA top
@@ -580,7 +582,7 @@ export function Proto({ props, onChange, revealed }: WidgetProps<ProtoProps>) {
 export function checkProto(state: unknown, goal: Record<string, unknown>): boolean {
   const s = state as ProtoState | undefined;
   if (!s || typeof s.proto !== "string") return false;
-  for (const k of ["proto", "byte", "parity", "addr", "read", "present", "addrByte", "compat", "mode"] as const) {
+  for (const k of ["proto", "byte", "parity", "frameBits", "addr", "read", "present", "addrByte", "compat", "mode"] as const) {
     if (k in goal && goal[k] !== undefined && s[k] !== goal[k]) return false;
   }
   return true;
