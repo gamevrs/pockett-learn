@@ -84,9 +84,9 @@ export function Reduce({ props, onChange }: WidgetProps<ReduceProps>) {
         </div>
       )}
 
-      <Caption className="mb-2">
-        Thread i holds the number i + 1, so the right total is {r.expected}
-      </Caption>
+      <p className="mb-2 text-xs text-ink-2">
+        Thread <i>i</i> holds the number <i>i</i> + 1, so the right total is <b className="text-ink">{r.expected}</b>.
+      </p>
 
       <div className="space-y-2 rounded-xl border border-line bg-surface p-2">
         {method === "plain" && (
@@ -111,7 +111,7 @@ export function Reduce({ props, onChange }: WidgetProps<ReduceProps>) {
             const last = k === r.trace.length - 1;
             return (
               <div key={k} className="space-y-1">
-                <p className="text-xs text-ink-2">{k === 0 ? "Start" : `Round ${k}: ${row.length} threads add pairs`}</p>
+                <p className="text-xs text-ink-2">{k === 0 ? "Start" : `Round ${k}: ${row.length === 1 ? "1 thread adds the last pair" : `${row.length} threads add pairs`}`}</p>
                 <Cells values={row} lastTone={last ? "brand" : undefined} />
               </div>
             );

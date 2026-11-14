@@ -40,7 +40,7 @@ const R = 348;
 const T = 12;
 const B = 212;
 const XMIN = 0.05;
-const XMAX = 5000;
+const XMAX = 20000;
 const YMIN = 0.05;
 const YMAX = 3000;
 const lx = (v: number) => L + ((Math.log10(v) - Math.log10(XMIN)) / (Math.log10(XMAX) - Math.log10(XMIN))) * (R - L);

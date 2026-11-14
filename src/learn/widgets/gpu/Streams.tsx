@@ -79,7 +79,7 @@ export function Streams({ props, onChange }: WidgetProps<StreamsProps>) {
           </div>
         ))}
         <div className="relative h-3" aria-hidden>
-          <span className="absolute top-0 h-3 border-l-2 border-[var(--ink)]" style={{ left: `${Math.min(100, r.total * scale)}%` }} />
+          <span className="absolute top-0 h-3 -translate-x-full border-r-2 border-[var(--ink)]" style={{ left: `${Math.min(100, r.total * scale)}%` }} />
         </div>
         <p className="text-right text-xs text-ink-3">The line marks the finish. The full width is the one-chunk time ({r.serial} ms).</p>
       </div>
