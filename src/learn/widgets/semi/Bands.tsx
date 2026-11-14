@@ -99,7 +99,7 @@ export function Bands({ props, onChange }: WidgetProps<BandsProps>) {
         </div>
       )}
 
-      <svg viewBox={`0 0 ${W} ${H}`} className="mt-3 block h-auto w-full rounded-xl border border-line bg-surface" role="img" aria-label={`${m.name} energy bands. ${metal ? "The bands overlap." : `Band gap ${m.gap} electronvolts.`} ${verdict}`}>
+      <svg viewBox={`0 0 ${W} ${H + 6}`} className="mt-3 block h-auto w-full rounded-xl border border-line bg-surface" role="img" aria-label={`${m.name} energy bands. ${metal ? "The bands overlap." : `Band gap ${m.gap} electronvolts.`} ${verdict}`}>
         {/* energy axis */}
         <line x1={10} y1={H - 14} x2={10} y2={12} stroke="var(--ink-3)" strokeWidth={1.2} />
         <path d="M6 18 L10 10 L14 18" fill="none" stroke="var(--ink-3)" strokeWidth={1.2} />

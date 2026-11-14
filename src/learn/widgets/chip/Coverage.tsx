@@ -240,7 +240,7 @@ export function Coverage({ props, onChange, goal, status }: WidgetProps<Coverage
 
       <div className="mt-3 rounded-xl border border-line bg-surface p-2">
         <Caption className="mb-1">Random tests needed: coverage after n random tests (seed {seed})</Caption>
-        <svg viewBox={`0 0 ${CW} ${CH}`} className="block h-auto w-full" role="img" aria-label={`Coverage after 1 to 3000 random tests. Uniform random reaches ${Math.round(curves.plain[curves.plain.length - 1] * 100)} percent; biased toward corners reaches ${Math.round(curves.biased[curves.biased.length - 1] * 100)} percent.`}>
+        <svg viewBox={`-8 0 ${CW + 8} ${CH}`} className="block h-auto w-full" role="img" aria-label={`Coverage after 1 to 3000 random tests. Uniform random reaches ${Math.round(curves.plain[curves.plain.length - 1] * 100)} percent; biased toward corners reaches ${Math.round(curves.biased[curves.biased.length - 1] * 100)} percent.`}>
           {[0, 0.5, 1].map((f) => (
             <g key={f}>
               <line x1={40} x2={340} y1={py(f)} y2={py(f)} stroke="var(--line)" />

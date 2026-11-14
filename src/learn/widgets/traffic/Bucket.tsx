@@ -109,7 +109,7 @@ export function Bucket({ props, onChange }: WidgetProps<{ kind?: Kind; kinds?: K
 
       <Caption className="mt-4">{kind === "token" ? "Tokens in the bucket" : "Requests in the bucket"}</Caption>
       <div className="mt-1 rounded-xl border border-line bg-surface p-2">
-        <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto w-full max-w-[480px]" role="img" aria-label={`${tr.allowed} requests accepted, ${tr.blocked} refused`}>
+        <svg viewBox={`0 0 ${W} ${H + 6}`} className="mx-auto w-full max-w-[480px]" role="img" aria-label={`${tr.allowed} requests accepted, ${tr.blocked} refused`}>
           <line x1={PAD} x2={W - PAD} y1={22} y2={22} stroke="var(--ink-3)" strokeDasharray="3 3" />
           <text x={W - PAD} y={16} textAnchor="end" fontSize="10" fill="var(--ink-2)" fontFamily="var(--font-mono), monospace">full: {capacity}</text>
           <polygon points={area} fill="var(--brand)" opacity="0.2" />
