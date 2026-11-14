@@ -1,7 +1,7 @@
 import type { ConceptLesson, Module } from "../../learn/types.ts";
 import { chipdesignLessonsA } from "./chipdesign-a.ts";
 import { chipdesignLessonsB } from "./chipdesign-b.ts";
-import { chipLowPowerLesson } from "./chipdesign-c.ts";
+import { chipFpgaLesson, chipLowPowerLesson } from "./chipdesign-c.ts";
 
 /**
  * Module: Designing chips: from RTL to tape-out. Spec: docs/ELECTRONICS_PATH.md (lesson list, levels, accuracy rules).
@@ -26,6 +26,7 @@ const lessons: ConceptLesson[] = [
   chipLowPowerLesson,
   byId("fnd-chip-9-verification-dft"),
   byId("fnd-chip-10-fpga-asic-tapeout"),
+  chipFpgaLesson,
 ];
 
 export const chipdesignModule: Module = {
