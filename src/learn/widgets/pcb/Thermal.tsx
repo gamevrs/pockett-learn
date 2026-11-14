@@ -83,7 +83,7 @@ export function Thermal({ props, onChange }: WidgetProps<ThermalProps>) {
         <path d={`M${cx - 52} ${boardTop - 10} L${cx - cuW / 2 + 6} ${boardTop - 10}`} stroke={ORANGE} strokeWidth={2.5} fill="none" />
         <path d={`M${cx + 52} ${boardTop - 10} L${cx + cuW / 2 - 6} ${boardTop - 10}`} stroke={ORANGE} strokeWidth={2.5} fill="none" />
         <text x={8} y={CH - 8} fontSize={14} fill="var(--ink-2)">
-          board side view{vias > 0 ? ": copper on both faces, joined by the vias" : ": copper on the top face only"}
+          side view: {vias > 0 ? "copper on both faces" : "copper on top only"}
         </text>
         <text x={CW - 8} y={22} textAnchor="end" fontSize={14} fill="var(--ink-2)">
           heat spreads out in the copper
