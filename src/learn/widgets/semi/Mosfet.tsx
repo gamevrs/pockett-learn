@@ -125,7 +125,7 @@ function Curve({ type, mag }: { type: MosType; mag: number }) {
   const { vth } = MOS[type];
   const neg = type === "pmos" ? "−" : "";
   return (
-    <svg viewBox="0 0 360 172" className="mt-3 block h-auto w-full rounded-xl border border-line bg-surface" role="img" aria-label={`Drain current against gate voltage. Zero below the ${vth} volt threshold, rising as a square above it.`}>
+    <svg viewBox="0 0 360 182" className="mt-3 block h-auto w-full rounded-xl border border-line bg-surface" role="img" aria-label={`Drain current against gate voltage. Zero below the ${vth} volt threshold, rising as a square above it.`}>
       {[0, 2, 4, 6].map((ma) => (
         <g key={ma}>
           <line x1={PX0} y1={r1(py(ma / 1000))} x2={PX1} y2={r1(py(ma / 1000))} stroke="var(--line-strong)" strokeWidth={0.7} />
@@ -148,7 +148,7 @@ function Curve({ type, mag }: { type: MosType; mag: number }) {
       <text x={PX0 - 4} y={13} textAnchor="end" fontSize={14} fill="var(--ink-2)">
         mA
       </text>
-      <text x={PX1} y={168} textAnchor="end" fontSize={14} fill="var(--ink-2)">
+      <text x={PX1} y={178} textAnchor="end" fontSize={14} fill="var(--ink-2)">
         gate voltage Vgs (V) →
       </text>
     </svg>
@@ -165,7 +165,7 @@ function CurveVds({ type, mag, vds, hideRegion }: { type: MosType; mag: number; 
   const showSat = !hideRegion && ov > 0 && ov < MOS.vdd;
   const satX = r1(px(ov));
   return (
-    <svg viewBox="0 0 360 172" className="mt-3 block h-auto w-full rounded-xl border border-line bg-surface" role="img" aria-label={`Drain current against drain voltage for a gate voltage of ${neg}${mag.toFixed(1)} volts.${hideRegion ? "" : " The current rises with drain voltage, then levels off."}`}>
+    <svg viewBox="0 0 360 182" className="mt-3 block h-auto w-full rounded-xl border border-line bg-surface" role="img" aria-label={`Drain current against drain voltage for a gate voltage of ${neg}${mag.toFixed(1)} volts.${hideRegion ? "" : " The current rises with drain voltage, then levels off."}`}>
       {[0, 2, 4, 6].map((ma) => (
         <g key={ma}>
           <line x1={PX0} y1={r1(py(ma / 1000))} x2={PX1} y2={r1(py(ma / 1000))} stroke="var(--line-strong)" strokeWidth={0.7} />
@@ -192,7 +192,7 @@ function CurveVds({ type, mag, vds, hideRegion }: { type: MosType; mag: number; 
       <text x={PX0 - 4} y={13} textAnchor="end" fontSize={14} fill="var(--ink-2)">
         mA
       </text>
-      <text x={PX1} y={168} textAnchor="end" fontSize={14} fill="var(--ink-2)">
+      <text x={PX1} y={178} textAnchor="end" fontSize={14} fill="var(--ink-2)">
         drain voltage Vds (V) →
       </text>
     </svg>
