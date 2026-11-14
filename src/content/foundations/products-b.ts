@@ -51,7 +51,7 @@ export const productsLessonsB: ConceptLesson[] = [
         body: "Sprout resets whenever it starts to send, but only in the fridge. Try the tools, then pick the **root cause**.",
         widget: { type: "prod-detective", props: { cases: ["cold-reset"] }, live: true },
         question: { type: "widget", goal: { solved: ["cold-reset"] }, hint: "The oscilloscope (or the debugger's reset-cause register) points at one place: the supply rail." },
-        explanation: "Cold makes a coin cell's internal resistance climb, so a 10 mA burst drops the rail: V = V_open − I × R_int. Once it falls below the chip's brown-out level the chip resets, which lines up with the radio start. After you solve it, the widget lets you try bulk capacitors: C ≈ I × t / ΔV gives the idea, and a 220 µF capacitor keeps the rail well above the threshold in this model.",
+        explanation: "Cold makes a coin cell's internal resistance climb, so a 10 mA burst drops the rail: V = V_open − I × R_int. Once it falls below the chip's brown-out level the chip resets, which lines up with the radio start. After you solve it, the widget lets you try bulk capacitors: the charge idea Q = CV from *Capacitors* in *Components in action: capacitors to op-amps* gives C ≈ I × t / ΔV as a first estimate, and a 220 µF capacitor keeps the rail well above the threshold in this model.",
       },
       {
         kind: "explain",

@@ -41,7 +41,7 @@ export const productsLessonsA: ConceptLesson[] = [
         title: "Constraints pull against each other",
         body: P(
           "Your requirements are also **constraints**: limits the design has to stay inside. For Sprout the big four are **cost**, **size**, **power** and **battery life**. They fight. A bigger battery lasts longer but costs more and takes room. A faster radio reports more often but drains the cell.",
-          "Battery life is the one beginners miss, so try it now. The widget uses the idea from *Power and heat* in the circuits module: the battery holds a fixed amount of charge (milliamp-hours), and life is that charge divided by the **average current** the product draws. Most of the time Sprout sleeps, and a short burst of activity happens each time it reports.",
+          "Battery life is the one beginners miss, so try it now. The widget uses the idea from *Power and heat* in *Electronics from zero: circuits*: the battery holds a fixed amount of charge (milliamp-hours), and life is that charge divided by the **average current** the product draws. Most of the time Sprout sleeps, and a short burst of activity happens each time it reports.",
           "Move the sliders. Which one changes battery life the most?",
         ),
         widget: { type: "prod-battery", props: {} },
@@ -583,7 +583,7 @@ def is_measurable(requirement):
         kind: "explain",
         title: "The bench",
         body: P(
-          "A **bench supply** lets you set a voltage *and a current limit*. If the board tries to draw more than the limit, the supply drops its voltage instead (called **constant-current mode**, shown as CC), and the board is protected. This is the same idea as the fuses and short circuits in *Sources and real-world limits*.",
+          "A **bench supply** lets you set a voltage *and a current limit*. If the board tries to draw more than the limit, the supply drops its voltage instead (called **constant-current mode**, shown as CC), and the board is protected. This is the same idea as the fuses and short circuits in *Sources and real-world limits* (*Electronics from zero: circuits*).",
           "Below are two mystery boards. Set a limit, power on, read the supply's display, then probe. Use the resistance probes **with the power off** and the voltage, scope and debugger probes **with it on**. A board that behaves badly may show you the problem in the very first reading.",
         ),
         widget: { type: "prod-bringup", props: { boards: ["good", "short"] } },
@@ -617,7 +617,7 @@ def is_measurable(requirement):
         kind: "question",
         title: "A rail at the wrong voltage",
         body: P(
-          "Sprout's 3.3 V rail comes from an adjustable regulator. Two resistors set the output: **Vout = 0.8 V × (1 + R1 / R2)**. (0.8 V is a typical reference; check the datasheet. This is the voltage divider from *The voltage divider and loading*, used in feedback.)",
+          "Sprout's 3.3 V rail comes from an adjustable regulator. Two resistors set the output: **Vout = 0.8 V × (1 + R1 / R2)**. (0.8 V is a typical reference; check the datasheet. This is the voltage divider from *The voltage divider and loading* in *Electronics from zero: circuits*, used in feedback. Regulators themselves are covered in *Power supplies* in *Components in action: capacitors to op-amps*.)",
           "Find the board whose rail is wrong, and diagnose it. Read the resistor values with power off, then work out what they make.",
         ),
         widget: { type: "prod-bringup", props: { boards: ["wrongreg", "good"] } },

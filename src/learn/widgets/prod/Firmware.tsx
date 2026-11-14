@@ -289,7 +289,7 @@ export function Fsm({ props, onChange }: WidgetProps<FsmProps>) {
         <Readout label="Average current" value={avgUa === null ? "finish a cycle" : `${avgUa.toFixed(1)} µA`} accent />
         <Readout label="Coin cell life" value={months === null ? "-" : months >= 24 ? `${(months / 12).toFixed(1)} years` : `${months.toFixed(1)} months`} />
       </div>
-      <pre className="mt-3 overflow-x-auto rounded-xl border border-line bg-surface-2 p-3 font-mono text-[12px] leading-snug text-ink-2" aria-label="Device log">
+      <pre className="mt-3 whitespace-pre-wrap break-words rounded-xl border border-line bg-surface-2 p-3 font-mono text-[12px] leading-snug text-ink-2" aria-label="Device log">
         {run.log.slice(-5).join("\n")}
       </pre>
       <Toy>
