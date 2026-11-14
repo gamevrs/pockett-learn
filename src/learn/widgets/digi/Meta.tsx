@@ -168,7 +168,7 @@ export function Meta({ onChange }: WidgetProps<Record<string, never>>) {
         <Readout label="Clocked" value={n} />
         <Readout label="Landed in the window" value={stat.inWin} />
         <Readout label="Went metastable" value={stat.meta} />
-        <Readout label="Slowest to resolve" value={stat.meta ? `${stat.worst.toFixed(2)} ns` : "—"} />
+        <Readout label="Slowest to resolve" value={stat.meta ? `${Math.max(1, Math.round(stat.worst * 1000))} ps` : "—"} />
       </div>
       <div className="mt-3 flex flex-col gap-2">
         <Note tone={inWindow ? "accent" : "plain"}>
