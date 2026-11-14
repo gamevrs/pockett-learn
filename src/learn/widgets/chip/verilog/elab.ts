@@ -447,6 +447,17 @@ export function elaborate(src: string, warnings: Diag[]): { design?: Design; err
             for (const w of ctx.writes) {
               if (!all.has(w)) warnings.push({ line: it.line, message: `\`${signals[w].name}\` isn't assigned on every path through this combinational always block, so real hardware would need a latch (a memory element) to remember it. Add an \`else\` or a \`default\`.` });
             }
+            if (it.levels) {
+              // an explicit list such as @(a) must name every signal the block reads, or simulation and hardware disagree
+              const listed = new Set(it.levels.map((l) => l.sig));
+              for (const l of it.levels) lookup(l.sig, l.line, l.col);
+              const missing = [...ctx.reads].filter((r) => !ctx.writes.has(r) && !listed.has(signals[r].name)).map((r) => `\`${signals[r].name}\``);
+              if (missing.length)
+                warnings.push({
+                  line: it.line,
+                  message: `this block reads ${missing.join(", ")} but its sensitivity list doesn't name ${missing.length > 1 ? "them" : "it"}. Synthesis builds the gates as if you had written \`@*\`, but a real event-driven simulator won't re-run the block when ${missing.length > 1 ? "those change" : "it changes"}, so simulation and hardware disagree. This toy always simulates it like \`@*\`. Write \`always @*\`.`,
+                });
+            }
             comb.push({ kind: "always", line: it.line, reads: [...ctx.reads].filter((r) => !ctx.writes.has(r)), writes: [...ctx.writes], body });
           }
         }

@@ -160,9 +160,12 @@ export function formalCheck(bug: boolean): FormalResult {
 
 // ───────────── check ─────────────
 
-/** goal: { minCoverage?: 0..1, maxTests?: n, formalRun?: true }. Coverage is recomputed from binsHit. */
+/**
+ * goal: { minCoverage?: 0..1, maxTests?: n, formalRun?: true, formalBugRun?: true, formalCleanRun?: true }. Coverage is recomputed from binsHit.
+ * formalBugRun: the formal check has been run with the planted bug and returned the counterexample; formalCleanRun: run on the correct adder.
+ */
 export function checkCoverage(state: unknown, goal: Record<string, unknown>): boolean {
-  const s = state as { binsHit?: unknown; testsRun?: unknown; formalRun?: unknown } | undefined;
+  const s = state as { binsHit?: unknown; testsRun?: unknown; formalRun?: unknown; formalBugRun?: unknown; formalCleanRun?: unknown } | undefined;
   if (!s || !Array.isArray(s.binsHit)) return false;
   let any = false;
   if (typeof goal.minCoverage === "number") {
@@ -177,6 +180,14 @@ export function checkCoverage(state: unknown, goal: Record<string, unknown>): bo
   if (goal.formalRun === true) {
     any = true;
     if (s.formalRun !== true) return false;
+  }
+  if (goal.formalBugRun === true) {
+    any = true;
+    if (s.formalBugRun !== true) return false;
+  }
+  if (goal.formalCleanRun === true) {
+    any = true;
+    if (s.formalCleanRun !== true) return false;
   }
   return any;
 }

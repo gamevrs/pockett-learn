@@ -18,6 +18,8 @@ export interface ScanProps {
 
 export interface ScanState {
   patternsApplied: number;
+  /** The patterns applied so far, in order (the check works out which faults they leave possible). */
+  patterns: number[];
   /** Patterns whose shifted-out response differed from the fault-free one. */
   mismatches: number;
   guessed?: string;
@@ -69,8 +71,8 @@ export function Scan({ props, onChange, goal, status }: WidgetProps<ScanProps>) 
   const [note, setNote] = useState("");
 
   const state = useMemo<ScanState>(
-    () => ({ patternsApplied: history.length, mismatches, ...(guess ? { guessed: guess.net, guessedValue: guess.value, correct: guess.net === fault.net && guess.value === fault.value } : {}) }),
-    [history.length, mismatches, guess, fault.net, fault.value]
+    () => ({ patternsApplied: history.length, patterns: history.map((h) => h.pattern), mismatches, ...(guess ? { guessed: guess.net, guessedValue: guess.value, correct: guess.net === fault.net && guess.value === fault.value } : {}) }),
+    [history, mismatches, guess, fault.net, fault.value]
   );
   const cb = useRef(onChange);
   useEffect(() => {
@@ -288,9 +290,11 @@ export function Scan({ props, onChange, goal, status }: WidgetProps<ScanProps>) 
           <div className="mt-2">
             <Note tone={guessRight ? "accent" : "plain"}>
               {guessRight
-                ? history.length > 0
-                  ? `Yes: ${fault.net} is stuck at ${fault.value}.`
-                  : `That is the fault, but you have not applied any pattern yet: apply one to see how it shows up.`
+                ? history.length === 0
+                  ? `That is the fault, but you have not applied any pattern yet: apply one to see how it shows up.`
+                  : candidates.length > 1
+                    ? `Right net, but your results so far also fit ${candidates.length - 1} other fault${candidates.length > 2 ? "s" : ""}, so this is still a guess. Apply a pattern that tells them apart.`
+                    : `Yes: ${fault.net} is stuck at ${fault.value}, and your patterns rule out every other fault.`
                 : `Not ${guess.net} stuck at ${guess.value}. Check which faults still explain your results, and try a pattern that tells them apart.`}
             </Note>
           </div>

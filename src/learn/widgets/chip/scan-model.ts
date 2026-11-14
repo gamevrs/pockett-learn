@@ -82,10 +82,11 @@ const isFault = (f: unknown): f is Fault => {
 
 /**
  * goal: { fault: {net, value}, findFault: true } (guessed net and value must match the fault, after at least one pattern was applied)
- *       or { detect: true } (at least one mismatching pattern was observed).
+ *       plus optional unique: true (the applied patterns must leave that fault as the only one consistent with the responses,
+ *       so cycling through guesses is not enough), or { detect: true } (at least one mismatching pattern was observed).
  */
 export function checkScan(state: unknown, goal: Record<string, unknown>): boolean {
-  const s = state as { patternsApplied?: number; mismatches?: number; guessed?: string; guessedValue?: number } | undefined;
+  const s = state as { patternsApplied?: number; patterns?: unknown; mismatches?: number; guessed?: string; guessedValue?: number } | undefined;
   if (!s) return false;
   let any = false;
   if (goal.detect === true) {
@@ -97,6 +98,13 @@ export function checkScan(state: unknown, goal: Record<string, unknown>): boolea
     if (!isFault(goal.fault)) return false;
     if (!((s.patternsApplied ?? 0) >= 1)) return false;
     if (s.guessed !== goal.fault.net || s.guessedValue !== goal.fault.value) return false;
+    if (goal.unique === true) {
+      const pats = Array.isArray(s.patterns) ? s.patterns.filter((p): p is number => Number.isInteger(p) && p >= 0 && p < 16) : [];
+      const target = goal.fault;
+      // responses recomputed from the real fault, so a forged state cannot claim evidence it does not have
+      const left = ALL_FAULTS.filter((f) => pats.every((p) => observedResponse(p, f) === observedResponse(p, target)));
+      if (left.length !== 1) return false;
+    }
   }
   return any;
 }

@@ -10,7 +10,11 @@ import { mtbfSeconds, mulberry32, sampleResolution } from "./sim";
 
 const TSU = 0.3; // ns, illustrative
 const THOLD = 0.1; // ns, illustrative
-const TAU = 0.1; // ns, illustrative resolution time constant
+/** Resolution time constant τ and metastable aperture Tw: the same 30 ps the MTBF widget uses (one τ for the lesson). */
+const TAU = 0.03; // ns
+const TW = 0.03; // ns
+/** Only a Tw-wide slice of the guard-band window really goes metastable: the chance per sample inside the window. */
+export const P_META = TW / (TSU + THOLD);
 const T_NEXT = 1.0; // ns, the next clock edge
 
 export interface MetaState {
@@ -18,7 +22,9 @@ export interface MetaState {
   edge: number;
   inWindow: boolean;
   samples: number;
-  /** how many samples landed in the window and went metastable */
+  /** how many samples landed inside the setup/hold window */
+  inWindowSamples: number;
+  /** how many of those went metastable */
   metastable: number;
   /** slowest resolution seen, ns */
   worst: number;
@@ -37,7 +43,7 @@ const H = 128;
 const PL = 8;
 const PR = 8;
 const T0 = -0.5; // ns shown to the left of the clock edge
-const T1 = 1.5; // ns shown to the right
+const T1 = 1.05; // ns shown to the right
 const px = (t: number) => PL + ((t - T0) / (T1 - T0)) * (W - PL - PR);
 const qy = (v: number) => 60 + (1 - v) * 56;
 
@@ -45,15 +51,16 @@ const qy = (v: number) => 60 + (1 - v) * 56;
 export function Meta({ onChange }: WidgetProps<Record<string, never>>) {
   const [edge, setEdge] = useState(-0.45);
   const [n, setN] = useState(0);
-  const [stat, setStat] = useState({ meta: 0, worst: 0, escaped: false });
+  const [stat, setStat] = useState({ meta: 0, inWin: 0, worst: 0, escaped: false });
   const [last, setLast] = useState<Sample | null>(null);
   const [worstS, setWorstS] = useState<Sample | null>(null);
 
   const inWindow = edge > -TSU && edge < THOLD;
-  const report = (e: number, count: number, s: typeof stat) => onChange?.({ edge: e, inWindow: e > -TSU && e < THOLD, samples: count, metastable: s.meta, worst: s.worst, escaped: s.escaped } satisfies MetaState);
+  const report = (e: number, count: number, s: typeof stat) => onChange?.({ edge: e, inWindow: e > -TSU && e < THOLD, samples: count, inWindowSamples: s.inWin, metastable: s.meta, worst: s.worst, escaped: s.escaped } satisfies MetaState);
 
   const run = (k: number) => {
     let meta = stat.meta;
+    let inWin = stat.inWin;
     let worst = stat.worst;
     let escaped = stat.escaped;
     let lastS: Sample | null = last;
@@ -63,7 +70,12 @@ export function Meta({ onChange }: WidgetProps<Record<string, never>>) {
       let s: Sample;
       if (edge <= -TSU) s = { meta: false, tres: 0, value: 1 };
       else if (edge >= THOLD) s = { meta: false, tres: 0, value: 0 };
-      else s = { meta: true, tres: sampleResolution(rand, TAU), value: rand() < 0.5 ? 0 : 1 };
+      else {
+        // inside the guard band the result is not guaranteed (old or new value), and only a Tw-wide slice goes metastable
+        inWin++;
+        const m = rand() < P_META;
+        s = { meta: m, tres: m ? sampleResolution(rand, TAU) : 0, value: rand() < 0.5 ? 0 : 1 };
+      }
       lastS = s;
       if (s.meta) {
         meta++;
@@ -74,7 +86,7 @@ export function Meta({ onChange }: WidgetProps<Record<string, never>>) {
         }
       }
     }
-    const ns = { meta, worst, escaped };
+    const ns = { meta, inWin, worst, escaped };
     setStat(ns);
     setN(n + k);
     setLast(lastS);
@@ -132,7 +144,7 @@ export function Meta({ onChange }: WidgetProps<Record<string, never>>) {
         <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-ink-2">
           <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" style={{ background: BLUE }} />data input (top)</span>
           <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[var(--brand)] align-middle" />flip-flop output (bottom)</span>
-          <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" style={{ background: ORANGE }} />setup + hold window</span>
+          <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" style={{ background: ORANGE }} />setup + hold window (result not guaranteed)</span>
           <span>solid line: clock edge · dashed line: next clock edge</span>
         </div>
       </div>
@@ -142,10 +154,10 @@ export function Meta({ onChange }: WidgetProps<Record<string, never>>) {
         <Btn
           onClick={() => {
             setN(0);
-            setStat({ meta: 0, worst: 0, escaped: false });
+            setStat({ meta: 0, inWin: 0, worst: 0, escaped: false });
             setLast(null);
             setWorstS(null);
-            report(edge, 0, { meta: 0, worst: 0, escaped: false });
+            report(edge, 0, { meta: 0, inWin: 0, worst: 0, escaped: false });
           }}
         >
           Reset
@@ -154,20 +166,25 @@ export function Meta({ onChange }: WidgetProps<Record<string, never>>) {
       <div className="mt-3 flex flex-wrap justify-center gap-2">
         <Readout label="Data edge is" value={inWindow ? "inside the window" : edge <= -TSU ? "early (safe)" : "late (safe)"} accent />
         <Readout label="Clocked" value={n} />
+        <Readout label="Landed in the window" value={stat.inWin} />
         <Readout label="Went metastable" value={stat.meta} />
-        <Readout label="Slowest to resolve" value={stat.meta ? `${stat.worst.toFixed(2)} ns` : "—"} />
+        <Readout label="Slowest to resolve" value={stat.meta ? `${Math.max(1, Math.round(stat.worst * 1000))} ps` : "—"} />
       </div>
       <div className="mt-3 flex flex-col gap-2">
         <Note tone={inWindow ? "accent" : "plain"}>
           {n === 0
-            ? "Move the data edge, then clock it. Outside the window the result is clean. Inside it, the output can hover near the middle for a random time before it falls to 0 or 1."
+            ? "Move the data edge, then clock it. Outside the window the result is clean. Inside it, the result is not guaranteed: usually the flop simply picks the old or the new value, but now and then it hovers near the middle for a random time first."
             : inWindow
               ? stat.escaped
                 ? "The slowest one was still hovering when the NEXT stage sampled it: that stage could now see an in-between level. This is a metastability failure."
-                : "Inside the window the output hovered, then picked 0 or 1 at random. Every case here settled before the next edge, but the tail of the distribution never quite ends."
+                : stat.meta
+                  ? "Inside the window most samples picked 0 or 1 at random straight away; a few hovered, then fell either way. Every case here settled before the next edge, but the tail of the distribution never quite ends."
+                  : "Inside the window each sample picked the old or the new value at random. Only a narrow slice of the window leaves the flop undecided, so keep clocking: it happens to a few samples in every hundred."
               : "Clean: setup and hold were respected, so the result is the new value (early edge) or the old one (late edge) and it is decided at once."}
         </Note>
-        <p className="text-center text-xs text-ink-3">Toy model: illustrative window ({TSU} ns before to {THOLD} ns after the edge), resolution time constant {TAU} ns, random outcomes. Real values depend on the process.</p>
+        <p className="text-center text-xs text-ink-3">
+          Toy model: an illustrative guard-band window ({TSU} ns before to {THOLD} ns after the edge). Only a much narrower aperture, Tw = {TW * 1000} ps, leaves the flop metastable, so here each sample inside the window goes metastable with probability Tw / window = {(P_META * 100).toFixed(1)}%. Resolution time constant τ = {TAU * 1000} ps, the same as the MTBF widget. Real values depend on the process.
+        </p>
       </div>
     </div>
   );
