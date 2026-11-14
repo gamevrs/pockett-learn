@@ -1,5 +1,6 @@
 import type { WidgetRegistry } from "@/learn/widget";
 import { Boot, checkBoot } from "./Boot";
+import { Can, checkCan } from "./Can";
 import { Cache, DBuf, Dma, checkCache, checkDBuf, checkDma } from "./Dma";
 import { Debounce, Gpio, checkDebounce, checkGpio } from "./Gpio";
 import { Irq, Race, checkIrq, checkRace } from "./Irq";
@@ -38,4 +39,5 @@ export const EMB_WIDGETS: WidgetRegistry = {
   "emb-rtos": { Component: Rtos, check: checkRtos },
   "emb-power": { Component: Power, check: checkPower },
   "emb-soc": { Component: Soc, check: checkSoc },
+  "emb-can": { Component: Can, check: checkCan },
 };
