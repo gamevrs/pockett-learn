@@ -36,12 +36,12 @@ const FLAME_DEMO = {
   name: "main",
   total: 100,
   children: [
-    { name: "startup", total: 10 },
+    { name: "init", total: 20 },
     {
       name: "serve",
-      total: 90,
+      total: 80,
       children: [
-        { name: "render", total: 50, children: [{ name: "format", total: 15 }] },
+        { name: "render", total: 45, children: [{ name: "json", total: 15 }] },
         { name: "query", total: 25 },
       ],
     },
