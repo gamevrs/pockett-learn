@@ -48,7 +48,7 @@ f = frequency of the current's changes`),
         body: P(
           "The loop is made of the **forward path** (the trace carrying the signal) and the **return path** (where that current flows back to its source). In *Power and ground* you saw that at high frequency the return current hugs the plane **right under the trace**. That keeps the loop thin and the area tiny.",
           "Now cut that path. If the trace crosses a **split in the plane**, or the plane has a slot, the return current must detour round it. The loop grows, often by a factor of tens or hundreds. The same signal now radiates much more, and nothing in the schematic changed.",
-          "In the widget the three routing choices are rough, typical sizes: a trace over a solid plane (about **10 mm²**), a return forced round a split (about **400 mm²**), and a two-layer board with a return wire far away (about **2000 mm²**). Rules that follow: keep traces over unbroken planes, never route a fast signal across a gap, and add a **stitching via** next to a layer change so the return current can change layers with the signal.",
+          "In the widget the three routing choices are rough, typical sizes: a trace over a solid plane (about **10 mm²**), a return forced round a split (about **400 mm²**), and a two-layer board with a return wire far away (about **2000 mm²**). Rules that follow: keep traces over unbroken planes, never route a fast signal across a gap, and add a **stitching via** next to a layer change so the return current can change layers with the signal. (That works when both reference planes are the same net, GND to GND. If the reference changes from GND to a power plane, use a stitching capacitor between them instead.)",
         ),
       },
       {
@@ -58,15 +58,15 @@ f = frequency of the current's changes`),
         question: {
           type: "choice",
           options: [
-            "A long trace whose return path is routed round a slot in the plane",
             "A trace running directly over an unbroken ground plane",
+            "A long trace whose return path is routed round a slot in the plane",
             "A trace on a two-layer board with the ground wire on the far side of the board",
             "They all radiate the same, because the current is the same",
           ],
-          answer: 1,
+          answer: 0,
           hint: "Think loop area. Where does the return current flow in each layout, and how far is it from the trace?",
           feedback: {
-            0: "The slot makes the return current detour, which grows the loop. That is a bigger antenna.",
+            1: "The slot makes the return current detour, which grows the loop. That is a bigger antenna.",
             2: "A far-away return makes a large loop too. This is the worst of the three for radiation.",
             3: "The current is the same, but the field also scales with loop area. The areas differ by a factor of tens.",
           },
@@ -91,11 +91,11 @@ f = frequency of the current's changes`),
         widget: { type: "pcb-emc", props: {} },
         question: {
           type: "widget",
-          goal: { pass: true, minMarginDb: 6 },
-          prompt: "Make the worst margin 6 dB or more.",
-          hint: "The cheapest fix costs nothing but careful routing. Which setting changes the loop area by a factor of forty?",
+          goal: { pass: true, minMarginDb: 6, areaMm2: 10 },
+          prompt: "Fix the layout (loop area 10 mm² or less) and make the worst margin 6 dB or more.",
+          hint: "The clock and its current are the product's job, so leave them alone. Which setting changes the loop area by a factor of forty?",
         },
-        explanation: "Shrinking the loop from 400 mm² to 10 mm² takes **about 32 dB** off every line and gives roughly +29 dB of margin. Slowing the edges to 10 ns alone only reaches about +5.7 dB at the defaults, so it falls just short; the source filter adds only a little. The lesson of the toy: **fix the geometry first**, then use edge rate and filters as helpers.",
+        explanation: "Shrinking the loop from 400 mm² to 10 mm² takes **about 32 dB** off every line and gives roughly +29 dB of margin. Slowing the edges to 10 ns alone only reaches about +5.7 dB at the defaults, and 10 ns edges plus the filter scrape past by about 0.1 dB, while the loop fix alone gives about +29 dB. That is why the goal asks for the geometry fix: you cannot slow the clock or cut its current without changing the product. The lesson of the toy: **fix the geometry first**, then use edge rate and filters as helpers.",
       },
       {
         kind: "explain",
@@ -114,7 +114,7 @@ f = frequency of the current's changes`),
         starter: `import math
 
 def field_dbuv(f_hz, area_mm2, i_ma, r_m=3.0):
-    # Ott: E = 263e-16 * f**2 * A * I / r  (V/m), then 20*log10(E / 1e-6)
+    # your code here
     return 0.0
 `,
         solution: `import math
@@ -131,7 +131,7 @@ def field_dbuv(f_hz, area_mm2, i_ma, r_m=3.0):
           { id: "freq", description: "Doubling the frequency adds about 12 dB", assertionCode: `d = field_dbuv(200e6, 100, 10) - field_dbuv(100e6, 100, 10)\nassert abs(d - 12.04) < 0.05, f"got {d}, expected 12.04"` },
           { id: "other", description: "50 MHz, 10 mm², 20 mA is about 12.8 dBµV/m", assertionCode: `v = field_dbuv(50e6, 10, 20)\nassert abs(v - 12.84) < 0.1, f"got {v}, expected about 12.84"` },
         ],
-        hints: ["Convert units first: area_mm2 * 1e-6 gives m², i_ma * 1e-3 gives A.", "E = 263e-16 * f_hz ** 2 * area * amps / r_m.", "Return 20 * math.log10(e / 1e-6)."],
+        hints: ["Convert units first: the formula wants metres squared and amps.", "Work out E in V/m from the formula in the step text, then convert it to a decibel ratio against 1 µV/m."],
       },
       {
         kind: "question",
@@ -145,19 +145,19 @@ def field_dbuv(f_hz, area_mm2, i_ma, r_m=3.0):
           type: "choice",
           options: [
             "Book the formal test straight away so you learn the real answer",
-            "Skip testing; the toy model said it passes",
-            "Scan the first board with a near-field probe and a spectrum analyser on the bench, fix the hot spots, then book a pre-scan",
+            "Probe the first board on the bench, fix hot spots, then pre-scan",
+            "Trust the toy model: it said the board passes",
             "Wrap the board in aluminium foil and call it shielded",
           ],
-          answer: 2,
+          answer: 1,
           hint: "Which option costs the least and finds problems earliest, before an expensive formal test?",
           feedback: {
             0: "That gives the real answer, but it is the most expensive way to find a simple problem. Do the cheap checks first.",
-            1: "A toy estimate ignores cable common-mode current, so it cannot promise a pass. Only measurement can.",
+            2: "A toy estimate ignores cable common-mode current, so it cannot promise a pass. Only measurement can.",
             3: "A foil wrap with gaps and open cable ports leaks, and it is not a design. Fix the sources first, then shield well.",
           },
         },
-        explanation: "The sensible order is cheap to expensive: **near-field probing on the bench**, fix what lights up, a **pre-scan** at a lab, and only then the **formal test**. Pre-compliance does not replace the formal test; it just makes a surprise failure much less likely.",
+        explanation: "The sensible order is cheap to expensive: **near-field probing on the bench** (a probe and a spectrum analyser), fix what lights up, a **pre-scan** at a lab, and only then the **formal test**. Pre-compliance does not replace the formal test; it just makes a surprise failure much less likely.",
       },
       {
         kind: "recap",
@@ -288,20 +288,20 @@ Fab drawing   stackup, finish, impedance and other notes`),
         question: {
           type: "choice",
           options: [
-            "It makes the file bigger, which fabs charge for",
             "The silkscreen cannot be printed without it",
-            "Part numbers set the pick-and-place coordinates",
-            "A value alone does not say the package, voltage rating or dielectric; the MPN pins down the exact part and lets you list approved alternates when it is out of stock or discontinued",
+            "The value alone does not say the package, voltage rating or dielectric",
+            "The pick-and-place file needs it to find each footprint",
+            "The stencil openings are cut separately for each part number",
           ],
-          answer: 3,
+          answer: 1,
           hint: "\"100 nF\" fits hundreds of different capacitors. What else do you need to choose one?",
           feedback: {
-            0: "File size is irrelevant. The reason is about getting the right part bought.",
-            1: "The silkscreen shows reference designators like C1 and R2, not part numbers.",
-            2: "Coordinates come from the placement file and your layout, not from part numbers.",
+            0: "The silkscreen shows reference designators like C1 and R2, not part numbers.",
+            2: "That file lists X, Y and rotation per reference designator. The footprint comes from your layout, not from a part number lookup.",
+            3: "Stencil openings follow the paste layer of your board, not the part numbers.",
           },
         },
-        explanation: "\"100 nF\" does not fix the **package** (0402 or 0805), **voltage rating**, **dielectric** or tolerance, so the buyer would have to guess. An MPN names one exact part, and a good BOM lists **alternates** too, because parts go out of stock or become **obsolete** (discontinued). A board with no approved alternates can stop a whole production run.",
+        explanation: "The MPN names one exact part. \"100 nF\" does not fix the **package** (0402 or 0805), **voltage rating**, **dielectric** or tolerance, so the buyer would have to guess. An MPN names one exact part, and a good BOM lists **alternates** too, because parts go out of stock or become **obsolete** (discontinued). A board with no approved alternates can stop a whole production run.",
       },
       {
         kind: "question",

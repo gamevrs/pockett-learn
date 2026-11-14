@@ -60,11 +60,11 @@ export const pcbLessonsB: ConceptLesson[] = [
         body: "On one sheet, a pin of U1 has a net label **DATA** and a pin of U3, far away, also has a net label **DATA**. No wire joins them. Are they connected?",
         question: {
           type: "choice",
-          options: ["No, only wires connect things", "Yes, the same net name means the same net", "Only if the two pins are close together on the page", "Only after you run ERC"],
-          answer: 1,
+          options: ["Yes, the same net name means the same net", "No, only wires connect things", "Only if the two pins are close together on the page", "Only after you run ERC"],
+          answer: 0,
           hint: "Think about why a tool offers labels at all, if wires were the only way to connect.",
           feedback: {
-            0: "Wires are one way. A net label is the other, and it joins every pin that carries the same name.",
+            1: "Wires are one way. A net label is the other, and it joins every pin that carries the same name.",
             2: "Distance on the page does not matter. The name is what joins them.",
             3: "ERC only checks the connections you made. It does not make any.",
           },
@@ -108,9 +108,9 @@ export const pcbLessonsB: ConceptLesson[] = [
         body: P(
           "**ERC** (electrical rules check) is a spell checker for a schematic. The tool knows each pin's **type** (input, output, power input, passive, and so on) and checks the connections against a table of what may meet what. It flags an **output on an output**, an **input nobody drives**, and a **power pin** that goes nowhere. It does not know what you meant, so it cannot say that a circuit is *right*, only that it breaks no rule.",
           "One thing ERC will **not** catch: a forgotten decoupling capacitor. The netlist is legal without it. Common practice is **one 100 nF ceramic capacitor per supply pin** as a starting point (typical; the datasheet decides), drawn beside that pin. That is a job for a design-review checklist.",
-          "Below is the sensor board with four mistakes hidden in it. Press **Run ERC**, then try the fix buttons. A wrong fix teaches as much as the right one.",
+          "Below is the sensor board with **two** mistakes hidden in it. Press **Run ERC**, then try the fix buttons. A wrong fix teaches as much as the right one. The next step hides four, including the two kinds ERC cannot name for you.",
         ),
-        widget: { type: "pcb-erc", props: {} },
+        widget: { type: "pcb-erc", props: { bugs: ["nrst", "vdd"] } },
       },
       {
         kind: "question",
@@ -132,17 +132,17 @@ export const pcbLessonsB: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "The net name becomes too long for the tool",
-            "One output reads the net as an input and is damaged",
-            "It uses more copper on the board",
-            "When one drives high and the other low they fight: a large current flows between them and the level is undefined",
+            "The net carries twice the current, so the trace overheats",
+            "If they disagree they fight, and a large current flows",
+            "The receiver only sees the output that switched first",
+            "Each output reads the net as an input and is damaged",
           ],
-          answer: 3,
+          answer: 1,
           hint: "A push-pull output drives its pin hard, high or low. What happens when two of them disagree?",
           feedback: {
-            0: "Names have nothing to do with it. The problem is electrical.",
-            1: "An output does not read the net as an input; the trouble is what both outputs do at the same time.",
-            2: "The copper is not the issue. The two outputs themselves are.",
+            0: "Current does not add up like that. The trouble comes when the two outputs disagree, not from carrying more.",
+            2: "Order of switching does not decide it. When the two disagree, both keep driving the same net.",
+            3: "An output does not read the net as an input; the trouble is what both outputs do at the same time.",
           },
         },
         explanation: "A push-pull output connects its pin to the supply (high) or to ground (low) through a switch with very low resistance. Two that disagree make a **short through the chips**: a big current, heat, and a line stuck at some muddy level. Buses that need many talkers use **open-drain** outputs with one pull-up resistor (as I²C does) or tri-state outputs with enable pins.",
@@ -185,13 +185,13 @@ export const pcbLessonsB: ConceptLesson[] = [
         body: "Which of these belongs only to the **footprint**, not to the symbol?",
         question: {
           type: "choice",
-          options: ["The pin names, such as VDD and GND", "The value, such as 10 kΩ", "The sizes and positions of the copper pads", "Which pins are inputs and which are outputs"],
-          answer: 2,
+          options: ["The pin names, such as VDD and GND", "The value, such as 10 kΩ", "Which pins are inputs and which are outputs", "The sizes and positions of the copper pads"],
+          answer: 3,
           hint: "The schematic says nothing about millimetres. Which of these is a physical shape?",
           feedback: {
             0: "Pin names are part of the symbol. The schematic needs them to show connections.",
             1: "The value is data on the symbol (and in the parts list), not geometry.",
-            3: "Pin types are exactly what ERC reads from the symbol.",
+            2: "Pin types are exactly what ERC reads from the symbol.",
           },
         },
         explanation: "The footprint is **geometry**: pad sizes and positions, the body outline, the courtyard. The symbol is **meaning**: pin names, types and how parts connect. A tool links the two by pin numbers, and that link is where a wrong pin mapping hides.",
@@ -210,11 +210,11 @@ export const pcbLessonsB: ConceptLesson[] = [
         kind: "question",
         title: "How thick is 2 oz?",
         body: P(
-          "Copper thickness is quoted as a **weight**: 1 oz means one ounce of copper spread over one square foot, which makes a layer about **34.8 µm** thick (often rounded to 35 µm). 2 oz is twice as much copper, so twice as thick.",
+          "Copper thickness is quoted as a **weight**: 1 oz means one ounce of copper spread over one square foot, which makes a layer about **35 µm** thick (34.8 µm to be exact; this module uses 35). 2 oz is twice as much copper, so twice as thick.",
           "How many micrometres thick is **2 oz** copper?",
         ),
-        question: { type: "number", answer: 69.6, tolerance: 0.5, unit: "µm", hint: "Thickness is proportional to weight: 1 oz is 34.8 µm." },
-        explanation: "2 × 34.8 µm = **69.6 µm**, about 2.7 mil. Thicker copper carries more current for the same width and spreads heat better, but it is harder to etch fine details into, so it costs more and limits the smallest trace and gap. Typical outer layers are 1 oz; power boards use 2 oz or more.",
+        question: { type: "number", answer: 70, tolerance: 0.5, unit: "µm", hint: "Thickness is proportional to weight: 1 oz is 35 µm." },
+        explanation: "2 × 35 µm = **70 µm**, about 2.8 mil. Thicker copper carries more current for the same width and spreads heat better, but it is harder to etch fine details into, so it costs more and limits the smallest trace and gap. Typical outer layers are 1 oz; power boards use 2 oz or more.",
       },
       {
         kind: "explain",
@@ -255,46 +255,46 @@ export const pcbLessonsB: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
+            "It keeps solder on the pads and off everything else",
             "It prints the part names on the board",
-            "It keeps solder on the pads and off everything else, and protects the copper",
             "It adds a ground plane to the board",
             "It holds the parts in place while they are soldered",
           ],
-          answer: 1,
+          answer: 0,
           hint: "It covers almost all of the copper. Why would you want copper covered?",
           feedback: {
-            0: "Printing names is the silkscreen's job, not the mask's.",
+            1: "Printing names is the silkscreen's job, not the mask's.",
             2: "A ground plane is a copper layer. The mask is a coat on top of the copper.",
             3: "Sticky solder paste holds parts while the board is heated, not the mask.",
           },
         },
-        explanation: "The mask leaves openings only at pads, so molten solder wets just the pads and does not creep along a trace or bridge two pads. It also protects the copper from dirt and corrosion.",
+        explanation: "The mask leaves openings only at pads, so molten solder wets just the pads and does not creep along a trace or bridge two pads. It also protects the copper from dirt and corrosion, which is a second job.",
       },
       {
         kind: "code",
         title: "Ounces to micrometres",
-        body: "Write `oz_to_um(oz)`. It takes a copper weight in **ounces per square foot** and returns the thickness in **micrometres**, using **34.8 µm per ounce**.",
+        body: "Write `oz_to_um(oz)`. It takes a copper weight in **ounces per square foot** and returns the thickness in **micrometres**, using **35 µm per ounce**.",
         language: "python",
         starter: `def oz_to_um(oz):
-    # thickness in micrometres for a copper weight in oz
+    # your code here
     return 0.0
 `,
         solution: `def oz_to_um(oz):
-    return oz * 34.8
+    return oz * 35
 `,
         tests: [
-          { id: "one", description: "1 oz is 34.8 µm", assertionCode: `assert abs(oz_to_um(1) - 34.8) < 0.01, f"got {oz_to_um(1)}, expected 34.8"` },
-          { id: "two", description: "2 oz is 69.6 µm", assertionCode: `assert abs(oz_to_um(2) - 69.6) < 0.01, f"got {oz_to_um(2)}, expected 69.6"` },
-          { id: "half", description: "0.5 oz is 17.4 µm", assertionCode: `assert abs(oz_to_um(0.5) - 17.4) < 0.01, f"got {oz_to_um(0.5)}, expected 17.4"` },
+          { id: "one", description: "1 oz is 35 µm", assertionCode: `assert abs(oz_to_um(1) - 35) < 0.01, f"got {oz_to_um(1)}, expected 35"` },
+          { id: "two", description: "2 oz is 70 µm", assertionCode: `assert abs(oz_to_um(2) - 70) < 0.01, f"got {oz_to_um(2)}, expected 70"` },
+          { id: "half", description: "0.5 oz is 17.5 µm", assertionCode: `assert abs(oz_to_um(0.5) - 17.5) < 0.01, f"got {oz_to_um(0.5)}, expected 17.5"` },
         ],
-        hints: ["Thickness is proportional to weight.", "Multiply the weight in ounces by 34.8."],
+        hints: ["Thickness is proportional to weight.", "One multiplication by the thickness of 1 oz does it."],
       },
       {
         kind: "recap",
         points: [
           "The **symbol** is meaning (pins, types); the **footprint** is geometry (pads, outline, courtyard). A wrong footprint or pin mapping is a classic respin, so check them against the datasheet.",
           "A board is **copper layers plus dielectric** (FR-4, εr about 4.2 to 4.7 typical), 2, 4 or 6 layers and about 1.6 mm thick (typical). More layers give planes for power and ground.",
-          "**Copper weight** is thickness: 1 oz is about 34.8 µm (often 35 µm), 2 oz about 69.6 µm.",
+          "**Copper weight** is thickness: 1 oz is about 35 µm, 2 oz about 70 µm.",
           "**Vias**: through (cheapest), blind, buried and micro. The last three cost more and need 4 or more layers.",
           "**Solder mask** keeps solder on the pads. **Silkscreen** carries names, pin 1 and polarity. The **outline** tells the fab where to cut.",
         ],
@@ -306,7 +306,7 @@ export const pcbLessonsB: ConceptLesson[] = [
   {
     id: "fnd-pcb-5-routing",
     title: "Placement and routing",
-    summary: "Place parts first, then route: a small route game with a clearance rule and a decoupling loop, trace width versus current (IPC-2221, simplified), and clearances.",
+    summary: "Place parts first, then route: a small route game with a clearance rule and a decoupling loop, trace width versus current (a simple IPC-2221 estimate, IPC-2152 as the reference), and clearances.",
     minutes: 12,
     xp: 65,
     level: "Intermediate",
@@ -370,9 +370,9 @@ export const pcbLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "How wide must a trace be?",
         body: P(
-          "Current flowing through copper heats it (power = I² × R). A trace that is too thin gets too hot. **IPC-2221**, an old standard, gives a simple formula for the width a trace needs to carry a current with a chosen **temperature rise** ΔT above the surroundings:",
+          "Current flowing through copper heats it (power = I² × R). A trace that is too thin gets too hot. **IPC-2221**, the older standard, gives a simple formula for the width a trace needs to carry a current with a chosen **temperature rise** ΔT above the surroundings:",
           "`I = k · ΔT^0.44 · A^0.725`  (A is the copper cross-section in mil², ΔT in °C, I in amps; k = 0.048 for an outer layer, 0.024 for an inner layer.)",
-          "Width = A divided by the copper thickness. Example: **1 A, 10 °C rise, 1 oz outer copper** needs about **12 mil (0.30 mm)**. Inner layers shed heat worse, so the same current needs a wider trace (about 31 mil here).",
+          "Width = A divided by the copper thickness. Example: **1 A, 10 °C rise, 1 oz outer copper** needs about **12 mil (0.30 mm)**. IPC-2221 halves k for inner layers, which makes the same current need a trace about 2.6 times wider (about 31 mil here). That is very conservative: **IPC-2152**, the modern reference built on measured data, shows that inner traces next to planes often run about as cool as outer ones in still air, or cooler. So treat this formula as the simple IPC-2221 estimate, and use an IPC-2152-based calculator for final widths.",
           "Try the sliders. In **check** mode you also pick *your* trace width, and the widget turns the formula around to show the temperature rise you would get.",
           "**Safety.** An undersized trace carrying high current gets hot enough to damage the board: it can lift, delaminate or burn. Batteries (lithium cells especially) can deliver very large short-circuit currents, far above the current the circuit normally uses. Protect high-current paths with fuses or protection circuits, and never assume a calculator is a safety guarantee.",
         ),
@@ -384,15 +384,15 @@ export const pcbLessonsB: ConceptLesson[] = [
         body: "Use the calculator: how wide must an **outer-layer 1 oz** trace be to carry **2 A** with a **10 °C** temperature rise (IPC-2221)? Answer in mil.",
         widget: { type: "pcb-tracewidth", props: { mode: "calc", current: 1, rise: 20, oz: 1, external: true } },
         question: { type: "number", answer: 30.8, tolerance: 3, unit: "mil", hint: "Set 2 A and a 10 °C rise, with 1 oz and External selected, then read the width in mil." },
-        explanation: "About **30.8 mil** (0.78 mm). Doubling the current from 1 A to 2 A does not just double the width: the area grows as I^(1/0.725), about 2.6 times, so the width goes from 11.8 mil to 30.8 mil. (IPC-2152 gives different numbers, so treat this as a first estimate and add margin.)",
+        explanation: "About **30.8 mil** (0.78 mm). Doubling the current from 1 A to 2 A does not just double the width: the area grows as I^(1/0.725), about 2.6 times, so the width goes from 11.8 mil to 30.8 mil. (IPC-2152, built on measured data, gives different numbers, so treat this as a first estimate and add margin.)",
       },
       {
         kind: "code",
         title: "The formula in code",
-        body: "Write `trace_width_mil(current_a, temp_rise_c, oz, external=True)` that returns the **width in mil** from the IPC-2221 formula.\n\nWith `k = 0.048` (outer) or `0.024` (inner), the area is `A = (I / (k * ΔT**0.44)) ** (1 / 0.725)` in mil², and the width is `A / (oz * 1.378)`, since 1 oz of copper is about 1.378 mil thick.",
+        body: "Write `trace_width_mil(current_a, temp_rise_c, oz, external=True)` that returns the **width in mil** from the simple IPC-2221 estimate.\n\nWith `k = 0.048` (outer) or `0.024` (inner), the area is `A = (I / (k * ΔT**0.44)) ** (1 / 0.725)` in mil², and the width is `A / (oz * 1.378)`, since 1 oz of copper is about 1.378 mil thick.",
         language: "python",
         starter: `def trace_width_mil(current_a, temp_rise_c, oz, external=True):
-    # IPC-2221: I = k * dT**0.44 * A**0.725, width = A / (oz * 1.378)
+    # your code here
     return 0.0
 `,
         solution: `def trace_width_mil(current_a, temp_rise_c, oz, external=True):
@@ -406,7 +406,7 @@ export const pcbLessonsB: ConceptLesson[] = [
           { id: "inner", description: "1 A, 10 °C, 1 oz, inner layer: about 30.76 mil (k is halved)", assertionCode: `w = trace_width_mil(1, 10, 1, False)\nassert abs(w - 30.76) / 30.76 < 0.02, f"got {w}, expected about 30.76"` },
           { id: "two-oz", description: "2 oz copper halves the width: 1 A, 10 °C, outer: about 5.91 mil", assertionCode: `w = trace_width_mil(1, 10, 2, True)\nassert abs(w - 5.91) / 5.91 < 0.02, f"got {w}, expected about 5.91"` },
         ],
-        hints: ["Choose k first: 0.048 for an outer layer, 0.024 for an inner one.", "Compute the area, then divide it by oz * 1.378 for the width."],
+        hints: ["Choose k first, from the layer. Then turn the formula round to solve for the area.", "The width is the area divided by the copper thickness in mil."],
       },
       {
         kind: "explain",
@@ -434,7 +434,7 @@ export const pcbLessonsB: ConceptLesson[] = [
         points: [
           "**Place first, then route.** Connectors at the edge, decoupling right at the pins, parts grouped by function, noisy away from sensitive.",
           "On one layer, traces of different nets cannot cross or touch. Layers and vias exist to let routes hop over each other.",
-          "IPC-2221: **I = k · ΔT^0.44 · A^0.725** gives the copper area for a current and a temperature rise. 1 A, 10 °C, 1 oz outer needs about 12 mil. Inner layers need more, and IPC-2152 is the modern reference.",
+          "IPC-2221: **I = k · ΔT^0.44 · A^0.725** gives the copper area for a current and a temperature rise. 1 A, 10 °C, 1 oz outer needs about 12 mil. Inner layers get k halved, which is very conservative: IPC-2152, built on measured data, is the modern reference for final widths.",
           "**Clearance** is set by the fab's minimum (about 6 mil / 0.15 mm for cheap services, typical) and by voltage. **Keep loops small.**",
           "Undersized traces on high-current paths can overheat, delaminate or burn, and batteries can supply huge short-circuit currents: protect them.",
         ],
