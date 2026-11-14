@@ -102,3 +102,14 @@ export function markOf(kind: keyof typeof MARKS, which: "plus" | "minus", x: num
   const r = rotate(MARKS[kind][which], rot);
   return [x + r[0], y + r[1]];
 }
+
+/**
+ * Seconds per dot spacing for a wire carrying `flow`, or null when no dots should move.
+ * The fastest wire is 0.25 s, a vanishing one 2 s. `scale` is the |flow| that moves at full speed:
+ * the largest |flow| on the drawing by default, or Schematic's `flowRef` when that is bigger.
+ */
+export function flowDuration(flow: number, scale: number): number | null {
+  if (!(scale > 0) || Math.abs(flow) < scale * 1e-6) return null;
+  const rel = Math.min(1, Math.abs(flow) / scale);
+  return 2 - 1.75 * rel;
+}

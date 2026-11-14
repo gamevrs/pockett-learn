@@ -2,7 +2,7 @@
 
 /** Shared kit for the circuits widgets: the same small controls as the other modules, plus a few circuit-specific helpers. */
 import React from "react";
-import { Schematic, type SchematicProps, type WireSpec } from "../elec-kit/Schematic";
+import { Schematic, type SchematicProps } from "../elec-kit/Schematic";
 import { formatSI } from "../elec-kit/format";
 import { RES_STEPS } from "./logic";
 
@@ -18,15 +18,13 @@ export const ohms = (r: number) => formatSI(r, "Ω");
 export const watts = (p: number) => formatSI(p, "W");
 
 /**
- * The shared schematic, wrapped so dots speed up and slow down against a fixed scale: `flowRef` is the current (any unit) that moves the dots at
- * full speed. A tiny wire carrying that reference is parked just outside the drawing and clipped away by the wrapper. Keep a one-cell margin
- * around the parts so nothing real is clipped.
+ * The shared schematic plus an optional overlay drawn on the same grid. Pass `flowRef` (Schematic's own prop: the current that moves the dots
+ * at full speed) so dots speed up and slow down against a fixed scale as the learner changes values.
  */
-export function Sch({ flowRef, overlay, ...props }: SchematicProps & { flowRef?: number; overlay?: React.ReactNode }) {
-  const ref: WireSpec | null = flowRef ? { points: [[-3, -3], [-3, -2]], flow: flowRef } : null;
+export function Sch({ overlay, ...props }: SchematicProps & { overlay?: React.ReactNode }) {
   return (
     <div className="relative overflow-hidden">
-      <Schematic {...props} wires={ref ? [...(props.wires ?? []), ref] : props.wires} />
+      <Schematic {...props} />
       {overlay && (
         <svg viewBox={`0 0 ${props.cols * 20} ${props.rows * 20}`} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
           {overlay}

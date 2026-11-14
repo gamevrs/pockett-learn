@@ -13,7 +13,7 @@ const kit = (f) => import(pathToFileURL(path.join(HERE, "..", "src", "learn", "w
 const { solveDC } = await kit("solve.ts");
 const { simulate, waveAt, peakAfter, sampleAt } = await kit("transient.ts");
 const { formatSI, parseSI, toInputSI } = await kit("format.ts");
-const { pinsOf, markOf } = await kit("geometry.ts");
+const { pinsOf, markOf, flowDuration } = await kit("geometry.ts");
 
 let passed = 0;
 const failures = [];
@@ -446,6 +446,15 @@ for (const method of ["backward-euler", "trapezoidal"]) {
     check(`op-amp${flip ? " flipped" : ""}: "+" sign sits beside the plus pin`, dist(plus, pins.plus) < dist(plus, pins.minus), JSON.stringify({ plus, pins }));
     check(`op-amp${flip ? " flipped" : ""}: "−" sign sits beside the minus pin`, dist(minus, pins.minus) < dist(minus, pins.plus), JSON.stringify({ minus, pins }));
   }
+}
+
+// ── flow-dot speed: the default scale is the fastest wire; flowRef fixes the scale ──
+{
+  near("flow: fastest wire on its own scale is full speed", flowDuration(5, 5), 0.25);
+  near("flow: half the scale is mid speed", flowDuration(-2.5, 5), 1.125);
+  near("flow: against a reference of 10, 5 is half speed", flowDuration(5, Math.max(5, 10)), 1.125);
+  check("flow: zero current has no moving dots", flowDuration(0, 5) === null);
+  check("flow: no scale (nothing flowing) has no moving dots", flowDuration(0, 0) === null);
 }
 
 console.log(`elec-kit: ${passed} passed, ${failures.length} failed`);

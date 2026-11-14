@@ -21,7 +21,8 @@
  *
  * A wire point is [col, row] or "partId.pin" (pins: a/b for two-pin parts, b/c/e for npn, g/d/s for MOSFETs,
  * minus/plus/out for the op-amp, a for ground). `flow` on a wire is a signed current in any unit: + means along
- * the point order. Dots move at a speed proportional to |flow| / the largest |flow| on the drawing; with
+ * the point order. Dots move at a speed proportional to |flow| / the largest |flow| on the drawing (or / `flowRef`
+ * when that is set and bigger, so a fixed current always looks the same speed as other values change); with
  * prefers-reduced-motion they stand still and an arrow shows the direction instead. Junction dots are added
  * where a wire ends on another wire's middle or three or more wire ends meet (turn off with autoDots={false}).
  */
@@ -54,6 +55,7 @@ import {
   type Rot,
   type SymbolKind,
 } from "./symbols";
+import { flowDuration } from "./geometry.ts";
 
 export interface PartSpec {
   kind: SymbolKind;
@@ -115,6 +117,12 @@ export interface SchematicProps {
   autoDots?: boolean;
   /** set false to never animate (dots still show where current flows) */
   animate?: boolean;
+  /**
+   * the |flow| (same unit as the wires) that moves dots at full speed. Default: the largest |flow| on the drawing,
+   * so the fastest wire is always full speed. Set it to keep speeds on a fixed scale while values change; a
+   * wire carrying more than this sets the scale itself.
+   */
+  flowRef?: number;
   className?: string;
 }
 
@@ -236,13 +244,13 @@ function midpoint(path: Pt[]): { pt: Pt; rot: number } {
   return { pt: path[0], rot: 0 };
 }
 
-export function Schematic({ parts, wires = [], texts = [], cols, rows, ariaLabel, showGrid, autoDots = true, animate = true, className }: SchematicProps) {
+export function Schematic({ parts, wires = [], texts = [], cols, rows, ariaLabel, showGrid, autoDots = true, animate = true, flowRef, className }: SchematicProps) {
   const reduced = useReducedMotion();
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const pins = partPins(parts);
   const paths = wires.map((w) => resolveWire(w, pins));
   const dots = autoDots ? junctions(paths, Object.values(pins)) : [];
-  const maxFlow = Math.max(0, ...wires.map((w) => Math.abs(w.flow ?? 0)));
+  const flowScale = Math.max(flowRef ?? 0, ...wires.map((w) => Math.abs(w.flow ?? 0)));
   const moving = animate && !reduced;
   const W = cols * GRID;
   const H = rows * GRID;
@@ -267,10 +275,9 @@ export function Schematic({ parts, wires = [], texts = [], cols, rows, ariaLabel
       ))}
       {paths.map((pts, i) => {
         const f = wires[i].flow ?? 0;
-        if (!maxFlow || Math.abs(f) < maxFlow * 1e-6) return null;
-        const rel = Math.abs(f) / maxFlow;
         // 20 units between dots; one dot spacing every 0.25 s (fastest) to 2 s (slowest)
-        const dur = 2 - 1.75 * rel;
+        const dur = flowDuration(f, flowScale);
+        if (dur === null) return null;
         const ordered = f > 0 ? pts : [...pts].reverse();
         const pointsAttr = ordered.map((p) => p.join(",")).join(" ");
         const mid = midpoint(ordered);
