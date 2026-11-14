@@ -11,9 +11,9 @@ export const pcbLessonsC: ConceptLesson[] = [
   {
     id: "fnd-pcb-6-power-ground",
     title: "Power and ground",
-    summary: "Every current goes round a loop. Return paths, ground planes, slots that break them, where to put decoupling capacitors, and star versus plane grounding.",
-    minutes: 11,
-    xp: 75,
+    summary: "Every current goes round a loop. Return paths, ground planes, slots that break them, where to put decoupling capacitors, star versus plane grounding, and copper and thermal vias as a heat sink.",
+    minutes: 14,
+    xp: 85,
     level: "Advanced",
     steps: [
       {
@@ -111,7 +111,7 @@ bottom   signals and parts`),
         widget: { type: "pcb-decap", props: { place: "5mm", via: "5mm", cap: "100nF" } },
         question: {
           type: "widget",
-          goal: { place: "1mm", via: "pad", maxDroop: 165 },
+          goal: { place: "1mm", via: "pad", cap: "100nF", maxDroop: 165 },
           prompt: "Capacitor next to the pin, via in the pad, dip within the budget.",
           hint: "Each millimetre of loop path costs about 1 nH, which is about 50 mV here. Keep the loop as short as you can on both sides.",
         },
@@ -128,21 +128,67 @@ bottom   signals and parts`),
         question: {
           type: "choice",
           options: [
-            "Cut the plane in two and join the halves at one point, so digital currents never touch analog ground",
-            "Keep one solid plane, put analog parts in one area and digital parts in another, and route so digital return currents do not flow under the analog part",
+            "Cut the plane in two and join the halves at one point",
             "Use star grounding with a wire between each pair of chips",
-            "Leave out the ground plane so there is nothing for noise to flow through",
+            "Keep one solid plane and place analog and digital parts apart",
+            "Leave out the plane so noise has nothing to flow through",
           ],
-          answer: 1,
+          answer: 2,
           hint: "Think about what happens to any trace that crosses a gap in the plane.",
           feedback: {
             0: "That gap is the slot from the last steps: any trace crossing it loses its return path. It is older advice and rarely right today.",
-            2: "Wires between chips are long, inductive spokes. They help at audio frequencies but fail for fast digital edges.",
+            1: "Wires between chips are long, inductive spokes. They help at audio frequencies but fail for fast digital edges.",
             3: "Without a plane every return becomes a long loop, which is the worst case you saw in the widget.",
           },
         },
         explanation:
           "The usual advice is **one solid ground plane with partitioned placement**: keep analog and digital areas apart and make sure digital return currents have a path that avoids the analog area. A split cuts the return paths of every signal that crosses it. Star grounding still earns its place at low frequency (audio, sensors, separating a heavy power return), but for most digital boards one solid plane plus careful placement wins. Always check the converter's datasheet for its own layout advice.",
+      },
+      {
+        kind: "explain",
+        title: "The board is the heat sink",
+        body: P(
+          "In *Reading a datasheet* you used TJ = TA + P × θJA, and were warned that a datasheet's θJA holds only for **its own test board**. Now you can see why. A power chip cannot shed heat from its plastic body alone (a **toy** figure here: about 150 °C/W, weak). Nearly all of it leaves **down through the chip into your board's copper**, which spreads it out and hands it to the air. So the copper you give it sets the θJA you really get.",
+          "Many power chips come with an **exposed pad** (also called a thermal pad): a bare metal square under a QFN or DFN, or the metal tab of the PK3302's SOT-223, which you solder to copper on purpose. Two layout levers then do the work:\n- **Copper area.** A bigger pour around the pad sheds more heat, with diminishing returns. Still air carries away only about **22 W per m² per kelvin** from a copper face (typical, natural convection and radiation).\n- **Thermal vias.** A **thermal via** is a plated hole under or beside the pad that carries heat to copper on the other face or an inner plane. One plain 0.3 mm via through a 1.6 mm board is about **150 °C/W** (typical, 100 to 200), a thin copper tube. So you use a small grid of them side by side (the datasheet's land pattern often shows one), which puts them in parallel.",
+          "More vias help only until the copper is the limit: past that, extra holes buy almost nothing. One trap: a via open in the pad can wick solder away from the joint during reflow. Fabs offer tented, plugged or filled vias for this, and the datasheet's land pattern says what the maker expects. *Manufacturing the board* returns to this. **Safety:** a working power chip, and the copper around it, can be hot enough to burn.",
+          "The widget is a **toy** with typical values. A chip turns **1.2 W** into heat in a box at **50 °C**, and we want the junction at **105 °C or lower**, so there is margin below the 125 °C rating. Start with the little pad and no vias, and try the controls.",
+        ),
+        widget: { type: "pcb-thermal", props: { area: 2, vias: 0 } },
+      },
+      {
+        kind: "question",
+        title: "Cool the chip, spend little board",
+        body: "The same chip, 1.2 W in a 50 °C box. You can spare at most **6 cm² of copper** for it. Choose the copper area and the number of thermal vias so that **TJ is 105 °C or lower**.",
+        widget: { type: "pcb-thermal", props: {} },
+        question: {
+          type: "widget",
+          goal: { maxTj: 105, maxAreaCm2: 6, minVias: 1 },
+          prompt: "Junction at 105 °C or lower, using no more than 6 cm² of copper and at least one thermal via.",
+          hint: "Copper alone at 6 cm² is not enough. Which second lever carries heat to a second copper face?",
+        },
+        explanation: "At 6 cm² with no vias the junction reaches about **114 °C**. Four vias join the far-side copper and bring it to about **97 °C**, passing. Nine vias give about 95 °C and sixteen about 94 °C, so the returns fade fast: copper is the limit by then. Ten cm² with no vias would also pass (about 97 °C), but it spends board space you did not have. These are toy values; a real design checks the datasheet's θJA curves for copper area and measures a prototype with a thermocouple or thermal camera.",
+      },
+      {
+        kind: "question",
+        title: "What are the via grid and pad for?",
+        body: "A QFN's datasheet shows a **3 × 3 grid of 0.3 mm vias** inside its exposed-pad land pattern, with the note \"connect to a copper area\". What is the grid for?",
+        question: {
+          type: "choice",
+          options: [
+            "They carry the chip's supply current to the inner power plane",
+            "They let flux gas escape during reflow, and nothing else",
+            "They tie the pad to ground so the chip is shielded",
+            "They move heat from the pad to copper on the other layers",
+          ],
+          answer: 3,
+          hint: "The pad is bare metal under the chip, and its job is to get heat out. Which of these is about heat?",
+          feedback: {
+            0: "Supply current uses the chip's pins, not the exposed pad. The pad is a heat path.",
+            1: "Gas escape is a side effect at best. The grid is there to carry heat.",
+            2: "The pad is often grounded, but the vias in a grid of this kind are placed to carry heat, not to shield.",
+          },
+        },
+        explanation: "The vias are **thermal vias**: nine in parallel are about 17 °C/W (150 ÷ 9, typical) instead of 150 °C/W for one, so the heat can reach copper on the other layers and spread there. The same note warns that open vias in the pad can steal solder, so check what your fab and the datasheet recommend (tented, plugged or filled).",
       },
       {
         kind: "recap",
@@ -152,6 +198,7 @@ bottom   signals and parts`),
           "Keep a **solid ground plane** under fast signals. A slot forces a long detour; avoid crossing it, or add a stitching capacitor as a patch. Power planes and pours need the same care.",
           "**Decoupling:** ΔV = L × ΔI/Δt, about 1 nH per mm of loop path. Put a 100 nF capacitor right at each supply pin, with its via in the pad. Placement beats value.",
           "**Star grounding** suits low-frequency and heavy-current separation. For most digital and mixed-signal boards: one solid plane, with analog and digital parts placed apart.",
+          "**Heat:** the board is the heat sink. Copper area and a grid of **thermal vias** under an exposed pad lower θJA, with diminishing returns (toy and typical values here), so a datasheet's θJA only holds for its own test board.",
         ],
       },
     ],
@@ -197,7 +244,7 @@ bottom   signals and parts`),
         body: "Write `critical_length_cm(rise_ns, speed_cm_per_ns)`. It returns the length in centimetres beyond which a trace should be treated as a transmission line, by the rule of thumb **rise time × speed ÷ 6**.",
         language: "python",
         starter: `def critical_length_cm(rise_ns, speed_cm_per_ns):
-    # rise time x speed, divided by 6
+    # your code here
     return 0
 `,
         solution: `def critical_length_cm(rise_ns, speed_cm_per_ns):
@@ -209,7 +256,7 @@ bottom   signals and parts`),
           { id: "slow", description: "5 ns edge at 14.5 cm/ns: about 12.08 cm", assertionCode: `assert abs(critical_length_cm(5, 14.5) - 12.0833) < 0.01, f"got {critical_length_cm(5, 14.5)}, expected 12.08"` },
           { id: "scale", description: "A ten times slower edge allows a ten times longer trace", assertionCode: `assert abs(critical_length_cm(10, 15) / critical_length_cm(1, 15) - 10) < 0.001, "length should scale with rise time"` },
         ],
-        hints: ["Multiply the rise time by the speed, then divide by 6.", "return rise_ns * speed_cm_per_ns / 6"],
+        hints: ["Distance is speed times time: the edge's rise time sets how far the signal moves while it rises.", "Then scale that distance by the rule's divisor."],
       },
       {
         kind: "question",
@@ -237,7 +284,7 @@ bottom   signals and parts`),
         starter: `import math
 
 def microstrip_z0(w, h, t, er):
-    # 87 / sqrt(er + 1.41) * ln(5.98 h / (0.8 w + t))
+    # your code here
     return 0
 `,
         solution: `import math
@@ -247,11 +294,11 @@ def microstrip_z0(w, h, t, er):
 `,
         tests: [
           { id: "hand", description: "0.3 mm trace, 0.2 mm dielectric, 35 µm copper, εr 4.3: about 53.5 ohms", assertionCode: `assert abs(microstrip_z0(0.3, 0.2, 0.035, 4.3) - 53.5) < 0.1, f"got {microstrip_z0(0.3, 0.2, 0.035, 4.3)}, expected about 53.5"` },
-          { id: "fifty", description: "0.33 mm wide on 0.2 mm dielectric: about 50.5 ohms", assertionCode: `assert abs(microstrip_z0(0.33, 0.2, 0.0348, 4.3) - 50.5) < 0.1, f"got {microstrip_z0(0.33, 0.2, 0.0348, 4.3)}, expected about 50.5"` },
-          { id: "narrow", description: "A narrow 0.15 mm trace has a high Z0 of about 74.4 ohms", assertionCode: `assert abs(microstrip_z0(0.15, 0.2, 0.0348, 4.3) - 74.4) < 0.1, f"got {microstrip_z0(0.15, 0.2, 0.0348, 4.3)}, expected about 74.4"` },
+          { id: "fifty", description: "0.33 mm wide on 0.2 mm dielectric: about 50.5 ohms", assertionCode: `assert abs(microstrip_z0(0.33, 0.2, 0.035, 4.3) - 50.5) < 0.1, f"got {microstrip_z0(0.33, 0.2, 0.035, 4.3)}, expected about 50.5"` },
+          { id: "narrow", description: "A narrow 0.15 mm trace has a high Z0 of about 74.4 ohms", assertionCode: `assert abs(microstrip_z0(0.15, 0.2, 0.035, 4.3) - 74.4) < 0.1, f"got {microstrip_z0(0.15, 0.2, 0.035, 4.3)}, expected about 74.4"` },
           { id: "wider", description: "A wider trace has a lower Z0", assertionCode: `assert microstrip_z0(0.5, 0.2, 0.035, 4.3) < microstrip_z0(0.2, 0.2, 0.035, 4.3), "wider should be lower"` },
         ],
-        hints: ["The scale factor is 87 / math.sqrt(er + 1.41).", "The log term is math.log(5.98 * h / (0.8 * w + t)). Multiply the two."],
+        hints: ["The formula is a scale factor times a logarithm: work out each part on its own first.", "Check the units: w, h and t must be in the same unit, and math.log is the natural log."],
       },
       {
         kind: "explain",
@@ -268,7 +315,7 @@ def microstrip_z0(w, h, t, er):
         kind: "question",
         title: "Reflection coefficient",
         body: "A 50 Ω line ends in a **150 Ω** load. What is the reflection coefficient Γ?",
-        question: { type: "number", answer: 0.5, tolerance: 0.01 },
+        question: { type: "number", answer: 0.5, tolerance: 0.01, hint: "Γ = (ZL − Z0) / (ZL + Z0): put 150 and 50 in." },
         explanation:
           "Γ = (ZL − Z0) / (ZL + Z0) = (150 − 50) / (150 + 50) = 100 / 200 = **0.5**. A positive Γ means the reflected wave has the same sign; its voltage is half of the incoming wave's. A load of 25 Ω gives (25 − 50) / (25 + 50) = −1/3: a smaller reflection with the opposite sign, so the load voltage approaches its final value from below.",
       },
@@ -291,7 +338,7 @@ def microstrip_z0(w, h, t, er):
         title: "Keep the neighbours quiet",
         body: P(
           "**Crosstalk** is a fast signal on one trace (the **aggressor**) leaking into a neighbour (the **victim**) through the fields between them. On the victim it shows up as noise that should not be there.",
-          "Three things set it. **Distance:** coupling falls fast as the gap grows. The toy scale here uses roughly 1 / (1 + (gap/h)²), a commonly quoted shape for near-end coupling over a plane, where h is the trace's height above the plane. **The plane:** a close plane ends many field lines on itself. **Length:** longer side-by-side runs couple more, then it stops growing. A classic rule of thumb is the **3W rule**: keep centre-to-centre spacing at least three trace widths.",
+          "Three things set it. **Distance:** coupling falls fast as the gap grows. The toy scale here uses roughly 1 / (1 + (gap/h)²), a commonly quoted shape for near-end coupling over a plane, where h is the trace's height above the plane. **The plane:** a close plane ends many field lines on itself. **Length:** longer side-by-side runs couple more. Near-end noise stops growing after a while, but far-end crosstalk on outer layers keeps growing with length. A classic rule of thumb is the **3W rule**: keep centre-to-centre spacing at least three trace widths.",
           "This is a toy scale, not a field solver. Space the traces so the noise on the quiet trace is **3% or less**, keeping at least 10 cm side by side and the plane under both.",
         ),
         widget: { type: "pcb-crosstalk", props: { spacingH: 1, lengthCm: 20, plane: true } },
