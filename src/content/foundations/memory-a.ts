@@ -50,10 +50,10 @@ export const memoryLessonsA: ConceptLesson[] = [
         title: "A bucket with a tiny hole",
         body: P(
           "Real buckets leak, and so do capacitors. Within a few milliseconds to seconds the charge in a DRAM cell drains away, and a 1 slowly turns into something that looks like a 0. (The leak speeds in the widget are a toy; real cells vary a lot from one to the next.)",
-          "The fix is **refresh**. The memory controller keeps visiting every row: it *reads* the row, notices which cells are still above the halfway mark, and *writes* them back at full charge. The usual rule for DRAM chips is that **every cell is refreshed about every 64 ms**, sooner when the chip is hot. That sounds frequent, but it costs only a few percent of the chip's time.",
-          "This is also why DRAM is called *dynamic*, and why every kind of RAM is **volatile**: switch off the power and the buckets drain (and the SRAM loops stop holding), so the bits are gone. Try the **No refresh** and **Every 64 ms** settings, then press Power off.",
+          "The fix is **refresh**. The memory controller keeps telling the chip to refresh, and the chip works through its rows: each row is read into the **sense amplifiers** (the circuits that tell a weak 1 from a 0), which write it straight back at full charge. Every cell gets this about every **64 ms** (32 ms on DDR5, and sooner when the chip is hot). That sounds frequent, but it costs only a few percent of the chip's time.",
+          "This is also why DRAM is called *dynamic*, and why every kind of RAM is **volatile**: switch off the power and the buckets drain (and the SRAM loops stop holding), so the bits are gone. The widget starts with refresh every 128 ms. Press **Wait** and watch the leakiest buckets, then try **No refresh**, and finally press Power off.",
         ),
-        widget: { type: "memsys-cell", props: {} },
+        widget: { type: "memsys-cell", props: { refreshMs: 128 } },
       },
       {
         kind: "question",
@@ -73,10 +73,10 @@ export const memoryLessonsA: ConceptLesson[] = [
         title: "Chips are grids",
         body: P(
           "A memory chip is not a long line of cells; it is a **grid** of rows and columns. To read a byte, the chip first **activates a whole row**: it copies every cell of that row into a small holder called the **row buffer**. Then it picks the **column** it wants from the buffer.",
-          "That makes a second read from the same row cheap (the row is already open), and a read from a different row expensive (close the old row, open the new one). Typical order-of-magnitude numbers: about **15 ns** for a row hit, about **45 ns** for a row switch. The grid below is a tiny 4 × 4 toy; a real row holds thousands of bytes.",
-          "Tap any cell to read it. Read a few from the same row, then jump to another row.",
+          "That makes a second read from the same row cheap (the row is already open), and a read from a different row expensive (close the old row, open the new one). Typical order-of-magnitude numbers: about **15 ns** for a row hit, about **30 ns** to open a row when none is open, and about **45 ns** for a row switch. The grid below is a tiny 4 × 4 toy; a real row holds thousands of bytes.",
+          "Press **Next read** to send a short list of reads, and watch what each one costs. Then it is your turn.",
         ),
-        widget: { type: "memsys-rowbuf", props: {} },
+        widget: { type: "memsys-rowbuf", props: { sequence: [[1, 0], [1, 2], [3, 1], [1, 3], [1, 1]] } },
       },
       {
         kind: "question",
@@ -117,7 +117,7 @@ export const memoryLessonsA: ConceptLesson[] = [
         kind: "recap",
         points: [
           "**SRAM** holds a bit in a self-propping transistor loop (fast, big, costly). **DRAM** holds it as charge in a capacitor (small, cheap, slower).",
-          "DRAM charge **leaks**, so every row is **refreshed** (read and written back) about every **64 ms**. All RAM is **volatile**: no power, no data.",
+          "DRAM charge **leaks**, so every row is **refreshed** (read into the sense amplifiers and written back) about every **64 ms** (32 ms on DDR5). All RAM is **volatile**: no power, no data.",
           "A DRAM chip is a **grid**. A read opens a whole **row** into the row buffer; reads from the open row are cheap, switching rows costs more.",
           "Computers pair a small amount of fast SRAM (caches) with a large amount of cheap DRAM (main memory).",
         ],
@@ -149,7 +149,7 @@ L3 cache     8-64 MB         ~ 15 ns
 RAM (DRAM)   8-64 GB         ~ 80-100 ns
 SSD          0.5-4 TB        ~ 10-100 us
 `),
-          "You met this ladder in *Inside the computer*, where RAM was rounded to 100 ns; the sums in this module use 90 ns, a typical middle of the 80 to 100 ns range. This module goes further: how each rung really works, and how to write code that stays on the upper ones.",
+          "You met this ladder in *Inside the computer* (the lesson *The memory hierarchy*), where RAM was rounded to 100 ns and time was stretched so 1 ns lasts a second: an L1 hit takes a second, RAM a minute and a half to two minutes, an SSD read about a day. The sums in this module use 90 ns for RAM, a typical middle of the 80 to 100 ns range. This module goes further: how each rung really works, and how to write code that stays on the upper ones.",
         ),
       },
       {
@@ -165,22 +165,6 @@ SSD          0.5-4 TB        ~ 10-100 us
       },
       {
         kind: "explain",
-        title: "Time you can feel",
-        body: P(
-          "Nanoseconds are hard to picture. So stretch time until **1 ns lasts 1 second**. Tap each rung to see how long a read would take for a person.",
-          "In that scale an L1 hit takes a second, RAM takes a minute and a half, and an SSD read takes about a day. A program that has to go to the SSD for every value is not slow in the way a slow phone is slow; it is working on a different clock.",
-        ),
-        widget: { type: "computer-latency", props: { levels: ["reg", "l1", "l2", "l3", "ram", "ssd"], scale: "human" } },
-      },
-      {
-        kind: "question",
-        title: "How many L1 reads?",
-        body: "One RAM access takes about **90 ns**. An L1 hit takes about **1 ns**. How many L1 hits fit in the time of **one** RAM access?",
-        question: { type: "number", answer: 90, tolerance: 0, unit: "hits", hint: "Divide the RAM time by the L1 time." },
-        explanation: "About **90**. While the CPU waits for one trip to RAM, it could have read ninety values from L1. That is what a cache miss costs, and why hardware works so hard to avoid them.",
-      },
-      {
-        kind: "explain",
         title: "The average access",
         body: P(
           "The stack only works because programs are **repetitive**: they reuse the same data and walk through neighbouring addresses. So most reads are found in the top layers (hits) and only a few fall through to the next one (misses).",
@@ -189,6 +173,13 @@ SSD          0.5-4 TB        ~ 10-100 us
           "Move the three sliders. Each one is the share of accesses *reaching that level* that are found there. Watch where the time goes.",
         ),
         widget: { type: "memsys-amat", props: {} },
+      },
+      {
+        kind: "question",
+        title: "Work out the average",
+        body: "L1 takes **1 ns** and hits **95%** of accesses. L2 takes **4 ns** and hits **60%** of what reaches it. L3 takes **15 ns** and hits **50%** of what reaches it. RAM takes **90 ns**. What is the **average access time**, in ns?",
+        question: { type: "number", answer: 2.4, tolerance: 0.05, unit: "ns", hint: "Work from the inside out: first 15 + 0.5 × 90, then 4 + 0.4 × that, then 1 + 0.05 × that." },
+        explanation: "Inside out: 15 + 0.5 × 90 = 60 ns for whatever reaches L3. Then 4 + 0.4 × 60 = 28 ns for whatever reaches L2. Then 1 + 0.05 × 28 = **2.4 ns**. Only 1% of accesses (0.05 × 0.4 × 0.5) go all the way to RAM, yet they add 0.9 ns: more than a third of the 2.4 ns total.",
       },
       {
         kind: "question",
@@ -316,7 +307,7 @@ SSD          0.5-4 TB        ~ 10-100 us
         body: "Write `transfer_ms(latency_ms, size_mb, mb_per_s)`. It returns the **total time in milliseconds** to move `size_mb` megabytes over a link that takes `latency_ms` to the first byte and then delivers `mb_per_s` megabytes per second.\n\nRemember: bytes / (bytes per second) gives **seconds**, and there are 1000 ms in a second.",
         language: "python",
         starter: `def transfer_ms(latency_ms, size_mb, mb_per_s):
-    # latency + size / speed, in milliseconds
+    # your code here
     return latency_ms
 `,
         solution: `def transfer_ms(latency_ms, size_mb, mb_per_s):
@@ -409,7 +400,7 @@ for (int c = 0; c < 16; c++)
 `),
           "Switch the widget to *Column by column* and run it. The cache holds only **4 lines**.",
         ),
-        widget: { type: "memsys-walk", props: { order: "col", lines: 4, lock: ["prefetch"] } },
+        widget: { type: "memsys-walk", props: { order: "row", lines: 4, lock: ["prefetch", "lines"] } },
       },
       {
         kind: "question",
@@ -430,9 +421,9 @@ for (int c = 0; c < 16; c++)
         body: P(
           "CPUs do not wait for you to ask. A **hardware prefetcher** watches the addresses you read, spots a pattern (\"+64, +64, +64…\"), and fetches the next line **before** you ask for it, so it is already in the cache when you arrive.",
           "That only works when the pattern is regular. Walking an array in order is perfect. Hopping around randomly, or chasing a pointer to find the next address, gives the prefetcher nothing to guess.",
-          "Walk row by row, first with *Prefetch next line* off and then on. With it on, the prefetcher grabs the next row whenever a read has to fetch one.",
+          "The widget starts on the column walk. Turn *Prefetch next line* on and off and compare the misses; then switch to row by row. With it on, the prefetcher grabs the next row whenever a read has to fetch one.",
         ),
-        widget: { type: "memsys-walk", props: { order: "row", lines: 4, lock: ["order"] } },
+        widget: { type: "memsys-walk", props: { order: "col", lines: 4, lock: ["lines"] } },
       },
       {
         kind: "question",
@@ -450,10 +441,10 @@ for (int c = 0; c < 16; c++)
       {
         kind: "code",
         title: "Count the lines",
-        body: "Write `lines_touched(addresses, line_size=64)`. It takes a list of **byte addresses** and returns how many **distinct cache lines** they fall in.\n\nA line is a block of `line_size` bytes starting at a multiple of `line_size`, so the line number of an address is `address // line_size`.",
+        body: "Write `lines_touched(addresses, line_size=64)`. It takes a list of **byte addresses** and returns how many **distinct cache lines** they fall in.\n\nA line is a block of `line_size` bytes starting at a multiple of `line_size`. Work out which line each address is in, then count the different lines.",
         language: "python",
         starter: `def lines_touched(addresses, line_size=64):
-    # how many different lines do these addresses fall in?
+    # your code here
     return 0
 `,
         solution: `def lines_touched(addresses, line_size=64):

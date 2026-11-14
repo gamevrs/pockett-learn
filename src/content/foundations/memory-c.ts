@@ -24,9 +24,9 @@ export const memoryLessonsC: ConceptLesson[] = [
         body: P(
           "Translating an address means reading the page table, and on x86-64 that is up to **four dependent reads** (one per level) before you can even start the real access. Doing that for every load would make everything several times slower. So the CPU keeps a small cache of recent translations: the **TLB** (translation lookaside buffer).",
           "A TLB hit gives the frame number straight away. A TLB **miss** triggers a **page walk**: the hardware reads the table levels (often served from the normal caches) and fills the TLB. Typical sizes, order of magnitude: a first-level data TLB of about **64 entries** and a second level of a **thousand or two**.",
-          "The TLB's **reach** is its entries times the page size. With 64 entries of 4 KiB pages that is only **256 KiB**: touch more memory than that in a jumpy way and you keep missing. The widget runs a toy 64-entry TLB; leave it on 4 KiB pages and slide the size up with *Jump around*.",
+          "The TLB's **reach** is its entries times the page size. With 64 entries of 4 KiB pages that is only **256 KiB**: touch more memory than that in a jumpy way and you keep missing. The widget runs a toy 64-entry TLB on 4 KiB pages, starting with a walk *in order*. Slide the size up, then switch to *Jump around* and slide again.",
         ),
-        widget: { type: "memsys-tlb", props: { entries: 64, exp: 20, pattern: "random", pageBytes: 4096 } },
+        widget: { type: "memsys-tlb", props: { entries: 64, exp: 20, pattern: "scan", pageBytes: 4096 } },
       },
       {
         kind: "question",
@@ -46,17 +46,17 @@ export const memoryLessonsC: ConceptLesson[] = [
         title: "Compute the reach",
         body: "A TLB has **64 entries** and the page size is **2 MiB**. How many **MiB** of memory does it cover?",
         question: { type: "number", answer: 128, tolerance: 0, unit: "MiB", hint: "Reach = number of entries × page size." },
-        explanation: "64 × 2 MiB = **128 MiB**. With 1 GiB pages (available on x86-64) the same 64 entries would reach 64 GiB, more than most machines have. That is why databases and other programs with huge working sets ask for huge pages.",
+        explanation: "64 × 2 MiB = **128 MiB**. With 1 GiB pages (available on x86-64) the same 64 entries would reach 64 GiB, more than most machines have (many real TLBs hold only a handful of 1 GiB entries, but even four of them cover 4 GiB). That is why databases and other programs with huge working sets ask for huge pages.",
       },
       {
         kind: "explain",
         title: "Minor and major faults",
         body: P(
           "From the last lesson: a **page fault** means the page is not mapped right now. There are two very different kinds.",
-          "- A **minor fault**: the data is already in RAM or needs no disk (a first touch of fresh memory gets a zero-filled frame; a page already loaded for someone else gets mapped). It costs roughly a **microsecond**.\n- A **major fault**: the data must be **read from disk**, for example a page that was pushed out to **swap** earlier. An SSD read is on the order of **100 µs**, a spinning disk around **10 ms**: thousands to millions of times slower than RAM.",
-          "When RAM is full the OS **swaps out** pages it has not used lately to make room. Below, a program uses pages 0 to 3 twice in a loop, but its share of RAM is only 3 frames. Press *Next use* through the list, then try giving it more frames.",
+          "- A **minor fault**: the data is already in RAM or needs no disk (a first touch of fresh memory gets a zero-filled frame; a page already loaded for someone else gets mapped). It costs roughly a **microsecond**.\n- A **major fault**: the data must be **read from disk**, for example a page that was pushed out to **swap** earlier. An SSD read is on the order of **100 µs**, a spinning disk around **10 ms**: about a thousand to a hundred thousand times slower than RAM.",
+          "When RAM is full the OS **swaps out** pages it has not used lately to make room. Below, a program uses pages 0 to 3 twice in a loop, but its share of RAM is only 3 frames. Press *Next use* through the list and count the major faults.",
         ),
-        widget: { type: "memsys-swap", props: { frames: 3, chooseFrames: true, sequence: [0, 1, 2, 3, 0, 1, 2, 3] } },
+        widget: { type: "memsys-swap", props: { frames: 3, sequence: [0, 1, 2, 3, 0, 1, 2, 3] } },
       },
       {
         kind: "question",
@@ -110,9 +110,9 @@ export const memoryLessonsC: ConceptLesson[] = [
           type: "order",
           items: [
             "The CPU cannot translate the address and raises a page fault",
-            "The OS finds the page's copy in swap on disk",
-            "The OS picks a free frame, evicting another page if RAM is full",
-            "The disk read runs while the program sleeps and other programs run",
+            "The OS looks up where the page lives in swap and picks a free frame (evicting another page if RAM is full)",
+            "The OS starts the disk read into that frame",
+            "The program sleeps and other programs run until the read finishes",
             "The OS updates the page table and the program retries the instruction",
           ],
           hint: "Start with the hardware noticing the problem; finish with the retry.",
@@ -147,9 +147,9 @@ export const memoryLessonsC: ConceptLesson[] = [
           "You met many-core CPUs earlier. Each core has its own private caches. So the same line of memory can sit in **two caches at once**. If one core changes it, the other core's copy is now stale, and reading it would give an old value. The hardware must prevent that. The rules it follows are called a **cache-coherence protocol**.",
           "The classic textbook protocol is **MESI**, named after the four states a line can be in, in each core's cache:",
           "- **Modified (M)**: I have the only copy and I changed it. Memory is out of date.\n- **Exclusive (E)**: I have the only copy and it is unchanged. I may write it without telling anyone.\n- **Shared (S)**: others may have copies too. I may read, but must warn them before I write.\n- **Invalid (I)**: my copy is not usable.",
-          "Caches **snoop** each other's requests on a shared bus (bigger chips use directories to do the same job). Real CPUs use variants, such as MESIF and MOESI, but the idea is the same. Try the buttons below: read and write from both cores and watch the states.",
+          "Caches **snoop** each other's requests on a shared bus (bigger chips use directories to do the same job). Real CPUs use variants, such as MESIF and MOESI, but the idea is the same. Start with Core A alone below: read, then write, and watch its state change. The questions bring in Core B.",
         ),
-        widget: { type: "memsys-mesi", props: {} },
+        widget: { type: "memsys-mesi", props: { ops: ["A read", "A write"] } },
       },
       {
         kind: "question",
@@ -205,9 +205,9 @@ export const memoryLessonsC: ConceptLesson[] = [
         body: P(
           "Coherence works on whole **cache lines**, not single variables. Now picture two threads, each incrementing its **own** counter. The counters are separate variables, so the code has no sharing at all. But if the two counters sit **next to each other in memory**, they share one 64-byte line.",
           "Every time one core writes its counter it must take the line away from the other core, and the other core then has to take it back. The line **ping-pongs** between the caches although the threads never touch the same variable. This is **false sharing**, one of the most common ways to make multi-threaded code slower than single-threaded code.",
-          "Compare the layouts. The strip shows the first six increments: red means a bus transaction, green a plain hit. (Toy costs: 1 ns for a hit, 30 ns for a transfer.)",
+          "Below, both counters sit on one line. The strip shows the first six increments: red means a bus transaction, green a plain hit. (Toy costs: 1 ns for a hit, 30 ns for a transfer.)",
         ),
-        widget: { type: "memsys-falseshare", props: { layout: "same" } },
+        widget: { type: "memsys-falseshare", props: { layout: "same", lockLayout: true } },
       },
       {
         kind: "question",
@@ -220,7 +220,7 @@ export const memoryLessonsC: ConceptLesson[] = [
           prompt: "Choose the layout where the two counters live in different cache lines.",
           hint: "The problem is two counters in one line. Put them somewhere else.",
         },
-        explanation: "Padded apart, each core takes its line once (Exclusive, then Modified) and every later write is a hit with no bus traffic. The work done is identical; only where the bytes sit changed. In the toy numbers that is tens of times faster. Real slowdowns are usually smaller but often 3x to 10x.",
+        explanation: "Padded apart, each core takes its line once (a read-for-ownership straight to Modified) and every later write is a hit with no bus traffic. The work done is identical; only where the bytes sit changed. In the toy numbers that is tens of times faster. Real slowdowns are usually smaller but often 3x to 10x.",
       },
       {
         kind: "explain",
@@ -376,9 +376,9 @@ while (flag.load(std::memory_order_acquire) == 0) {}   // wait
 use(data);                                        // guaranteed to see 42
 `),
           "C++ names the strengths `memory_order_relaxed` (atomic, but no ordering: fine for a plain counter), `acquire`/`release`, and `seq_cst` (the default: one agreed order for all such operations, the strongest and slightly costlier). A **fence** is a standalone barrier. What they cost depends on the CPU: on x86 acquire and release are ordinary moves, since TSO already gives them for free; on ARM64 they become special instructions (such as `ldar` and `stlr`).",
-          "Try it in the widget: tap an operation to cycle *relaxed* → *release / acquire* → *seq_cst*.",
+          "Try it in the widget on a third test, *load buffering* (each thread reads, then writes): tap an operation to cycle *relaxed* → *release / acquire* → *seq_cst*, and find which orderings make r1=1 r2=1 impossible.",
         ),
-        widget: { type: "memsys-litmus", props: { test: "mp", model: "weak", tests: ["mp"], lockModel: true } },
+        widget: { type: "memsys-litmus", props: { test: "lb", model: "weak", tests: ["lb"], lockModel: true } },
       },
       {
         kind: "question",
@@ -401,20 +401,20 @@ use(data);                                        // guaranteed to see 42
         question: {
           type: "widget",
           goal: { test: "sb", model: "tso", surprisingPossible: false, ordered: true },
-          prompt: "Add seq_cst to the operations (or a full fence between the two operations of each thread).",
-          hint: "The problem is a store being overtaken by a later load. Which ordering stops a store from being passed by a load?",
+          prompt: "Make all four operations seq_cst, or add a full fence between the two operations of each thread.",
+          hint: "The problem is a store being overtaken by a later load. The promise has to cover both ends of that pair, in both threads.",
         },
-        explanation: "Release/acquire never stop a **store from being overtaken by a later load**. That needs a full barrier: a fence between the two operations, or `seq_cst` (on x86 a seq_cst store is compiled with an `xchg` or an `mfence`, which drains the store buffer). This is why the default `memory_order_seq_cst` exists: it is the one that matches intuition.",
+        explanation: "Release/acquire never stop a **store from being overtaken by a later load**. That needs a full barrier: a fence between the two operations in each thread, or `seq_cst` on all four. In C++ **both the store and the load must be seq_cst**: a seq_cst store followed by a relaxed load still allows r1 = r2 = 0, because the compiler may move the relaxed load up past the store. On x86 the compiler puts the `mfence` (or an `xchg`) on the seq_cst store, which drains the store buffer. This is why the default `memory_order_seq_cst` exists: it is the one that matches intuition.",
       },
       {
         kind: "explain",
         title: "Data races, and why locks work",
         body: P(
           "A **data race** is two threads touching the same variable, at least one writing, with nothing ordering them. In C and C++ that is **undefined behaviour**: the compiler is allowed to assume it never happens. Even `counter++` on a plain `int` is three steps (load, add, store), and threads can interleave in the middle.",
-          "Run the two threads below. You choose whose next step runs. Find an unlucky order, then try the other modes.",
+          "Run the two threads below. You choose whose next step runs. It starts with the lock on; then try the other modes and look for an unlucky order.",
           "A **mutex** fixes this twice over. It gives **mutual exclusion** (only one thread inside at a time). And it gives **ordering**: `unlock` is a *release* and `lock` is an *acquire*, so everything the previous holder did is visible to the next. An **atomic** add does the read-add-write as one indivisible step.",
         ),
-        widget: { type: "memsys-race", props: { mode: "plain" } },
+        widget: { type: "memsys-race", props: { mode: "lock" } },
       },
       {
         kind: "question",
@@ -483,9 +483,9 @@ use(data);                                        // guaranteed to see 42
         body: P(
           "A program can be limited by two things: how fast the processor can do arithmetic, or how fast memory can feed it numbers. Which one depends on how much work you do on each byte you fetch. That ratio is the **arithmetic intensity**: operations per byte moved (FLOPs per byte, when the operations are floating-point maths).",
           "The **roofline** picture shows it. The sloped part of the line is the memory limit (bandwidth × intensity); the flat part is the compute limit. The corner is the **ridge**. A kernel to the left of the ridge is **memory-bound** (faster arithmetic won't help); to the right it is **compute-bound** (faster memory won't help).",
-          "The machine below is a toy desktop: about 1 TFLOP/s single-precision peak and 50 GB/s of memory bandwidth, so the ridge sits at 20 operations per byte. Try the kernels. The *Your own* slider lets you choose any intensity. (GPUs have far more peak maths per byte of bandwidth, so their ridge sits much further right: the GPU module's *GPUs for AI* lesson draws it.)",
+          "The machine below is a toy desktop: about 1 TFLOP/s single-precision peak and 50 GB/s of memory bandwidth, so the ridge sits at 20 operations per byte. Try the kernels (the question below adds one more). The *Your own* slider lets you choose any intensity. (GPUs have far more peak maths per byte of bandwidth, so their ridge sits much further right: the GPU module's *GPUs for AI* lesson draws it.)",
         ),
-        widget: { type: "memsys-roofline", props: { peak: 1000, bw: 50, kernel: "add", free: true } },
+        widget: { type: "memsys-roofline", props: { peak: 1000, bw: 50, kernel: "add", kernels: ["add", "saxpy", "dot", "mm16"], free: true } },
       },
       {
         kind: "question",
@@ -498,7 +498,7 @@ use(data);                                        // guaranteed to see 42
           prompt: "Select a kernel whose point sits on the flat part of the roofline.",
           hint: "Which kernel does the most operations for every byte it moves?",
         },
-        explanation: "Only **tiled matrix multiply** has enough reuse: each byte loaded into a tile is used many times, so the intensity (32 operations per byte for 128 × 128 tiles) is past the ridge at 20. Vector add, SAXPY and the dot product do one or two operations per few bytes, so they wait on memory no matter how fast the arithmetic is.",
+        explanation: "Only the **128 × 128-tile matrix multiply** is past the ridge: each byte loaded into a tile is used many times, giving 32 operations per byte against a ridge at 20. With 16 × 16 tiles (4 per byte) even matmul is still memory-bound: bigger tiles mean more reuse. Vector add, SAXPY and the dot product do one or two operations per few bytes, so they wait on memory no matter how fast the arithmetic is.",
       },
       {
         kind: "question",
@@ -513,7 +513,7 @@ use(data);                                        // guaranteed to see 42
         body: P(
           "Bandwidth is only half the story; latency matters when the CPU cannot see the next address early. A hardware prefetcher (you met it with the cache-line lesson) streams memory in when your accesses are **regular**, so arrays run at nearly full bandwidth.",
           "A **linked list** or a tree is the opposite. To find the address of the next node, the CPU must first *finish loading the current node*. Every step depends on the previous one (**pointer chasing**), so loads cannot overlap and the prefetcher has nothing to predict. If the nodes are scattered, each step is a full RAM latency of about 80 to 100 ns.",
-          "Summing ten million numbers might take a few milliseconds from an array, and the better part of a second from a randomly scattered linked list: roughly 100 times slower for the same work. Rules that follow: prefer **contiguous arrays**, keep related data together, use indexes into an array instead of pointers when you can, and give the CPU independent work to overlap.",
+          "Summing ten million numbers might take a few milliseconds from an array, and the better part of a second from a randomly scattered linked list: hundreds of times slower for the same work. Rules that follow: prefer **contiguous arrays**, keep related data together, use indexes into an array instead of pointers when you can, and give the CPU independent work to overlap.",
         ),
       },
       {
@@ -556,7 +556,7 @@ use(data);                                        // guaranteed to see 42
           "The heap below is 24 cells. It starts with six blocks and six one-cell holes: 6 cells free, but the biggest hole is 1. Tap *alloc 2* and watch it fail. Then tap blocks to free them and try again.",
           "Real allocators (glibc's ptmalloc, jemalloc, tcmalloc and mimalloc are examples) fight fragmentation with size classes, per-thread caches and arenas. Languages with a moving garbage collector can **compact** the heap by sliding live objects together; C and C++ cannot move a block, because pointers to it exist.",
         ),
-        widget: { type: "memsys-frag", props: { blocks: [[0, 3], [4, 3], [8, 3], [12, 3], [16, 3], [20, 3]], sizes: [1, 2, 3, 4, 6, 8] } },
+        widget: { type: "memsys-frag", props: { blocks: [[1, 3], [5, 3], [9, 3], [13, 3], [17, 3], [21, 3]], sizes: [1, 2, 3, 4, 6, 8] } },
       },
       {
         kind: "question",
@@ -569,7 +569,7 @@ use(data);                                        // guaranteed to see 42
           prompt: "Tap blocks to free them until the Largest hole readout reaches 8.",
           hint: "Holes only join when the blocks between them are free. Free neighbours.",
         },
-        explanation: "Freeing two **neighbouring** blocks merges their space with the holes next to them into one run of 7 or 8 cells. Scattered frees leave scattered holes. That is why allocators prefer to hand out memory from the same region, why **arena** or **pool** allocation (free a whole group together) is so effective, and why long-running servers keep an eye on memory growth that is really fragmentation.",
+        explanation: "Freeing two **neighbouring** blocks merges their space with the holes next to them into one run of 8 or 9 cells. Scattered frees leave scattered holes. That is why allocators prefer to hand out memory from the same region, why **arena** or **pool** allocation (free a whole group together) is so effective, and why long-running servers keep an eye on memory growth that is really fragmentation.",
       },
       {
         kind: "question",

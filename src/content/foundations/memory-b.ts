@@ -48,7 +48,7 @@ export const memoryLessonsB: ConceptLesson[] = [
         kind: "question",
         title: "Which set?",
         body: "In the cache below (64-byte lines, 64 sets), which **set number** does address `0x1234` map to?",
-        widget: { type: "memsys-addr", props: { lineBytes: 64, setBits: 6, ways: 8, addr: 0x1234, lockShape: true } },
+        widget: { type: "memsys-addr", props: { lineBytes: 64, setBits: 6, ways: 8, addr: 0x1234, lockShape: true }, after: true },
         question: { type: "number", answer: 8, tolerance: 0, unit: "set", hint: "Drop the lowest 6 bits (the offset), then keep the next 6 bits." },
         explanation: "0x1234 is `0001 0010 0011 0100` in binary. The low 6 bits (`110100`, = 52) are the offset. The next 6 bits (`001000`) are the index: **set 8**. What is left (`0001`) is the tag.",
       },
@@ -58,7 +58,7 @@ export const memoryLessonsB: ConceptLesson[] = [
         body: P(
           "How many slots does a set have? That is the **associativity**, and it is a trade-off.",
           "- **Direct-mapped** (1 way): each line has exactly one possible slot. Simple and fast to check, but two lines that map to the same set keep kicking each other out.\n- **N-way set-associative**: each set has N slots, and a line may sit in any of them. Hardware checks all N tags at once. Real L1 caches are often 8-way or 12-way; L2 and L3 use more.\n- **Fully associative**: one set holds everything; any line can go anywhere. Flexible, but checking every tag is costly, so it is used only for small things.",
-          "The cache below holds 8 lines of 16 bytes. Lines **A** and **B** live at addresses that map to the same set in the direct-mapped layout. Tap A, then B, then A again. Then change *Ways per set* to 2 and try again.",
+          "The cache below holds 8 lines of 16 bytes. Lines **A** and **B** live at addresses that map to the same set in the direct-mapped layout. Tap A, then B, then A again. Then try the other *Ways per set* settings and watch what changes.",
         ),
         widget: {
           type: "memsys-cache",
@@ -126,7 +126,7 @@ export const memoryLessonsB: ConceptLesson[] = [
       {
         kind: "code",
         title: "Split an address",
-        body: "Write `split_address(addr, offset_bits, index_bits)` that returns the tuple `(tag, index, offset)`.\n\nShifts and masks do it: `addr & ((1 << n) - 1)` keeps the low `n` bits, and `addr >> n` drops them.",
+        body: "Write `split_address(addr, offset_bits, index_bits)` that returns the tuple `(tag, index, offset)`.\n\nShifts and masks do it: shifting right by `n` drops the low `n` bits, and AND-ing with a mask of `n` one-bits keeps only them.",
         language: "python",
         starter: `def split_address(addr, offset_bits, index_bits):
     # return (tag, index, offset)
@@ -174,9 +174,9 @@ export const memoryLessonsB: ConceptLesson[] = [
           "A miss is a miss to the CPU, but to the engineer there are three causes, and each has a different cure.",
           "- **Compulsory** (or *cold*): the **first time** a line is ever touched. It cannot be in the cache yet. No cache can avoid these.\n- **Capacity**: the cache is simply **too small** for what the program keeps using. Lines are thrown out and then needed again.\n- **Conflict**: the cache has room, but **too many lines want the same set**, so they push each other out.",
           "A handy way to remember: *first time*, *too much*, *too crowded*.",
-          "Below is a cache of 8 lines (16 bytes each) and ten named lines A to J. Tap lines and watch the counters. In the **direct-mapped** setting, A and I map to the same set (so do B and J); try A, I, A, I.",
+          "Below is a cache of 8 lines (16 bytes each) and ten named lines A to J. It starts **2-way** (4 sets of 2 slots). Each chip shows the set its line maps to. Tap lines and watch the three counters, then try 1 way and 8 ways.",
         ),
-        widget: { type: "memsys-cache", props: { lines: 8, lineBytes: 16, ways: 1, chooseWays: true, showKinds: true, palette: LETTERS } },
+        widget: { type: "memsys-cache", props: { lines: 8, lineBytes: 16, ways: 2, chooseWays: true, showKinds: true, palette: LETTERS } },
       },
       {
         kind: "question",
@@ -267,7 +267,7 @@ export const memoryLessonsB: ConceptLesson[] = [
             3: "Only a few KiB are touched, far less than 32 KiB. The cache is mostly empty, which is the clue.",
           },
         },
-        explanation: "The index uses address bits 6 to 11, and adding 4096 changes only bits 12 and up. So **every access lands in the same set**, which holds just 8 lines: conflict misses with 7/8 of the cache idle. The fix is to pad (use a stride like 4096 + 64) or restructure the loop.",
+        explanation: "The index uses address bits 6 to 11, and adding 4096 changes only bits 12 and up. So **every access lands in the same set**, which holds just 8 lines: conflict misses while the other 63 of the 64 sets (over 98% of the cache) sit empty. The fix is to pad (use a stride like 4096 + 64) or restructure the loop.",
       },
       {
         kind: "recap",
@@ -296,15 +296,15 @@ export const memoryLessonsB: ConceptLesson[] = [
         body: P(
           "Memory hardware likes data to sit at addresses that are a **multiple of its size**: a 4-byte int at 0, 4, 8, 12…; an 8-byte double at 0, 8, 16…. That is **alignment**. A misaligned int could straddle two words, or even two cache lines, so it takes two fetches instead of one. On some CPUs that is slower; on others it is an error.",
           "So the compiler places each field of a struct at an address that is a multiple of its own size, and fills the gaps with unused **padding** bytes. The whole struct is also rounded up so that in an array every element starts aligned.",
-          "Below is a C struct with four fields: `char a; double b; char c; int d;`. Each coloured box is a field; dashed red boxes are padding. Look at where each field starts.",
+          "Below is a small C struct with three fields: `char a; int b; char c;`. Each coloured box is a field; dashed red boxes are padding. Look at where each field starts, and why the whole thing is 12 bytes for 6 bytes of data. You can add and remove fields to experiment.",
         ),
-        widget: { type: "memsys-struct", props: { fields: ["char", "double", "char", "int"] } },
+        widget: { type: "memsys-struct", props: { fields: ["char", "int", "char"] } },
       },
       {
         kind: "question",
         title: "How big is it?",
-        body: "What is `sizeof` for the struct `{ char a; double b; char c; int d; }` on a typical 64-bit machine? Use the widget to check yourself.",
-        widget: { type: "memsys-struct", props: { fields: ["char", "double", "char", "int"], fixed: true } },
+        body: "What is `sizeof` for the struct `{ char a; double b; char c; int d; }` on a typical 64-bit machine? (The widget appears once you answer, so you can check.)",
+        widget: { type: "memsys-struct", props: { fields: ["char", "double", "char", "int"], fixed: true }, after: true },
         question: { type: "number", answer: 24, tolerance: 0, unit: "bytes", hint: "Add the sizes, but put each field at a multiple of its own size, and round the total up to a multiple of 8." },
         explanation: "`a` sits at 0, then 7 bytes of padding so `b` starts at 8; `b` fills 8 to 15; `c` is at 16; 3 bytes of padding put `d` at 20; `d` ends at 24. The fields add up to only 14 bytes, but the struct is **24**: 10 bytes (more than 40%) are padding.",
       },
@@ -344,7 +344,7 @@ static_assert(sizeof(Tight) == 16, "layout changed");
         starter: `SIZES = {"char": 1, "short": 2, "int": 4, "double": 8, "ptr": 8}
 
 def struct_size(types):
-    # place each field at a multiple of its size, then round the total up
+    # your code here
     return sum(SIZES[t] for t in types)
 `,
         solution: `SIZES = {"char": 1, "short": 2, "int": 4, "double": 8, "ptr": 8}
@@ -374,9 +374,9 @@ def struct_size(types):
         body: P(
           "Layout is also about *which values sit next to each other*. Say you have 16 particles, each with eight 4-byte fields: `x y z vx vy vz mass id`.",
           "- **Array of structs (AoS)**: particle 0's eight fields, then particle 1's eight fields, and so on. Natural to write.\n- **Struct of arrays (SoA)**: all 16 `x` values, then all 16 `y` values, and so on. Each field has its own array.",
-          "Now a loop that only reads `x` (say, to find the leftmost particle). Tap the fields your loop reads and switch the layout. Each row below is one 64-byte cache line, and outlined rows are lines the loop has to fetch.",
+          "Say your loop reads only some of the fields. The widget starts with a loop that reads `x` and `vx`. Tap the fields your loop reads and switch the layout. Each row below is one 64-byte cache line, and outlined rows are lines the loop has to fetch.",
         ),
-        widget: { type: "memsys-layout", props: { layout: "aos", fields: ["x"] } },
+        widget: { type: "memsys-layout", props: { layout: "aos", fields: ["x", "vx"] } },
       },
       {
         kind: "question",
@@ -442,7 +442,7 @@ def struct_size(types):
           "Memory is divided into fixed-size blocks. A block of virtual addresses is a **page** (4 KiB is the usual size). A block of RAM of the same size is a **frame**. Each process has a **page table** saying which frame (if any) holds each of its pages.",
           "In the toy below, addresses are 16 bits: the top 4 are the **page number**, the low 12 are the **offset** inside the page. Switch between processes A and B with the same address and see where each one lands.",
         ),
-        widget: { type: "memsys-pagetable", props: { proc: "A", addr: 0x1abc } },
+        widget: { type: "memsys-pagetable", props: { proc: "A", addr: 0x3abc } },
       },
       {
         kind: "question",
@@ -527,7 +527,7 @@ physical address =  [ frame number | offset ]
       {
         kind: "code",
         title: "A translator",
-        body: "Write `translate(page_table, vaddr, page_size=4096)`. `page_table` is a dict from page number to frame number. Return the **physical address**, or `None` if the page is not in the table (a page fault).\n\nPage number = `vaddr // page_size`; offset = `vaddr % page_size`; physical = `frame * page_size + offset`.",
+        body: "Write `translate(page_table, vaddr, page_size=4096)`. `page_table` is a dict from page number to frame number. Return the **physical address**, or `None` if the page is not in the table (a page fault).\n\nSplit the address into a page number and an offset, swap the page number for its frame, and keep the offset as it is.",
         language: "python",
         starter: `def translate(page_table, vaddr, page_size=4096):
     # return the physical address, or None on a page fault
@@ -546,7 +546,7 @@ physical address =  [ frame number | offset ]
           { id: "fault", description: "Page 5 is not mapped: None", assertionCode: `assert translate({0: 4, 1: 9}, 0x5000) is None, "an unmapped page must return None"` },
           { id: "frame0", description: "Frame 0 is a real frame, not a missing page", assertionCode: `assert translate({3: 0}, 0x3123) == 0x123, f"got {translate({3: 0}, 0x3123)}; frame 0 is valid"` },
         ],
-        hints: ["Use `in` to test whether the page is mapped; do not test the frame for truthiness, because frame 0 is a valid frame.", "Keep the offset and add it to frame * page_size."],
+        hints: ["Page number = `vaddr // page_size`; offset = `vaddr % page_size`.", "Use `in` to test whether the page is mapped; do not test the frame for truthiness, because frame 0 is a valid frame.", "Keep the offset and add it to frame * page_size."],
       },
       {
         kind: "question",
