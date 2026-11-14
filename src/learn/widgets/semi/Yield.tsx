@@ -151,8 +151,8 @@ export function Yield({ props, onChange }: WidgetProps<YieldProps>) {
         <Readout label="Whole dies on the wafer" value={whole(r.dpw)} />
         <Readout label="Formula estimate" value={whole(r.dpwFormula)} />
         <Readout label="Defects on this wafer" value={r.defs.length} />
-        <Readout label="Good dies here" value={`${whole(r.goodHere)} (${(r.observed * 100).toFixed(0)} %)`} />
-        <Readout label="Poisson yield e^(−A·D0)" value={`${(r.y * 100).toFixed(1)} %`} accent />
+        <Readout label="Good dies here" value={`${whole(r.goodHere)} (${(r.observed * 100).toFixed(0)}%)`} />
+        <Readout label="Poisson yield e^(−A·D0)" value={`${(r.y * 100).toFixed(1)}%`} accent />
         {props.cost && <Readout label="Cost per good die" value={usd(r.cost)} accent />}
       </div>
       <div className="mt-3 flex justify-center">
@@ -167,7 +167,7 @@ export function Yield({ props, onChange }: WidgetProps<YieldProps>) {
       </div>
       <div className="mt-3">
         <Note tone="accent">
-          {`A ${side * side} mm² die is ${(side * side) / 100} cm², so it collects on average ${((side * side) / 100 * d0).toFixed(2)} defects. The chance it gets none is e^(−${((side * side) / 100 * d0).toFixed(2)}) = ${(r.y * 100).toFixed(1)} %. `}
+          {`A ${side * side} mm² die is ${(side * side) / 100} cm², so it collects on average ${((side * side) / 100 * d0).toFixed(2)} defects. The chance it gets none is e^(−${((side * side) / 100 * d0).toFixed(2)}) = ${(r.y * 100).toFixed(1)}%. `}
           {r.y < 0.6 ? "Big dies lose out twice: fewer fit on the wafer, and each is more likely to catch a defect." : "Small dies dodge most defects: a defect only kills the one die it lands on."}
         </Note>
       </div>
@@ -256,15 +256,15 @@ export function Chiplet({ props, onChange }: WidgetProps<ChipletProps>) {
       <div className="mt-3 flex flex-wrap justify-center gap-2">
         <Readout label={n === 1 ? "Die area" : "Each chiplet"} value={`${Math.round(c.each)} mm²`} />
         <Readout label="Per wafer" value={whole(c.dpw)} />
-        <Readout label="Yield" value={`${(c.y * 100).toFixed(1)} %`} accent={n > 1} />
+        <Readout label="Yield" value={`${(c.y * 100).toFixed(1)}%`} accent={n > 1} />
         <Readout label="Cost per good die" value={usd(c.perDie)} />
         <Readout label="Silicon per product" value={usd(c.perProduct)} accent />
       </div>
       <div className="mt-3">
         <Note tone={n > 1 ? "accent" : "plain"}>
           {n === 1
-            ? `One ${area} mm² die: only ${(one.y * 100).toFixed(0)} % come out working, so each good one costs ${usd(one.perProduct)} of silicon.`
-            : `${n} chiplets of ${Math.round(c.each)} mm² each: a defect now ruins one small chiplet instead of the whole design. Silicon per product drops from ${usd(one.perProduct)} to ${usd(c.perProduct)} (${Math.round((1 - c.perProduct / one.perProduct) * 100)} % less), before paying for the more complex package.`}
+            ? `One ${area} mm² die: only ${(one.y * 100).toFixed(0)}% come out working, so each good one costs ${usd(one.perProduct)} of silicon.`
+            : `${n} chiplets of ${Math.round(c.each)} mm² each: a defect now ruins one small chiplet instead of the whole design. Silicon per product drops from ${usd(one.perProduct)} to ${usd(c.perProduct)} (${Math.round((1 - c.perProduct / one.perProduct) * 100)}% less), before paying for the more complex package.`}
         </Note>
       </div>
       <Toy>
