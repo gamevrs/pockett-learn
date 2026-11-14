@@ -364,7 +364,7 @@ export function Scope({ props, onChange }: WidgetProps<ScopeProps>) {
 
       <ToyNote>
         A toy scope: a 3.3 V, 1 MHz square wave with 3 ns edges, a 100 MHz scope, and typical probe and lead values (about 150 nH for a long clip lead, 12 nH for a spring ground, 12 pF at the
-        probe tip; a 1x probe is limited to about 6 MHz). Real ones differ.
+        probe tip, 40 Ω in the loop; a 1x probe is limited to about 6 MHz). The ring is worked out from L, C and R; the 100 MHz scope and 3 ns edges then shrink what you see. Real ones differ.
       </ToyNote>
     </div>
   );

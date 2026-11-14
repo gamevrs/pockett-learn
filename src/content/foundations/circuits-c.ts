@@ -3,16 +3,16 @@ import type { ConceptLesson } from "../../learn/types.ts";
 /** Paragraphs joined with blank lines. */
 const P = (...paras: string[]) => paras.join("\n\n");
 
-/** Lesson 9 of "Electronics from zero: circuits": the bench skills. Breadboards, soldering, and the oscilloscope. */
+/** Lessons 9 and 10 of "Electronics from zero: circuits": the bench skills. Breadboards and soldering, then the oscilloscope. */
 export const circuitsLessonsC: ConceptLesson[] = [
   // ─────────────────────────────── 9. On the bench ───────────────────────────────
   {
     id: "fnd-circ-9-on-the-bench",
     title: "On the bench",
-    summary: "The tools that turn a schematic into a working circuit: how a breadboard is wired inside, how to solder (and stay safe), and how to read an oscilloscope, its trigger, its probe and its ground lead.",
+    summary: "The tools that turn a schematic into a working circuit: how a breadboard is wired inside, how to find a fault on one, and how to solder well and safely.",
     level: "Intermediate",
-    minutes: 12,
-    xp: 65,
+    minutes: 9,
+    xp: 50,
     steps: [
       {
         kind: "explain",
@@ -42,6 +42,23 @@ export const circuitsLessonsC: ConceptLesson[] = [
         explanation: "Holes 12a to 12e are one strip, so the LED's legs are joined by a wire and the current goes round the LED instead of through it. Move one leg to another column (say 13) and put the resistor between the two columns, so the current has to go through the LED.",
       },
       {
+        kind: "question",
+        title: "Half the board is dead",
+        body: "You wire the **+ rail** to the battery at the left end of a large breadboard. LEDs near the left light up, but every LED placed on the right half stays dark, with all their wiring correct. What is the most likely cause?",
+        question: {
+          type: "choice",
+          options: ["The rail is split in the middle on this board", "The battery is too weak for more than a few LEDs", "Breadboard rails only reach about ten holes", "The right half needs its own ground symbol"],
+          answer: 0,
+          hint: "A strip is just a wire. Does the long rail necessarily run the whole length of this board?",
+          feedback: {
+            1: "A weak battery would dim every LED, not switch off a whole half of the board.",
+            2: "Rails run the length of the board, or half of it. They are not limited to ten holes.",
+            3: "Ground symbols exist on schematics only. On the board, ground is a wire you must connect.",
+          },
+        },
+        explanation: "Many large breadboards have rails that are **split in the middle**. Connect a jumper wire between the two halves of the rail, or feed each half separately. A meter across a rail tells you in seconds whether it is live.",
+      },
+      {
         kind: "explain",
         title: "Soldering: heat the joint, not the solder",
         body: P(
@@ -68,6 +85,62 @@ export const circuitsLessonsC: ConceptLesson[] = [
         },
         explanation: "Heating the pad and the leg together makes the solder flow into the joint. Feeding the solder to the joint (not the iron) puts the flux where it is needed. Moving the part while it sets gives a dull, cracked cold joint, which is why you keep still until it is solid.",
       },
+      {
+        kind: "question",
+        title: "Spot the bad joint",
+        body: "You inspect four soldered legs. Which one should you **rework**?",
+        question: {
+          type: "choice",
+          options: ["Shiny and smooth, shaped like a small cone round the leg", "A dull, grainy blob that sits on the pad and does not touch the leg", "A small shiny joint with the leg trimmed just above it", "A joint that wicks evenly onto both the pad and the leg"],
+          answer: 1,
+          hint: "A good joint is shiny, concave and wets both the pad and the leg. Look for the one that does not.",
+          feedback: {
+            0: "That is the textbook good joint: shiny, concave and wetted onto the leg.",
+            2: "A trimmed, shiny joint is fine. Trimming the leg after it cools is normal.",
+            3: "Solder wetting both the pad and the leg evenly is exactly what you want.",
+          },
+        },
+        explanation: "A dull, grainy blob that has not wetted the leg is a **cold joint**: the metal never got hot enough, or moved while it set. It may conduct today and fail later. Add a little flux, reheat the pad and the leg together, and let the solder flow properly.",
+      },
+      {
+        kind: "question",
+        title: "Before you walk away",
+        body: "You are called away for ten minutes mid-job. The iron is hot and a small part is half soldered. What is the safest move?",
+        question: {
+          type: "choice",
+          options: ["Lay the iron on the bench with its tip pointing away", "Rest it in the stand and leave it on so it stays ready", "Put it in its stand and switch it off, then come back to it", "Wedge it against the board so the part cannot move"],
+          answer: 2,
+          hint: "A hot tip stays hot for minutes and a bench is not a safe place for it.",
+          feedback: {
+            0: "A hot tip lying on the bench can burn the surface or roll onto a cable. Use the stand.",
+            1: "The stand is right, but a hot iron left unattended is a fire risk. Switch it off if you will be away.",
+            3: "Never rest a hot iron on the work. It can melt the board and the part.",
+          },
+        },
+        explanation: "The stand holds the tip safely, and switching off removes the fire risk while you are away. The same habits apply to the rest of the bench: ventilate or use a fume extractor, wear safety glasses, wash your hands after lead solder, and never solder onto a lithium cell or a powered circuit.",
+      },
+      {
+        kind: "recap",
+        points: [
+          "A **breadboard** joins holes in groups of five (a to e, f to j) and along the long rails. Two legs of one part in the same strip are shorted out.",
+          "A good **solder joint** is shiny and concave: heat the pad and the leg together, feed solder to the joint, remove the solder and then the iron, and keep still. A dull blob is a cold joint: rework it.",
+          "Rework means flux, heat and braid, without overheating the pad.",
+          "Soldering safety: iron in its stand (and off when you leave), ventilation or a fume extractor, safety glasses, wash hands after lead solder, never solder a powered circuit or a lithium cell.",
+          "Next, *Using an oscilloscope* shows you what the circuit is doing.",
+        ],
+      },
+    ],
+  },
+
+  // ─────────────────────────────── 10. Using an oscilloscope ───────────────────────────────
+  {
+    id: "fnd-circ-10-oscilloscope",
+    title: "Using an oscilloscope",
+    summary: "Read voltage against time on a toy scope: V/div and time/div, the trigger, the 10x probe and its setting, and why a long ground lead makes a signal ring.",
+    level: "Intermediate",
+    minutes: 10,
+    xp: 60,
+    steps: [
       {
         kind: "explain",
         title: "The oscilloscope: voltage against time",
@@ -132,8 +205,8 @@ export const circuitsLessonsC: ConceptLesson[] = [
         kind: "explain",
         title: "The ground lead: a loop that rings",
         body: P(
-          "A probe measures the voltage between its **tip** and its **ground lead**, so the ground lead is part of the measurement. Any wire has a little **inductance** (a typical figure is about 10 nH per centimetre), and a 15 cm clip lead has around 150 nH. Together with the probe tip's capacitance (typically around 12 pF) it forms a small resonant circuit. Every fast edge kicks it and it **rings**, at tens of megahertz, for a few cycles.",
-          "On the screen it looks like overshoot and wobble on every corner, and it makes the voltage read **too high**. Some ringing can be real (the circuit itself may do it), but a long ground lead adds its own. The test is to shorten the lead: if the ringing shrinks, the lead was making it. A short **spring ground** (a bare spring touching a ground point right beside the test point) has far less inductance, so it rings far above what the scope can show.",
+          "A probe measures the voltage between its **tip** and its **ground lead**, so the ground lead is part of the measurement. Any wire has a little **inductance** (a typical figure is about 10 nH per centimetre), and a 15 cm clip lead has around 150 nH. Together with the probe tip's capacitance (typically around 12 pF) and a few tens of ohms of resistance in the loop (40 Ω here) it forms a small resonant circuit. Every fast edge kicks it and it **rings** for a few cycles. For 150 nH and 12 pF the ring is at about 120 MHz, and an ideal scope would show an overshoot of about 56%.",
+          "A 100 MHz scope cannot follow a 120 MHz ring fully, and real edges are not perfectly sharp, so this toy scope shows about +25% (peaks near 4.1 V on the 3.3 V signal, and a peak-to-peak reading near 5 V once the dip after the falling edge counts): the lead is worse than the picture admits. On the screen it looks like overshoot and wobble on every corner, and it makes the voltage read **too high**. Some ringing can be real (the circuit itself may do it), but a long ground lead adds its own. The test is to shorten the lead: if the ringing shrinks, the lead was making it. A short **spring ground** (a bare spring touching a ground point right beside the test point) has far less inductance. Its ring is at about 420 MHz and is well damped (about 8% on paper), which a 100 MHz scope almost completely hides.",
           "A big ground loop also picks up magnetic noise from nearby circuits. Short and close is better for both.",
           "This is the same lead on the same signal: swap between the long clip and the short spring.",
         ),
@@ -154,13 +227,10 @@ export const circuitsLessonsC: ConceptLesson[] = [
       {
         kind: "recap",
         points: [
-          "A **breadboard** joins holes in groups of five (a to e, f to j) and along the long rails. Two legs of one part in the same strip are shorted out.",
-          "A good **solder joint** is shiny and concave: heat the pad and the leg together, feed solder to the joint, remove the solder and then the iron, and keep still. A dull blob is a cold joint.",
-          "Soldering safety: iron in its stand, ventilation or a fume extractor, safety glasses, wash hands after lead solder, never solder a powered circuit or a lithium cell.",
           "A **scope** plots voltage against time. Read volts as squares × V/div, time as squares × time/div, and frequency as 1 ÷ period.",
           "The **trigger** starts each sweep at the same point (a level and an edge), so the picture holds still.",
           "Tell the scope what the **probe** is: a 10x probe on a channel set to 1x reads ten times too small.",
-          "Use the **shortest ground lead** you can. A long clip lead rings on fast edges and makes the reading too high. For more tools and cases, see *Debugging hardware*.",
+          "Use the **shortest ground lead** you can. A long clip lead rings on fast edges (here about 120 MHz, +25% on this scope) and makes the reading too high. For more tools and cases, see *Debugging hardware*.",
         ],
       },
     ],

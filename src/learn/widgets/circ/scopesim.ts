@@ -213,7 +213,20 @@ export function measure(cols: Column[], vdiv: number): Measurement {
   return { vpp, clipped, heightDiv: vpp / vdiv };
 }
 
-/** Overshoot above the settled high level as a percentage; ignores anything under 2%. */
+/**
+ * The ground loop on paper: a series RLC (lead inductance, tip capacitance, loop resistance) driven by a perfect step.
+ * f0 = 1 / (2 pi sqrt(LC)), zeta = (R / 2) sqrt(C / L), overshoot = exp(-pi zeta / sqrt(1 - zeta^2)).
+ * This is what an ideal scope would show; the toy scope's 100 MHz bandwidth and 3 ns edges shrink it (see scopeSim).
+ */
+export function ringTheory(ground: Ground) {
+  const L = ground === "clip" ? SCOPE.lLong : SCOPE.lShort;
+  const f0 = 1 / (2 * Math.PI * Math.sqrt(L * SCOPE.cTip));
+  const zeta = (SCOPE.rLoop / 2) * Math.sqrt(SCOPE.cTip / L);
+  const overshoot = zeta < 1 ? Math.exp((-Math.PI * zeta) / Math.sqrt(1 - zeta * zeta)) * 100 : 0;
+  return { f0, zeta, overshoot };
+}
+
+/** Overshoot above the settled high level as the scope shows it (after its bandwidth), in percent; ignores anything under 2%. */
 export function overshootPct(sim: ScopeSim): number {
   const o = (sim.peak - 1) * 100;
   return o < 2 ? 0 : o;
