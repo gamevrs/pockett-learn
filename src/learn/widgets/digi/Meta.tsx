@@ -33,7 +33,7 @@ interface Sample {
 }
 
 const W = 360;
-const H = 150;
+const H = 128;
 const PL = 8;
 const PR = 8;
 const T0 = -0.5; // ns shown to the left of the clock edge
@@ -128,13 +128,12 @@ export function Meta({ onChange }: WidgetProps<Record<string, never>>) {
           ) : (
             <path d={`M${px(0)} ${qy(0)} L${px(T1)} ${qy(0)}`} stroke="var(--line-strong)" strokeWidth={1.6} fill="none" strokeDasharray="3 3" />
           )}
-          <text x={px(0) + 4} y={144} fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-mono, monospace)">clock edge</text>
-          <text x={px(T_NEXT) + 4} y={144} fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-mono, monospace)">next edge</text>
         </svg>
         <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-ink-2">
           <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" style={{ background: BLUE }} />data input (top)</span>
           <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[var(--brand)] align-middle" />flip-flop output (bottom)</span>
           <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" style={{ background: ORANGE }} />setup + hold window</span>
+          <span>solid line: clock edge · dashed line: next clock edge</span>
         </div>
       </div>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-2">

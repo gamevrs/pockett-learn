@@ -147,9 +147,9 @@ export function CmosGate({ props, onChange }: WidgetProps<CmosGateProps>) {
       <div className="mx-auto max-w-[26rem] rounded-xl border border-line bg-surface p-1.5">
         <svg viewBox="0 0 360 292" role="img" aria-label={`Pull-up network of two PMOS ${pu === "series" ? "in series" : "in parallel"} above the output, pull-down network of two NMOS ${pd === "series" ? "in series" : "in parallel"} below it. With A = ${a} and B = ${b} the pull-up ${cur.pullUp ? "conducts" : "does not conduct"} and the pull-down ${cur.pullDown ? "conducts" : "does not conduct"}.`} className="block w-full">
           <line x1={30} y1={16} x2={330} y2={16} stroke="var(--ink)" strokeWidth={2} />
-          <text x={34} y={12} fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-mono, monospace)">VDD</text>
+          <text x={34} y={34} fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-mono, monospace)">VDD</text>
           <line x1={30} y1={276} x2={330} y2={276} stroke="var(--ink)" strokeWidth={2} />
-          <text x={34} y={290} fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-mono, monospace)">GND</text>
+          <text x={34} y={268} fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-mono, monospace)">GND</text>
           <Net kind={pu} up aOn={cur.pA} bOn={cur.pB} conducts={cur.pullUp} />
           <Net kind={pd} up={false} aOn={cur.nA} bOn={cur.nB} conducts={cur.pullDown} />
           <circle cx={180} cy={146} r={5} fill={outColour} />

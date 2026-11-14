@@ -36,10 +36,7 @@ function snap(p: TimingInput): TimingState {
   return { period: p.period, skew: p.skew, tlogic: r.tlogic, setupSlack: r.setupSlack, holdSlack: r.holdSlack, setupOk: r.setupSlack >= -EPS, holdOk: r.holdSlack >= -EPS, fmaxMhz: r.fmaxMhz, critical: r.critical };
 }
 
-const AX = 8; // axis length in ns
 const X0 = 6;
-const PX = (360 - 2 * X0) / AX;
-const tx = (t: number) => X0 + Math.max(0, Math.min(AX, t)) * PX;
 
 /** Timing analyser: launch flop, gates with delays, capture flop; critical path, setup and hold slack, maximum clock frequency. */
 export function Timing({ props, onChange }: WidgetProps<TimingProps>) {
@@ -59,12 +56,14 @@ export function Timing({ props, onChange }: WidgetProps<TimingProps>) {
   const sw = (hot: boolean) => (hot ? 3 : 1.6);
   const E = p.period + p.skew;
   const tmin = Math.min(r.pathLong, r.pathShort);
+  const AX = Math.max(3, Math.ceil(Math.max(E + 0.2, p.tcq + r.tlogic + 0.3, p.skew + p.thold + 0.3)));
+  const tx = (t: number) => X0 + Math.max(0, Math.min(AX, t)) * ((360 - 2 * X0) / AX);
 
-  const gate = (x: number, y: number, name: string, d: number, hot: boolean) => (
+  const gate = (x: number, y: number, name: string, hot: boolean) => (
     <g key={name}>
-      <rect x={x} y={y} width={62} height={32} rx={8} fill={hot ? "var(--tint)" : "var(--surface-2)"} stroke={col(hot)} strokeWidth={hot ? 2.4 : 1.4} />
-      <text x={x + 31} y={y + 21} textAnchor="middle" fontSize={14} fill="var(--ink)" fontFamily="var(--font-mono, monospace)">
-        {name} {d.toFixed(2)}
+      <rect x={x} y={y} width={40} height={32} rx={8} fill={hot ? "var(--tint)" : "var(--surface-2)"} stroke={col(hot)} strokeWidth={hot ? 2.4 : 1.4} />
+      <text x={x + 20} y={y + 21} textAnchor="middle" fontSize={14} fill="var(--ink)" fontFamily="var(--font-mono, monospace)">
+        {name}
       </text>
     </g>
   );
@@ -72,32 +71,31 @@ export function Timing({ props, onChange }: WidgetProps<TimingProps>) {
   return (
     <div className="w-full" data-widget="digi-timing">
       <div className="mx-auto max-w-[26rem] rounded-xl border border-line bg-surface p-1.5">
-        <svg viewBox="0 0 360 126" role="img" aria-label={`Launch flip-flop, four gates and a capture flip-flop. Critical path is ${longHot ? "G1, G2, G4" : "G3, G4"}, ${r.tlogic.toFixed(2)} nanoseconds.`} className="block w-full">
-          {/* wires */}
-          <path d="M50 62 L64 36" stroke={col(longHot)} strokeWidth={sw(longHot)} fill="none" />
-          <path d="M50 62 L64 100" stroke={col(!longHot)} strokeWidth={sw(!longHot)} fill="none" />
-          <path d="M126 36 L142 36" stroke={col(longHot)} strokeWidth={sw(longHot)} fill="none" />
-          <path d="M204 36 L218 56" stroke={col(longHot)} strokeWidth={sw(longHot)} fill="none" />
-          <path d="M126 100 L218 74" stroke={col(!longHot)} strokeWidth={sw(!longHot)} fill="none" />
-          <path d="M280 65 L306 62" stroke="var(--brand)" strokeWidth={3} fill="none" />
-          {gate(64, 20, "G1", p.g[0], longHot)}
-          {gate(142, 20, "G2", p.g[1], longHot)}
-          {gate(64, 84, "G3", p.g[2], !longHot)}
-          {gate(218, 49, "G4", p.g[3], true)}
+        <svg viewBox="0 0 300 126" role="img" aria-label={`Launch flip-flop, four gates and a capture flip-flop. Critical path is ${longHot ? "G1, G2, G4" : "G3, G4"}, ${r.tlogic.toFixed(2)} nanoseconds.`} className="block w-full">
+          <path d="M40 62 L52 36" stroke={col(longHot)} strokeWidth={sw(longHot)} fill="none" />
+          <path d="M40 62 L52 100" stroke={col(!longHot)} strokeWidth={sw(!longHot)} fill="none" />
+          <path d="M92 36 L106 36" stroke={col(longHot)} strokeWidth={sw(longHot)} fill="none" />
+          <path d="M146 36 L180 56" stroke={col(longHot)} strokeWidth={sw(longHot)} fill="none" />
+          <path d="M92 100 L180 74" stroke={col(!longHot)} strokeWidth={sw(!longHot)} fill="none" />
+          <path d="M220 65 L258 62" stroke="var(--brand)" strokeWidth={3} fill="none" />
+          {gate(52, 20, "G1", longHot)}
+          {gate(106, 20, "G2", longHot)}
+          {gate(52, 84, "G3", !longHot)}
+          {gate(180, 49, "G4", true)}
           {[
-            [4, "FF1"],
-            [306, "FF2"],
+            [2, "FF1"],
+            [258, "FF2"],
           ].map(([x, t]) => (
             <g key={String(t)}>
-              <rect x={x as number} y={40} width={46} height={44} rx={8} fill="var(--surface-2)" stroke="var(--ink)" strokeWidth={1.8} />
-              <text x={(x as number) + 23} y={67} textAnchor="middle" fontSize={14} fill="var(--ink)" fontFamily="var(--font-mono, monospace)">
+              <rect x={x as number} y={40} width={40} height={44} rx={8} fill="var(--surface-2)" stroke="var(--ink)" strokeWidth={1.8} />
+              <text x={(x as number) + 20} y={67} textAnchor="middle" fontSize={14} fill="var(--ink)" fontFamily="var(--font-mono, monospace)">
                 {t}
               </text>
             </g>
           ))}
         </svg>
       </div>
-      <p className="mt-1 text-center text-xs text-ink-3">Gate numbers are delays in ns. The highlighted route is the critical path: the slowest way from FF1 to FF2.</p>
+      <p className="mt-1 text-center text-xs text-ink-3">Gate delays are set below. The highlighted route is the critical path: the slowest way from FF1 to FF2.</p>
 
       <div className="mt-3 rounded-xl border border-line bg-surface p-2">
         <svg viewBox="0 0 360 104" role="img" aria-label={`Timeline of one clock period. Slowest data arrives at ${(p.tcq + r.tlogic).toFixed(2)} ns; the setup window ends at the capture edge at ${E.toFixed(2)} ns. Setup slack ${ns(r.setupSlack)}. Earliest next data arrives at ${(p.tcq + tmin).toFixed(2)} ns; hold window ends at ${(p.skew + p.thold).toFixed(2)} ns. Hold slack ${ns(r.holdSlack)}.`} className="block w-full">
@@ -124,7 +122,7 @@ export function Timing({ props, onChange }: WidgetProps<TimingProps>) {
           <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" style={{ background: BLUE }} />clock to Q</span>
           <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm bg-[var(--brand)] align-middle" />gate delays</span>
           <span><span className="mr-1 inline-block h-2.5 w-2.5 rounded-sm align-middle" style={{ background: ORANGE }} />setup / hold window</span>
-          <span>top bar: slowest data · bottom bar: fastest data · axis in ns</span>
+          <span>top bar: slowest data · bottom bar: fastest data · dashed: FF1 clock edges · black: FF2 clock edges · axis ticks every 1 ns</span>
         </div>
       </div>
 

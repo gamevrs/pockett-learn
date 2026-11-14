@@ -79,19 +79,16 @@ export function Bounce({ onChange }: WidgetProps<Record<string, never>>) {
   return (
     <div className="w-full" data-widget="digi-bounce">
       <div className="rounded-xl border border-line bg-surface p-2">
-        <svg viewBox="0 0 360 150" role="img" aria-label={`A button pressed at ${PRESS_AT_MS} ms and released at ${RELEASE_AT_MS} ms. The raw contact signal bounces: a naive edge counter sees ${rawPresses} presses. After debouncing with ${ms} ms it sees ${presses}.`} className="block w-full">
-          <text x={PL} y={14} fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-mono, monospace)">raw contact</text>
+        <svg viewBox="0 0 360 146" role="img" aria-label={`A button pressed at ${PRESS_AT_MS} ms and released at ${RELEASE_AT_MS} ms. The raw contact signal bounces: a naive edge counter sees ${rawPresses} presses. After debouncing with ${ms} ms it sees ${presses}.`} className="block w-full">
           <path d={stepPath(raw, 20, 56)} fill="none" stroke={BLUE} strokeWidth={1.8} strokeLinejoin="round" />
-          <text x={PL} y={88} fontSize={14} fill="var(--ink-2)" fontFamily="var(--font-mono, monospace)">{ms === 0 ? "no debouncing (same as raw)" : `debounced: stable for ${ms} ms`}</text>
           <path d={stepPath(outSeq, 94, 130)} fill="none" stroke="var(--brand)" strokeWidth={2.4} strokeLinejoin="round" />
           {[0, 10, 20, 30, 40, 50, 60].map((t) => (
             <g key={t}>
               <line x1={x((t / BOUNCE_TOTAL_MS) * (raw.length - 1), raw.length)} x2={x((t / BOUNCE_TOTAL_MS) * (raw.length - 1), raw.length)} y1={136} y2={141} stroke="var(--line-strong)" />
             </g>
           ))}
-          <text x={PL} y={149} fontSize={14} fill="var(--ink-3)" fontFamily="var(--font-mono, monospace)">0 ms</text>
-          <text x={W - PL} y={149} textAnchor="end" fontSize={14} fill="var(--ink-3)" fontFamily="var(--font-mono, monospace)">60 ms</text>
         </svg>
+        <p className="mt-1 text-center text-xs text-ink-3">Top: raw contact. Bottom: {ms === 0 ? "no debouncing (same as raw)" : `debounced (stable for ${ms} ms)`}. Time runs 0 to 60 ms, ticks every 10 ms.</p>
       </div>
       <div className="mt-3">
         <Slider label="Debounce time: the signal must stay the same this long" value={ms} min={0} max={30} step={1} onChange={(v) => set(seed, v)} format={(v) => (v === 0 ? "off" : `${v} ms`)} />

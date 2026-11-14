@@ -418,10 +418,10 @@ export const digitalLessonsB: ConceptLesson[] = [
       {
         kind: "question",
         title: "A century without failure",
-        body: "At the starting setting (1 GHz clock, data changing 100 million times a second) a two-flop synchroniser fails about every day. Choose a setting that gives an MTBF of **at least 100 years**.",
+        body: "At the starting setting (no synchroniser, a 1 GHz receiving clock, data changing 100 million times a second) the circuit fails about every fifth of a second. Choose a setting that gives an MTBF of **at least 100 years**. (Try two flops first and read the result.)",
         widget: { type: "digi-mtbf", props: {} },
         question: { type: "widget", goal: { minYears: 100 }, hint: "Each extra flop adds a whole clock period of settling time, and settling time sits in an exponent. A slower receiving clock also adds time." },
-        explanation: "A third flop (or a slower clock) multiplies the MTBF by a gigantic factor, because the settling time sits **in the exponent**. A real design picks the number of stages from the flip-flop's measured τ and Tw, the clock rate and a safety target (often thousands of years) taking process, voltage and temperature into account. The extra cost is **latency**: each stage delays the signal by one clock.",
+        explanation: "At 1 GHz two flops still fail about every day or two; a third flop (or a slower clock) multiplies the MTBF by a gigantic factor, because the settling time sits **in the exponent**. A real design picks the number of stages from the flip-flop's measured τ and Tw, the clock rate and a safety target (often thousands of years) taking process, voltage and temperature into account. The extra cost is **latency**: each stage delays the signal by one clock.",
       },
       {
         kind: "explain",

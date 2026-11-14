@@ -66,8 +66,8 @@ export function Inverter({ props, onChange }: WidgetProps<InverterProps>) {
           rows={15}
           ariaLabel="CMOS inverter: a PMOS transistor from the supply to the output and an NMOS transistor from the output to ground, both gates tied to the input"
           parts={[
-            { kind: "pmos", id: "P1", at: [6, 5], bubble: true, label: "P", highlight: s.pOn },
-            { kind: "nmos", id: "N1", at: [6, 11], label: "N", highlight: s.nOn },
+            { kind: "pmos", id: "P1", at: [6, 5], bubble: true, label: "PMOS", value: s.pOn ? "ON" : "off", highlight: s.pOn },
+            { kind: "nmos", id: "N1", at: [6, 11], label: "NMOS", value: s.nOn ? "ON" : "off", highlight: s.nOn },
             { kind: "capacitor", id: "CL", at: [14, 8], rot: 90, label: "load" },
             { kind: "ground", id: "G1", at: [8, 13] },
             { kind: "ground", id: "G2", at: [14, 11] },
@@ -87,8 +87,6 @@ export function Inverter({ props, onChange }: WidgetProps<InverterProps>) {
             { at: [10.4, 1.35], text: "VDD", anchor: "start" },
             { at: [0.2, 7.3], text: "IN", anchor: "start" },
             { at: [9.3, 7.55], text: "OUT", anchor: "start", muted: true },
-            { at: [9.3, 5.3], text: s.pOn ? "ON" : "off", anchor: "start" },
-            { at: [9.3, 11.3], text: s.nOn ? "ON" : "off", anchor: "start" },
           ]}
         />
       </div>
