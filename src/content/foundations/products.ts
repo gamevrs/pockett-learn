@@ -6,7 +6,7 @@ import { productsLessonsB } from "./products-b.ts";
  * Module: Building real products. Spec: docs/ELECTRONICS_PATH.md (lesson list, levels, accuracy rules).
  *
  * One running example, "Sprout" (a battery-powered plant monitor), goes from requirements to a hardware revision
- * across nine lessons: products-a.ts holds lessons 1 to 5, products-b.ts lessons 6 to 9.
+ * across ten lessons: products-a.ts holds lessons 1 to 5, products-b.ts lessons 6, 7, 10 (radio and antennas), 8 and 9, in that order.
  * Widgets: src/learn/widgets/prod/index.ts (keys prefixed "prod-"). Shared circuit kit: src/learn/widgets/elec-kit/.
  */
 export const productsModule: Module = {

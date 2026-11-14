@@ -4,7 +4,7 @@ import type { ConceptLesson } from "../../learn/types.ts";
 const P = (...paras: string[]) => paras.join("\n\n");
 
 /**
- * Lessons 6 to 9 of "Building real products": debugging, testing, certification and shipping Sprout.
+ * Lessons 6 to 9 of "Building real products" plus lesson 10 (radio and antennas, placed before certification): debugging, testing, radio, certification and shipping Sprout.
  * Lab values, prices, yields and return counts are made-up round numbers for teaching. Standards and marks are
  * named as examples; nothing here is legal or compliance advice.
  */
@@ -252,6 +252,150 @@ export const productsLessonsB: ConceptLesson[] = [
           "Catch each bug at the **cheapest layer that can show it**: code bugs on the host, chip timing in HIL, weather in chambers, one-off defects on the line.",
           "A **fixture** with pogo pins checks every board in seconds; **first-pass yield** is the product of station pass rates, so many small losses add up.",
           "Design **test points** and fixture contacts into the board from the start.",
+        ],
+      },
+    ],
+  },
+
+  // ─────────────────────────────── 10. Radio and antennas (between testing and certification) ───────────────────────────────
+  {
+    id: "fnd-prod-10-radio",
+    title: "Radio and antennas",
+    summary: "Decibels and dBm, a link budget from transmit power to receiver sensitivity, why the antenna's keep-out matters, and when BLE, Wi-Fi or LoRa fits.",
+    level: "Advanced",
+    minutes: 11,
+    xp: 75,
+    steps: [
+      {
+        kind: "explain",
+        title: "Decibels and dBm",
+        body: P(
+          "Sprout's radio sends about a milliwatt. The phone two rooms away hears less than a billionth of that and still decodes it. Numbers that span such a range are awkward, so radio engineers use **decibels**: a ratio on a log scale, dB = 10 × log10(P2 / P1).",
+          "- **+3 dB** is about twice the power, **+10 dB** is ten times, **+20 dB** a hundred times.\n- **−10 dB** is a tenth, **−30 dB** a thousandth.\n- Gains and losses in a chain simply **add** in dB, where the powers would multiply.",
+          "**dBm** is a power compared with 1 milliwatt: **0 dBm = 1 mW**, +10 dBm = 10 mW, +20 dBm = 100 mW, and −90 dBm is a billionth of a milliwatt. A typical BLE radio sends at 0 dBm, and a typical BLE receiver still decodes **−95 dBm**, its **sensitivity**: a gap of 95 dB, about three billion times weaker.",
+          "An analogy: a ruler where every 10 cm multiplies the power by ten. It breaks down if you try to add two *powers* in dB: 0 dBm plus 0 dBm is 2 mW, which is +3 dBm, not 0 dBm.",
+        ),
+      },
+      {
+        kind: "question",
+        title: "How much stronger?",
+        body: "A Wi-Fi radio transmits at **+20 dBm** and a BLE radio at **0 dBm**. How many times more power does the Wi-Fi radio send?",
+        question: { type: "number", hint: "The difference is 20 dB, and every 10 dB is another factor of 10.", answer: 100, tolerance: 0, unit: "times" },
+        explanation: "20 dB is 10 × 10 = **100 times** the power: 100 mW against 1 mW. That extra power reaches further, but the battery pays for it, as you will see in the widget.",
+      },
+      {
+        kind: "explain",
+        title: "A link budget",
+        body: P(
+          "Whether a radio link works is plain bookkeeping in dB, called a **link budget**: received power = transmit power + antenna gains − path loss − other losses (walls, a detuned antenna). The link works while the received power stays above the receiver's sensitivity, and the difference is the **margin**. A common rule of thumb keeps about **10 dB of fade margin** for people walking past, doors and a phone in a pocket.",
+          "**Path loss** grows with distance because the wave spreads out. In free space it rises 20 dB for every ten times the distance (6 dB per doubling), and at 2.4 GHz it is already about 40 dB at 1 m (about 31 dB at 868 MHz). Indoors, walls, furniture and people make it worse. A common simple model is **path loss = loss at 1 m + 10 × n × log10(distance in m)**, with n = 2 in free space and **n ≈ 3** as a typical indoor figure, plus a few dB per wall.",
+          "Try it: change the distance, the surroundings and the walls, then the radio.",
+        ),
+        widget: { type: "prod-link", props: { scenario: "explore" } },
+      },
+      {
+        kind: "explain",
+        title: "The antenna is part of the circuit",
+        body: P(
+          "The antenna turns current on a trace into a radio wave, and it only does that well when it is **matched** to the radio's 50 Ω. A mismatch reflects power back, just like the reflections in *Signal integrity* (*Components and PCB design*). A small **matching network** of two or three inductors and capacitors tunes it, and a network analyser measures how well.",
+          "Antennas **detune** near anything that conducts or holds water: copper under or beside them, the plastic case, a hand, and for Sprout the **wet soil** in the pot. Every module datasheet gives a **keep-out zone**: no copper on any layer under or around the antenna, often with the antenna at a board edge, and a ground plane of a stated size next to it. Break it and you can lose 10 dB or more, which can cut indoor range in half.",
+          "This is the other big reason for a **pre-certified module**: the antenna, the matching and the tuning are done and approved, as long as you follow its layout rules. Chip-down, you tune your own antenna with a network analyser and pay for radiated tests in a lab.",
+        ),
+      },
+      {
+        kind: "question",
+        title: "Reach the phone two rooms away",
+        body: "The first Sprout layout poured ground copper under the antenna to 'improve grounding'. The phone is two rooms away. Get at least **10 dB of margin** at the phone while the radio draws **no more than 6 mA** while sending (Sprout's whole burst, MCU included, is budgeted at about 10 mA).",
+        widget: { type: "prod-link", props: { scenario: "rooms", radio: "ble", txDbm: 0, placement: "copper" } },
+        question: { type: "widget", goal: { minMarginDb: 10, maxTxMa: 6 }, hint: "More transmit power costs current fast. Which antenna choice wins back the most dB for free?" },
+        explanation: "Clearing the keep-out wins back 12 dB in this toy: at 0 dBm the margin rises from 2.8 dB to about 14.8 dB at 5 mA. Turning the power up to +8 dBm with the copper still there only reaches about 10.8 dB, at 15 mA, three times the current. Wi-Fi and LoRa reach, but draw tens to hundreds of milliamps. Fix the antenna before you buy range with battery.",
+      },
+      {
+        kind: "question",
+        title: "A different antenna",
+        body: "Your pre-certified module's approval lists one specific antenna. To save a little space you plan to use a different antenna. What should you do?",
+        question: {
+          type: "choice",
+          options: ["Nothing: the module is certified, so it is fine", "Check with a meter that the antenna connects", "Raise the transmit power to make up any loss", "Ask the module maker and a test lab first"],
+          answer: 3,
+          hint: "The approval was for a particular combination. What happens when you change part of it?",
+          feedback: {
+            0: "The approval covers the listed antenna. A different antenna changes how much power is radiated and where, which is what the rules limit.",
+            1: "A meter shows the antenna is connected, not that the radio's emissions are within the limits.",
+            2: "More power with an unapproved antenna can push emissions over the limits, which makes the problem worse.",
+          },
+        },
+        explanation: "Approvals are granted for a tested configuration. A different antenna can change radiated power and emissions, so the maker's conditions must be followed, or the change must be re-evaluated or re-tested. Ask early, before the board layout is final.",
+      },
+      {
+        kind: "explain",
+        title: "BLE, Wi-Fi or LoRa?",
+        body: P(
+          "Different radios trade range, data rate and power. Typical figures (they vary a lot by chip and settings):",
+          "- **Bluetooth LE**: 2.4 GHz, about 0 dBm, a few mA while sending, around 1 Mbit/s, tens of metres indoors. Talks to a **phone** or a hub. The natural fit for a coin cell.\n- **Wi-Fi**: 2.4 or 5 GHz, about +15 to +20 dBm, roughly 150 to 250 mA while sending, tens of Mbit/s. Talks straight to the **home router** and the internet, but joining a network takes seconds of high current: AA cells or mains, not a coin cell.\n- **LoRa**: below 1 GHz (868 MHz in Europe, 915 MHz in the US), about +14 dBm, tens of mA, only hundreds of bit/s to a few kbit/s, but **kilometres** outdoors. Talks to a **gateway**, not a phone, and a short packet can take a second on air. Many bands also limit how often you may transmit.",
+          "Energy per message is **current × time on air**, so a slow radio with a modest current can still cost more per message than a fast one. Others exist too, for example Thread or Zigbee meshes and cellular IoT (LTE-M, NB-IoT) with a SIM.",
+        ),
+      },
+      {
+        kind: "question",
+        title: "The allotment",
+        body: "A community garden wants Sprouts in an allotment **800 m** from the nearest house, each sending a few bytes every hour. Which radio fits?",
+        question: {
+          type: "choice",
+          options: ["BLE, with a phone left in the nearest house", "Wi-Fi, from the router in the nearest house", "LoRa, with a gateway at the nearest house", "BLE at +8 dBm with a bigger coin cell"],
+          answer: 2,
+          hint: "Compare the distance with the typical ranges, and think about who receives the message.",
+          feedback: {
+            0: "BLE reaches tens of metres, not 800 m, and a phone is not a dependable receiver.",
+            1: "Wi-Fi does not reach 800 m from a home router, and its current would drain a small battery anyway.",
+            3: "8 dB more power roughly doubles to triples the range, nowhere near 800 m, and costs three times the current.",
+          },
+        },
+        explanation: "A few bytes an hour over close to a kilometre is what LoRa is for: a very sensitive receiver (around −137 dBm in its slowest mode, typical) buys the range, and a gateway on the house forwards the data to the internet. The cost is a gateway, a slow link and a second or so on air per message.",
+      },
+      {
+        kind: "code",
+        title: "How far does it reach?",
+        body: P(
+          "Write `max_range_m(tx_dbm, sens_dbm, margin_db, freq_mhz, n, extra_loss_db=0)`: the distance in metres at which the link still has `margin_db` to spare, using the path-loss model from *A link budget* (with `extra_loss_db` for walls or a detuned antenna, and 0 dBi antennas).",
+          "`path_loss_1m(freq_mhz)` is given. Work out how much path loss the budget can afford beyond the first metre, then undo the log to get the distance.",
+        ),
+        language: "python",
+        starter: `import math
+
+def path_loss_1m(freq_mhz):
+    # free-space path loss at 1 m, dB
+    return 20 * math.log10(freq_mhz) - 27.55
+
+def max_range_m(tx_dbm, sens_dbm, margin_db, freq_mhz, n, extra_loss_db=0):
+    # your code here
+    return 0.0
+`,
+        solution: `import math
+
+def path_loss_1m(freq_mhz):
+    # free-space path loss at 1 m, dB
+    return 20 * math.log10(freq_mhz) - 27.55
+
+def max_range_m(tx_dbm, sens_dbm, margin_db, freq_mhz, n, extra_loss_db=0):
+    spare = tx_dbm - sens_dbm - margin_db - extra_loss_db - path_loss_1m(freq_mhz)
+    return 10 ** (spare / (10 * n))
+`,
+        tests: [
+          { id: "indoor", description: "BLE at 0 dBm, −95 dBm sensitivity, 10 dB margin, indoors (n = 3) through two 5 dB walls: about 14.5 m", assertionCode: `d = max_range_m(0, -95, 10, 2440, 3, 10)\nassert abs(d - 14.46) < 0.15, f"expected about 14.5 m, got {d}"` },
+          { id: "free", description: "The same radio in free space (n = 2), no walls: about 174 m", assertionCode: `d = max_range_m(0, -95, 10, 2440, 2)\nassert abs(d - 173.8) < 1.5, f"expected about 174 m, got {d}"` },
+          { id: "lora", description: "LoRa at +14 dBm, −137 dBm, 868 MHz, indoors through two walls: about 2.1 km", assertionCode: `d = max_range_m(14, -137, 10, 868, 3, 10)\nassert abs(d - 2118) < 20, f"expected about 2118 m, got {d}"` },
+          { id: "six", description: "In free space, 6 dB more power about doubles the range", assertionCode: `a = max_range_m(0, -95, 10, 2440, 2)\nb = max_range_m(6, -95, 10, 2440, 2)\nassert a > 0 and 1.9 < b / a < 2.1, f"expected about twice the range, got {a} and {b}"` },
+        ],
+        hints: ["The spare dB is the transmit power minus the sensitivity, the margin, the extra losses and the 1 m loss.", "That spare equals 10 × n × log10(d), so d = 10 ** (spare / (10 * n))."],
+      },
+      {
+        kind: "recap",
+        points: [
+          "**dB** is a ratio on a log scale (+3 dB ≈ ×2, +10 dB = ×10); **dBm** is power against 1 mW, so 0 dBm = 1 mW.",
+          "A **link budget** adds transmit power and gains, subtracts path loss and other losses, and compares the result with the receiver's **sensitivity**; keep about 10 dB of **fade margin**.",
+          "The antenna needs a matched feed and a clear **keep-out**; copper, hands, cases and water detune it, and a **pre-certified module** gives you a tuned, approved antenna if you follow its rules.",
+          "**BLE** suits a coin cell and a phone, **Wi-Fi** reaches the router at a high current, **LoRa** reaches kilometres through a gateway at a low data rate.",
         ],
       },
     ],
