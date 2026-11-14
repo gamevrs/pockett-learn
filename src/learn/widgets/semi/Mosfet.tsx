@@ -34,7 +34,7 @@ export interface MosfetState {
 
 const r1 = (v: number) => Math.round(v * 10) / 10;
 
-function Section({ type, mag }: { type: MosType; mag: number }) {
+function Section({ type, mag, vds = MOS.vdd }: { type: MosType; mag: number; vds?: number }) {
   const st = channelState(type, mag);
   const { vth } = MOS[type];
   const n = type === "nmos";
@@ -93,7 +93,7 @@ function Section({ type, mag }: { type: MosType; mag: number }) {
         </g>
       ))}
       <text x={280} y={48} textAnchor="end" fontSize={14} fill="var(--ink-2)">
-        {n ? "+3.3 V" : "−3.3 V"}
+        {`${n ? "+" : "−"}${vds.toFixed(1)} V`}
       </text>
       {/* flow */}
       {on && (
@@ -145,7 +145,7 @@ function Curve({ type, mag }: { type: MosType; mag: number }) {
       </text>
       <polyline points={pts} fill="none" stroke="var(--ink)" strokeWidth={2.5} strokeLinejoin="round" />
       <circle cx={r1(px(mag))} cy={r1(py(drainCurrent(type, mag)))} r={7} fill="var(--brand)" stroke="var(--surface)" strokeWidth={2} />
-      <text x={PX0 + 4} y={PY1 - 6} fontSize={14} fill="var(--ink-2)">
+      <text x={PX0 - 4} y={13} textAnchor="end" fontSize={14} fill="var(--ink-2)">
         mA
       </text>
       <text x={PX1} y={168} textAnchor="end" fontSize={14} fill="var(--ink-2)">
@@ -189,7 +189,7 @@ function CurveVds({ type, mag, vds, hideRegion }: { type: MosType; mag: number; 
       )}
       <polyline points={pts} fill="none" stroke="var(--ink)" strokeWidth={2.5} strokeLinejoin="round" />
       <circle cx={r1(px(vds))} cy={r1(py(drainCurrentVds(type, mag, vds)))} r={7} fill="var(--brand)" stroke="var(--surface)" strokeWidth={2} />
-      <text x={PX0 + 4} y={PY1 - 6} fontSize={14} fill="var(--ink-2)">
+      <text x={PX0 - 4} y={13} textAnchor="end" fontSize={14} fill="var(--ink-2)">
         mA
       </text>
       <text x={PX1} y={168} textAnchor="end" fontSize={14} fill="var(--ink-2)">
@@ -285,7 +285,7 @@ export function Mosfet({ props, onChange }: WidgetProps<MosfetProps>) {
         </div>
       )}
       <div className="mt-3">
-        <Section type={type} mag={mag} />
+        <Section type={type} mag={mag} vds={vdsMag} />
       </div>
       {drain ? <CurveVds type={type} mag={mag} vds={vdsMag} hideRegion={props.hideRegion} /> : <Curve type={type} mag={mag} />}
       <div className="mt-3 flex flex-wrap justify-center gap-2">
