@@ -92,7 +92,7 @@ export function Plot({ width = 360, height = 200, x, y, xLog, yLog, series, xTic
   const L = 44;
   const R = 10;
   const T = 10;
-  const B = 34;
+  const B = 38; // room under the tick row for the x-axis title, descenders included
   const pw = width - L - R;
   const ph = height - T - B;
   const tx = (v: number) => (xLog ? Math.log10(v) : v);
@@ -174,7 +174,7 @@ export function Plot({ width = 360, height = 200, x, y, xLog, yLog, series, xTic
         }
         return null;
       })}
-      {xLabel && <text x={r2(L + pw / 2)} y={r2(height - 3)} textAnchor="middle" fontSize={FS} fill="var(--ink-2)">{xLabel}</text>}
+      {xLabel && <text x={r2(L + pw / 2)} y={r2(height - 6)} textAnchor="middle" fontSize={FS} fill="var(--ink-2)">{xLabel}</text>}
       {yLabel && <text x={r2(L + 5)} y={r2(T + ph - 6)} textAnchor="start" fontSize={FS} fill="var(--ink-2)">{yLabel}</text>}
     </svg>
   );
