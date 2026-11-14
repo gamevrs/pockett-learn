@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import type { WidgetProps } from "@/learn/widget";
-import { MATERIALS, SI_ATOMS, material, photonCrosses, photonEv, thermalCarriers, type MaterialId } from "./phys";
+import { MATERIALS, SI_ATOMS, material, photonCrosses, photonEv, intrinsicCarriers, type MaterialId } from "./phys";
 import { Note, Readout, Seg, Slider, Toy, ORANGE, sci } from "./ui";
 
 // ───────────────────────────── semi-bands: conductor, semiconductor, insulator ─────────────────────────────
@@ -59,12 +59,12 @@ export function Bands({ props, onChange }: WidgetProps<BandsProps>) {
   const [lightNm, setLightNm] = useState(0);
 
   const m = material(mat);
-  const ni = thermalCarriers(m.gap, tempK);
+  const ni = intrinsicCarriers(mat, tempK);
   const photo = lightNm > 0 && photonCrosses(m.gap, lightNm);
 
   const report = (id: MaterialId, t: number, l: number) => {
     const mm = material(id);
-    onChange?.({ material: id, tempK: t, lightNm: l, ni: thermalCarriers(mm.gap, t), photo: l > 0 && photonCrosses(mm.gap, l) } satisfies BandsState);
+    onChange?.({ material: id, tempK: t, lightNm: l, ni: intrinsicCarriers(id, t), photo: l > 0 && photonCrosses(mm.gap, l) } satisfies BandsState);
   };
 
   const metal = m.gap <= 0;
@@ -84,7 +84,7 @@ export function Bands({ props, onChange }: WidgetProps<BandsProps>) {
         ? `A ${lightNm} nm photon carries only ${photonEv(lightNm).toFixed(2)} eV, less than the ${m.gap} eV gap: the light passes straight through without freeing anything.`
         : m.kind === "insulator"
           ? `A ${m.gap} eV gap is far too wide for heat to cross: practically no electrons reach the conduction band, so it insulates.`
-          : `Heat alone lifts about ${sci(ni)} electrons per cm³ across the ${m.gap} eV gap${mat === "si" && ni >= 1 ? `, about 1 for every ${sci(SI_ATOMS / ni)} atoms` : ""}. Each one leaves a hole behind.`;
+          : `Heat alone lifts about ${sci(ni)} electrons per cm³ across the ${m.gap} eV gap${mat === "si" && ni >= 1 ? `, about 1 for every ${sci(SI_ATOMS / ni)} atoms` : ""}. Each one leaves a hole behind.${m.gap > 2.5 ? " A wide band gap: almost nothing is freed even when hot." : ""}`;
 
   return (
     <div className="w-full" data-widget>
@@ -173,13 +173,13 @@ export function Bands({ props, onChange }: WidgetProps<BandsProps>) {
         <Note tone={photo ? "accent" : "plain"}>{verdict}</Note>
       </div>
       <Toy>
-        Toy model: room-temperature gaps held fixed as the material warms, one formula (n ∝ T^1.5 · e^(−Eg/2kT)) tuned so pure silicon has 1 × 10¹⁰ free electrons per cm³ at 300 K. Big gaps are drawn compressed.
+        Toy model: each material starts from a typical room-temperature intrinsic density (silicon 1 × 10¹⁰, germanium 2 × 10¹³, gallium arsenide 2 × 10⁶ per cm³; silicon carbide and gallium nitride far lower) and scales it as T^1.5 · e^(−Eg/2kT). Gaps are held fixed as the material warms, and big gaps are drawn compressed.
       </Toy>
     </div>
   );
 }
 
-/** goal: { material, minNi, maxNi, photo, minTemp, maxTemp } */
+/** goal: { material, minNi, maxNi, photo, minTemp, maxTemp, light, alsoAbsorbs } */
 export function checkBands(state: unknown, goal: Record<string, unknown>) {
   const s = state as BandsState | undefined;
   if (!s) return false;
@@ -190,5 +190,6 @@ export function checkBands(state: unknown, goal: Record<string, unknown>) {
   if (typeof goal.minTemp === "number" && s.tempK < goal.minTemp) return false;
   if (typeof goal.maxTemp === "number" && s.tempK > goal.maxTemp) return false;
   if (typeof goal.light === "boolean" && s.lightNm > 0 !== goal.light) return false;
+  if (typeof goal.alsoAbsorbs === "string" && !(s.lightNm > 0 && photonCrosses(material(goal.alsoAbsorbs as MaterialId).gap, s.lightNm))) return false;
   return true;
 }

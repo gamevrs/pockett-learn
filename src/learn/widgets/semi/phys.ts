@@ -29,7 +29,7 @@ export const photonEv = (nm: number) => 1239.84 / nm;
 
 // ───────────────────────────── energy bands ─────────────────────────────
 
-export type MaterialId = "copper" | "ge" | "si" | "gaas" | "diamond" | "glass";
+export type MaterialId = "copper" | "ge" | "si" | "gaas" | "sic" | "gan" | "diamond" | "glass";
 
 export interface Material {
   id: MaterialId;
@@ -37,14 +37,18 @@ export interface Material {
   /** Band gap in eV at room temperature (0: the bands overlap, a metal). */
   gap: number;
   kind: "metal" | "semiconductor" | "insulator";
+  /** Typical textbook intrinsic carrier density at 300 K, cm⁻³ (absent: fall back to the silicon prefactor). */
+  ni300?: number;
 }
 
 /** Room-temperature band gaps (typical textbook values; glass is fused silica, SiO₂, roughly 9 eV). */
 export const MATERIALS: Material[] = [
   { id: "copper", name: "Copper", gap: 0, kind: "metal" },
-  { id: "ge", name: "Germanium", gap: 0.66, kind: "semiconductor" },
-  { id: "si", name: "Silicon", gap: 1.12, kind: "semiconductor" },
-  { id: "gaas", name: "Gallium arsenide", gap: 1.42, kind: "semiconductor" },
+  { id: "ge", name: "Germanium", gap: 0.66, kind: "semiconductor", ni300: 2e13 },
+  { id: "si", name: "Silicon", gap: 1.12, kind: "semiconductor", ni300: 1e10 },
+  { id: "gaas", name: "Gallium arsenide", gap: 1.42, kind: "semiconductor", ni300: 2e6 },
+  { id: "sic", name: "Silicon carbide (4H-SiC)", gap: 3.26, kind: "semiconductor", ni300: 5e-9 },
+  { id: "gan", name: "Gallium nitride", gap: 3.4, kind: "semiconductor", ni300: 2e-10 },
   { id: "diamond", name: "Diamond", gap: 5.5, kind: "insulator" },
   { id: "glass", name: "Glass (SiO₂)", gap: 9, kind: "insulator" },
 ];
@@ -60,6 +64,17 @@ export function thermalCarriers(gap: number, tempK: number): number {
   if (gap <= 0) return 8.5e22;
   const a = NI_300 / (Math.pow(300, 1.5) * Math.exp(-1.12 / (2 * K_B * 300)));
   return a * Math.pow(tempK, 1.5) * Math.exp(-gap / (2 * K_B * tempK));
+}
+
+/**
+ * Intrinsic carrier density per cm³ for a material at a temperature. Materials with a typical 300 K value scale it as
+ * T^1.5 · e^(−Eg/2k · (1/T − 1/300)); the rest use the silicon prefactor above. Metals return copper's electron density.
+ */
+export function intrinsicCarriers(id: MaterialId, tempK: number): number {
+  const m = material(id);
+  if (m.gap <= 0) return 8.5e22;
+  if (m.ni300 === undefined) return thermalCarriers(m.gap, tempK);
+  return m.ni300 * Math.pow(tempK / 300, 1.5) * Math.exp(-(m.gap / (2 * K_B)) * (1 / tempK - 1 / 300));
 }
 
 /** Can a photon of this wavelength lift an electron across the gap? */
@@ -143,7 +158,7 @@ export const diodeCurrent = (v: number, is = PN.is, tempK = PN.tempK) => is * (M
 
 export type MosType = "nmos" | "pmos";
 
-/** Toy square-law transistors, always in saturation (Vds fixed at the 3.3 V supply). */
+/** Toy square-law transistors. Vds defaults to the 3.3 V supply, where they sit in saturation; lower Vds gives the linear (triode) region. */
 export const MOS = {
   vdd: 3.3,
   nmos: { vth: 0.7, k: 2e-3 },
@@ -155,6 +170,24 @@ export function drainCurrent(type: MosType, vgsMag: number): number {
   const { vth, k } = MOS[type];
   const ov = vgsMag - vth;
   return ov > 0 ? 0.5 * k * ov * ov : 0;
+}
+
+const EPS = 1e-9;
+
+/** Drain current magnitude in A for |Vgs| and |Vds|: linear (triode) below Vds = Vgs − Vth, saturation above. */
+export function drainCurrentVds(type: MosType, vgsMag: number, vdsMag: number): number {
+  const { vth, k } = MOS[type];
+  const ov = vgsMag - vth;
+  if (ov <= EPS) return 0;
+  if (vdsMag < ov - EPS) return k * (ov * vdsMag - (vdsMag * vdsMag) / 2);
+  return 0.5 * k * ov * ov;
+}
+
+/** Operating region for |Vgs| and |Vds|. */
+export function mosRegion(type: MosType, vgsMag: number, vdsMag: number): "off" | "linear" | "saturation" {
+  const ov = vgsMag - MOS[type].vth;
+  if (ov <= EPS) return "off";
+  return vdsMag < ov - EPS ? "linear" : "saturation";
 }
 
 /** What the region under the gate is doing at this |Vgs|. */

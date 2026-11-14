@@ -199,9 +199,16 @@ function binCounts(total: number): number[] {
   return [...head, total - head.reduce((a, b) => a + b, 0)];
 }
 
-export function TestFlow({ onChange }: WidgetProps) {
-  const [sort, setSort] = useState(false);
-  const [burnIn, setBurnIn] = useState(false);
+export interface TestFlowProps {
+  /** Start with wafer sort on. */
+  sort?: boolean;
+  /** Start with burn-in on. */
+  burnIn?: boolean;
+}
+
+export function TestFlow({ props, onChange }: WidgetProps<TestFlowProps>) {
+  const [sort, setSort] = useState(props.sort ?? false);
+  const [burnIn, setBurnIn] = useState(props.burnIn ?? false);
   const r = runTest(sort, burnIn);
   const good = Math.round(TEST.dies * TEST.waferYield);
   const report = (a: boolean, b: boolean) => {
@@ -244,7 +251,7 @@ export function TestFlow({ onChange }: WidgetProps) {
         </div>
       </div>
       <ol className="mt-3 space-y-1.5">
-        <Stage name="Fab" detail={`${whole(TEST.dies)} dies, of which ${good} work (${TEST.waferYield * 100} % yield)`} />
+        <Stage name="Fab" detail={`${whole(TEST.dies)} dies, of which ${good} work (${Math.round(TEST.waferYield * 100)}% yield)`} />
         <Stage name="Wafer sort" detail={sort ? `probe needles test each die: ${TEST.dies - good} failures marked and never packaged` : "skipped: bad dies go on to packaging"} tone={sort ? "plain" : "skip"} />
         <Stage name="Dice and package" detail={`${whole(r.packaged)} dies packaged${r.wastedPackages ? `, ${r.wastedPackages} of them already dead` : ""}; about 1% are damaged on the way`} tone={r.wastedPackages ? "bad" : "plain"} />
         <Stage name="Final test" detail={`rejects ${r.finalRejects} (${r.wastedPackages ? "dead dies plus " : ""}packaging damage)`} />
