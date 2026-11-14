@@ -1,7 +1,8 @@
 import type { ConceptLesson } from "../../learn/types.ts";
 
 /**
- * GPU module, lessons 1 to 5: why GPUs exist, the graphics pipeline, kernels and threads, warps and divergence, GPU memory.
+ * GPU module, lessons 1 to 5 plus lesson 11 (races, atomics and reductions; placed after lesson 5 so levels never go backwards):
+ * why GPUs exist, the graphics pipeline, kernels and threads, warps and divergence, GPU memory, reductions.
  * CUDA words are the main vocabulary (they are the most widely taught); the other vendors' names are given when a term first appears.
  */
 export const gpuLessonsA: ConceptLesson[] = [
@@ -392,7 +393,7 @@ export const gpuLessonsA: ConceptLesson[] = [
           },
           hint: "How many instructions can a warp issue at a time?",
         },
-        explanation: "One instruction stream, so one side at a time: the `if` side with the `else` lanes **masked off** (idle), then the `else` side with the `if` lanes masked off. Since Volta (2017), NVIDIA chips can interleave the two sides and let lanes make progress independently, but the cost is the same in effect: divergent paths do not run at the same moment. The practical consequence: never assume a warp's lanes are in lockstep; when lanes exchange data, use `__syncwarp()` and the `*_sync` intrinsics.",
+        explanation: "One instruction stream, so one side at a time: the `if` side with the `else` lanes **masked off** (idle), then the `else` side with the `if` lanes masked off. Since Volta (2017), NVIDIA chips can interleave the two sides and let lanes make progress independently, but the cost is the same in effect: divergent paths do not run at the same moment. The practical consequence: never assume a warp's lanes are in lockstep; when lanes exchange data, use `__syncwarp()` and the `*_sync` intrinsics (the lesson *Races, atomics and reductions* shows them).",
       },
       {
         kind: "question",
@@ -596,4 +597,136 @@ export const gpuLessonsA: ConceptLesson[] = [
     ],
   },
 
+  // ── Lesson 11 (placed after lesson 5): races, atomics and reductions ──
+  {
+    id: "fnd-gpu-11-races-reductions",
+    title: "Races, atomics and reductions",
+    summary: "Thousands of threads adding to one total lose updates. Fix it with atomics, then do it fast with a tree and warp shuffles.",
+    minutes: 10,
+    xp: 75,
+    level: "Advanced",
+    steps: [
+      {
+        kind: "explain",
+        title: "Everyone adds to one total",
+        body: "After vector add, the next kernel most people write is a **sum**: add up a million numbers. The obvious version gives every thread one number to add to a shared total:\n\n```cpp\n__global__ void total(const float *x, float *sum, int n) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;\n    if (i < n) *sum += x[i];   // looks harmless; it is not\n}\n```\n\n`*sum += x[i]` is really **three** steps: read `sum`, add, write `sum` back. If two threads both read the old value before either writes, both write \"old + mine\" and one addition vanishes. That is a **data race**: the answer depends on the timing of threads you do not control. It is like two people updating a tally on a whiteboard at the same moment: both read 41, both write 42, and one vote is lost.\n\nBelow, each thread *i* holds the number *i* + 1. Try the three ways of adding them up, and the thread counts. (A toy: in its race, every thread reads before any thread writes, the worst case. On real hardware the timing varies, so the wrong answer changes from run to run.)",
+        widget: { type: "gpu-reduce", props: { method: "plain", n: 8 } },
+      },
+      {
+        kind: "question",
+        title: "Lost updates",
+        body: "In the toy race, **16** threads each run `sum += x[i]`. Every thread reads `sum` before any thread writes, and each write replaces the one before. How many of the 16 updates are **lost**?",
+        widget: { type: "gpu-reduce", props: { method: "plain", n: 16 }, after: true },
+        question: { type: "number", answer: 15, unit: "updates", hint: "Only one write can be the last one, and it was computed from a sum of 0." },
+        explanation: "All 16 threads read 0, so each writes just its own number; only the last write survives. **15** updates are lost and the \"total\" is 16 instead of 136. On a real GPU some threads would read a partly updated value, so you would get some number in between, and a different one on each run, which makes the bug hard to spot.",
+      },
+      {
+        kind: "question",
+        title: "What atomicAdd promises",
+        body: "The direct fix is an **atomic** operation: `atomicAdd(sum, x[i]);` instead of `*sum += x[i];`. (CUDA also has atomic min, max, exchange and compare-and-swap; Metal, OpenCL, WGSL and HIP have their own atomic functions.) What exactly does `atomicAdd` guarantee?",
+        question: {
+          type: "choice",
+          options: [
+            "The threads' additions happen in thread order, lowest index first",
+            "Each read-add-write is indivisible, so no update can be lost",
+            "All the additions to one address finish in a single memory cycle",
+            "The total is locked to one thread for the rest of the kernel",
+          ],
+          answer: 1,
+          feedback: {
+            0: "The order is not specified at all; only that each update happens whole.",
+            2: "The opposite: updates to one address are applied one after another, which is why atomics on a single total are slow.",
+            3: "Nothing is locked for long: each update is indivisible on its own, and any thread may do the next one.",
+          },
+          hint: "The race happened because another thread slipped in between the read and the write.",
+        },
+        explanation: "An atomic does the read, the add and the write as **one indivisible step**, so no other thread can slip in between. It does **not** fix the order, and updates to the *same* address are served one after another, so a million threads adding to one total wait in a queue. Atomics shine when updates are spread out, such as a histogram with many bins. One more catch: floating-point addition is not exactly associative ((a + b) + c can differ from a + (b + c) in the last digits), so a different order can give a slightly different float total from run to run.",
+      },
+      {
+        kind: "explain",
+        title: "A tree of partial sums",
+        body: "The fast way to sum is a **reduction tree**: pair the numbers up and add each pair, then pair the results, and so on. *n* numbers need only **log₂ n rounds**, and every addition in a round is independent, so the threads do them at the same time.\n\nInside one block, the tree runs in **shared memory**:\n\n```cpp\n__global__ void block_sum(const float *x, float *sum, int n) {   // launch with 256 threads per block\n    __shared__ float s[256];                // one slot per thread of the block\n    int t = threadIdx.x;\n    int i = blockIdx.x * 256 + t;\n    s[t] = (i < n) ? x[i] : 0.0f;           // each thread loads one number\n    __syncthreads();                        // wait until every slot is written\n    for (int half = 128; half > 0; half /= 2) {\n        if (t < half) s[t] += s[t + half];  // the first half adds in the second half\n        __syncthreads();                    // finish this round before the next\n    }\n    if (t == 0) atomicAdd(sum, s[0]);       // one atomic per block, not per number\n}\n```\n\n`__syncthreads()` is a **barrier**: every thread of the block waits there until all of them have arrived, so no thread reads a slot that another has not written yet. It must be reached by *all* the block's threads, which is why it sits outside the `if`. (Metal calls it `threadgroup_barrier`, OpenCL `barrier`, WGSL `workgroupBarrier`.)\n\nPick the tree in the widget and watch the partial sums halve each round.",
+        widget: { type: "gpu-reduce", props: { method: "tree", n: 16 } },
+      },
+      {
+        kind: "question",
+        title: "Right and fast",
+        body: "Now with **32 threads**: get the **right total** in **at most 5 steps**.",
+        widget: { type: "gpu-reduce", props: { method: "plain", n: 32 } },
+        question: { type: "widget", goal: { n: 32, correct: true, maxSteps: 5 }, prompt: "With 32 threads, get the right total in 5 steps or fewer.", hint: "atomicAdd is right but takes one step per thread. Which method halves the work every round?" },
+        explanation: "The tree takes log₂ 32 = **5** rounds and gets 528; atomicAdd also gets 528 but needs 32 one-at-a-time updates; the plain race is quick and wrong. Real kernels use both: a tree inside each block, then **one** atomic (or a second small kernel) to combine the blocks' totals.",
+      },
+      {
+        kind: "question",
+        title: "Rounds for a full block",
+        body: "A block of **1,024 threads** sums 1,024 numbers with the tree. How many rounds does it take?",
+        question: { type: "number", answer: 10, unit: "rounds", hint: "Each round halves the count: 1,024 → 512 → … → 1. How many halvings?" },
+        explanation: "log₂ 1,024 = **10** rounds. A million numbers in blocks of 256 need 8 rounds per block plus 3,907 atomics (one per block) instead of a million atomics on one address.",
+      },
+      {
+        kind: "code",
+        title: "Simulate the tree",
+        body: "Write `tree_sum(xs)` for a list whose length is a power of two. Do it the way the block reduction does: each round, every value in the **first half** adds the value **half-way along**, and only the first half is kept for the next round. Stop when one value is left. Return a pair: `(total, rounds)`.\n\nDo not change the list you were given (work on a copy).",
+        language: "python",
+        starter: `def tree_sum(xs):
+    s = list(xs)   # a copy, so the caller's list is untouched
+    rounds = 0
+    # your code here: one round per pass, until one value is left
+    return s[0], rounds
+`,
+        solution: `def tree_sum(xs):
+    s = list(xs)
+    rounds = 0
+    while len(s) > 1:
+        half = len(s) // 2
+        s = [s[i] + s[i + half] for i in range(half)]
+        rounds += 1
+    return s[0], rounds
+`,
+        tests: [
+          { id: "eight", description: "1 to 8 sums to 36 in 3 rounds", assertionCode: `r = tree_sum([1, 2, 3, 4, 5, 6, 7, 8])\nassert r == (36, 3), f"got {r}"` },
+          { id: "warp", description: "32 ones take 5 rounds", assertionCode: `r = tree_sum([1] * 32)\nassert r == (32, 5), f"got {r}"` },
+          { id: "pair", description: "Two values take 1 round", assertionCode: `r = tree_sum([10, 20])\nassert r == (30, 1), f"got {r}"` },
+          { id: "copy", description: "The input list is not changed", assertionCode: `xs = [4, 3, 2, 1]\nr = tree_sum(xs)\nassert r == (10, 2) and xs == [4, 3, 2, 1], f"got {r}, list now {xs}"` },
+        ],
+        hints: ["Loop while more than one value is left. Each pass works with half = len(s) // 2.", "Build the next, shorter list from pairs that are half a list apart, and count the pass."],
+      },
+      {
+        kind: "explain",
+        title: "Inside a warp: shuffles, and no lockstep",
+        body: "The last five rounds of a block's tree involve 32 values or fewer: one warp. Lanes of a warp can pass values **directly between their registers** with a **shuffle**, with no shared memory and no block-wide barrier:\n\n```cpp\n__device__ float warp_sum(float v) {\n    for (int offset = 16; offset > 0; offset /= 2)\n        v += __shfl_down_sync(0xffffffff, v, offset);  // add the value held by lane (me + offset)\n    return v;                                          // lane 0 now holds the warp's total\n}\n```\n\n`0xffffffff` is the **mask**: all 32 lanes take part. Five shuffles sum a warp. (Vulkan and WebGPU call these *subgroup* operations, such as `subgroupAdd`; Metal has `simd_sum`; HIP has the same shuffles, over 64-lane wavefronts on many AMD chips.)\n\nWhy the `_sync` in the name? Older code skipped synchronisation inside a warp, trusting that its 32 lanes always ran in lockstep. Since NVIDIA's Volta generation (2017) lanes can be scheduled **independently**, so that trust is no longer safe: a lane may read a value another lane has not written yet. The `*_sync` intrinsics and `__syncwarp()` make the exchange explicit.\n\nThe full recipe for a big sum: each thread first adds up many elements in a loop, then a warp shuffle, then one value per warp through shared memory, then one atomic per block. In practice you call a library (CUB or Thrust on NVIDIA, or `sum()` in PyTorch or CuPy; names are examples), which does all of this tuned for your chip.",
+      },
+      {
+        kind: "question",
+        title: "Code that trusted the warp",
+        body: "Old code finishes a block sum by letting the 32 lanes of one warp read each other's shared-memory slots with **no synchronisation at all**, assuming the warp runs in lockstep. On newer GPUs it sometimes gives wrong totals. What is the right fix?",
+        question: {
+          type: "choice",
+          options: [
+            "Call `__syncthreads()` inside `if (threadIdx.x < 32)` only",
+            "Launch 32-thread blocks so that each block is a single warp",
+            "Swap values with `__shfl_down_sync`, or add `__syncwarp()` calls",
+            "Declare the shared array `volatile` so reads skip the registers",
+          ],
+          answer: 2,
+          feedback: {
+            0: "A block barrier that only some threads reach is a bug in itself: it can hang the block or give undefined results.",
+            1: "One warp per block still gives no lockstep guarantee, and tiny blocks waste the SM.",
+            3: "`volatile` was the old trick, and it is not enough once lanes are scheduled independently: it forces the reads but does not order them.",
+          },
+          hint: "Since Volta, what does the hardware no longer promise about a warp's lanes, and which intrinsics state the sync explicitly?",
+        },
+        explanation: "Make the exchange explicit: `__shfl_down_sync` with a full mask (or shared memory plus `__syncwarp()` between steps) tells the hardware which lanes must meet. That is correct on every generation, and the shuffle version is also faster, since it skips shared memory.",
+      },
+      {
+        kind: "recap",
+        points: [
+          "`sum += x` from many threads is a **data race**: read, add and write can interleave, and updates are lost, differently on each run.",
+          "**Atomics** (`atomicAdd`) make each update indivisible: correct, but updates to one address queue up. Good for spread-out updates such as histograms.",
+          "A **reduction tree** sums *n* values in **log₂ n** rounds: in shared memory with `__syncthreads()` between rounds, then **warp shuffles** (`__shfl_down_sync`), then one atomic per block.",
+          "Since Volta, never assume a warp's lanes are in lockstep: use `__syncwarp()` and the `*_sync` intrinsics. Float sums can differ in the last digits when the order changes. In practice, call a library reduction.",
+        ],
+      },
+    ],
+  },
 ];
