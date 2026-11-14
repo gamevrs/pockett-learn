@@ -8,6 +8,8 @@ import { Caption, Note, Readout, Toy } from "./ui";
 export interface RequirementsProps {
   /** Show the free-text tester under the wishes. Default true. */
   tester?: boolean;
+  /** true: two warm-up wishes for a different gadget, with instant feedback. Otherwise Sprout's five wishes, judged only once the question is answered. */
+  practice?: boolean;
 }
 
 export interface RequirementsState {
@@ -45,16 +47,30 @@ const WISHES: Wish[] = [
   },
 ];
 
+const PRACTICE: Wish[] = [
+  {
+    wish: "Travel charger: \"It should charge quickly.\"",
+    options: ["Charges quickly.", "Charges a phone to 80% in under 30 minutes.", "Faster charging than the old model."],
+  },
+  {
+    wish: "Travel charger: \"It should be light.\"",
+    options: ["Lightweight.", "Feels light in the hand.", "Weighs under 150 g."],
+  },
+];
+
 /** Turn vague wishes into measurable requirements: pick a rewrite for each wish and a simple keyword rule flags the ones nobody could test. */
-export function Requirements({ props, onChange }: WidgetProps<RequirementsProps>) {
-  const [picks, setPicks] = useState<(number | null)[]>(WISHES.map(() => null));
+export function Requirements({ props, onChange, status }: WidgetProps<RequirementsProps>) {
+  const practice = props.practice === true;
+  const wishes = practice ? PRACTICE : WISHES;
+  const show = practice || status === "correct" || status === "revealed";
+  const [picks, setPicks] = useState<(number | null)[]>(wishes.map(() => null));
   const [own, setOwn] = useState("Lasts about a year");
   const showTester = props.tester ?? true;
 
   const stateOf = (p: (number | null)[]): RequirementsState => {
     const picked = p.filter((x) => x !== null).length;
-    const good = p.filter((x, i) => x !== null && isMeasurable(WISHES[i].options[x as number]).ok).length;
-    return { picked, good, total: WISHES.length, allGood: good === WISHES.length };
+    const good = p.filter((x, i) => x !== null && isMeasurable(wishes[i].options[x as number]).ok).length;
+    return { picked, good, total: wishes.length, allGood: good === wishes.length };
   };
   const st = stateOf(picks);
 
@@ -70,12 +86,12 @@ export function Requirements({ props, onChange }: WidgetProps<RequirementsProps>
   return (
     <div className="w-full" data-widget>
       <div className="space-y-4">
-        {WISHES.map((w, i) => (
+        {wishes.map((w, i) => (
           <div key={w.wish}>
             <p className="text-[0.9rem] font-medium text-ink">{w.wish}</p>
             <div role="radiogroup" aria-label={`Rewrite for ${w.wish}`} className="mt-1.5 grid gap-1.5">
               {w.options.map((o, k) => {
-                const on = picks[i] === k;
+                const on = status === "revealed" && !practice ? isMeasurable(o).ok : picks[i] === k;
                 const v = isMeasurable(o);
                 return (
                   <button
@@ -85,11 +101,11 @@ export function Requirements({ props, onChange }: WidgetProps<RequirementsProps>
                     aria-checked={on}
                     onClick={() => pick(i, k)}
                     className={`min-h-10 rounded-xl border px-3 py-2 text-left text-[0.86rem] leading-snug transition-colors ${
-                      on ? (v.ok ? "border-[var(--good)] bg-tint text-ink" : "border-[var(--bad)] bg-tint text-ink") : "border-line bg-surface text-ink-2 hover:bg-surface-2"
+                      on ? (!show ? "border-[var(--brand)] bg-tint text-ink" : v.ok ? "border-[var(--good)] bg-tint text-ink" : "border-[var(--bad)] bg-tint text-ink") : "border-line bg-surface text-ink-2 hover:bg-surface-2"
                     }`}
                   >
                     {o}
-                    {on && (
+                    {on && show && (
                       <span className={`mt-1 block text-xs ${v.ok ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
                         {v.ok ? "Measurable. " : "Not measurable. "}
                         <span className="text-ink-3">{v.reason}</span>
@@ -105,7 +121,7 @@ export function Requirements({ props, onChange }: WidgetProps<RequirementsProps>
 
       <div className="mt-4 flex flex-wrap justify-center gap-2">
         <Readout label="Chosen" value={`${st.picked} / ${st.total}`} />
-        <Readout label="Measurable" value={`${st.good} / ${st.total}`} accent />
+        {show && <Readout label="Measurable" value={`${st.good} / ${st.total}`} accent />}
       </div>
 
       {showTester && (

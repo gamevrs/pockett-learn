@@ -24,12 +24,12 @@ interface RiskItem {
 }
 
 const RISKS: RiskItem[] = [
-  { id: "case", text: "People may not like the colour of the case", likelihood: 5, impact: 1 },
+  { id: "case", text: "People may not like the colour of the case", likelihood: 4, impact: 1 },
   { id: "ble", text: "Pairing may fail on some older phones", likelihood: 3, impact: 3 },
   { id: "power", text: "The coin cell may not supply the radio bursts in the cold", likelihood: 4, impact: 5 },
   { id: "light", text: "The case window may dim the light sensor too much", likelihood: 3, impact: 2 },
   { id: "moist", text: "Moisture readings may drift with soil type and salt", likelihood: 4, impact: 4 },
-  { id: "layout", text: "A small mistake in the first board layout", likelihood: 2, impact: 2 },
+  { id: "layout", text: "A small mistake in the first board layout (Rev A)", likelihood: 5, impact: 1 },
 ];
 
 const score = (r: RiskItem) => r.likelihood * r.impact;

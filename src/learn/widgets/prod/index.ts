@@ -9,6 +9,7 @@ import { Fsm, Layers, checkFsm, checkLayers } from "./Firmware";
 import { Requirements, checkRequirements } from "./Requirements";
 import { Risk, checkRisk } from "./Risk";
 import { Stages, checkStages } from "./Stages";
+import { Link, checkLink } from "./Radio";
 import { Pyramid, TestFlow, checkPyramid, checkTestFlow } from "./Testing";
 
 /**
@@ -35,4 +36,5 @@ export const PROD_WIDGETS: WidgetRegistry = {
   "prod-cert": { Component: Cert, check: checkCert },
   "prod-ota": { Component: Ota, check: checkOta },
   "prod-pareto": { Component: Pareto, check: checkPareto },
+  "prod-link": { Component: Link, check: checkLink },
 };

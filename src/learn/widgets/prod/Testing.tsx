@@ -24,6 +24,19 @@ const BUGS: { id: string; text: string; answer: LayerId; why: string }[] = [
   { id: "parse", text: "The settings loader crashes when the saved data is cut short.", answer: "host", why: "Feed the loader truncated data in a unit test, on the laptop. It is a software logic bug, so it needs no hardware." },
 ];
 
+/** Warm-up bugs for the explain step, so the graded set is new when the question comes. */
+const PRACTICE: typeof BUGS = [
+  { id: "pct", text: "The battery gauge shows 104% on a fresh cell.", answer: "host", why: "A formula bug: feed the gauge function a fresh cell's voltage on a laptop and check it never passes 100%." },
+  { id: "dma", text: "BLE drops the link when a flash write runs at the same moment.", answer: "hil", why: "Two real peripherals fighting over time on the real chip. A rig that runs both again and again catches it; a laptop cannot." },
+  { id: "fog", text: "Water condenses inside the case after a cold night and a warm morning.", answer: "env", why: "Only a humidity and temperature chamber recreates the swing that makes water condense." },
+  { id: "xtal", text: "One board in a batch has its crystal fitted the wrong way round.", answer: "prod", why: "A one-off assembly defect: only a check of every unit, such as the program-and-boot station, finds it." },
+];
+
+export interface PyramidProps {
+  /** true: the warm-up bugs with instant feedback. Otherwise the graded set, coloured only once the question is answered. */
+  practice?: boolean;
+}
+
 export interface PyramidState {
   assigned: Record<string, LayerId>;
   correct: number;
@@ -32,12 +45,15 @@ export interface PyramidState {
 }
 
 /** Match each bug to the cheapest test layer that would catch it first. */
-export function Pyramid({ onChange }: WidgetProps<Record<string, never>>) {
+export function Pyramid({ props, onChange, status }: WidgetProps<PyramidProps>) {
+  const practice = props.practice === true;
+  const bugs = practice ? PRACTICE : BUGS;
+  const show = practice || status === "correct" || status === "revealed";
   const [assigned, setAssigned] = useState<Record<string, LayerId>>({});
 
   const stateOf = (a: Record<string, LayerId>): PyramidState => {
-    const correct = BUGS.filter((b) => a[b.id] === b.answer).length;
-    return { assigned: a, correct, total: BUGS.length, allCorrect: correct === BUGS.length };
+    const correct = bugs.filter((b) => a[b.id] === b.answer).length;
+    return { assigned: a, correct, total: bugs.length, allCorrect: correct === bugs.length };
   };
   const st = stateOf(assigned);
   const pick = (bug: string, l: LayerId) => {
@@ -56,8 +72,8 @@ export function Pyramid({ onChange }: WidgetProps<Record<string, never>>) {
         ))}
       </ul>
       <div className="space-y-3">
-        {BUGS.map((b) => {
-          const a = assigned[b.id];
+        {bugs.map((b) => {
+          const a = status === "revealed" && !practice ? b.answer : assigned[b.id];
           return (
             <div key={b.id} className="rounded-xl border border-line bg-surface p-2.5">
               <p className="text-[0.88rem] leading-snug text-ink">{b.text}</p>
@@ -72,7 +88,13 @@ export function Pyramid({ onChange }: WidgetProps<Record<string, never>>) {
                       aria-checked={on}
                       onClick={() => pick(b.id, l.id)}
                       className={`min-h-10 flex-auto rounded-full border px-3 text-xs font-medium transition-colors ${
-                        on ? (l.id === b.answer ? "border-[var(--good)] bg-tint text-ink" : "border-[var(--bad)] bg-tint text-ink") : "border-line bg-surface text-ink-2 hover:bg-surface-2"
+                        on
+                          ? !show
+                            ? "border-[var(--brand)] bg-tint text-ink"
+                            : l.id === b.answer
+                              ? "border-[var(--good)] bg-tint text-ink"
+                              : "border-[var(--bad)] bg-tint text-ink"
+                          : "border-line bg-surface text-ink-2 hover:bg-surface-2"
                       }`}
                     >
                       {l.label}
@@ -80,7 +102,7 @@ export function Pyramid({ onChange }: WidgetProps<Record<string, never>>) {
                   );
                 })}
               </div>
-              {a && (
+              {a && show && (
                 <p className={`mt-1.5 text-xs leading-snug ${a === b.answer ? "text-[var(--good)]" : "text-[var(--bad)]"}`} aria-live="polite">
                   {a === b.answer ? `Right. ${b.why}` : "Not the cheapest place to catch it. Think about what the bug needs in order to show up."}
                 </p>
@@ -90,7 +112,7 @@ export function Pyramid({ onChange }: WidgetProps<Record<string, never>>) {
         })}
       </div>
       <div className="mt-3 flex justify-center">
-        <Readout label="Placed correctly" value={`${st.correct} / ${st.total}`} accent />
+        {show ? <Readout label="Placed correctly" value={`${st.correct} / ${st.total}`} accent /> : <Readout label="Placed" value={`${Object.keys(assigned).length} / ${st.total}`} />}
       </div>
       <Toy>Four layers, as one common way to split testing. Real teams add more (integration, system, field trials) and argue over where some bugs belong.</Toy>
     </div>
