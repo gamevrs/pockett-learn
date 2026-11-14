@@ -92,7 +92,7 @@ export const semisLessonsB: ConceptLesson[] = [
         title: "How big is a wafer?",
         body: "Modern fabs use wafers **300 mm** across (older ones 200 mm). What is the area of a 300 mm wafer in **cm²**? Work it out.",
         question: { type: "number", answer: 706.9, tolerance: 5, unit: "cm²", hint: "Area = π × r². The radius is 150 mm, which is 15 cm." },
-        explanation: "π × 15² ≈ **707 cm²**, about 2.25 times a 200 mm wafer's 314 cm². Bigger wafers spread each step's cost over more chips, which is why the industry moved to 300 mm around 2000; a move to 450 mm was attempted and shelved in the mid-2010s. You will use this area in lesson 9.",
+        explanation: "π × 15² ≈ **707 cm²**, about 2.25 times a 200 mm wafer's 314 cm². Bigger wafers spread each step's cost over more chips, which is why the industry moved to 300 mm around 2000; a move to 450 mm was attempted and shelved in the mid-2010s. You will use this area in *Yield and cost*.",
       },
       {
         kind: "explain",
@@ -548,7 +548,7 @@ def dies_per_wafer(diameter_mm, die_area_mm2):
         title: "Binning and chiplets",
         body: P(
           "Two industry answers to the big-die problem:",
-          "- **Binning and redundancy.** A defect often hits one core, one cache block or a spare memory row. Chips are designed with spares and fuses, and dies with a dead core are sold as a cheaper model with that core switched off. Dies are also sorted by top speed (lesson 10).\n- **Chiplets.** Split one big design into several smaller dies and join them in one package. Each small die has a much better yield, and dies can even come from different processes (an expensive one for the cores, a cheaper one for input/output).",
+          "- **Binning and redundancy.** A defect often hits one core, one cache block or a spare memory row. Chips are designed with spares and fuses, and dies with a dead core are sold as a cheaper model with that core switched off. Dies are also sorted by top speed (*Packaging and test*).\n- **Chiplets.** Split one big design into several smaller dies and join them in one package. Each small die has a much better yield, and dies can even come from different processes (an expensive one for the cores, a cheaper one for input/output).",
           "Split a 600 mm² design and compare the silicon cost per product.",
         ),
         widget: { type: "semi-chiplet", props: { area: 600, d0: 0.2 } },
@@ -674,7 +674,7 @@ bin, ship      sort by speed and power, mark, pack
         kind: "explain",
         title: "Chiplets, UCIe and light in the package",
         body: P(
-          "**Chiplets** (lesson 9's answer to the big-die problem) need a way to talk to each other almost as fast as wires inside one die. Early products used each company's own die-to-die links; **UCIe** (Universal Chiplet Interconnect Express, a consortium standard since 2022) defines a common one, so in principle chiplets from different companies and foundries can share a package. As of 2025 most chiplet products still pair dies from one vendor.",
+          "**Chiplets** (the answer to the big-die problem in *Yield and cost*) need a way to talk to each other almost as fast as wires inside one die. Early products used each company's own die-to-die links; **UCIe** (Universal Chiplet Interconnect Express, a consortium standard since 2022) defines a common one, so in principle chiplets from different companies and foundries can share a package. As of 2025 most chiplet products still pair dies from one vendor.",
           "A UCIe link is built from **modules**: in the advanced-package version (silicon bridges or interposers) each module has 64 data lanes in each direction, at up to 32 Gb/s per lane in the first versions of the standard. Wider links put several modules side by side along the die edge (the **shoreline**), so edge length becomes a design budget.",
           "Between packages, data still leaves as electrical signals to optical modules plugged into the front of a switch or server, tens of centimetres away, and driving those traces costs a lot of power. **Co-packaged optics** (CPO) moves the optical engines into the same package as the switch chip, so the electrical path shrinks to millimetres and fibre leaves the package directly. As of 2025 network-switch makers have announced CPO switches for AI data centres; serviceability (a failed laser can no longer be swapped at the front panel) and yield are the main open questions.",
         ),
@@ -691,7 +691,7 @@ bin, ship      sort by speed and power, mark, pack
         title: "Test: catch failures early",
         body: P(
           "Testing happens twice for good reason. **Wafer sort** uses a **probe card**, a bed of needles that touches every die's pads, and an automatic test machine (ATE) runs a quick test in a second or so. Dead dies are marked and never packaged, so the expensive steps are not wasted on them.",
-          "**Final test** checks the packaged part at full speed and at temperature, catches damage from packaging, and sorts parts into **speed and power bins** (lesson 9). **Burn-in** stresses parts hot (often around 125 °C) at raised voltage for hours, so that weak parts, which would fail in their first weeks of use, fail in the factory instead. It is expensive, so it is used most where early failures are unacceptable: cars, servers, medical devices.",
+          "**Final test** checks the packaged part at full speed and at temperature, catches damage from packaging, and sorts parts into **speed and power bins** (*Yield and cost*). **Burn-in** stresses parts hot (often around 125 °C) at raised voltage for hours, so that weak parts, which would fail in their first weeks of use, fail in the factory instead. It is expensive, so it is used most where early failures are unacceptable: cars, servers, medical devices.",
           "Run a toy lot through the flow, with and without sort and burn-in.",
         ),
         widget: { type: "semi-test", props: { sort: true } },

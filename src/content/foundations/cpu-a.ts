@@ -326,7 +326,7 @@ export const cpuLessonsA: ConceptLesson[] = [
           hint: "Look at the three things on the right-hand side of the formula.",
           feedback: { 2: "Once the data fits, spare RAM sits unused: it changes none of instructions, CPI or clock speed." },
         },
-        explanation: "Every speed-up trick in this module attacks one of the three terms: fewer **instructions** (SIMD, better code), fewer **cycles per instruction** (pipelining, prediction, caches) or a faster **clock**. The next lessons are all about CPI.",
+        explanation: "Every speed-up trick in this module attacks one of the three terms: fewer **instructions** (SIMD, better code), fewer **cycles per instruction** (pipelining, prediction, caches) or a faster **clock**. Most of the lessons ahead are about CPI.",
       },
       {
         kind: "code",

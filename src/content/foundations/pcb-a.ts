@@ -81,7 +81,7 @@ export const pcbLessonsA: ConceptLesson[] = [
         kind: "question",
         title: "Which way round?",
         body: P(
-          "Capacitors store charge (see *Components in action: capacitors to op-amps*, \"Capacitors\"). Two kinds appear on almost every board. **Ceramic** capacitors (MLCC) are tiny, have no polarity and handle small values, up to a few µF. **Aluminium electrolytic** capacitors are cans that hold far more capacitance per part, and they are **polarised**: the stripe with minus signs marks the **negative** lead. On a new through-hole one, the **longer lead is positive**. Each capacitor also has a **voltage rating**, a limit you must stay under.",
+          "Capacitors store charge (see *Components in action: capacitors to op-amps*, \"Capacitors: storing charge\"). Two kinds appear on almost every board. **Ceramic** capacitors (MLCC) are tiny, have no polarity and handle small values, up to a few µF. **Aluminium electrolytic** capacitors are cans that hold far more capacitance per part, and they are **polarised**: the stripe with minus signs marks the **negative** lead. On a new through-hole one, the **longer lead is positive**. Each capacitor also has a **voltage rating**, a limit you must stay under.",
           "A new through-hole electrolytic goes across a **5 V rail and ground**. Which connection is right?",
         ),
         question: {

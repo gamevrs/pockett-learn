@@ -736,7 +736,7 @@ below V*  the FPGA is cheaper     above V*  the ASIC is cheaper
         title: "What \"tape-out\" means",
         body: P(
           "**Tape-out** is the moment the design is released for manufacturing: the final, signed-off **layout database** (in the **GDSII** or **OASIS** file format) is sent to the foundry, which turns it into masks. The word dates from the days when the data went to the fab on a reel of magnetic tape.",
-          "It is a one-way door. Before it, a team works through a **sign-off checklist**: final **STA** at every corner (setup and hold; *Low power and sign-off* covers corners and variation), **DRC** clean, **LVS** clean, power-grid (IR drop) and signal-integrity checks, and the verification and test-coverage goals from the last lesson. After it come masks, wafers (*The fab process loop*), packaging and test (*Packaging and test*), and **bring-up**: the first time real silicon runs your design.",
+          "It is a one-way door. Before it, a team works through a **sign-off checklist**: final **STA** at every corner (setup and hold; *Low power and sign-off: domains, corners and variation* covers corners and variation), **DRC** clean, **LVS** clean, power-grid (IR drop) and signal-integrity checks, and the verification and test-coverage goals from the last lesson. After it come masks, wafers (*The fab process loop*), packaging and test (*Packaging and test*), and **bring-up**: the first time real silicon runs your design.",
           "On the day before tape-out, which of these findings should stop the release?",
         ),
         question: {

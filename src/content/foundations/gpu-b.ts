@@ -293,7 +293,7 @@ export const gpuLessonsB: ConceptLesson[] = [
         title: "What does that allow?",
         body: "A GPU with 1 TB/s of memory bandwidth runs the **naive** kernel at 0.25 FLOP per byte. If memory is the only limit, how many **TFLOP/s** (trillions of FLOPs per second) can it reach?",
         question: { type: "number", answer: 0.25, tolerance: 0.01, unit: "TFLOP/s", hint: "Speed = bandwidth × FLOP per byte = 1 TB/s × 0.25." },
-        explanation: "1 TB/s × 0.25 FLOP/B = **0.25 TFLOP/s**, even though the chip might be able to do tens of TFLOP/s on simple maths. The kernel is **memory-bound**: bytes, not arithmetic, set its speed. Lesson 9 draws this as the *roofline*.",
+        explanation: "1 TB/s × 0.25 FLOP/B = **0.25 TFLOP/s**, even though the chip might be able to do tens of TFLOP/s on simple maths. The kernel is **memory-bound**: bytes, not arithmetic, set its speed. *GPUs for AI* draws this as the *roofline*.",
       },
       {
         kind: "code",
@@ -396,7 +396,7 @@ def arithmetic_intensity(n, tile):
         title: "How big is it?",
         body: "A model has **70 billion parameters** stored in FP16 (2 bytes each). How many **gigabytes** do just the weights take?",
         question: { type: "number", answer: 140, unit: "GB", hint: "70 billion × 2 bytes = 140 billion bytes." },
-        explanation: "70 × 10⁹ × 2 bytes = **140 GB**: more than any single consumer card, and a squeeze even on large data-centre cards, so such models are often quantised to fewer bits or split across several GPUs (lesson 10).",
+        explanation: "70 × 10⁹ × 2 bytes = **140 GB**: more than any single consumer card, and a squeeze even on large data-centre cards, so such models are often quantised to fewer bits or split across several GPUs (*Profiling and scaling*).",
       },
       {
         kind: "question",

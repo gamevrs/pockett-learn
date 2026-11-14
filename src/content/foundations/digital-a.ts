@@ -81,7 +81,7 @@ export const digitalLessonsA: ConceptLesson[] = [
         kind: "explain",
         title: "Power is spent on changing",
         body: P(
-          "What *does* use power? The output drives a **load**: the wire and the gate inputs it connects to. Electrically that load acts like a tiny capacitor (see *Capacitors* in the Analog module). Every time the output rises, the PMOS charges that capacitance from the supply. Every fall throws the charge away to ground.",
+          "What *does* use power? The output drives a **load**: the wire and the gate inputs it connects to. Electrically that load acts like a tiny capacitor (see *Capacitors: storing charge* in the Analog module). Every time the output rises, the PMOS charges that capacitance from the supply. Every fall throws the charge away to ground.",
           "So power depends on how often the node switches: **P ≈ α · C · V² · f**. C is the load capacitance, V the supply voltage, f the clock frequency, and **α** the **activity factor**: the fraction of clock cycles in which the node rises. A node that rises every cycle (like the clock itself) has α = 1; a quiet one has α near 0. Small extras like shoot-through and leakage come on top.",
           "Two consequences you can feel: a CPU runs hot when busy and cool when idle, and **lowering the voltage helps a great deal**, because V is squared.",
         ),
