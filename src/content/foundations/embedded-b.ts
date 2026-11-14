@@ -6,6 +6,9 @@ const c = (s: string) => "~~~c\n" + s.trim() + "\n~~~";
 const txt = (s: string) => "~~~text\n" + s.trim() + "\n~~~";
 /** Paragraphs joined with blank lines. */
 const P = (...paras: string[]) => paras.join("\n\n");
+/** Check for a C program: find the line main printed under this label and compare it with the expected text. */
+const printed = (label: string, expected: string, msg: string) =>
+  `{ const l = lines.find((s) => s.startsWith(${JSON.stringify(label + " ")}));\nassertEqual(l ?? "(not printed)", ${JSON.stringify(label + " " + expected)}, ${JSON.stringify(msg)}); }`;
 
 /** Lessons 6 to 10: serial protocols, DMA, boot and the memory map, RTOS and power, SoCs. */
 export const embeddedLessonsB: ConceptLesson[] = [
@@ -102,34 +105,84 @@ export const embeddedLessonsB: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "The device acknowledged and is ready",
-            "The bus is running too slowly",
-            "The device wants to send more data",
-            "Nobody acknowledged: no device answered that address (wrong address, no power, or a wiring fault)",
+            "The device acknowledged and is ready to send",
+            "No device acknowledged that address",
+            "The clock is too fast for this device to follow",
+            "The device is busy and asks the controller to wait",
           ],
-          answer: 3,
+          answer: 1,
           hint: "ACK means the receiver actively pulls SDA low. What keeps it high if nobody does?",
           feedback: {
             0: "An ACK is SDA LOW. High means nobody pulled it down.",
-            1: "Speed does not decide the ACK bit; most devices handle 100 kHz without trouble.",
-            2: "During the address phase, the 9th bit is only ever the ACK or NACK.",
+            2: "Speed does not decide the ACK bit; most devices handle 100 kHz without trouble.",
+            3: "A device that needs more time does ask the controller to wait, but that is clock stretching: it holds SCL low. It does not leave SDA high on the 9th clock.",
           },
         },
-        explanation: "A **NACK**: the pull-up kept SDA high because no chip pulled it low. Check the address (7-bit vs 8-bit form), the device's power, and that the pull-ups are fitted. An I²C bus scan, which tries every address and lists those that ACK, is often the first test on a new board. (*Debugging hardware* in *Building real products* tracks down a NACK like this one with a logic analyser.)",
+        explanation: "A **NACK**: the pull-up kept SDA high because no chip pulled it low, so no device answered that address. The usual causes are a wrong address (7-bit vs 8-bit form), no power to the device, and missing pull-ups, or a wiring fault. An I²C bus scan, which tries every address and lists those that ACK, is often the first test on a new board. (*Debugging hardware* in *Building real products* tracks down a NACK like this one with a logic analyser.)",
       },
       {
-        kind: "explain",
-        title: "SPI and its four modes",
+        kind: "code",
+        title: "Read the temperature",
         body: P(
-          "**SPI** uses a clock (SCLK), a line from controller to device (MOSI, also called COPI or SDO), one back (MISO, CIPO or SDI) and a **chip select** (CS) per device, pulled low to pick it. Every clock moves one bit **each way at once**, so a byte in and a byte out happen together. Tens of MHz are common.",
-          "There is no fixed timing: the **mode** sets it. **CPOL** is the clock's idle level (0 low, 1 high). **CPHA** says on which edge data is sampled: CPHA = 0 samples on the first (leading) edge of each clock pulse, CPHA = 1 on the second (trailing) edge. Mode = CPOL × 2 + CPHA, so modes 0 to 3. The device's datasheet tells you its mode; the controller must match.",
+          "Back to I²C, with a real chip: the **TMP102** temperature sensor, at address 0x48 (the sensor in the widget from earlier, which answered 0x19). To read it, the controller writes the **pointer register** number 0x00 (the temperature register), makes a repeated START and reads **2 bytes**: first the **msb**, then the **lsb**.",
+          "The temperature is a 12-bit number in **two's complement** (see *How computers store information*), 0.0625 °C per step. It is **left-justified** in the two bytes: the msb holds the top 8 bits and the top 4 bits of the lsb hold the rest; the low 4 bits of the lsb are zero. A negative temperature has bit 11 of the 12-bit number set.",
+          "Write `tmp102_celsius(msb, lsb)`, which turns the two bytes into degrees Celsius. (Source: the TI TMP102 datasheet, 12-bit mode, which is the default.) The program's `main` tries four readings and prints them; the checks read those lines.",
         ),
-        widget: { type: "emb-proto", props: { protocols: ["spi"], mode: 0, deviceMode: 0, byte: 0xa5 } },
+        language: "cpp",
+        starter: `#include <cstdint>
+#include <cstdio>
+
+// msb and lsb are the two bytes read from the TMP102's temperature register.
+float tmp102_celsius(uint8_t msb, uint8_t lsb) {
+    return 0.0f;  // your code here
+}
+
+// The checks read what main prints. Leave main as it is.
+int main() {
+    std::printf("room %.4f\\n", tmp102_celsius(0x19, 0x00));
+    std::printf("hot %.4f\\n", tmp102_celsius(0x7F, 0xF0));
+    std::printf("slightly_cold %.4f\\n", tmp102_celsius(0xFF, 0x00));
+    std::printf("freezer %.4f\\n", tmp102_celsius(0xE7, 0x00));
+    return 0;
+}
+`,
+        solution: `#include <cstdint>
+#include <cstdio>
+
+// msb and lsb are the two bytes read from the TMP102's temperature register.
+float tmp102_celsius(uint8_t msb, uint8_t lsb) {
+    int raw = (msb << 4) | (lsb >> 4);   // the 12-bit number
+    if (raw & 0x800) {
+        raw -= 4096;                     // bit 11 set: negative (two's complement)
+    }
+    return raw * 0.0625f;
+}
+
+// The checks read what main prints. Leave main as it is.
+int main() {
+    std::printf("room %.4f\\n", tmp102_celsius(0x19, 0x00));
+    std::printf("hot %.4f\\n", tmp102_celsius(0x7F, 0xF0));
+    std::printf("slightly_cold %.4f\\n", tmp102_celsius(0xFF, 0x00));
+    std::printf("freezer %.4f\\n", tmp102_celsius(0xE7, 0x00));
+    return 0;
+}
+`,
+        tests: [
+          { id: "room", description: "0x19, 0x00 is 25.0 °C", assertionCode: printed("room", "25.0000", "tmp102_celsius(0x19, 0x00) should be 25.0000: raw value 0x190 = 400 steps of 0.0625") },
+          { id: "hot", description: "0x7F, 0xF0 is 127.9375 °C, the largest reading", assertionCode: printed("hot", "127.9375", "tmp102_celsius(0x7F, 0xF0) should be 127.9375: raw value 0x7FF = 2047 steps") },
+          { id: "minus1", description: "0xFF, 0x00 is −1.0 °C", assertionCode: printed("slightly_cold", "-1.0000", "tmp102_celsius(0xFF, 0x00) should be -1.0000: raw value 0xFF0 has bit 11 set, so it is negative") },
+          { id: "minus25", description: "0xE7, 0x00 is −25.0 °C", assertionCode: printed("freezer", "-25.0000", "tmp102_celsius(0xE7, 0x00) should be -25.0000: raw value 0xE70 has bit 11 set, so it is negative") },
+        ],
+        hints: ["First join the two bytes into one 12-bit number: the msb gives the upper 8 bits, the lsb gives the lower 4 in its upper half.", "Then handle negative readings: with bit 11 set, the 12-bit number stands for a negative value, so move it down into the negative range. Finally scale by the size of one step."],
       },
       {
         kind: "question",
         title: "Match the sensor",
-        body: "This sensor's datasheet says it uses **SPI mode 3**. Set the controller so they agree.",
+        body: P(
+          "**SPI** uses a clock (SCLK), a line from controller to device (MOSI, also called COPI or SDO), one back (MISO, CIPO or SDI) and a **chip select** (CS) per device, pulled low to pick it. Every clock moves one bit **each way at once**, so a byte in and a byte out happen together. Tens of MHz are common.",
+          "There is no fixed timing: the **mode** sets it. **CPOL** is the clock's idle level (0 low, 1 high). **CPHA** says on which edge data is sampled: CPHA = 0 samples on the first (leading) edge of each clock pulse, CPHA = 1 on the second (trailing) edge. Mode = CPOL × 2 + CPHA, so modes 0 to 3. The device's datasheet tells you its mode; the controller must match.",
+          "This sensor's datasheet says it uses **SPI mode 3**. Set the controller so they agree.",
+        ),
         widget: { type: "emb-proto", props: { protocols: ["spi"], mode: 0, deviceMode: 3, lockDevice: true, byte: 0xa5 } },
         question: {
           type: "widget",
@@ -219,8 +272,8 @@ export const embeddedLessonsB: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "DMA cannot count that high",
-            "It adds a second of delay (latency) before any sound is processed, and uses a lot of RAM",
+            "A DMA channel cannot count that many items",
+            "Every sample waits up to a second to be processed",
             "Larger buffers make the ADC less accurate",
             "The half-transfer interrupt only works for small buffers",
           ],
@@ -239,9 +292,8 @@ export const embeddedLessonsB: ConceptLesson[] = [
         title: "The cache trap",
         body: P(
           "Bigger chips put a **data cache** between the CPU and RAM (see *The memory hierarchy*). Many DMA engines see **only RAM**, not the cache. In *Many cores, one memory* hardware kept the caches coherent for you; here, on many MCUs with a data cache (Cortex-M7 class parts, for example) and on some application processors, **nobody does**.",
-          "So two things can go wrong. **Sending**: the CPU writes a message, it sits in the cache (write-back), and DMA sends the old bytes from RAM. **Receiving**: DMA writes new bytes into RAM, but the CPU reads its old cached copy. The fixes: **clean** the cache lines (write them back) before DMA reads; **invalidate** them (drop them) before the CPU reads what DMA wrote. Try sending first.",
+          "So two things can go wrong. **Sending**: the CPU writes a message, it sits in the cache (write-back), and DMA sends the old bytes from RAM. **Receiving**: DMA writes new bytes into RAM, but the CPU reads its old cached copy. The fixes: **clean** the cache lines (write them back) before DMA reads; **invalidate** them (drop them) before the CPU reads what DMA wrote. Try it.",
         ),
-        widget: { type: "emb-cache", props: { scenario: "tx" } },
       },
       {
         kind: "question",
@@ -254,19 +306,20 @@ export const embeddedLessonsB: ConceptLesson[] = [
           prompt: "Write the message, do the right cache operation, then start the DMA.",
           hint: "DMA reads RAM. Where is the new message right after the CPU writes it?",
         },
-        explanation: "Write, then **clean** (write the dirty line back to RAM), then start the DMA. Invalidating instead would throw the new message away. Skipping both sends the stale bytes still in RAM. These bugs are infamous because they come and go with cache timing: a debugger that halts the CPU can even make them vanish.",
+        explanation: "Write, then **clean** (write the dirty line back to RAM), then start the DMA. In code the order is: write the buffer, call the clean (CMSIS `SCB_CleanDCache_by_Addr`, which ends with a DSB barrier so the clean has really finished), and only then write the DMA enable register. Ordinary stores to the buffer may otherwise still be in flight, or be reordered around that start. Invalidating instead would throw the new message away. Skipping both sends the stale bytes still in RAM. These bugs are infamous because they come and go with cache timing: a debugger that halts the CPU can even make them vanish.",
       },
       {
         kind: "question",
         title: "Receiving",
         body: "DMA has just written a received packet into a buffer the CPU had read earlier. What must the CPU do **before reading it**?",
+        widget: { type: "emb-cache", props: { scenario: "rx", lockScenario: true }, after: true },
         question: {
           type: "choice",
           options: [
-            "Invalidate the buffer's cache lines, so the reads go to RAM",
+            "Invalidate the buffer's cache lines",
             "Clean the buffer's cache lines",
             "Nothing: DMA updates the cache automatically",
-            "Declare the buffer volatile",
+            "Declare the buffer volatile in C",
           ],
           answer: 0,
           hint: "The cache holds an old copy. Do you want to keep it, write it out, or drop it?",
@@ -276,7 +329,7 @@ export const embeddedLessonsB: ConceptLesson[] = [
             3: "volatile only stops the compiler caching values in registers. The hardware data cache still serves the old line.",
           },
         },
-        explanation: "**Invalidate** before reading (and, to be safe, before starting the receive, so no dirty line gets written back over the new data later). Keep DMA buffers aligned to cache lines so an invalidate cannot destroy a neighbouring variable. The alternative is to place DMA buffers in a **non-cacheable** memory region, set up with the memory protection unit.",
+        explanation: "**Invalidate** before reading, so the reads go to RAM instead of the old cached copy (and, to be safe, before starting the receive, so no dirty line gets written back over the new data later). Keep DMA buffers aligned to cache lines so an invalidate cannot destroy a neighbouring variable. The alternative is to place DMA buffers in a **non-cacheable** memory region, set up with the memory protection unit.",
       },
       {
         kind: "recap",
@@ -317,14 +370,13 @@ export const embeddedLessonsB: ConceptLesson[] = [
           items: [
             "The CPU loads the stack pointer from the first word of the vector table",
             "It loads the program counter from the second word: the reset handler",
-            "The startup code copies .data's initial values from flash to RAM",
-            "It fills .bss with zeros",
-            "It sets up the clocks",
+            "The reset handler, the startup code, starts running",
+            "It prepares RAM: copies .data's initial values from flash and fills .bss with zeros",
             "It calls main()",
           ],
           hint: "The hardware does the first two by itself. The startup code then prepares memory before anything in C runs.",
         },
-        explanation: "The hardware only fetches SP and PC; everything else is ordinary code. Some startup files set up the clocks before the copy so that it runs faster; either way, **main comes last**. On a PC the steps are bigger but the idea is the same: something must prepare memory before your program's first line.",
+        explanation: "The hardware only fetches SP and PC; everything else is ordinary code. The clocks are not in the list because their place depends on the startup file. CMSIS-style startup files call `SystemInit` (clocks, FPU) first, before the copy (the current STM32Cube GCC startup does this), and older ones call it after the copy; either way, **main comes last**. (Copying .data and zeroing .bss do not depend on each other, so they are one item here; startup files conventionally do the copy first.) Many startup files also run the C library's initialisation just before `main`. On a PC the steps are bigger but the idea is the same: something must prepare memory before your program's first line.",
       },
       {
         kind: "explain",
@@ -348,25 +400,25 @@ const char msg[] = "hi";   // .rodata: stays in flash
         question: {
           type: "choice",
           options: [
-            "In flash at both times",
-            "In RAM at both times",
-            "In RAM while running; the initial value is kept in flash and copied at startup",
-            "In the CPU's registers",
+            "In flash, both while running and while off",
+            "In RAM, both while running and while off",
+            "In RAM while running, with its 42 stored in flash",
+            "In CPU registers while running, and in flash when off",
           ],
           answer: 2,
           hint: "It must be writable at run time, but RAM forgets everything at power-off.",
           feedback: {
             0: "Flash cannot be written like RAM (it is erased and programmed in blocks), so a changing variable cannot live there.",
             1: "RAM loses its contents without power; the 42 would be gone at the next boot.",
-            3: "Registers hold values only briefly while instructions work on them; globals live in memory.",
+            3: "Registers hold values only briefly while instructions work on them; a global variable has a home in memory for the whole run.",
           },
         },
-        explanation: "A **.data** variable has a run address (VMA) in **RAM** and a load address (LMA) in **flash**. The startup code copies the initial values across before `main`. `const` data needs no copy: it is read straight from flash.",
+        explanation: "A **.data** variable has a run address (VMA) in **RAM** and a load address (LMA) in **flash**: the initial value is kept in flash and the startup code copies it across before `main`. `const` data needs no copy: it is read straight from flash.",
       },
       {
         kind: "question",
         title: "Broken startup code",
-        body: "This startup code lets you skip steps. Boot to `main` so that **counter is 42** and **total is 0**.",
+        body: "Two steps of this startup code are switched off. Find them, switch them back on, and boot to `main` so that **counter is 42** and **total is 0**.",
         widget: { type: "emb-boot", props: { skip: true } },
         question: {
           type: "widget",
@@ -397,42 +449,60 @@ const char msg[] = "hi";   // .rodata: stays in flash
         explanation: "**64 KiB** fits. 126 KiB plus .data and the 2 KiB stack is more than 128 KiB, and the linker stops with an error like `region RAM overflowed`. Better a link error now than a stack crash in the field.",
       },
       {
-        kind: "explain",
-        title: "Bootloaders",
-        body: P(
-          "Many products need **firmware updates** without a debugger. A **bootloader** is a small, separate program in the first part of flash. At reset it runs first, checks whether a new firmware image is waiting (arriving over UART, USB, or a radio for **over-the-air** updates), writes it into flash, **verifies it** (a checksum, or a cryptographic signature for **secure boot**), and then jumps to the application.",
-          "To jump, it reads the application's own vector table, sets the stack pointer and program counter from it, and (on Cortex-M) points the **vector table offset register** at it so interrupts go to the application's handlers. So the application must be **linked at its own address**, after the bootloader. Many MCUs also have a fixed bootloader in **ROM** from the factory, so a blank chip can be programmed over UART or USB.",
-        ),
-      },
-      {
         kind: "question",
         title: "The wrong address",
-        body: "A bootloader occupies the first **16 KiB** of flash. The application is still linked for flash starting at **0x0000_0000**. What goes wrong?",
+        body: P(
+          "Many products need **firmware updates** without a debugger. A **bootloader** is a small, separate program in the first part of flash. At reset it runs first, checks whether a new firmware image is waiting (arriving over UART, USB, or a radio for **over-the-air** updates), writes it into flash, **verifies it** (a checksum, or a cryptographic signature for **secure boot**, which the last step of this lesson explains), and then jumps to the application.",
+          "To jump, it reads the application's own vector table and sets the stack pointer and program counter from it. It also points the **vector table offset register** (VTOR) at that table, so interrupts go to the application's handlers. VTOR exists on Cortex-M3 and later and on most M0+ parts. A Cortex-M0 has no VTOR, so bootloaders there copy the application's vector table into SRAM and remap SRAM to address 0, as on STM32F0. Either way, the application must be **linked at its own address**, after the bootloader. Many MCUs also have a fixed bootloader in **ROM** from the factory, so a blank chip can be programmed over UART or USB.",
+          "Now a mistake. A bootloader occupies the first **16 KiB** of flash. The application is still linked for flash starting at **0x0000_0000**. What goes wrong?",
+        ),
         question: {
           type: "choice",
           options: [
-            "Nothing: the CPU relocates code automatically",
-            "Only the application's interrupts are slower",
-            "The bootloader is now larger",
-            "Its code and vector table expect addresses where the bootloader sits: flashing it overwrites the bootloader, or, placed at 16 KiB, it jumps to wrong addresses",
+            "The CPU relocates it to 0x4000 at reset",
+            "Only interrupts break; plain code runs fine",
+            "Nothing: Thumb code is position-independent",
+            "Its absolute addresses point into the bootloader",
           ],
           answer: 3,
           hint: "Machine code contains absolute addresses chosen by the linker.",
           feedback: {
-            0: "An MCU has no loader that fixes up addresses; code runs exactly where the linker put it.",
-            1: "Speed is not the issue. The vector table points at the wrong place entirely.",
-            2: "The bootloader's size does not change; it is the application's addresses that are wrong.",
+            0: "Cortex-M has no loader and no relocation at reset: code runs exactly where the linker put it, at the address the CPU fetches it from.",
+            1: "Interrupts are only the first thing you notice. Function pointers, constants and global variables hold absolute addresses too, and they point at the wrong place as well.",
+            2: "Default GCC builds for Cortex-M are not position-independent: the vector table, function pointers and addresses of globals are absolute.",
           },
         },
-        explanation: "Change the application's linker script so its flash starts at **0x0000_4000** (16 KiB), and have the bootloader set the vector table offset there before jumping. Mixing up these addresses is a classic first-bootloader bug: the board then crashes on the first interrupt.",
+        explanation: "Linked for 0x0000_0000, the application's vector table, function pointers and data addresses all point into the bootloader's own 16 KiB. Flash it there and you overwrite the bootloader; flash it at 16 KiB and every absolute address is still 16 KiB too low. Change the application's linker script so its flash starts at **0x0000_4000** (16 KiB), and have the bootloader set the vector table offset there before jumping. Mixing up these addresses is a classic first-bootloader bug: the board then crashes on the first interrupt.",
+      },
+      {
+        kind: "question",
+        title: "A chain of trust",
+        body: P(
+          "Secure boot answers a question: how does the chip know the firmware it is about to run is the maker's, and not an attacker's? A check is only as trustworthy as the code doing it, so the chain has to **start in code nobody can change**: the **boot ROM**, written at the factory (mask ROM).",
+          "A hash of the maker's public key is burnt into **one-time-programmable fuses** (OTP): bits that can be written once and never erased. (A hash is a short fingerprint of the key, so a 32-byte SHA-256 value takes far fewer fuses than the whole key.) Each stage then checks the **signature** on the next one before running it. A signature is made with the maker's private key, which never leaves the maker's signing server, and anyone with the public key can check it. The bootloader also refuses images with an older version number than a counter kept in OTP or protected flash (**anti-rollback**): an old, signed image with a known bug must not be accepted. If a check fails, the device stays in a recovery mode.",
+          "Examples (no favourite implied): ESP32 Secure Boot v2, MCUboot (used with Zephyr), Arm TF-M, NXP HAB. Two honest caveats: secure boot means little if the debug port (SWD/JTAG) is left open, so lock it (STM32 has readout protection levels; ESP32 has eFuses that disable JTAG). And if the private key is lost or leaks, control of every device is lost with it.",
+          "Put one boot chain in order.",
+        ),
+        question: {
+          type: "order",
+          items: [
+            "The boot ROM hashes the public key stored with the bootloader and compares it with the hash in OTP fuses",
+            "The ROM checks the bootloader's signature with that key, then runs it",
+            "The bootloader checks the application's signature and its version number",
+            "The bootloader jumps to the application",
+          ],
+          hint: "Each stage can only be trusted if something already trusted has checked it, so the chain starts with what nobody can change.",
+        },
+        explanation: "This is a **chain of trust**: each link is checked by the one before it. The chain hangs on the **root of trust**, the boot ROM plus the OTP fuses, because neither can be rewritten. The key hash in the fuses is compared first, so a bootloader signed by someone else is rejected before it ever runs. The version check is what stops an attacker from loading an old, genuine, buggy image. And remember the caveats: with the debug port open, an attacker can bypass the chain, and the private signing key must be guarded as carefully as the devices.",
       },
       {
         kind: "recap",
         points: [
           "At reset a Cortex-M CPU loads **SP** from the vector table's first word and **PC** (the reset handler) from the second.",
-          "Startup code copies **.data** from flash (LMA) to RAM (VMA), zeroes **.bss**, sets up clocks, then calls `main`.",
+          "Startup code sets up the clocks (`SystemInit`), copies **.data** from flash (LMA) to RAM (VMA), zeroes **.bss**, then calls `main`.",
           "**.text** and **.rodata** stay in flash; .data, .bss, heap and **stack** use RAM. The linker reports when a region overflows.",
           "A **bootloader** runs first, updates and verifies the application, then jumps to it; the application must be linked at its own address.",
+          "**Secure boot** is a chain of signature checks that starts in the boot ROM and OTP fuses, plus anti-rollback. It is only as strong as the locked debug port and the guarded signing key.",
         ],
       },
     ],
@@ -472,7 +542,7 @@ void motor_task(void *arg) {
           type: "choice",
           options: [
             "It keeps running that task in a loop until data arrives",
-            "It marks the task blocked and runs the highest-priority task that is ready; when data arrives the task becomes ready again",
+            "It blocks the task and runs the next ready one",
             "It restarts the task from the beginning",
             "It reports an error, because queues must never be empty",
           ],
@@ -484,7 +554,7 @@ void motor_task(void *arg) {
             3: "An empty queue is the normal state between messages.",
           },
         },
-        explanation: "The task **blocks**. When an ISR or another task puts a message in the queue, it becomes ready, and since it has the highest priority it runs at once. Queues are the safe way to pass data between tasks and from ISRs (with the ISR-safe call variant), because the RTOS does the locking.",
+        explanation: "The scheduler marks the task **blocked** and runs the highest-priority task that is ready. When an ISR or another task puts a message in the queue, the blocked task becomes ready again, and since it has the highest priority it runs at once. Queues are the safe way to pass data between tasks and from ISRs (with the ISR-safe call variant), because the RTOS does the locking.",
       },
       {
         kind: "explain",
@@ -493,7 +563,7 @@ void motor_task(void *arg) {
           "Tasks that share something, say a sensor bus, protect it with a **mutex**: a lock only one task can hold. Now a trap. **Low** takes the mutex. **High** wakes up, needs the mutex and blocks: it must wait for Low, which is fine for a moment. But then **Medium**, which needs no mutex at all, becomes ready. It outranks Low, so it runs, and Low cannot finish and release the lock. **High waits for Medium**, a task it outranks. That is **priority inversion**.",
           "The fix many RTOSes offer is **priority inheritance**: while Low holds a mutex that High wants, Low temporarily runs at High's priority, so Medium cannot get in the way. Look at the chart with a plain mutex, then switch.",
         ),
-        widget: { type: "emb-rtos", props: { inherit: false, mediumWork: 6 } },
+        widget: { type: "emb-rtos", props: { inherit: false, mediumWork: 3 } },
       },
       {
         kind: "question",
@@ -515,10 +585,10 @@ void motor_task(void *arg) {
         question: {
           type: "choice",
           options: [
-            "Engineers found the inversion, then enabled priority inheritance on the mutex involved by uploading a change from Earth",
-            "A new computer was sent on a later mission",
-            "They lowered the lander's clock speed",
-            "They removed the RTOS and rewrote the software as one loop",
+            "A patch uploaded from Earth turned on priority inheritance",
+            "The flight computer was replaced on a later mission",
+            "The lander's processor was slowed to ease the load",
+            "The RTOS was removed and the software rewritten as one loop",
           ],
           answer: 0,
           hint: "The change was small: one setting on one lock.",
@@ -543,10 +613,10 @@ void motor_task(void *arg) {
         kind: "question",
         title: "A year on a coin cell",
         body: "A sensor on a **CR2032 coin cell** wakes every **10 s** and works for **20 ms**. Make it last **at least a year** (365 days).",
-        widget: { type: "emb-power", props: { modeId: "sleep", activeMs: 20, periodS: 10, capacityMah: 220 } },
+        widget: { type: "emb-power", props: { modeId: "sleep", activeMs: 20, periodS: 10, capacityMah: 220, lockBattery: true } },
         question: {
           type: "widget",
-          goal: { minDays: 365 },
+          goal: { minDays: 365, capacityMah: 220 },
           prompt: "Pick the sleep mode (and other settings) that give at least 365 days.",
           hint: "Look at the share of the charge used while asleep. Which mode cuts the sleep current the most while keeping a fast wake-up?",
         },
@@ -561,7 +631,7 @@ void motor_task(void *arg) {
         ),
         language: "python",
         starter: `def battery_hours(capacity_mAh, active_mA, sleep_uA, duty):
-    # average mA = duty * active + (1 - duty) * sleep (in mA!)
+    # your code here
     return 0
 `,
         solution: `def battery_hours(capacity_mAh, active_mA, sleep_uA, duty):
@@ -577,13 +647,16 @@ void motor_task(void *arg) {
         hints: ["Convert the sleep current: sleep_uA / 1000 gives mA.", "Average = duty × active + (1 − duty) × sleep; hours = capacity ÷ average."],
       },
       {
-        kind: "explain",
+        kind: "question",
         title: "Measuring current",
         body: P(
-          "Sleep currents of microamps and active bursts of milliamps are hard to measure. A multimeter in series reads an average and misses short spikes, and its shunt resistor drops voltage that can disturb the circuit (the **burden voltage**). Engineers use a **current probe** or **power profiler** that samples fast across a wide range (the Nordic PPK2, Joulescope and Qoitech Otii are examples; prices range from around a hundred to a few thousand dollars), or a small shunt resistor and an oscilloscope.",
+          "Sleep currents of microamps and active bursts of milliamps are hard to measure. A multimeter in series reads an average and misses short spikes. Its **shunt** (a small resistor the current flows through, so the meter can measure the voltage across it) also drops voltage that can disturb the circuit: the **burden voltage**.",
+          "Try it. A basic 3½-digit multimeter on its 200 µA range uses a shunt of about 1 kΩ (typical: 200 mV full scale). Your board sleeps at a few µA, then wakes and draws **5 mA**. If the meter stayed on that range, work out the voltage the shunt would have to drop at 5 mA, in **volts**.",
           "Real batteries are not ideal either: a coin cell's usable capacity drops at high pulse currents and in the cold, and every regulator, LED and sensor adds its own current. Measure the real board, and design with margin.",
           "Safety: lithium cells can deliver large currents when shorted. Never short a coin cell or a LiPo, use cells with protection circuits, and don't charge lithium cells without a proper charger.",
         ),
+        question: { type: "number", answer: 5, tolerance: 0.05, unit: "V", hint: "Ohm's law: V = I × R. Convert 5 mA to amps first." },
+        explanation: "V = 0.005 A × 1000 Ω = **5 V**. That is more than the 3 V coin cell itself, so in reality the meter's shunt would take the voltage the board needs: its supply collapses and the MCU browns out or resets. That is the burden voltage at work. It is why engineers use a **power profiler** (the Nordic PPK2, Joulescope and Qoitech Otii are examples) that switches ranges fast, or a tiny shunt with a precise amplifier, or a small shunt resistor and an oscilloscope.",
       },
       {
         kind: "recap",
@@ -629,18 +702,13 @@ void motor_task(void *arg) {
         explanation: "General, branchy code (app logic) goes to the **big cores**; light background work to the **little cores**; graphics to the **GPU**; neural networks with int8 weights to the **NPU**; always-on audio to the low-power **DSP**; raw camera data to the **ISP**; video to the **video codec**. A specialist does its job many times more efficiently than a CPU, which is why phones are full of them.",
       },
       {
-        kind: "explain",
-        title: "Running Linux",
-        body: P(
-          "SoCs usually run a full OS such as **Linux** or Android. That needs an **MMU** for virtual memory (*Virtual memory*), which most MCUs lack, and a longer boot chain than the one in *Boot and the memory map*:",
-          "1. A **boot ROM** inside the chip runs first. It can only reach on-chip SRAM and a few boot devices.\n2. It loads a small **first-stage loader** into SRAM, whose main job is to set up the external DRAM.\n3. A full bootloader (**U-Boot** is a common open-source one) loads the kernel and a **device tree** into DRAM.\n4. The **Linux kernel** starts, probes its drivers and mounts the root filesystem.\n5. **init** (often systemd) starts the user programs.",
-          "With secure boot, every stage checks the signature of the next before running it.",
-        ),
-      },
-      {
         kind: "question",
         title: "The chain",
-        body: "Put the boot chain of a Linux SoC in order.",
+        body: P(
+          "SoCs usually run a full OS such as **Linux** or Android. That needs an **MMU** for virtual memory (*Virtual memory*), which most MCUs lack, and a longer boot chain than the one in *Boot and the memory map*. Five stages take part, listed here in no particular order:",
+          "- **init** (often systemd) starts the user programs.\n- A full bootloader (**U-Boot** is a common open-source one) loads the kernel and a **device tree** into DRAM.\n- A **boot ROM** inside the chip. It can only reach on-chip SRAM and a few boot devices.\n- The **Linux kernel** probes its drivers and mounts the root filesystem.\n- A small **first-stage loader**, loaded into SRAM, whose main job is to set up the external DRAM.",
+          "With secure boot, every stage checks the signature of the next before running it (see *Boot and the memory map*, \"A chain of trust\"). Put the boot chain of a Linux SoC in order.",
+        ),
         question: {
           type: "order",
           items: [
@@ -652,13 +720,13 @@ void motor_task(void *arg) {
           ],
           hint: "Each stage can only use the memory the previous one made available.",
         },
-        explanation: "Each stage prepares more of the machine for the next: the ROM knows only SRAM and boot devices, the first stage brings up DRAM, the bootloader can then load something big, and the kernel takes over all hardware. Tools such as **Yocto** and **Buildroot** build this whole stack for a board.",
+        explanation: "Each stage prepares more of the machine for the next: the ROM knows only SRAM and boot devices, the first stage brings up DRAM, the bootloader can then load something big, and the kernel takes over all hardware. The exact stages differ between SoCs. Tools such as **Yocto** and **Buildroot** build this whole stack for a board.",
       },
       {
         kind: "explain",
         title: "Device trees and drivers",
         body: P(
-          "A PC can ask its buses which devices are attached (PCIe and USB enumerate themselves). Most things on an SoC board cannot: a sensor on I²C just sits at an address. So Linux on Arm and RISC-V boards reads a **device tree**, a text description of the hardware compiled into a binary blob, that says what is where:",
+          "A PC can ask its buses which devices are attached (PCIe and USB enumerate themselves; *Links between chips* shows how). Most things on an SoC board cannot: a sensor on I²C just sits at an address. So Linux on Arm and RISC-V boards reads a **device tree**, a text description of the hardware compiled into a binary blob, that says what is where:",
           txt(`
 &i2c1 {
     status = "okay";
@@ -680,10 +748,10 @@ void motor_task(void *arg) {
         question: {
           type: "choice",
           options: [
-            "It contains the drivers' machine code",
-            "It speeds up the kernel's boot",
-            "It describes hardware the kernel cannot discover by itself (addresses, interrupts, which pins), so one kernel can run on many different boards",
-            "It replaces the bootloader",
+            "It holds the machine code of the drivers",
+            "It makes the kernel boot faster on every board",
+            "It describes the board's hardware to the kernel",
+            "It replaces the bootloader on the board",
           ],
           answer: 2,
           hint: "A sensor at an I²C address has no way to announce itself.",
@@ -693,16 +761,35 @@ void motor_task(void *arg) {
             3: "The bootloader still runs; it usually loads the device tree and hands it to the kernel.",
           },
         },
-        explanation: "The device tree is **data, not code**: a board description. Change the board (another sensor, other pins) and you change the device tree, not the kernel. Board vendors ship device trees for their boards; adding a part means adding a node and making sure its driver is enabled.",
+        explanation: "The device tree describes hardware the kernel cannot discover by itself (addresses, interrupts, which pins), so one kernel can run on many different boards. It is **data, not code**: a board description. Change the board (another sensor, other pins) and you change the device tree, not the kernel. Board vendors ship device trees for their boards; adding a part means adding a node and making sure its driver is enabled.",
       },
       {
-        kind: "explain",
-        title: "Programming the GPU and NPU",
+        kind: "question",
+        title: "Write the node",
+        body: "The datasheet of a TMP102-like sensor lists its I²C address as \"0x90 (write) / 0x91 (read)\". You add the sensor to the device tree. Which `reg` goes in its node?",
+        question: {
+          type: "choice",
+          options: ["reg = <0x90>", "reg = <0x91>", "reg = <0x48>", "reg = <0x24>"],
+          answer: 2,
+          hint: "The datasheet's two numbers are the whole address byte on the wire. What else is in that byte besides the address?",
+          feedback: {
+            0: "0x90 is the 8-bit form: the 7-bit address shifted left by one, with the write bit (0) at the end. Linux's I²C uses the 7-bit address.",
+            1: "0x91 is the same 8-bit form with the read bit (1) at the end. The driver adds the read or write bit itself, so the node holds the 7-bit address.",
+            3: "That is the address shifted right one place too many. Drop the R/W bit once: 0x90 shifted right by one.",
+          },
+        },
+        explanation: "The datasheet gives the address byte as it appears on the wire: the 7-bit address, shifted left by one, plus the R/W bit. 0x90 and 0x91 are both 0x48 with a different last bit, so `reg = <0x48>`, as in the node above (and in *Talking to other chips*, \"The address byte\"). Confusing the two forms is a very common reason a sensor does not show up.",
+      },
+      {
+        kind: "question",
+        title: "Copy or share?",
         body: P(
-          "The GPU on an SoC is programmed like the ones in the GPU module (*Kernels and threads*): through graphics APIs such as **OpenGL ES** and **Vulkan**, or compute APIs such as **OpenCL** or the vendor's own. One big difference from a PC: there is usually **no separate GPU memory**. CPU and GPU share the same DRAM (*GPU memory* explained why copies over PCIe are expensive), so data need not be copied, but the caches still have to be kept coherent, by the hardware or by the driver.",
-          "The **NPU** is usually reached through an ML framework: you export a trained model, typically **quantised to int8**, and a **delegate** or **execution provider** (in LiteRT, formerly TensorFlow Lite, or ONNX Runtime, for example) hands the layers it supports to the vendor's NPU driver. The DSP has its own vendor SDK.",
-          "Be honest about the cost: these toolchains differ by vendor, some are closed or need a developer agreement, and the supported features change between chips. Check before you choose the chip.",
+          "The GPU on an SoC is programmed like the ones in the GPU module (*Kernels and threads*): through graphics APIs such as **OpenGL ES** and **Vulkan**, or compute APIs such as **OpenCL** or the vendor's own. One big difference from a PC: there is usually **no separate GPU memory**. CPU and GPU share the same DRAM, so a buffer need not be copied (*GPU memory* explained why copies over PCIe are expensive). The caches still have to be kept coherent, by the hardware or by the driver.",
+          "The **NPU** is usually reached through an ML framework: you export a trained model, typically **quantised to int8**, and a **delegate** or **execution provider** (in LiteRT, formerly TensorFlow Lite, or ONNX Runtime, for example) hands the layers it supports to the vendor's NPU driver. The DSP has its own vendor SDK. Be honest about the cost: these toolchains differ by vendor, some are closed or need a developer agreement, and the supported features change between chips. Check before you choose the chip.",
+          "Now put a number on the copying. A 1920 × 1080 camera frame in RGBA is **4 bytes per pixel**. A PC with a discrete GPU copies it over PCIe at about **16 GB/s** (roughly the raw limit of PCIe 3.0 x16 or 4.0 x8; real copies get a bit less). Work out the **one-way copy time** of one frame, in **milliseconds**.",
         ),
+        question: { type: "number", answer: 0.518, tolerance: 0.01, unit: "ms", hint: "Bytes per frame = width × height × 4. Then divide by the bytes per second, and convert seconds to milliseconds." },
+        explanation: "1920 × 1080 × 4 = 8,294,400 bytes, and 8,294,400 ÷ 16,000,000,000 bytes/s = 0.5184 ms, so about **0.52 ms**. At 60 frames per second, copying there and back is about 2 × 0.52 × 60 = 62 ms of copying every second (around 6% of the time), and that is the ideal figure. On an SoC with shared DRAM the GPU reads the same buffer (zero-copy) and pays only for cache maintenance, as in *DMA: moving data without the CPU*.",
       },
       {
         kind: "question",
@@ -711,20 +798,20 @@ void motor_task(void *arg) {
         question: {
           type: "choice",
           options: [
-            "The NPU is broken",
-            "int8 is always slower than float",
-            "The model is too small for the NPU to notice",
-            "That layer falls back to the CPU, so data shuttles between NPU and CPU and the slow part dominates",
+            "int8 maths is slower than float on most NPUs",
+            "The NPU needs a warm-up run before it speeds up",
+            "The model is too small to keep the NPU busy",
+            "The unsupported layer falls back to the CPU",
           ],
           answer: 3,
           hint: "A delegate only takes the operations it knows. What happens to the rest?",
           feedback: {
-            0: "The other layers run fine on it; the profile points at one unsupported operation.",
-            1: "On NPUs int8 is normally the fastest format; that is why models are quantised.",
-            2: "Size can matter, but the profiler already named the cause: an unsupported layer.",
+            0: "On NPUs int8 is normally the fastest format; that is why models are quantised.",
+            1: "A first run can be slower while the model is prepared for the NPU, but a second run would not change that. The profiler already points at one unsupported layer.",
+            2: "A tiny model can fail to keep an NPU busy, and that is worth checking. But the profiler already named a more specific cause: one unsupported layer.",
           },
         },
-        explanation: "Unsupported operations **fall back to the CPU**. Each fallback splits the model, adds transfers and synchronisation, and the CPU part can dominate the time (Amdahl's law from *Many cores: why 8 cores is not 8x faster*). The usual fixes: replace the layer with a supported equivalent, retrain or re-export, or check the vendor's list of supported operations before choosing the model.",
+        explanation: "Unsupported operations **fall back to the CPU**. Each fallback splits the model, adds transfers and synchronisation, and the CPU part can dominate the time (Amdahl's law from *Many cores: why 8 cores is not 8x faster*). The usual fixes: replace the layer with a supported equivalent, retrain or re-export, or check the vendor's list of supported operations before choosing the model. *Drivers and accelerators on an SoC* goes deeper into how the accelerators are driven.",
       },
       {
         kind: "explain",
@@ -732,7 +819,7 @@ void motor_task(void *arg) {
         body: P(
           "Everything in this module can be tried on cheap hardware. Examples, with no favourite implied:",
           "- **MCU boards** (a few to about 30 dollars): Raspberry Pi Pico (RP2040 / RP2350), ST Nucleo boards (STM32), Espressif ESP32 dev kits (with Wi-Fi), Nordic nRF52 or nRF54 DKs (Bluetooth). Toolchains: GCC or Clang for Arm and RISC-V, vendor IDEs, Zephyr, PlatformIO.\n- **Debug**: an SWD/JTAG probe with **OpenOCD** or pyOCD and GDB, or a commercial **J-Link** (education licences are cheap, commercial ones are not). Many dev boards have a probe built in.\n- **Measure**: a multimeter, an **oscilloscope**, and a **logic analyser** (from about 10-dollar clones used with sigrok/PulseView to commercial ones costing hundreds) to decode UART, I²C and SPI.\n- **Linux SoC boards** (roughly 50 to 150 dollars, more for AI boards): Raspberry Pi, BeagleBone/BeaglePlay, NXP i.MX and Rockchip based boards, and NVIDIA Jetson for GPU and AI work (several hundred dollars).",
-          "A good path: blink an LED with registers only, read a button with debouncing, dim with PWM, read an I²C sensor and check it with a logic analyser, stream ADC samples with DMA, then put it all under an RTOS and measure the current. Then boot Linux on an SoC board and write a device-tree node for the same sensor.",
+          "A good path: blink an LED with registers only, read a button with debouncing, dim with PWM, read an I²C sensor and check it with a logic analyser, stream ADC samples with DMA, then put it all under an RTOS and measure the current. Then boot Linux on an SoC board and write a device-tree node for the same sensor. *Drivers and accelerators on an SoC* picks up from there.",
         ),
       },
       {
@@ -741,8 +828,8 @@ void motor_task(void *arg) {
           "An **SoC** combines big and little **CPU clusters**, a **GPU**, **NPU**, **DSP**, **ISP** and codecs, sharing DRAM through a **memory controller** over an **interconnect**.",
           "Run each workload on the block that does it most efficiently; specialists beat CPUs many times over on their own job.",
           "Linux boots in stages: **boot ROM → first-stage loader (DRAM setup) → U-Boot → kernel + device tree → init**.",
-          "A **device tree** describes hardware the kernel cannot discover; `compatible` strings pick the **drivers**.",
-          "GPUs use OpenGL ES / Vulkan / OpenCL on shared memory; NPUs are reached through framework **delegates**, and unsupported layers fall back to the CPU.",
+          "A **device tree** describes hardware the kernel cannot discover; `compatible` strings pick the **drivers**, and `reg` holds the 7-bit I²C address.",
+          "GPUs use OpenGL ES / Vulkan / OpenCL on DRAM shared with the CPU, so a frame need not be copied over PCIe; NPUs are reached through framework **delegates**, and unsupported layers fall back to the CPU.",
         ],
       },
     ],
