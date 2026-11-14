@@ -183,6 +183,8 @@ export const METER = {
   voltInput: 10e6,
   /** an ammeter's burden, a small resistance */
   ampBurden: 0.05,
+  /** the battery's internal resistance, ohms (a typical PP3 9 V is roughly 1 to 2 ohms) */
+  batteryRi: 1.5,
   /** the ammeter input's fuse, amps */
   fuseA: 0.5,
   /** the ohmmeter's test current, amps (typical meters use well under a milliamp) */
@@ -224,7 +226,8 @@ const ENDS: Record<MeterPlace, [string, string]> = {
 
 function base(sc: MeterScenario, place: MeterPlace, batteryVolts: number): DcElement[] {
   const els: DcElement[] = [
-    { kind: "V", id: "B", a: "p", b: "gnd", volts: batteryVolts },
+    { kind: "V", id: "B", a: "bp", b: "gnd", volts: batteryVolts },
+    { kind: "R", id: "Ri", a: "bp", b: "p", ohms: METER.batteryRi },
     { kind: "S", id: "S1", a: "p", b: "s", closed: sc.power },
     { kind: "R", id: "R1", a: "g", b: "mid", ohms: sc.r1 },
     { kind: "R", id: "R2", a: "mid", b: "gnd", ohms: sc.r2 },

@@ -80,7 +80,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
         title: "Find the node voltage",
         body: P(
           "Write `node_voltage(b1, b2, r1, r2, r3)` returning Va for the circuit above, using the formula from the explanation. Voltages are in volts and resistances in ohms.",
-          "Remember to divide the top by the bottom: the top is `b1 / r1 + b2 / r3` and the bottom is `1 / r1 + 1 / r2 + 1 / r3`.",
+          "The formula is a fraction. Work out its top and its bottom separately, then divide.",
         ),
         language: "python",
         starter: `def node_voltage(b1, b2, r1, r2, r3):
@@ -105,13 +105,13 @@ export const circuitsLessonsB: ConceptLesson[] = [
         body: "In one loop a **9 V** battery drives three resistors. Someone measures drops of **4 V, 3 V and 3 V** across them. What does KVL say?",
         question: {
           type: "choice",
-          options: ["That is fine: the extra voltage is just wasted", "That is fine: KVL only applies to parallel circuits", "That is impossible: a loop can only hold two resistors", "That is impossible: the drops add to 10 V but the battery supplies only 9 V"],
-          answer: 3,
+          options: ["That is fine: the extra volt is just wasted", "That is impossible: the drops add to 10 V, not 9 V", "That is fine: KVL only applies to parallel circuits", "That is impossible: a loop holds at most two resistors"],
+          answer: 1,
           hint: "Add the drops and compare them with the battery's rise.",
           feedback: {
             0: "Voltage is not wasted. Around a closed loop the rises and drops must match exactly.",
-            1: "KVL applies to every closed loop, in series or parallel circuits alike.",
-            2: "A loop can contain as many parts as you like. The sum of the drops is the problem.",
+            2: "KVL applies to every closed loop, in series or parallel circuits alike.",
+            3: "A loop can contain as many parts as you like. The sum of the drops is the problem.",
           },
         },
         explanation: "4 + 3 + 3 = 10 V of drops, against a 9 V rise: it cannot be, so a reading (or the battery voltage) is wrong. KVL is a great check on your own measurements.",
@@ -169,7 +169,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
         title: "Loading: the catch",
         body: P(
           "The formula assumed nothing else is connected to the output. But the whole point is to feed something: a sensor, a chip, a lamp. That **load** has its own resistance, and it sits **in parallel with R2**.",
-          "Parallel branches lower the total resistance (last module's rule), so the bottom half of the divider gets weaker and the output **sags**. A load of 1 kΩ on a divider of two 1 kΩ resistors drags R2 down to 500 Ω.",
+          "Parallel branches lower the total resistance (the rule from *Series and parallel*), so the bottom half of the divider gets weaker and the output **sags**. A load of 1 kΩ on a divider of two 1 kΩ resistors drags R2 down to 500 Ω.",
           "**Rule of thumb**: to keep the sag small, make the load resistance at least about ten times R2. Slide the load from \"no load\" down and watch the output fall.",
         ),
         widget: { type: "circ-divider", props: { mode: "load", vin: 9, r1: 1000, r2: 1000 } },
@@ -195,16 +195,16 @@ export const circuitsLessonsB: ConceptLesson[] = [
         kind: "question",
         title: "Light-dependent divider",
         body: "An **LDR** (light-dependent resistor) is the bottom half of a divider and a fixed 10 kΩ is the top. Its resistance is **high in the dark** and low in bright light. It gets dark: which way does Vout move?",
-        widget: { type: "circ-divider", props: { mode: "ldr", vin: 5, r1: 10000, lux: 100, noLoad: true }, live: true },
+        widget: { type: "circ-divider", props: { mode: "ldr", vin: 5, r1: 10000, lux: 100, noLoad: true }, after: true },
         question: {
           type: "choice",
-          options: ["It falls towards 0 V", "It rises towards the supply voltage", "It stays the same", "It reverses"],
-          answer: 1,
+          options: ["It falls towards 0 V, as if brighter", "It stays the same, as only light changed", "It rises towards the supply voltage", "It swings negative, below 0 V"],
+          answer: 2,
           hint: "A bigger bottom resistor takes a bigger share of the supply.",
           feedback: {
             0: "That would be the bright-light case, where the LDR is small. Dark makes it large.",
-            2: "The LDR's resistance changes, so the split changes.",
-            3: "A divider never reverses. The output stays between 0 V and the supply.",
+            1: "The LDR's resistance changes, so the split changes.",
+            3: "A divider never goes negative. The output stays between 0 V and the supply.",
           },
         },
         explanation: "Dark means a big LDR resistance, so it takes more of the 5 V and Vout **rises**. A chip can read that voltage and decide whether to switch a night light on. (This LDR curve is a typical toy shape; real parts differ a lot, so check datasheets.)",
@@ -214,7 +214,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
         title: "Take its temperature",
         body: "Now the bottom half is an **NTC thermistor**: its resistance falls as it gets warmer (typically 10 kΩ at 25 °C). Warm it up until Vout drops **below 1.5 V**.",
         widget: { type: "circ-divider", props: { mode: "ntc", vin: 5, r1: 10000, tempC: 25, noLoad: true } },
-        question: { type: "widget", goal: { maxVout: 1.5 }, hint: "Warmer means the thermistor's resistance falls, so it takes a smaller share. Slide towards hot." },
+        question: { type: "widget", goal: { maxVout: 1.5, minTemp: 40 }, hint: "Warmer means the thermistor's resistance falls, so it takes a smaller share. Slide the temperature towards hot." },
         explanation: "At around 50 °C the thermistor is only about 3.6 kΩ and Vout is near 1.3 V. A microcontroller reads that voltage and converts it back to a temperature: you will see how in the ADC lesson later. (The curve is a typical 10 kΩ, B = 3950 K model; real parts differ.)",
       },
       {
@@ -222,7 +222,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
         title: "The divider in code",
         body: P(
           "Write `divider(vin, r1, r2)` that returns the output voltage of an unloaded divider.",
-          "Use the formula Vout = Vin × R2 ÷ (R1 + R2). Remember the parentheses around the sum.",
+          "Use the divider formula from this lesson. Remember the parentheses around the sum in the bottom.",
         ),
         language: "python",
         starter: `def divider(vin, r1, r2):
@@ -326,7 +326,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
         body: "Mistakes teach best when nothing real burns. **Blow the meter's fuse** by making the classic error: put the meter on **amps** and connect the probes **across the battery**.",
         widget: { type: "circ-multimeter", props: {}, live: true },
         question: { type: "widget", goal: { everBlown: true }, hint: "An ammeter is almost a wire. Where would a wire across a battery be a disaster?" },
-        explanation: "Across the battery, the ammeter is a near-wire, so around 180 A would try to flow. The meter's fuse exists exactly to break first. On a real meter, if there is no fuse or someone fitted the wrong one, that can mean a burnt meter or injury: this is why amps always go **in series**.",
+        explanation: "Across the battery, the ammeter is a near-wire, so only the battery's own internal resistance (about 1.5 Ω for a typical 9 V battery) limits the current: roughly 6 A would try to flow. The meter's 0.5 A fuse exists exactly to break first. On a real meter, if there is no fuse or someone fitted the wrong one, that can mean a burnt meter or injury: this is why amps always go **in series**.",
       },
       {
         kind: "question",
@@ -334,12 +334,12 @@ export const circuitsLessonsB: ConceptLesson[] = [
         body: "Which of these is a safe way to practise measuring?",
         question: {
           type: "choice",
-          options: ["Measuring the voltage at a wall socket", "Opening up a mains plug-in adaptor to look inside", "A battery-powered circuit like the one in this lesson", "Measuring the current directly across a car battery"],
-          answer: 2,
+          options: ["A battery circuit like this lesson's", "Measuring the voltage at a wall socket", "Opening a mains plug-in adaptor to look inside", "Measuring current straight across a car battery"],
+          answer: 0,
           hint: "Which choice involves only a small, current-limited low-voltage source?",
           feedback: {
-            0: "Mains can kill. Learners should not probe it: leave that to trained electricians with proper equipment.",
-            1: "Mains adaptors store dangerous voltage inside even when unplugged. Do not open them.",
+            1: "Mains can kill. Learners should not probe it: leave that to trained electricians with proper equipment.",
+            2: "Mains adaptors store dangerous voltage inside even when unplugged. Do not open them.",
             3: "An ammeter across a car battery is the fuse-blowing short circuit, with an enormous current.",
           },
         },
@@ -400,7 +400,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
           "If the load asks for more than the limit, the supply stops raising the current and lets the **voltage fall** instead. It switches from **CV** (constant voltage) to **CC** (constant current) mode. That is a safety net for new circuits: a wiring mistake cannot pull more than the limit.",
           "Here a supply is set to 5 V with a 0.5 A limit. Lower the load resistance and watch it hit the limit.",
         ),
-        widget: { type: "circ-source", props: { kind: "bench", vset: 5, limit: 0.5, load: 100 } },
+        widget: { type: "circ-source", props: { kind: "bench", vset: 5, limit: 0.5, load: 47 } },
       },
       {
         kind: "question",
@@ -415,15 +415,15 @@ export const circuitsLessonsB: ConceptLesson[] = [
         title: "Short circuits and fuses",
         body: P(
           "A **short circuit** is an accidental path with almost no resistance between the two terminals of a source. Ohm's law then gives an enormous current, limited only by the source's internal resistance: a 12 V pack with 0.1 Ω inside could try to push over **100 A**, which would melt wires and overheat the pack.",
-          "A **fuse** is a thin piece of wire designed to melt at its rated current, **opening the loop** before anything else is hurt. Choose a load and a fuse and connect it. A real fuse takes longer to blow for a small overload than for a big one (the datasheet shows the curve); this toy opens the moment the rating is passed.",
+          "A **fuse** is a thin piece of wire designed to carry its rated current safely but melt when the current goes well above it (faster the bigger the overload), **opening the loop** before anything else is hurt. Choose a load and a fuse and connect it. A real fuse takes longer to blow for a small overload than for a big one (the datasheet shows the curve); this toy opens the moment the rating is passed.",
           "**Safety:** never short a real battery to find out. Lithium packs especially can heat up and burn.",
         ),
-        widget: { type: "circ-fuse", props: { load: "lamp", fuse: "2" } },
+        widget: { type: "circ-fuse", props: { load: "motor", fuse: "5" } },
       },
       {
         kind: "question",
         title: "Let the fuse save the day",
-        body: "Connect a load that **blows the fuse**. (The lamp and motor are fine on a 2 A fuse. What is not?)",
+        body: "Connect a load that **blows the fuse**. (The lamp, at 0.5 A, and the motor, at about 1.5 A, run fine on a 2 A fuse. What does not?)",
         widget: { type: "circ-fuse", props: { load: "lamp", fuse: "2" } },
         question: { type: "widget", goal: { blown: true }, hint: "Pick a load that would pull more than the fuse's rating, then connect it." },
         explanation: "The stuck motor (about 11 A) or the short circuit (about 100 A) is way over 2 A, so the fuse opens and the current stops at once. Without a fuse, that heat would be dumped in the battery and the wiring.",
@@ -434,13 +434,13 @@ export const circuitsLessonsB: ConceptLesson[] = [
         body: "A gadget normally draws **1.2 A**. Which fuse is the sensible choice?",
         question: {
           type: "choice",
-          options: ["1 A, to be extra careful", "2 A, a little above the normal current", "10 A, so it never blows", "No fuse: it only adds cost"],
-          answer: 1,
+          options: ["1 A, to be extra careful and safe", "10 A, so it never blows in use", "No fuse at all: it only adds cost", "2 A, a little above normal current"],
+          answer: 3,
           hint: "A fuse must survive normal use but open before the wiring is in danger.",
           feedback: {
             0: "A 1 A fuse would blow in normal use, because 1.2 A is already above its rating.",
-            2: "A fuse far above normal protects nothing: the wires could overheat long before 10 A.",
-            3: "Skipping the fuse saves pennies and risks fires. Fuses are cheap insurance.",
+            1: "A fuse far above normal protects nothing: the wires could overheat long before 10 A.",
+            2: "Skipping the fuse saves pennies and risks fires. Fuses are cheap insurance.",
           },
         },
         explanation: "Choose a rating **above normal current** (a rule of thumb is a margin of roughly 25% to 100%, set by the datasheet and the wire's ability) but **below** what the wiring can safely carry. Too low and it nuisance-blows; too high and it does not protect.",
@@ -450,7 +450,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
         title: "Terminal voltage in code",
         body: P(
           "Write `terminal_voltage(voc, ri, r_load)` that returns the voltage at the terminals of a source with open-circuit voltage `voc` and internal resistance `ri`, driving a load `r_load` (all volts and ohms).",
-          "First find the current, `voc / (ri + r_load)`, then subtract the drop inside the source, `current * ri`.",
+          "First find the current round the loop, then subtract the voltage lost inside the source.",
         ),
         language: "python",
         starter: `def terminal_voltage(voc, ri, r_load):
@@ -464,7 +464,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
         tests: [
           { id: "cell", description: "1.5 V, 0.5 ohm inside, 2.5 ohm load gives 1.25 V", assertionCode: `assert abs(terminal_voltage(1.5, 0.5, 2.5) - 1.25) < 1e-9, f"should be 1.25, got {terminal_voltage(1.5, 0.5, 2.5)}"` },
           { id: "equal", description: "A load equal to Ri gets half the voltage", assertionCode: `assert abs(terminal_voltage(3, 15, 15) - 1.5) < 1e-9, f"should be 1.5, got {terminal_voltage(3, 15, 15)}"` },
-          { id: "light", description: "A light load barely drops it", assertionCode: `assert abs(terminal_voltage(9, 1, 8) - 8) < 1e-9, f"should be 8, got {terminal_voltage(9, 1, 8)}"` },
+          { id: "light", description: "A light load barely drops it: 9 V, 1 ohm inside, 89 ohm load gives 8.9 V", assertionCode: `assert abs(terminal_voltage(9, 1, 89) - 8.9) < 1e-9, f"should be 8.9, got {terminal_voltage(9, 1, 89)}"` },
         ],
         hints: ["The current through the load is the open-circuit voltage divided by the total resistance in the loop.", "Return voc - current * ri."],
       },

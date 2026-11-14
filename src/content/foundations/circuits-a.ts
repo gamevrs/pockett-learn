@@ -48,11 +48,11 @@ export const circuitsLessonsA: ConceptLesson[] = [
         body: "In the water picture, what plays the part of **voltage**?",
         question: {
           type: "choice",
-          options: ["The water flowing past a point", "The pressure the pump creates", "The width of the pipe", "The length of the pipe"],
-          answer: 1,
+          options: ["The pressure the pump makes", "The water flowing past a point", "How wide the pipe is", "How long the pipe is"],
+          answer: 0,
           hint: "Voltage is the push. Which part of the water picture pushes?",
           feedback: {
-            0: "That is the flow, which matches current. Voltage is what makes it flow.",
+            1: "That is the flow, which matches current. Voltage is what makes it flow.",
             2: "Pipe width is about how easily water flows, which comes later as resistance.",
             3: "Length matters a bit for a real pipe, but it is not the push. The pump's pressure is.",
           },
@@ -73,13 +73,13 @@ export const circuitsLessonsA: ConceptLesson[] = [
         body: "The lamp has been glowing for an hour. What has it used up?",
         question: {
           type: "choice",
-          options: ["Some of the charge", "The wire", "Energy that the battery gave to the charge", "Some of the current"],
-          answer: 2,
+          options: ["Some of the charge that flowed", "A little of the copper in the wire", "Some of the current in the loop", "Energy the battery gave the charge"],
+          answer: 3,
           hint: "Light and heat leave the lamp. What is it that carries them?",
           feedback: {
             0: "The charge goes all the way round and back to the battery. None of it disappears.",
             1: "The wire is only the path. It is not consumed.",
-            3: "Current is a rate of flow, and the same amount enters and leaves the lamp.",
+            2: "Current is a rate of flow, and the same amount enters and leaves the lamp.",
           },
         },
         explanation: "The charge comes back out of the lamp as it went in; what it gave up is **energy**. The battery gives the charge energy, the lamp turns it into light and heat. When the battery has no more energy to give, the push fades and the lamp dims.",
@@ -175,13 +175,13 @@ export const circuitsLessonsA: ConceptLesson[] = [
         body: "The battery stays the same, but you swap the resistor for one with **twice the resistance**. What happens to the current?",
         question: {
           type: "choice",
-          options: ["It doubles", "It halves", "It stays the same", "It drops to zero"],
-          answer: 1,
+          options: ["It doubles", "It drops to zero", "It halves", "It stays the same"],
+          answer: 2,
           hint: "I = V ÷ R. If the bottom of a fraction doubles, what happens to the answer?",
           feedback: {
             0: "That would be halving the resistance. More resistance fights the current.",
-            2: "The push is the same but the path is harder, so the current changes.",
-            3: "A bigger resistor still lets some current through, just less of it.",
+            1: "A bigger resistor still lets some current through, just less of it.",
+            3: "The push is the same but the path is harder, so the current changes.",
           },
         },
         explanation: "I = V ÷ R, so doubling R halves I. This is why the resistor in the lamp circuit works as a dimmer: more resistance, less current, less light.",
@@ -192,7 +192,7 @@ export const circuitsLessonsA: ConceptLesson[] = [
         body: "The battery is stuck at 9 V. Use the dimmer to make the lamp **glow dimly but not go out**.",
         widget: { type: "circ-ohm", props: { withLamp: true, v: 9, r: 100, lockV: true } },
         question: { type: "widget", goal: { brightMin: 0.01, brightMax: 0.25 }, hint: "A bigger dimmer resistor means less current. Go up in steps until the lamp is faint." },
-        explanation: "A bigger resistor means less current and so less power in the lamp. A pushbutton on a toy and the knob on an old dimmer do just this, though real dimmers waste less heat using cleverer tricks.",
+        explanation: "A bigger resistor means less current and so less power in the lamp. The knob on an old dimmer (or a volume-style control on a toy) does just this, though modern dimmers waste less heat using cleverer tricks.",
       },
       {
         kind: "explain",
@@ -293,15 +293,15 @@ export const circuitsLessonsA: ConceptLesson[] = [
       {
         kind: "question",
         title: "Choose the rating",
-        body: "A 100 Ω resistor will have **10 V** across it all the time, so it dissipates 1 W. Which rating is the smallest one that leaves comfortable headroom (at least double the power)?",
+        body: "A 100 Ω resistor will have **10 V** across it all the time. Which rating is the smallest one that leaves comfortable headroom (at least double the power it dissipates)?",
         question: {
           type: "choice",
-          options: ["¼ W", "1 W", "2 W", "10 W"],
-          answer: 2,
+          options: ["2 W", "¼ W", "1 W", "10 W"],
+          answer: 0,
           hint: "First find the heat: P = V² ÷ R. Then pick the rating at least twice that.",
           feedback: {
-            0: "A ¼ W part would get four times its rating, so it would cook.",
-            1: "1 W exactly equals the heat, which leaves no headroom: it would run very hot.",
+            1: "A ¼ W part would get four times its rating, so it would cook.",
+            2: "1 W exactly equals the heat, which leaves no headroom: it would run very hot.",
             3: "That works, but it is much bigger and dearer than needed. Pick the smallest with headroom.",
           },
         },
@@ -411,13 +411,13 @@ export const circuitsLessonsA: ConceptLesson[] = [
         body: "A circuit has one resistor across a battery. You add a **second resistor in parallel** with the first. What happens to the battery's total current?",
         question: {
           type: "choice",
-          options: ["It goes down, because there is more resistance", "It stays the same", "It goes up, because the total resistance went down", "It splits and the total halves"],
-          answer: 2,
+          options: ["It falls, because resistance was added", "It stays the same, because R1 is unchanged", "It halves, because the current splits in two", "It rises, because the total resistance falls"],
+          answer: 3,
           hint: "A parallel branch is an extra road. What does an extra road do to the traffic?",
           feedback: {
             0: "Resistance in parallel does not add. An extra branch gives current an extra way through.",
             1: "The first branch still carries the same as before, and the new one carries extra, so the total changes.",
-            3: "The current splits between branches, but the battery has to supply both parts, so the total rises.",
+            2: "The current splits between branches, but the battery has to supply both parts, so the total rises.",
           },
         },
         explanation: "The first resistor still sees the full battery voltage, so it carries the same current as before. The new branch carries its own current as well. The battery supplies the sum, so **adding parallel branches always increases the total current**, which is why plugging in too many things can overload a socket.",
@@ -445,7 +445,7 @@ export const circuitsLessonsA: ConceptLesson[] = [
         body: "Lamps and sockets in a house are wired in **parallel**, not series. What is the main reason?",
         question: {
           type: "choice",
-          options: ["Parallel wiring uses less electricity overall", "Each device gets the full supply voltage and works on its own", "Series wiring needs thicker wires", "It makes the lights brighter"],
+          options: ["Parallel wiring uses less electricity overall", "Each device gets full voltage and works alone", "Series wiring needs much thicker cables", "Parallel wiring makes every lamp brighter"],
           answer: 1,
           hint: "Think about what happens in a series string of lights when one bulb breaks.",
           feedback: {
@@ -461,7 +461,7 @@ export const circuitsLessonsA: ConceptLesson[] = [
         title: "Combine resistors",
         body: P(
           "Write two functions. `series(rs)` takes a list of resistances in ohms and returns their series total. `parallel(rs)` returns the parallel total.",
-          "Use `sum(...)` to add up a list. For parallel, add up the reciprocals, `1 / r`, and then take the reciprocal of that sum.",
+          "Use `sum(...)` to add up a list. For parallel, use the reciprocal rule from this lesson.",
         ),
         language: "python",
         starter: `def series(rs):
