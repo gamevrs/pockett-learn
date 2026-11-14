@@ -1,14 +1,17 @@
-import type { Module } from "../../learn/types.ts";
+import type { ConceptLesson, Module } from "../../learn/types.ts";
+import { chipdesignLessonsA } from "./chipdesign-a.ts";
+import { chipdesignLessonsB } from "./chipdesign-b.ts";
 
 /**
  * Module: Designing chips: from RTL to tape-out. Spec: docs/ELECTRONICS_PATH.md (lesson list, levels, accuracy rules).
  *
- * Authors: put the lessons in the `lessons` array below (or, if the file grows large, split them into
- * chipdesign-a.ts / chipdesign-b.ts exporting ConceptLesson[] and spread them here, like ai-systems.ts).
- * Lesson ids are `fnd-chip-N-slug`, each lesson sets `level` ("Beginner" | "Intermediate" | "Advanced" |
- * "Professional"), and levels must never go backwards within the module (the validator checks it).
- * Widgets: register them in src/learn/widgets/chip/index.ts with keys prefixed "chip-".
+ * Ten lessons from Beginner to Professional: the design flow; hardware is not software; Verilog basics; sequential
+ * logic in Verilog; testbenches; synthesis; static timing analysis; physical design and power; verification at
+ * scale and design for test; FPGA vs ASIC and tape-out.
+ * Widgets: src/learn/widgets/chip/ (keys prefixed "chip-"), centred on a toy Verilog subset simulator.
  */
+const lessons: ConceptLesson[] = [...chipdesignLessonsA, ...chipdesignLessonsB];
+
 export const chipdesignModule: Module = {
   id: "chipdesign",
   part: "semiconductors",
@@ -16,5 +19,5 @@ export const chipdesignModule: Module = {
   blurb:
     "The chip design flow, hardware vs software thinking, Verilog for combinational and sequential logic, testbenches, synthesis, timing analysis, physical design, verification and test, FPGA vs ASIC and tape-out.",
   icon: "microchip",
-  lessons: [],
+  lessons,
 };
