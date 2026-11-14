@@ -8,6 +8,8 @@ import { Caption, Meter, Note, Readout, Seg, Stepper } from "./ui";
 export interface CoalesceProps {
   pattern?: Pattern;
   stride?: number;
+  /** Starting offset in words (default 0). */
+  offset?: number;
   /** Hide the controls. */
   fixed?: boolean;
 }
@@ -34,7 +36,7 @@ const MAX_SHOWN = 36;
 export function Coalesce({ props, onChange }: WidgetProps<CoalesceProps>) {
   const [pattern, setPattern] = useState<Pattern>(props.pattern ?? "contiguous");
   const [stride, setStride] = useState(props.stride ?? 2);
-  const [offset, setOffset] = useState(0);
+  const [offset, setOffset] = useState(props.offset ?? 0);
 
   const r = coalesce(pattern, stride, offset);
   const upd = (p: Pattern, s: number, o: number) => {

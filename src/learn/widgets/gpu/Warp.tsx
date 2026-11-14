@@ -8,6 +8,10 @@ import { Caption, Meter, Note, Readout, Seg, Slider, Stepper, BLUE, ORANGE } fro
 export interface WarpProps {
   /** Which condition the `if` tests (default "below"). */
   branch?: Branch;
+  /** Starting k and starting cycle costs of the if and else sides (defaults 16, 4, 4). */
+  k?: number;
+  ifCycles?: number;
+  elseCycles?: number;
   /** Hide the controls: show the starting condition only. */
   fixed?: boolean;
 }
@@ -34,9 +38,9 @@ const BRANCHES: { value: Branch; label: string; code: (k: number) => string; not
 /** One warp of 32 lanes meets an if/else: lanes that disagree make the warp run both paths, one after the other. */
 export function Warp({ props, onChange }: WidgetProps<WarpProps>) {
   const [branch, setBranch] = useState<Branch>(props.branch ?? "below");
-  const [k, setK] = useState(16);
-  const [ifC, setIfC] = useState(4);
-  const [elseC, setElseC] = useState(4);
+  const [k, setK] = useState(props.k ?? 16);
+  const [ifC, setIfC] = useState(props.ifCycles ?? 4);
+  const [elseC, setElseC] = useState(props.elseCycles ?? 4);
 
   const w = warp(branch, k, ifC, elseC);
   const report = (b: Branch, kk: number, a: number, e: number) => {

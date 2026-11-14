@@ -29,6 +29,7 @@ export function Formats({ props, onChange }: WidgetProps<FormatsProps>) {
   const [params, setParams] = useState(props.params ?? 8);
 
   const f = FORMATS.find((x) => x.id === fid)!;
+  const whole = f.sign === 0 && f.exp === 0;
   const gb = (params * f.bits) / 8;
   const tps = decodeTokensPerSec(params, f.bits, BW_TBS);
 
@@ -41,10 +42,11 @@ export function Formats({ props, onChange }: WidgetProps<FormatsProps>) {
 
   const box = (label: string, n: number, colour: string) =>
     n === 0 ? null : (
-      <div key={label} className="flex min-w-0 flex-col items-stretch" style={{ flex: n }}>
+      <div key={label} className="flex min-w-14 flex-col items-stretch" style={{ flex: n }}>
         <div className="h-9 rounded-md" style={{ background: colour }} role="img" aria-label={`${n} ${label} bits`} />
-        <p className="mt-1 truncate text-center font-mono text-[11px] text-ink-2">
-          {n} {label}
+        <p className="mt-1 break-words text-center font-mono text-[11px] leading-tight text-ink-2">
+          <span className="block">{n}</span>
+          <span className="block">{label}</span>
         </p>
       </div>
     );
@@ -61,11 +63,11 @@ export function Formats({ props, onChange }: WidgetProps<FormatsProps>) {
       </Caption>
       <div className="flex gap-1" style={{ minWidth: 0 }}>
         {f.sign ? box("sign", f.sign, "var(--ink-3)") : null}
-        {box(f.id === "int8" ? "whole-number bits" : "exponent", f.id === "int8" ? 8 : f.exp, ORANGE)}
+        {box(whole ? "whole-number bits" : "exponent", whole ? f.bits : f.exp, ORANGE)}
         {box("mantissa", f.man, BLUE)}
       </div>
       <p className="mt-1.5 text-xs text-ink-3">
-        {f.id === "int8" ? "INT8 has no exponent: a whole number from −128 to 127, scaled back to a real value with a stored scale factor." : "Exponent bits set how big or small the number can be (its range). Mantissa bits set how finely it can be told apart from its neighbours (its precision)."}
+        {whole ? `No exponent: a whole number from ${f.id === "int4" ? "−8 to 7" : "−128 to 127"}, scaled back to a real value with a stored scale factor.` : "Exponent bits set how big or small the number can be (its range). Mantissa bits set how finely it can be told apart from its neighbours (its precision)."}
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -99,11 +101,19 @@ export function Formats({ props, onChange }: WidgetProps<FormatsProps>) {
             </>
           ) : f.id === "fp8" ? (
             <>
-              <b>FP8</b> (here the E4M3 layout) is a quarter of FP32: very coarse, so values are kept in scaled groups. Newer GPU generations run it fast.
+              <b>FP8</b> (here the E4M3 layout) is a quarter of FP32: very coarse, so values share a scale factor per tensor or per block (see FP4). Newer GPU generations run it fast.
+            </>
+          ) : f.id === "fp4" ? (
+            <>
+              <b>FP4</b> (E2M1) can hold only 16 values (0, ±0.5, ±1, ±1.5, ±2, ±3, ±4, ±6), so it only works with <b>block scaling</b>: each small block of values shares one stored scale factor (for example 32 values in the OCP MXFP4 format, 16 in NVIDIA&apos;s NVFP4; formats are vendor- and standard-specific). The scales cost a little extra memory, about 0.25 to 0.5 bits per value, which this widget ignores.
+            </>
+          ) : f.id === "int4" ? (
+            <>
+              <b>INT4</b> is a 4-bit whole number from −8 to 7. Run-time weights are often stored this way with one scale per group of weights (for example 32 or 128), and unpacked to 16 bits for the maths (weight-only quantisation).
             </>
           ) : (
             <>
-              <b>INT8</b> is a plain 8-bit whole number. After training, weights are often squeezed to it (quantised) for inference.
+              <b>INT8</b> is a plain 8-bit whole number from −128 to 127, scaled back to a real value with a stored scale factor. After training, weights are often squeezed to it (quantised) for inference.
             </>
           )}
         </Note>
@@ -112,18 +122,19 @@ export function Formats({ props, onChange }: WidgetProps<FormatsProps>) {
         <Readout label="Bytes per number" value={f.bits / 8} />
         <Readout label="Weights" value={`${+gb.toFixed(1)} GB`} accent />
       </div>
-      <p className="mt-2 text-xs text-ink-3">Decode cap = {BW_TBS} TB/s ÷ weight bytes (batch 1: every token streams all the weights once). Ignores the KV cache and other overheads; real speeds are lower.</p>
+      <p className="mt-2 text-xs text-ink-3">Decode cap = {BW_TBS} TB/s ÷ weight bytes (batch 1: every token streams all the weights once). Ignores the KV cache and other overheads; real speeds are lower. 4-bit formats&apos; block scales are ignored.</p>
     </div>
   );
 }
 
-/** goal: { maxGb?: number, format?: string, minBits?: number }. */
+/** goal: { maxGb?: number, format?: string, minBits?: number, maxBits?: number, paramsB?: number }. */
 export function checkFormats(state: unknown, goal: Record<string, unknown>) {
   const s = state as FormatsState | undefined;
   if (!s) return false;
   if (typeof goal.maxGb === "number" && s.gb > goal.maxGb) return false;
   if (typeof goal.format === "string" && s.format !== goal.format) return false;
   if (typeof goal.minBits === "number" && s.bits < goal.minBits) return false;
+  if (typeof goal.maxBits === "number" && s.bits > goal.maxBits) return false;
   if (typeof goal.paramsB === "number" && s.paramsB !== goal.paramsB) return false;
   return true;
 }

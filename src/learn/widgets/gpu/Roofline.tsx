@@ -160,6 +160,7 @@ export function Roofline({ props, onChange }: WidgetProps<RooflineProps>) {
         <Readout label="Ridge" value={`${Math.round(rg)} FLOP/B`} accent />
       </div>
       <Caption className="mt-2">Round example numbers, not any product&apos;s spec</Caption>
+      <p className="mt-1 text-xs text-ink-3">Decode intensity ≈ batch size assumes 16-bit weights (8-bit weights double it) and ignores each user&apos;s KV-cache reads, which grow with the batch and pull decode back to the left.</p>
     </div>
   );
 }
