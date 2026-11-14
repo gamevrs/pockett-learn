@@ -255,7 +255,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
   {
     id: "fnd-circ-7-schematics-measuring",
     title: "Reading schematics and measuring",
-    summary: "The symbols, nets and ground that make a schematic a map, and how to use a multimeter: volts across, amps in series, ohms with the power off.",
+    summary: "The symbols, nets and ground that make a schematic a map, and how to use a multimeter: volts across, amps in series, ohms with no battery in the path.",
     level: "Intermediate",
     minutes: 10,
     xp: 60,
@@ -299,15 +299,15 @@ export const circuitsLessonsB: ConceptLesson[] = [
         title: "The multimeter",
         body: P(
           "A **multimeter** reads voltage, current and resistance. It is the first tool every electronics hobbyist buys, and the way you use it depends on what you measure:",
-          "- **Volts**: probes **across** the part, one on each end. The meter looks like a huge resistance, so it barely disturbs the circuit.\n- **Amps**: the meter goes **in series**. You open the loop and let the current flow *through* the meter, which acts almost like a wire.\n- **Ohms**: measure with the circuit **switched off**, probes across the part. The meter sends its own tiny current.",
-          "Try it on the circuit below. The dashed meter and the red and black dots show where the probes go. Choosing badly shows what would really happen, safely.",
+          "- **Volts**: probes **across** the part, one on each end. The meter looks like a huge resistance, so it barely disturbs the circuit.\n- **Amps**: the meter goes **in series**. You open the loop and let the current flow *through* the meter, which acts almost like a wire.\n- **Ohms**: the meter sends its **own** tiny test current through the part and works out the resistance. That only works if **no battery is in the path**: take the part out of the circuit, or at least cut the battery off from it. A source in the path fights the test current and the reading is garbage (the meter shows ?? here).",
+          "Try it on the circuit below. The red and black dots show where the probes go, and the dashed circle is the meter when it sits in the loop. Open and close the switch too: it changes what each placement means. Choosing badly shows what would really happen, safely.",
         ),
         widget: { type: "circ-multimeter", props: {} },
       },
       {
         kind: "question",
         title: "Measure a voltage",
-        body: "Set the meter to **volts** and put the probes **across R2**, with the circuit switched on.",
+        body: "Set the meter to **volts** and put the probes **across R2**, with the switch closed.",
         widget: { type: "circ-multimeter", props: { mode: "A", place: "series" } },
         question: { type: "widget", goal: { mode: "V", place: "r2", power: true, correct: true }, hint: "Pick the Volts dial and the Across R2 probe position." },
         explanation: "Volts go **across** a part. You should read about 6 V: the battery is 9 V with R1 = 1 kΩ and R2 = 2 kΩ, so R2 takes two thirds. If the meter were wired in series for a volts reading, it would be wrong.",
@@ -350,7 +350,7 @@ export const circuitsLessonsB: ConceptLesson[] = [
         points: [
           "A **schematic** shows connections, not positions, with a standard **symbol** for each part.",
           "A **net** is everything joined by wire: one voltage. **Ground** is the 0 V reference, and ground symbols are all connected.",
-          "Meter rules: **volts across**, **amps in series**, **ohms across with the power off**.",
+          "Meter rules: **volts across**, **amps in series**, **ohms across a part with no battery in the path**.",
           "An ammeter is almost a wire: across a source it blows its fuse (or worse).",
           "Practise on batteries and small circuits. Never probe mains.",
         ],

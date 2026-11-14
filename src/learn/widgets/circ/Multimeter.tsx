@@ -23,7 +23,7 @@ export interface MultimeterState {
   /** the number shown (null when the display shows a word) */
   value: number | null;
   display: string;
-  /** a sensible way to use the meter (right mode, right place, power state) */
+  /** a trustworthy, useful reading (right mode, right place, nothing corrupting it) */
   correct: boolean;
   fuseBlown: boolean;
   /** has the fuse been blown at any point this session */
@@ -49,23 +49,24 @@ const PLACES: { value: MeterPlace; label: string }[] = [
   { value: "r1", label: "Across R1" },
   { value: "r2", label: "Across R2" },
   { value: "battery", label: "Across battery" },
+  { value: "switch", label: "Across switch" },
   { value: "series", label: "In the loop" },
 ];
+const WHERE: Record<MeterPlace, string> = { r1: "across R1", r2: "across R2", battery: "across the battery", switch: "across the switch", series: "in the loop" };
 const MODES: { value: MeterMode; label: string }[] = [
   { value: "V", label: "Volts (V)" },
   { value: "A", label: "Amps (A)" },
   { value: "ohm", label: "Ohms (Ω)" },
 ];
 
-function isCorrect(mode: MeterMode, place: MeterPlace, power: boolean) {
-  if (mode === "V") return place !== "series" && power;
-  if (mode === "A") return place === "series" && power;
-  return place !== "series" && !power;
+/** A placement is "correct" when the meter would give a trustworthy, useful reading (the model decides, see readMeter). */
+function isCorrect(sc: { battery: number; r1: number; r2: number }, mode: MeterMode, place: MeterPlace, power: boolean) {
+  return readMeter({ ...sc, power }, place, mode).tone === "good";
 }
 
 function showValue(r: MeterReading, mode: MeterMode): string {
   if (r.value === null) return r.display;
-  return formatSI(r.value, mode === "V" ? "V" : mode === "A" ? "A" : "Ω", { digits: 3 });
+  return formatSI(Math.abs(r.value) < 1e-9 ? 0 : r.value, mode === "V" ? "V" : mode === "A" ? "A" : "Ω", { digits: 3 });
 }
 
 /** A virtual multimeter on a two-resistor circuit. Pick the dial and where the probes go; wrong choices show what would really happen. */
@@ -80,7 +81,7 @@ export function Multimeter({ props, onChange }: WidgetProps<MultimeterProps>) {
   const reading0 = readMeter({ ...sc, power }, place, mode);
   const dead = mode === "A" && fuseBlown;
   const reading: MeterReading = dead ? { value: null, display: "FUSE", tone: "bad", note: "The meter's amps fuse has blown, so the amps setting is dead until it is replaced. Volts and ohms still work.", fuseBlown: true } : reading0;
-  const correct = !dead && isCorrect(mode, place, power);
+  const correct = !dead && reading0.tone === "good";
 
   const apply = (m: MeterMode, p: MeterPlace, pw: boolean) => {
     const was = fuseBlown;
@@ -100,7 +101,7 @@ export function Multimeter({ props, onChange }: WidgetProps<MultimeterProps>) {
       power: pw,
       value: deadNow ? null : r.value,
       display: deadNow ? "FUSE" : r.display,
-      correct: !deadNow && isCorrect(m, p, pw),
+      correct: !deadNow && isCorrect(sc, m, p, pw),
       fuseBlown: blownNow,
       everBlown: everBlown || (blownNow && !was),
     } satisfies MultimeterState);
@@ -130,6 +131,7 @@ export function Multimeter({ props, onChange }: WidgetProps<MultimeterProps>) {
     r1: [pins["R1.a"], pins["R1.b"]],
     r2: [pins["R2.a"], pins["R2.b"]],
     battery: [pins["B1.a"], pins["B1.b"]],
+    switch: [pins["S1.a"], pins["S1.b"]],
   };
   if (place === "series") {
     const a = pins["S1.b"];
@@ -165,14 +167,14 @@ export function Multimeter({ props, onChange }: WidgetProps<MultimeterProps>) {
         cols={18}
         rows={9}
         flowRef={Math.sqrt(sc.battery / (sc.r1 + sc.r2))}
-        ariaLabel={`A ${volts(sc.battery)} battery, a switch and two resistors in a loop, with the meter ${place === "series" ? "inserted in the loop" : `across ${place === "battery" ? "the battery" : place.toUpperCase()}`}. The switch is ${power ? "closed" : "open"}.`}
+        ariaLabel={`A ${volts(sc.battery)} battery, a switch and two resistors in a loop, with the meter ${WHERE[place]}. The switch is ${power ? "closed" : "open"}.`}
         parts={parts}
         wires={wires}
         overlay={overlay}
       />
       <div className={`mx-auto mt-2 max-w-[22rem] rounded-2xl border-2 bg-surface-2 px-4 py-3 text-center ${toneBorder}`} aria-live="polite">
         <p className="text-xs text-ink-3">
-          Meter on {unitShown === "Ω" ? "Ω (ohms)" : unitShown === "V" ? "V (volts)" : "A (amps)"}, probes {place === "series" ? "in the loop" : `across ${place === "battery" ? "the battery" : place.toUpperCase()}`}
+          Meter on {unitShown === "Ω" ? "Ω (ohms)" : unitShown === "V" ? "V (volts)" : "A (amps)"}, probes {WHERE[place]}
         </p>
         <p className="font-mono text-3xl font-semibold tabular-nums text-ink">{showValue(reading, mode)}</p>
       </div>
@@ -183,8 +185,8 @@ export function Multimeter({ props, onChange }: WidgetProps<MultimeterProps>) {
         <Seg label="Dial" value={mode} options={MODES} onChange={(m) => apply(m, place, power)} />
         <Seg label="Probes" value={place} options={PLACES} onChange={(p) => apply(mode, p, power)} />
         <div className="flex flex-wrap justify-center gap-2">
-          <Btn on={power} label={power ? "Switch the circuit off" : "Switch the circuit on"} onClick={() => apply(mode, place, !power)}>
-            {power ? "Circuit: on" : "Circuit: off"}
+          <Btn on={power} label={power ? "Open the switch" : "Close the switch"} onClick={() => apply(mode, place, !power)}>
+            {power ? "Switch: closed" : "Switch: open"}
           </Btn>
           {fuseBlown && (
             <Btn
@@ -192,7 +194,7 @@ export function Multimeter({ props, onChange }: WidgetProps<MultimeterProps>) {
               onClick={() => {
                 setFuseBlown(false);
                 const r = readMeter({ ...sc, power }, place, mode);
-                onChange?.({ mode, place, power, value: r.value, display: r.display, correct: isCorrect(mode, place, power), fuseBlown: false, everBlown } satisfies MultimeterState);
+                onChange?.({ mode, place, power, value: r.value, display: r.display, correct: mode !== "A" || r.tone === "good", fuseBlown: false, everBlown } satisfies MultimeterState);
               }}
             >
               Replace fuse

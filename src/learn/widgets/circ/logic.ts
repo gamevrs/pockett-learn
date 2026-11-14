@@ -176,7 +176,7 @@ export function shortCircuit(voc: number, ri: number, rLoad: number, fuseA: numb
 /* ───────────────────────── the virtual multimeter ───────────────────────── */
 
 export type MeterMode = "V" | "A" | "ohm";
-export type MeterPlace = "r1" | "r2" | "battery" | "series";
+export type MeterPlace = "r1" | "r2" | "battery" | "switch" | "series";
 
 export const METER = {
   /** a voltmeter's input resistance (typical digital meter) */
@@ -185,20 +185,28 @@ export const METER = {
   ampBurden: 0.05,
   /** the ammeter input's fuse, amps */
   fuseA: 0.5,
+  /** the ohmmeter's test current, amps (typical meters use well under a milliamp) */
+  testCurrent: 1e-4,
+  /** above this the ohmmeter shows OL (over limit), ohms */
+  olOhms: 1e7,
 };
 
+/**
+ * The circuit under test: B1 (+ at node p) -> S1 -> node s -> [gap] -> node g -> R1 -> node mid -> R2 -> ground -> B1 (-).
+ * `power` means the switch is closed. The battery is always connected: opening the switch only breaks the loop.
+ */
 export interface MeterScenario {
   battery: number;
   r1: number;
   r2: number;
-  /** is the battery connected (switch closed)? */
+  /** switch closed? */
   power: boolean;
 }
 
 export interface MeterReading {
-  /** the number to show, in the unit of the mode; null when the meter shows a word instead */
+  /** the number to show, in the unit of the mode; null when the display shows a word */
   value: number | null;
-  /** word for the display when value is null */
+  /** word for the display when value is null: OL, ??, FUSE */
   display: string;
   tone: "good" | "bad" | "neutral";
   /** what happened, in plain words */
@@ -206,78 +214,110 @@ export interface MeterReading {
   fuseBlown?: boolean;
 }
 
+const ENDS: Record<MeterPlace, [string, string]> = {
+  r1: ["g", "mid"],
+  r2: ["mid", "gnd"],
+  battery: ["p", "gnd"],
+  switch: ["p", "s"],
+  series: ["s", "g"],
+};
+
+function base(sc: MeterScenario, place: MeterPlace, batteryVolts: number): DcElement[] {
+  const els: DcElement[] = [
+    { kind: "V", id: "B", a: "p", b: "gnd", volts: batteryVolts },
+    { kind: "S", id: "S1", a: "p", b: "s", closed: sc.power },
+    { kind: "R", id: "R1", a: "g", b: "mid", ohms: sc.r1 },
+    { kind: "R", id: "R2", a: "mid", b: "gnd", ohms: sc.r2 },
+  ];
+  // the wire between s and g is cut only when the meter sits in the loop there
+  if (place !== "series") els.push({ kind: "S", id: "W", a: "s", b: "g", closed: true });
+  return els;
+}
+
 function solveMeter(sc: MeterScenario, place: MeterPlace, mode: "V" | "A") {
-  const els: DcElement[] = [{ kind: "V", id: "B", a: "top", b: "gnd", volts: sc.power ? sc.battery : 0 }];
-  const meterR = mode === "A" ? METER.ampBurden : METER.voltInput;
-  if (place === "series") {
-    els.push({ kind: "R", id: "R1", a: "top", b: "x", ohms: sc.r1 });
-    els.push({ kind: "R", id: "M", a: "x", b: "mid", ohms: meterR });
-    els.push({ kind: "R", id: "R2", a: "mid", b: "gnd", ohms: sc.r2 });
-  } else {
-    els.push({ kind: "R", id: "R1", a: "top", b: "mid", ohms: sc.r1 });
-    els.push({ kind: "R", id: "R2", a: "mid", b: "gnd", ohms: sc.r2 });
-    const [a, b] = place === "r1" ? ["top", "mid"] : place === "r2" ? ["mid", "gnd"] : ["top", "gnd"];
-    els.push({ kind: "R", id: "M", a, b, ohms: meterR });
-  }
+  const [a, b] = ENDS[place];
+  const els = base(sc, place, sc.battery);
+  els.push({ kind: "R", id: "M", a, b, ohms: mode === "A" ? METER.ampBurden : METER.voltInput });
   const s = solveDC(els, { allowFloating: true });
   if (!s.ok) throw new Error(s.message);
   return s;
 }
 
-const PLACE_NAME: Record<MeterPlace, string> = { r1: "R1", r2: "R2", battery: "the battery", series: "the loop" };
+/** The ohmmeter pushes a small test current through the part and reads volts / amps, so any source in the path corrupts it. */
+function ohmReading(sc: MeterScenario, place: MeterPlace, batteryVolts: number): number {
+  const [a, b] = ENDS[place];
+  const els = base(sc, place, batteryVolts);
+  els.push({ kind: "I", id: "T", a, b, amps: METER.testCurrent });
+  els.push({ kind: "R", id: "L", a, b, ohms: 1e9 });
+  const s = solveDC(els, { allowFloating: true });
+  if (!s.ok) throw new Error(s.message);
+  return (s.v[b] - s.v[a]) / METER.testCurrent;
+}
+
+const PLACE_NAME: Record<MeterPlace, string> = { r1: "R1", r2: "R2", battery: "the battery", switch: "the switch", series: "the loop" };
 
 export function readMeter(sc: MeterScenario, place: MeterPlace, mode: MeterMode): MeterReading {
+  const open = !sc.power;
   if (mode === "ohm") {
-    if (sc.power) {
+    const passive = ohmReading(sc, place, 0);
+    const live = ohmReading(sc, place, sc.battery);
+    if (passive > METER.olOhms) {
       return {
         value: null,
-        display: "ERR",
-        tone: "bad",
-        note: "Never measure resistance on a powered circuit: the meter sends its own tiny test current, and the battery's voltage would swamp it (and could damage the meter). Switch the circuit off first.",
+        display: "OL",
+        tone: "neutral",
+        note:
+          place === "series"
+            ? "The loop is open at the switch, so with the probes in the gap there is no way round: the meter shows OL (over limit), an open circuit."
+            : "Nothing connects the probes except air: the meter shows OL (over limit), an open circuit.",
       };
     }
-    if (place === "series") {
-      return { value: null, display: "OL", tone: "neutral", note: "Resistance is measured ACROSS a part, with the circuit off. Probes in the gap of the loop see an open circuit, which the meter shows as OL (over limit)." };
+    if (Math.abs(live - passive) > 1e-3 * Math.max(passive, 1)) {
+      return {
+        value: null,
+        display: "??",
+        tone: "bad",
+        note: "The battery is in the path the meter's test current takes, so its voltage fights the test current and the reading is meaningless (it could be anything, even negative, and it can damage the meter). Measure resistance with no source in the path: take the part out, or at least cut the battery off from it.",
+      };
     }
-    // powered off, battery out of the picture: what the rest of the circuit offers across the probes
-    const ohms = place === "r1" ? sc.r1 : place === "r2" ? sc.r2 : sc.r1 + sc.r2;
     return {
-      value: ohms,
+      value: passive,
       display: "",
       tone: "good",
-      note: place === "battery" ? "With the battery disconnected, the probes see R1 and R2 in series: R1 + R2." : "Circuit off: the meter sends its own tiny current through this resistor and reads its resistance.",
+      note: open
+        ? "The open switch cuts the battery out of the path, so the meter's test current only sees this resistor and the reading is true. A cleaner habit is to remove the part or disconnect the battery."
+        : "No source in the path, so the reading is the true resistance.",
     };
   }
   if (mode === "V") {
     const s = solveMeter(sc, place, "V");
+    const v = Math.abs(s.el.M.v);
     if (place === "series") {
       return {
-        value: Math.abs(s.el.M.v),
+        value: v,
         display: "",
         tone: "bad",
         note: sc.power
           ? "A voltmeter in the loop is a 10 MΩ resistor in series. Almost no current can flow, so R1 and R2 get nothing and the meter shows nearly the whole battery voltage. Wrong place: volts go ACROSS a part."
-          : "The battery is disconnected, so there is no voltage to read.",
+          : "The loop is open at the switch and the meter sits in a second gap: no current flows, so it reads nothing. Volts go ACROSS a part, not in the loop.",
       };
     }
-    return {
-      value: Math.abs(s.el.M.v),
-      display: "",
-      tone: "good",
-      note: sc.power ? "Volts are measured ACROSS a part, with a probe on each end. The 10 MΩ meter barely disturbs the circuit." : "The battery is disconnected, so every part reads 0 V.",
-    };
+    const note =
+      place === "switch"
+        ? open
+          ? "An open switch has the whole battery voltage across it: that is how you find the gap."
+          : "A closed switch is a wire, so there is no voltage across it."
+        : open && (place === "r1" || place === "r2")
+          ? "With the switch open no current flows, so there is no voltage drop across this resistor: 0 V."
+          : place === "battery"
+            ? "The battery's voltage is there whether or not the switch is closed."
+            : "Volts are measured ACROSS a part, with a probe on each end. The 10 MΩ meter barely disturbs the circuit.";
+    return { value: v, display: "", tone: "good", note };
   }
+  // amps
   const s = solveMeter(sc, place, "A");
-  if (place === "series") {
-    return {
-      value: Math.abs(s.el.M.i),
-      display: "",
-      tone: "good",
-      note: sc.power ? "Amps are measured IN SERIES: the loop is opened and the meter becomes part of it, so all the current flows through it." : "The circuit is off, so no current flows.",
-    };
-  }
   const i = Math.abs(s.el.M.i);
-  if (sc.power && fuseBlows(i, METER.fuseA)) {
+  if (fuseBlows(i, METER.fuseA)) {
     return {
       value: null,
       display: "FUSE",
@@ -286,12 +326,25 @@ export function readMeter(sc: MeterScenario, place: MeterPlace, mode: MeterMode)
       note: `An ammeter is almost a wire. Across ${PLACE_NAME[place]} it would have to carry about ${i < 1 ? Math.round(i * 1000) + " mA" : Math.round(i) + " A"}. Its ${METER.fuseA} A fuse blows, which is exactly the fuse's job. Amps go IN SERIES, never across a supply.`,
     };
   }
+  if (place === "series") {
+    return {
+      value: i,
+      display: "",
+      tone: sc.power ? "good" : "neutral",
+      note: sc.power ? "Amps are measured IN SERIES: the loop is opened and the meter becomes part of it, so all the current flows through it." : "The switch is open, so the loop is broken and no current flows. Close the switch to see the current.",
+    };
+  }
+  if (place === "switch") {
+    return open
+      ? { value: i, display: "", tone: "good", note: "The meter bridges the open switch, so the current flows through the meter instead: it is in series with the rest of the loop, which works." }
+      : { value: i, display: "", tone: "neutral", note: "A closed switch is already a wire, so almost all the current bypasses the meter and it reads nearly nothing. Put the meter in the loop instead." };
+  }
   return {
     value: i,
     display: "",
     tone: "bad",
     note: sc.power
       ? `Across ${PLACE_NAME[place]} the ammeter is a near-wire in parallel, so it shorts that part out and changes the circuit. This is not the current that flowed before you connected it.`
-      : "The circuit is off, so no current flows.",
+      : "The switch is open so the loop is broken: nothing flows through the meter. Anyway, amps do not go across a part.",
   };
 }
