@@ -247,7 +247,7 @@ export function Scan({ props, onChange, goal, status }: WidgetProps<ScanProps>) 
                 <span>{patternStr(numToBits(h.pattern))}</span>
                 <span>{e}</span>
                 <span>{h.observed}</span>
-                <span className={`text-right font-sans font-semibold ${h.observed === e ? "text-ink-2" : "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]"}`}>{h.observed === e ? "match" : "MISMATCH"}</span>
+                <span className={`text-right font-sans font-semibold ${h.observed === e ? "text-ink-2" : "text-bad"}`}>{h.observed === e ? "match" : "MISMATCH"}</span>
               </div>
             );
           })}

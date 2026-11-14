@@ -154,10 +154,10 @@ export function Sta({ props, onChange }: WidgetProps<StaProps>) {
                   </button>
                 </td>
                 <td className="px-2 py-1.5 font-mono text-ink">{Math.round(r.arrivalPs)}</td>
-                <td className={`px-2 py-1.5 font-mono font-semibold ${r.setupSlackPs < 0 ? "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]" : "text-[color-mix(in_srgb,var(--good)_70%,var(--ink))]"}`}>
+                <td className={`px-2 py-1.5 font-mono font-semibold ${r.setupSlackPs < 0 ? "text-bad" : "text-good"}`}>
                   {slackPs(r.setupSlackPs)} {r.setupSlackPs < 0 ? "VIOLATED" : "ok"}
                 </td>
-                <td className={`px-2 py-1.5 font-mono font-semibold ${r.holdSlackPs < 0 ? "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]" : "text-[color-mix(in_srgb,var(--good)_70%,var(--ink))]"}`}>
+                <td className={`px-2 py-1.5 font-mono font-semibold ${r.holdSlackPs < 0 ? "text-bad" : "text-good"}`}>
                   {slackPs(r.holdSlackPs)} {r.holdSlackPs < 0 ? "VIOLATED" : "ok"}
                 </td>
               </tr>

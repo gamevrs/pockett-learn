@@ -23,7 +23,7 @@ export interface SynthProps {
 
 export { checkSynth };
 
-const TONE: Record<string, string> = { ok: "text-[color-mix(in_srgb,var(--good)_70%,var(--ink))]", ignored: "text-ink-2", no: "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]", warn: "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]" };
+const TONE: Record<string, string> = { ok: "text-good", ignored: "text-ink-2", no: "text-bad", warn: "text-bad" };
 
 export function Synth({ props, onChange, status, goal }: WidgetProps<SynthProps>) {
   const first = presetById(props.preset ?? "ao") ?? SYNTH_PRESETS[0];

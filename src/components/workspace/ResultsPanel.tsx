@@ -81,7 +81,7 @@ export function ResultsPanel({ tab, onTab, tests, results, stdout, error, runnin
           <CheckCircle2 className="h-3.5 w-3.5" />
           Checks
           {hasRun && (
-            <span className={`rounded-full px-1.5 text-[10px] ${allPassed ? "bg-good text-[#06140f]" : "bg-bad/20 text-bad"}`}>
+            <span className={`rounded-full px-1.5 text-[10px] ${allPassed ? "bg-good text-white dark:text-[#06140f]" : "bg-bad/20 text-bad"}`}>
               {passed}/{tests.length}
             </span>
           )}

@@ -272,7 +272,7 @@ function Editor({ code, onEdit, readOnly, errorLines, taRef }: { code: string; o
       <div className="flex min-w-full w-max">
         <div aria-hidden className="shrink-0 select-none border-r border-line py-2 pl-2 pr-2 text-right font-mono text-[14px] leading-6 text-ink-3">
           {lines.map((_, i) => (
-            <div key={i} className={errorLines.has(i + 1) ? "font-bold text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]" : ""}>
+            <div key={i} className={errorLines.has(i + 1) ? "font-bold text-bad" : ""}>
               {i + 1}
             </div>
           ))}
@@ -426,7 +426,7 @@ export function VerilogSim({ props, onChange, goal, status }: WidgetProps<Verilo
                 onClick={() => gotoLine(e.line)}
                 className="min-h-10 w-full rounded-xl border border-[var(--bad)]/60 bg-surface px-3 py-2 text-left text-[0.88rem] leading-snug text-ink hover:bg-surface-2"
               >
-                <span className="font-semibold text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]">{e.line > 0 ? `Line ${e.line}` : "Error"}: </span>
+                <span className="font-semibold text-bad">{e.line > 0 ? `Line ${e.line}` : "Error"}: </span>
                 {e.message}
               </button>
             </li>
@@ -463,7 +463,7 @@ export function VerilogSim({ props, onChange, goal, status }: WidgetProps<Verilo
             </div>
           ) : (
             other && (
-              <p className="mt-2 text-sm text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]">
+              <p className="mt-2 text-sm text-bad">
                 {other.errors.map((e) => formatDiag(e)).join(" ")}
               </p>
             )

@@ -180,7 +180,7 @@ export function Testbench({ props, onChange }: WidgetProps<TestbenchProps>) {
                     <span className="text-ink-3">expected </span>
                     {fmtOut(model, res.want)}
                   </p>
-                  <p className={`mt-0.5 font-sans text-[0.9rem] font-bold ${res.pass ? "text-[color-mix(in_srgb,var(--good)_70%,var(--ink))]" : "text-[color-mix(in_srgb,var(--bad)_70%,var(--ink))]"}`}>{res.pass ? "PASS" : "FAIL"}</p>
+                  <p className={`mt-0.5 font-sans text-[0.9rem] font-bold ${res.pass ? "text-good" : "text-bad"}`}>{res.pass ? "PASS" : "FAIL"}</p>
                 </div>
               )}
             </li>
