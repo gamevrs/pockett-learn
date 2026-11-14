@@ -234,7 +234,7 @@ export function Erc({ props, onChange, revealed }: WidgetProps<ErcProps>) {
           </p>
         </div>
       )}
-      <ToyNote>Toy ERC: four seeded mistakes and simplified pin-type rules. Real tools check far more, and you can set each rule to error, warning or ignore.</ToyNote>
+      <ToyNote>Toy ERC: {seeded.length === 4 ? "four" : String(seeded.length)} seeded mistakes and simplified pin-type rules. Real tools check far more, and you can set each rule to error, warning or ignore.</ToyNote>
     </div>
   );
 }

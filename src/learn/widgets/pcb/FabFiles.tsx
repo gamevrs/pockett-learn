@@ -43,7 +43,8 @@ export function FabFiles({ onChange, revealed, status }: WidgetProps<FabFilesPro
     setChecked(false);
     emit({}, false);
   };
-  const showAnswers = checked || status === "revealed";
+  const revealedAll = status === "revealed";
+  const showAnswers = checked || revealedAll;
 
   return (
     <div className="w-full">
@@ -81,7 +82,20 @@ export function FabFiles({ onChange, revealed, status }: WidgetProps<FabFilesPro
               </div>
               {showAnswers && (
                 <p className="mt-1.5 text-[0.8rem] leading-snug text-ink-2">
-                  <b className={mine && ok ? "text-ink" : "text-[var(--bad)]"}>{!mine ? "Not sorted yet." : ok ? "Correct." : "Not quite."}</b> Goes to <b>{BUCKETS.find((b) => b.id === c.bucket)!.label}</b>. {c.why}
+                  {!mine ? (
+                    <>
+                      <b className="text-[var(--bad)]">Not sorted yet.</b>
+                      {revealedAll && <> Goes to <b>{BUCKETS.find((b) => b.id === c.bucket)!.label}</b>. {c.why}</>}
+                    </>
+                  ) : ok ? (
+                    <>
+                      <b className="text-ink">Correct.</b> Goes to <b>{BUCKETS.find((b) => b.id === c.bucket)!.label}</b>. {c.why}
+                    </>
+                  ) : (
+                    <>
+                      <b className="text-[var(--bad)]">Not quite.</b> {revealedAll ? <>Goes to <b>{BUCKETS.find((b) => b.id === c.bucket)!.label}</b>. {c.why}</> : <>Look again at what it is: {c.what}</>}
+                    </>
+                  )}
                 </p>
               )}
             </li>
@@ -103,7 +117,7 @@ export function FabFiles({ onChange, revealed, status }: WidgetProps<FabFilesPro
       </div>
       <div className="mt-3">
         <Note tone={checked && correct === total ? "accent" : "plain"}>
-          {!checked ? "Sort the files, then press Check my sort to see which are right and why." : correct === total ? "Every file is in the right bucket." : `${total - correct} to fix. Change the red cards and check again.`}
+          {!checked ? "Sort the files, then press Check my sort to see which are right. Wrong ones get a hint, not the answer." : correct === total ? "Every file is in the right bucket." : `${total - correct} to fix. Change the red cards and check again.`}
         </Note>
       </div>
       <ToyNote>Simplified: fabs and assemblers differ. Always read your chosen fab&apos;s file guide before ordering.</ToyNote>
