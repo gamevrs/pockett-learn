@@ -138,11 +138,11 @@ What actually happens?`,
             type: "choice",
             options: [
               "Ben is healed: his 50 becomes 70",
-              "Ben's hp becomes Ana's hp plus 20, so 100",
               "Ana is healed and Ben is unchanged",
               "Python raises an error because the names don't match",
+              "Ben's hp becomes Ana's hp plus 20, so 100",
             ],
-            answer: 1,
+            answer: 3,
           },
           explanation: "`heal()` just gets a number. It returned 80 + 20 = 100, which landed in `p2_hp`. Python can't catch the mistake because to Python these are unrelated numbers. Nothing says `p1_hp` *belongs to* Ana.",
         },
@@ -174,12 +174,12 @@ What actually happens?`,
           question: {
             type: "choice",
             options: [
-              "Programs run faster",
-              "Each object looks after its own data, so related things stay together and are hard to mix up",
-              "It makes bugs impossible",
+              "Programs run much faster than with plain variables",
+              "Bugs become impossible once data is in objects",
+              "Data and behaviour stay together, so mix-ups are rarer",
               "Python won't run code that isn't inside a class",
             ],
-            answer: 1,
+            answer: 2,
           },
           explanation: "Objects don't make code faster or bug-free, and Python is perfectly happy without classes. The win is **organisation**: data lives next to the code that uses it. The rest of this module, including the four pillars, builds on that.",
         },
@@ -270,7 +270,7 @@ Notice that you never type \`self\` when you call a method: \`rex.birthday()\` a
           kind: "question",
           title: "Who is self?",
           body: "Inside `rex.birthday()`, what is `self`?",
-          question: { type: "choice", options: ["The Dog class itself", "rex: the object the method was called on", "A fresh copy of rex", "Every Dog object at once"], answer: 1 },
+          question: { type: "choice", options: ["The Dog class itself", "A fresh copy of rex", "The object before the dot: rex", "Every Dog object at once"], answer: 2 },
           explanation: "Python turns `rex.birthday()` into `Dog.birthday(rex)`, so `self` is whichever object is in front of the dot. That's how one method, written once, works for every dog.",
         },
         {
@@ -284,7 +284,7 @@ b = Dog("Rex", 3)
 a.age = 10
 print(b.age)
 ~~~`,
-          question: { type: "choice", options: ["10", "3", "An error: two dogs can't share a name", "None"], answer: 1 },
+          question: { type: "choice", options: ["10", "None", "3", "An error: two dogs can't share a name"], answer: 2 },
           explanation: "Two calls to `Dog(...)` make two separate objects, even with identical values. Changing `a` doesn't touch `b`, so it prints **3**.",
         },
         {
@@ -314,7 +314,7 @@ class Dog:
 rex = Dog("Rex")
 print(rex.name)
 ~~~`,
-          question: { type: "choice", options: ["It prints Rex", "AttributeError: 'Dog' object has no attribute 'name'", "It prints None", "It prints name"], answer: 1 },
+          question: { type: "choice", options: ["It prints Rex, since name was set in __init__", "It prints None, since nothing was stored", "SyntaxError: name = name is not allowed", "AttributeError: Dog has no attribute 'name'"], answer: 3 },
           explanation: "Without `self.`, `name = name` just sets a local variable that vanishes when `__init__` ends. An attribute only sticks when you store it **on the object**: `self.name = name`.",
         },
         {
@@ -475,7 +475,7 @@ class BankAccount {
 ~~~
 
 Java is another programming language, and it checks your whole program for mistakes *before* it starts running (that check is called compiling). Some other class writes \`acct.balance = -999;\`. What happens?`,
-          question: { type: "choice", options: ["It works, just like in Python", "The program won't compile: balance is private", "It runs, but prints a warning", "Java silently ignores the line"], answer: 1 },
+          question: { type: "choice", options: ["It won't compile: balance is private", "It works, just like in Python", "It runs, but prints a warning", "Java silently ignores the line"], answer: 0 },
           explanation: "In Java, C# and C++, `private` is enforced by the compiler: code outside the class can't even mention the field. Python gets the same design from conventions (`_balance`) and properties. Same idea, different enforcement.",
         },
         {
@@ -651,12 +651,12 @@ class ElectricEngine(Engine):
           question: {
             type: "choice",
             options: [
-              "Abstraction hides complexity behind a simple interface; encapsulation protects an object's data by controlling access to it",
-              "They're two names for the same thing",
+              "They mean the same thing; only the wording differs",
               "Abstraction means using abstract classes; encapsulation means using classes",
               "Encapsulation hides complexity; abstraction hides data",
+              "Abstraction hides complexity; encapsulation guards data",
             ],
-            answer: 0,
+            answer: 3,
           },
           explanation: "They're easy to confuse because a well-built class usually does both. But they answer different questions. Abstraction: *what does the caller need to know?* Encapsulation: *who may change this data?* (Abstract classes are just one tool for abstraction. A well-named function is another.)",
         },
@@ -795,7 +795,7 @@ class Dog(Animal):
 rex = Dog("Rex", "collie")
 print(rex.eat())
 ~~~`,
-          question: { type: "choice", options: ["It prints Rex eats", "AttributeError: 'Dog' object has no attribute 'name'", "It prints collie eats", "TypeError: Dog() takes no arguments"], answer: 1 },
+          question: { type: "choice", options: ["It prints Rex eats", "It prints collie eats", "AttributeError: Dog has no attribute 'name'", "TypeError: Dog() takes no arguments"], answer: 2 },
           explanation: "Dog's `__init__` replaced Animal's and never called `super().__init__(name)`, so `self.name` was never set. Overriding `__init__` and forgetting `super()` is one of the most common inheritance bugs.",
         },
         {
@@ -807,11 +807,11 @@ print(rex.eat())
             type: "choice",
             options: [
               "class Car(Engine), because a car needs an engine's start()",
-              "class SavingsAccount(BankAccount): a savings account is a bank account that earns interest",
               "class Employee(Database), so employees can save themselves",
               "class Stack(list), just to reuse append()",
+              "class SavingsAccount(BankAccount): it is a bank account",
             ],
-            answer: 1,
+            answer: 3,
           },
           explanation: "A car **has** an engine; it isn't one. An employee isn't a database. And `Stack(list)` also inherits `insert()` and `sort()`, which let people break the stack's rules. Only SavingsAccount passes the test \"every X is a Y\", and it can stand in anywhere a BankAccount is expected. For *has-a*, use composition (two lessons from now).",
         },
@@ -930,7 +930,7 @@ class Cat(Animal):
           kind: "question",
           title: "One more shape",
           body: "You add a `Pentagon` class with its own `area()`. What has to change in the polymorphic loop?",
-          question: { type: "choice", options: ["Add an elif for Pentagon", "Nothing", "Make Pentagon inherit from Triangle", "Rename area() to pentagon_area()"], answer: 1 },
+          question: { type: "choice", options: ["Add an elif for Pentagon", "Nothing: the loop stays exactly as it is", "Make Pentagon inherit from Triangle", "Rename area() to pentagon_area()"], answer: 1 },
           explanation: "Nothing. As long as Pentagon answers `area()`, the loop works. With the if-chain, you'd edit the chain, and every other place in the program that checks types. That's the payoff: code that's **open to new types without being edited**.",
         },
         {
@@ -941,11 +941,11 @@ class Cat(Animal):
             type: "choice",
             options: [
               "Having many different classes in a program",
-              "Code calls one method name, and each object runs its own version of it",
               "One class inheriting from several parents",
+              "One call, and each object runs its own version of it",
               "An object changing its class while the program runs",
             ],
-            answer: 1,
+            answer: 2,
           },
           explanation: "Lots of classes alone isn't polymorphism, and inheriting from several parents is *multiple inheritance*. Polymorphism is about the **call**: one interface (`area()`, `speak()`) with many implementations, and the object picks which one runs.",
         },
@@ -965,7 +965,7 @@ class Pizza:
 for s in [Square(2), Pizza(10)]:
     print(s.area())
 ~~~`,
-          question: { type: "choice", options: ["TypeError: Pizza is not a Shape", "It prints 4 and then 314.0", "It prints 4 and then None", "It only works if Pizza inherits from Square"], answer: 1 },
+          question: { type: "choice", options: ["TypeError: Pizza is not a Shape", "It prints 4 and then None", "It only works if Pizza inherits from Square", "It prints 4 and then 314.0"], answer: 3 },
           explanation: "Python doesn't check family trees, only whether the method exists: if it walks like a duck and quacks like a duck, it's a duck. That's **duck typing**. Java or C# would need Pizza to declare a shared interface first; Python just makes the call.",
         },
         {
@@ -1207,12 +1207,12 @@ class Car:
           question: {
             type: "choice",
             options: [
-              "Hiding complexity behind a simple interface",
-              "Bundling data with the methods that use it, and restricting direct access so the object can protect its own rules",
+              "Hiding complexity behind a simple interface for callers",
               "Writing a getter and a setter for every field",
+              "Bundling data with its methods and controlling access to it",
               "Putting your code inside a class",
             ],
-            answer: 1,
+            answer: 2,
           },
           explanation: "The first option is abstraction: the classic swap. A getter and setter for every field is a *mechanism*, and it can defeat the purpose: a setter that accepts anything protects nothing. The right answer names the data, the access control *and* why it matters.",
         },
@@ -1336,12 +1336,12 @@ def show(report):
           question: {
             type: "choice",
             options: [
-              "Nothing, that's the full definition",
-              "It should model an is-a relationship; for reuse alone, composition is usually better",
+              "It should model is-a; for reuse alone, composition is better",
+              "Nothing: reuse is the whole point of inheritance",
               "Inheritance only works with abstract classes",
-              "Modern Python has deprecated inheritance",
+              "Modern Python has deprecated inheritance entirely",
             ],
-            answer: 1,
+            answer: 0,
           },
           explanation: "Reuse is a side effect, not the purpose. `class Car(Engine)` reuses code too, and it's wrong. A strong answer: \"Inheritance models *is-a*: a subclass can be used anywhere its parent is expected. If I only want to reuse behaviour, I use composition.\"",
         },
