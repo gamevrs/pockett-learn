@@ -66,15 +66,10 @@ const lessons: ConceptLesson[] = [
         body: "Which of these instructions is precise enough to be an algorithm for finding the largest card?",
         question: {
           type: "choice",
-          options: [
-            "Look over the cards and pick the one that seems biggest.",
-            "Hold the first card. Turn over the others one at a time, and whenever one is bigger than the card you hold, hold that one instead. When none are left, the card you hold is the answer.",
-            "Turn over cards until you find a big one.",
-            "Pick the middle card, since it's probably about average.",
-          ],
-          answer: 1,
+          options: ["Look over the cards and pick the one that seems biggest.", "Turn over cards until you find a big one.", "Pick the middle card, since it's probably about average.", "Hold the first card. Swap it for any bigger card, until none are left."],
+          answer: 3,
         },
-        explanation: "Only the second says exactly what to do at every moment **and when to stop**. \"Seems biggest\" and \"a big one\" need judgement, and a computer has none: it can only follow exact steps.",
+        explanation: "Only the hold-and-swap steps (hold the first card, turn over the rest one at a time, swap whenever one is bigger) say exactly what to do at every moment **and when to stop**. \"Seems biggest\" and \"a big one\" need judgement, and a computer has none: it can only follow exact steps.",
       },
       {
         kind: "question",
@@ -82,13 +77,8 @@ const lessons: ConceptLesson[] = [
         body: "A shortcut: *look at the first 3 cards and answer the largest of those.* On the cards [9, 4, 7, 2, 1] it answers 9, which is right. Is it a correct algorithm?",
         question: {
           type: "choice",
-          options: [
-            "Yes: it gave the right answer.",
-            "No: on other cards, like [1, 2, 3, 8], it answers 3 instead of 8.",
-            "Yes, as long as there are at least 3 cards.",
-            "No, because it's too fast.",
-          ],
-          answer: 1,
+          options: ["No: on [1, 2, 3, 8] it answers 3, not 8.", "Yes: it gave the right answer.", "Yes, as long as there are at least 3 cards.", "No, because it's too fast."],
+          answer: 0,
         },
         explanation: "An algorithm is **correct** only if it's right for *every* possible input. One success proves nothing; a single input where it fails (a **counterexample**) proves it wrong.",
       },
@@ -126,13 +116,8 @@ return 9
         body: "Ana's program finds the largest of a million numbers in 0.2 seconds. Ben's, on a different computer, takes 0.5 seconds. What can you conclude?",
         question: {
           type: "choice",
-          options: [
-            "Ana's algorithm is better.",
-            "Ben's algorithm is better.",
-            "Nothing yet: the computers differ. Count the steps each algorithm takes to compare them fairly.",
-            "They must be using the same algorithm.",
-          ],
-          answer: 2,
+          options: ["Ana's algorithm is better, as it ran faster.", "Nothing yet: compare step counts, not seconds.", "Ben's algorithm does more steps than Ana's.", "They must be using the same algorithm."],
+          answer: 1,
         },
         explanation: "Seconds mix up the algorithm with the machine it ran on. Ana might simply have a faster computer. Counting steps compares the **algorithms** themselves, and that count is the same everywhere.",
       },
@@ -226,7 +211,7 @@ return 9
         kind: "question",
         title: "Drop the small stuff",
         body: "Big-O keeps only the fastest-growing part and drops constant factors: 3n + 5 is O(n), and n² + n is O(n²).\n\nAn algorithm takes **2n² + 50n + 7** steps. What is it in Big-O?",
-        question: { type: "choice", options: ["O(2n² + 50n + 7)", "O(n²)", "O(n)", "O(50n)"], answer: 1 },
+        question: { type: "choice", options: ["O(2n² + 50n + 7)", "O(50n)", "O(n²)", "O(n)"], answer: 2 },
         explanation: "For big n the n² part dwarfs the rest: at n = 1,000, 2n² is 2,000,000 while 50n is only 50,000. Drop the smaller terms and the factor 2, and you're left with **O(n²)**.",
       },
       {
@@ -242,7 +227,7 @@ return 9
         title: "Halving",
         body: "This loop halves n on every pass. Try a few values of n. What's its Big-O?",
         widget: { type: "dsa-opcount", props: { shape: "halving", initial: 64 }, live: true },
-        question: { type: "choice", options: ["O(1)", "O(log n)", "O(n)", "O(n²)"], answer: 1 },
+        question: { type: "choice", options: ["O(log n)", "O(n)", "O(n log n)", "O(1)"], answer: 0 },
         explanation: "Each pass halves n, so it runs about log₂ n times: 6 times for 64, 10 for 1,024, and only about 20 for a million. Doubling n adds **one** pass. That's **O(log n)**, and it's the reason searching sorted data is so fast.",
       },
       {
@@ -580,8 +565,8 @@ to_list(a)   # [3, 8, 5]
         body: "`names` holds a million usernames. Which check is fast?",
         question: {
           type: "choice",
-          options: ["`\"ada\" in names` when names is a list", "`\"ada\" in names` when names is a set", "Both are equally fast", "Neither: `in` always checks every item"],
-          answer: 1,
+          options: ["`\"ada\" in names` when names is a list", "Both are equally fast", "Neither: `in` always checks every item", "`\"ada\" in names` when names is a set"],
+          answer: 3,
         },
         explanation: "A **set** is a hash map with keys and no values (create one with `set()`, add with `.add(x)`): `in` hashes \"ada\" and checks one bucket, about O(1). On a **list**, `in` compares item by item: O(n), up to a million comparisons.",
       },
@@ -591,13 +576,8 @@ to_list(a)   # [3, 8, 5]
         body: "`{[1, 2]: \"x\"}` fails with *TypeError: unhashable type: 'list'*. Why won't Python let a list be a key?",
         question: {
           type: "choice",
-          options: [
-            "Lists are too long to hash.",
-            "A list can change after it's stored. Its hash would change too, and the map would look in the wrong bucket.",
-            "Dictionary keys must be strings.",
-            "Lists can't be compared with ==.",
-          ],
-          answer: 1,
+          options: ["Lists are too long to have a hash value.", "Dictionary keys must always be strings.", "A list can change, so its hash could change too.", "Lists can't be compared with `==` at all."],
+          answer: 2,
         },
         explanation: "The bucket is picked from the key's hash when it's stored. If the key could change later, its hash would point somewhere else and the entry would be lost. So keys must be **immutable**, which means \"can't be changed after it's made\": strings, numbers and tuples (fixed groups like `(3, 4)`) qualify; a list can be changed, so it doesn't. Values can be anything.",
       },
@@ -695,7 +675,7 @@ to_list(a)   # [3, 8, 5]
         kind: "question",
         title: "The fine print",
         body: "Someone runs binary search for **2** on the *unsorted* list [7, 9, 5, 2, 1]. It looks at the middle item, 5, and since 2 is smaller it searches only the left part, [7, 9]. What does it report?",
-        question: { type: "choice", options: ["Found, at index 3", "Not found, even though 2 is in the list", "It crashes with an error", "It sorts the list first, then finds it"], answer: 1 },
+        question: { type: "choice", options: ["Found, at index 3", "It crashes with an error", "It sorts the list first, then finds it", "Not found, even though 2 is in the list"], answer: 3 },
         explanation: "Binary search **trusts** the order: seeing 5, it assumes everything smaller is on the left. Here 2 sits on the right, so it's never looked at. Binary search needs **sorted** data. Sorting first costs O(n log n), which pays off when you search the same data many times.",
       },
       {
@@ -812,8 +792,8 @@ assert _Counting.reads <= 40, f"Your search read {_Counting.reads} items. Binary
         widget: { type: "dsa-sort", props: { table: true, initialN: 8 }, live: true },
         question: {
           type: "choice",
-          options: ["28, the same as always", "7: each new item is compared once with its left neighbour and stays put", "0: it notices the list is sorted", "64"],
-          answer: 1,
+          options: ["7: one check per item after the first", "28, the same as always", "0: it notices it's already sorted", "64: every item against every item"],
+          answer: 0,
         },
         explanation: "Each item is compared with its neighbour once, found to be in place, and left alone: **7** comparisons, so insertion sort is O(n) on sorted or nearly sorted data. Its worst case, reversed input, is still O(n²).",
       },
@@ -835,7 +815,7 @@ assert _Counting.reads <= 40, f"Your search read {_Counting.reads} items. Binary
         title: "The race",
         body: "Splitting n items down to single items takes about log₂ n levels (8 → 4 → 2 → 1 is 3 levels), and each level of merging costs about n comparisons, so merge sort is **O(n log n)**. Race the four sorts as n grows.\n\nPython's `sorted()` uses Timsort, a merge-sort relative. Roughly how many comparisons for **1,000,000** items?",
         widget: { type: "dsa-sort", props: { table: true, initialN: 64 }, live: true },
-        question: { type: "choice", options: ["About 20 million (n log₂ n)", "About 500 billion (n²/2)", "About 1 million (n)", "About 20 (log₂ n)"], answer: 0 },
+        question: { type: "choice", options: ["About 500 billion (n²/2)", "About 20 million (n log₂ n)", "About 1 million (n)", "About 20 (log₂ n)"], answer: 1 },
         explanation: "n log₂ n ≈ 1,000,000 × 20 = **20 million**. Selection sort would need about 500 billion, some 25,000 times more. In fact no sort that works by comparing items can beat about n log n comparisons in the worst case.",
       },
       {
@@ -911,7 +891,7 @@ Documents
         kind: "question",
         title: "Find the leaves",
         body: "In that tree, which items are **leaves**?",
-        question: { type: "choice", options: ["Only Documents", "school and photos", "essay.txt, notes.txt and beach.jpg", "All of them"], answer: 2 },
+        question: { type: "choice", options: ["Only Documents, the top of the tree", "school and photos, the folders", "essay.txt, notes.txt and beach.jpg", "All of them, folders and files"], answer: 2 },
         explanation: "Leaves have no children: the three files. Documents is the **root**, and school and photos are in between: each has a parent above and children below.",
       },
       {
@@ -956,7 +936,7 @@ Documents
         kind: "question",
         title: "A million values",
         body: "A perfectly balanced BST holds 1,000,000 values. About how many comparisons does a search need, at most?",
-        question: { type: "choice", options: ["About 20", "About 1,000", "About 500,000", "About 1,000,000"], answer: 0 },
+        question: { type: "choice", options: ["About 1,000", "About 20", "About 500,000", "About 1,000,000"], answer: 1 },
         explanation: "Each level doubles the room: 20 levels hold over a million nodes (2²⁰ − 1), so about **20** comparisons. That matches binary search on a sorted list, but a tree can also **insert** in O(log n), with no shifting.",
       },
       {
@@ -1072,10 +1052,10 @@ graph = {
           "\n\nThe roads go both ways. Which code adds a new road between **E** and **H**?",
         question: {
           type: "choice",
-          options: ["`graph[\"E\"].append(\"H\")`", "`graph[\"E\"].append(\"H\")` and `graph[\"H\"].append(\"E\")`", "`graph[\"E\"] = \"H\"`", "`graph[\"E\"] = [\"H\"]`"],
-          answer: 1,
+          options: ["`graph[\"E\"].append(\"H\")`", "`graph[\"E\"] = [\"H\"]` and `graph[\"H\"] = [\"E\"]`", "`graph[\"E\"].append(\"H\")` and `graph[\"H\"] = [\"E\"]`", "`graph[\"E\"].append(\"H\")` and `graph[\"H\"].append(\"E\")`"],
+          answer: 3,
         },
-        explanation: "A two-way edge appears in **both** nodes' lists, so add H to E's and E to H's. The last two options replace E's list and lose its old roads.",
+        explanation: "A two-way edge appears in **both** nodes' lists, so add H to E's and E to H's. Using `=` replaces a whole list and loses its old roads, and a single `append` adds only a one-way road.",
       },
       {
         kind: "explain",
@@ -1230,7 +1210,7 @@ graph + BFS   fewest steps between nodes  (a model, not a box)
         kind: "question",
         title: "The spell checker",
         body: "A spell checker checks every word you type against 200,000 dictionary words. What should it keep the dictionary in?",
-        question: { type: "choice", options: ["A list, checked with `in`", "A set", "A stack", "A queue"], answer: 1 },
+        question: { type: "choice", options: ["A set", "A list, checked with `in`", "A stack", "A queue"], answer: 0 },
         explanation: "Each check is a membership test, and a **set** answers it in about one step. A list would compare up to 200,000 words for every word you type. (A sorted list with binary search would also work: about 18 steps.)",
       },
       {
@@ -1239,13 +1219,8 @@ graph + BFS   fewest steps between nodes  (a model, not a box)
         body: "You have 10 million sales records, each with a product name. You want the number of sales for each product. What's the best plan?",
         question: {
           type: "choice",
-          options: [
-            "For each product, loop over all the sales and count its matches",
-            "One pass over the sales, adding 1 to a dict entry keyed by product",
-            "Sort the sales, then binary search for each product",
-            "Push every sale onto a stack",
-          ],
-          answer: 1,
+          options: ["One pass over the sales, adding 1 to a dict entry keyed by product", "For each product, loop over all the sales and count its matches", "Sort the sales, then binary search for each product", "Push every sale onto a stack"],
+          answer: 0,
         },
         explanation: "One pass with a **dict** is O(n): 10 million quick updates. Looping over all sales once per product is O(products × n), which with thousands of products means billions of steps. Sorting first works but costs O(n log n) before you even start counting.",
       },
@@ -1253,7 +1228,7 @@ graph + BFS   fewest steps between nodes  (a model, not a box)
         kind: "question",
         title: "Train changes",
         body: "A travel app wants the route with the **fewest changes** between two stations on a train network. What fits?",
-        question: { type: "choice", options: ["A sorted list of station names", "A graph of stations and lines, searched with BFS", "A stack of stations", "A hash map from station to its name length"], answer: 1 },
+        question: { type: "choice", options: ["A sorted list of station names", "A stack of stations", "A hash map from station to its name length", "A graph of stations and lines, searched with BFS"], answer: 3 },
         explanation: "Stations are **nodes** and direct connections are **edges**, so \"fewest changes\" is a shortest route in a graph, exactly what **BFS** finds. (When edges have different lengths, like travel times, apps use Dijkstra's algorithm, a cousin of BFS.)",
       },
       {
@@ -1262,7 +1237,7 @@ graph + BFS   fewest steps between nodes  (a model, not a box)
         body: "You need to know whether any two of 100,000 user IDs are the same. Which approach is fastest?",
         question: {
           type: "choice",
-          options: ["Compare every ID with every other ID: O(n²)", "Add each ID to a set, stopping if it's already there: O(n)", "Binary search the unsorted list for each ID", "Put them in a queue and dequeue them all"],
+          options: ["Compare every ID with every other ID: O(n²)", "Add each ID to a set, stopping at a repeat: O(n)", "Binary search the unsorted list for each ID", "Put them in a queue and dequeue them all"],
           answer: 1,
         },
         explanation: "With a **set**, each ID costs about one step to check and add, so 100,000 IDs take about 100,000 steps. Comparing every pair is about 5 billion comparisons. Binary search fails on unsorted data.",
