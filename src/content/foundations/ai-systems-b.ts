@@ -110,14 +110,14 @@ export const aiLessonsB: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "Make the chunks cut at the section or paragraph break, or overlap them, so a rule and its exception stay together",
-            "Switch to a bigger language model",
+            "Switch to a bigger model that can read more at once",
             "Lower the temperature so the model is less creative",
-            "Retrieve k = 1 so there is less to read",
+            "Cut chunks at paragraph breaks, or let them overlap",
+            "Retrieve only k = 1 so the model has less to read",
           ],
-          answer: 0,
+          answer: 2,
         },
-        explanation: "The model can only use what is in the prompt. The exception was cut away from the rule at **indexing time**, long before any model ran. A bigger model cannot read a paragraph that was never retrieved. Fix the chunks, then check the fix on your regression questions (two lessons on).",
+        explanation: "The model can only use what is in the prompt. The exception was cut away from the rule at **indexing time**, long before any model ran. A bigger model cannot read a paragraph that was never retrieved. Cutting at paragraph breaks, or letting chunks overlap, keeps a rule and its exception together. Fix the chunks, then check the fix on your regression questions (two lessons on).",
       },
       {
         kind: "explain",
@@ -341,12 +341,12 @@ assert rrf([["p", "q"], ["r", "q"]], k=0) == ["p", "q", "r"], f"k=0 gave {rrf([[
         question: {
           type: "choice",
           options: [
-            "Don’t ship yet: investigate that question first; some questions matter more than the average",
-            "Ship: the average improved",
+            "Ship it, because the average improved",
+            "Don’t ship yet: investigate that question first",
             "Delete the question from the set so the numbers look better",
-            "Re-run until it passes",
+            "Re-run the test until it passes",
           ],
-          answer: 0,
+          answer: 1,
         },
         explanation: "Averages hide the cases you cannot afford to lose. Mark the high-stakes questions, and gate releases on **no new failures there** as well as on the overall score. A flaky question that passes “sometimes” is a finding, not noise to re-roll away.",
       },

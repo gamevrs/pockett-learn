@@ -40,8 +40,8 @@ export const aiLessonsD: ConceptLesson[] = [
           options: [
             "They share most of their letters",
             "Someone sorted the words into groups by hand",
-            "They are used in similar ways, so the model gave them similar numbers",
-            "The model looked them up in a dictionary",
+            "They are used in similar ways, so get similar numbers",
+            "The model looked both words up in a dictionary",
           ],
           answer: 2,
           feedback: {
@@ -69,16 +69,16 @@ export const aiLessonsD: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "Letting “sat” pull in information from the words that matter most to it, like who did the sitting",
-            "Deleting the words that are not needed",
-            "Checking each word for spelling mistakes",
-            "Counting how many words the sentence has",
+            "Deleting the words the sentence does not need",
+            "Checking each word for spelling and grammar errors",
+            "Counting how many words each sentence contains",
+            "Letting “sat” pull in details from the relevant words",
           ],
-          answer: 0,
+          answer: 3,
           feedback: {
-            1: "Nothing is deleted. Every word stays; attention only decides how much each one is mixed into the others.",
-            2: "Spelling is not the point. Attention is about meaning: which other words help to understand this one.",
-            3: "Counting is not what the lines do. Their thickness says how much one word draws on another.",
+            0: "Nothing is deleted. Every word stays; attention only decides how much each one is mixed into the others.",
+            1: "Spelling is not the point. Attention is about meaning: which other words help to understand this one.",
+            2: "Counting is not what the lines do. Their thickness says how much one word draws on another.",
           },
           hint: "The thickness of a line says how strongly one word draws on another word.",
         },
@@ -101,10 +101,10 @@ export const aiLessonsD: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "The model is running faster",
-            "The model has memorised the dictionary",
-            "The model is getting more random",
-            "The model’s guesses at the real next word are getting closer to right",
+            "The model is running faster on the same hardware",
+            "The model has memorised every word in the dictionary",
+            "The model’s answers are getting more random",
+            "The model’s next-word guesses are getting closer to right",
           ],
           answer: 3,
           feedback: {
@@ -132,10 +132,10 @@ export const aiLessonsD: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "The context window getting full",
-            "Temperature: a higher setting sometimes picks a less likely word such as “floor”",
-            "The number of layers changing between runs",
-            "The model forgetting what it learned",
+            "The context window filling up between runs",
+            "Temperature: a higher setting can pick a less likely word",
+            "The number of layers changing from run to run",
+            "The model slowly forgetting what it learned in training",
           ],
           answer: 1,
           feedback: {

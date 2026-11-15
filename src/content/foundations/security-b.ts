@@ -213,12 +213,12 @@ SELECT * FROM appointments WHERE id = :id AND patient_id = :me;
         question: {
           type: "choice",
           options: [
+            "404 Not Found: it looks like an id that does not exist",
             "403 Forbidden: it is honest about what happened",
-            "404 Not Found: it looks exactly like an id that does not exist",
             "200 with an empty body",
             "500 Internal Server Error",
           ],
-          answer: 1,
+          answer: 0,
         },
         explanation: "A 403 confirms the record exists, which can itself be sensitive (is that person a patient here?). Answering 404 for “not yours” reveals nothing. Use 403 when the caller knows the thing exists and the information is harmless, such as a staff-only page. A fake 200 or a 500 would confuse your own monitoring.",
       },
@@ -248,10 +248,10 @@ SELECT * FROM appointments WHERE id = :id AND patient_id = :me;
         question: {
           type: "choice",
           options: [
-            "A patient sends PUT /profile with `{\"role\": \"admin\"}` and becomes an administrator",
-            "A browser offers to remember a saved password",
-            "A non-admin types /admin/export and downloads the patient list",
-            "A shared invoice link opens for anyone who has it, a year later",
+            "A patient sets `\"role\": \"admin\"` and becomes an admin",
+            "A browser offers to save the password you just typed",
+            "A non-admin opens /admin/export and gets the patient list",
+            "An invoice link still opens for anyone, a year after sharing",
           ],
           answer: [0, 2, 3],
         },
@@ -369,12 +369,12 @@ mutual TLS               both sides show certificates; strong, more plumbing
         question: {
           type: "choice",
           options: [
+            "Grant read access on request, for a limited time and with a logged reason, and review the log",
             "Give the whole engineering team permanent production admin, so nobody ever waits",
             "Give nobody production access, ever",
-            "Grant read access on request, for a limited time and with a logged reason, and review the log",
             "Share one production password in the team chat",
           ],
-          answer: 2,
+          answer: 0,
         },
         explanation: "Permanent access means every phished laptop is a production incident. No access at all just pushes people towards workarounds. Time-boxed, logged, reviewed access gives engineers what they need and gives you a trail to check.",
       },
