@@ -139,7 +139,7 @@ export const reliabilityModule: Module = {
           kind: "question",
           title: "Which clock?",
           body: "A server accepts your connection instantly, reads your request, and then never sends a response. Which timeout rescues you?",
-          question: { type: "choice", options: ["The connect timeout", "The read timeout", "The DNS timeout", "None: only the server can end it"], answer: 1 },
+          question: { type: "choice", options: ["The connect timeout", "The DNS timeout", "None: only the server can end it", "The read timeout"], answer: 3 },
           explanation: "Connecting **worked**, so the connect timeout never fires. It's the **read** (response) timeout that gives up on a connection that is open but silent. That's why setting only a connect timeout leaves the most common hang uncovered.",
         },
         {
@@ -234,8 +234,7 @@ export const reliabilityModule: Module = {
           body: "A service receives a request with only **300 ms** left on its deadline. The work it needs takes about 500 ms plus a downstream call. What should it do?",
           question: {
             type: "choice",
-            options: ["Start anyway, it might be quick this time", "Fail at once with “deadline exceeded”", "Call downstream with a fresh 5-second timeout", "Ask the caller to extend the deadline"],
-            answer: 1,
+            options: ["Start anyway, it might be quick this time", "Call downstream with a fresh 5-second timeout", "Ask the caller to extend the deadline", "Fail at once with “deadline exceeded”"], answer: 3,
           },
           explanation: "The caller will give up in 300 ms, so any work you start is wasted work. Failing **immediately** frees your worker and tells the caller the truth. A fresh timeout would undo the whole point of a shared deadline.",
         },
@@ -317,8 +316,7 @@ export const reliabilityModule: Module = {
           body: "A `POST /charge-card` call times out. Is it safe to retry it exactly the way you'd retry a `GET /parcel/4417`?",
           question: {
             type: "choice",
-            options: ["Yes, a retry is a retry", "No: the first charge may already have gone through, so a retry could charge twice", "Yes, because the card company deduplicates", "No: POST can never be retried"],
-            answer: 1,
+            options: ["Yes, a retry is a retry", "Yes, because the card company deduplicates", "No: the first charge may have succeeded", "No: POST can never be retried"], answer: 2,
           },
           explanation: "A timeout doesn't say the server did nothing, so the first charge may well have gone through. Reading data twice is harmless; **charging twice isn't**. Whether an operation is safe to repeat is the second question to ask before every retry, and the lesson on idempotency shows how to make it safe.",
         },
@@ -331,7 +329,7 @@ export const reliabilityModule: Module = {
           kind: "question",
           title: "Safe to repeat",
           body: "Which of these HTTP methods are **idempotent by definition**? Pick all that apply.",
-          question: { type: "choice", options: ["GET: fetch a record", "POST: create a record", "PUT: replace a record with this exact content", "DELETE: remove a record"], answer: [0, 2, 3] },
+          question: { type: "choice", options: ["GET: fetch a record", "POST: create a record", "PUT: replace a record", "DELETE: remove a record"], answer: [0, 2, 3] },
           explanation: "Setting a record to a fixed value (`PUT`) leaves the same result however many times you do it; so does deleting something (gone is gone). `POST` creates a *new* thing every time, so two POSTs can make two records.",
         },
         {
@@ -340,13 +338,7 @@ export const reliabilityModule: Module = {
           body: "A server answers **500 Internal Server Error**. A sensible default policy for your client is…",
           question: {
             type: "choice",
-            options: [
-              "Retry forever until it works",
-              "Retry a couple of times with a growing pause, then give up",
-              "Never retry any 5xx",
-              "Retry instantly, as fast as possible",
-            ],
-            answer: 1,
+            options: ["Retry a few times with growing pauses", "Retry forever until it works", "Never retry any 5xx", "Retry instantly, as fast as possible"], answer: 0,
           },
           explanation: "Some 500s are momentary (a node hiccuped), but many are **bugs that repeat** for the same input. A small, limited number of paced retries catches the first kind without hammering the second. Unlimited or instant retries turn a bug into an outage.",
         },
@@ -529,13 +521,7 @@ export const reliabilityModule: Module = {
           body: "In a three-layer stack, which retry policy is the safest default?",
           question: {
             type: "choice",
-            options: [
-              "Every layer retries 3 times, to be safe",
-              "One layer retries; the others pass the failure straight up",
-              "No layer ever retries",
-              "Only the user retries, by pressing the button",
-            ],
-            answer: 1,
+            options: ["Every layer retries 3 times, to be safe", "No layer ever retries", "Only the user retries, by pressing the button", "One layer retries; the others pass failures up"], answer: 3,
           },
           explanation: "One deliberate place keeps the total predictable (here, 4 attempts instead of 64). The others should return errors quickly and leave it to the retrying layer. Having **no** retries makes every blip visible to users; having them **everywhere** multiplies load.",
         },
@@ -653,13 +639,7 @@ export const reliabilityModule: Module = {
           body: "Where should an idempotency key come from?",
           question: {
             type: "choice",
-            options: [
-              "The server, when it first receives the request",
-              "The client, once per user intention, reused on every retry of it",
-              "The client, freshly generated for every attempt",
-              "The customer's card number",
-            ],
-            answer: 1,
+            options: ["The server, when it first receives the request", "The client, once per action, reused on every retry", "The client, freshly generated for every attempt", "The customer's card number"], answer: 1,
           },
           explanation: "Only the client knows that attempt 2 is a retry of attempt 1. If the server made the key, it couldn't tell the client's retry from a new request. A fresh key per attempt would defeat the purpose; a card number would make every purchase on that card look like a duplicate.",
         },
@@ -674,13 +654,7 @@ export const reliabilityModule: Module = {
           body: "A vendor promises “exactly-once processing”. What can that honestly mean?",
           question: {
             type: "choice",
-            options: [
-              "Each message crosses the network exactly one time",
-              "Messages may arrive more than once, but the effect is applied once, thanks to deduplication",
-              "No failure can ever happen",
-              "Messages are never retried",
-            ],
-            answer: 1,
+            options: ["Each message crosses the network exactly one time", "No failure can ever happen", "Messages are never retried", "Messages may repeat, but the effect is applied once"], answer: 3,
           },
           explanation: "It means the **effect** happens once, built from at-least-once delivery and idempotent handling (often by remembering the IDs of messages already processed). It never means that the wire carried a message just once.",
         },
@@ -757,8 +731,7 @@ export const reliabilityModule: Module = {
           body: "While a breaker is **open**, what should a caller receive?",
           question: {
             type: "choice",
-            options: ["It waits for its normal timeout, then fails", "An immediate failure, or a fallback answer", "A retry loop until the breaker closes", "A made-up success"],
-            answer: 1,
+            options: ["It waits for its normal timeout, then fails", "A retry loop until the breaker closes", "An immediate failure, or a fallback answer", "A success reply with empty data"], answer: 2,
           },
           explanation: "The whole point is to **fail fast**: no waiting, no worker held. The caller can show an error right away or, better, serve a fallback (a cached or default answer, which is the topic of the next lesson).",
         },
@@ -768,13 +741,7 @@ export const reliabilityModule: Module = {
           body: "In the half-open state, why does the breaker let only **one** (or very few) calls through, instead of opening the floodgates?",
           question: {
             type: "choice",
-            options: [
-              "To avoid slamming a service that is only just recovering with the full traffic at once",
-              "To save memory in the breaker",
-              "Because a half-open breaker is broken",
-              "To make the logs shorter",
-            ],
-            answer: 0,
+            options: ["To protect a service that is still recovering", "To keep the breaker's own memory use small", "To measure how many users are affected", "To keep the logs short and readable"], answer: 0,
           },
           explanation: "A service coming back from an outage is fragile, with cold caches and empty connection pools. One careful probe tells you whether it has recovered, and if not, costs almost nothing.",
         },
@@ -784,13 +751,7 @@ export const reliabilityModule: Module = {
           body: "A breaker is set to open after **just 2 failures in a row**. What's the most likely problem in production?",
           question: {
             type: "choice",
-            options: [
-              "It trips on harmless blips, cutting off a dependency that was fine",
-              "It never trips",
-              "It makes calls slower",
-              "It can't be closed again",
-            ],
-            answer: 0,
+            options: ["It trips on a few unlucky, harmless blips", "It never trips, even during a real outage", "It makes every call a little slower", "It can't be closed again once open"], answer: 0,
           },
           explanation: "A hair-trigger breaker turns a pair of unlucky packets into a self-inflicted outage. Real breakers usually look at a **rate** over a window (for example 50% failures over the last 20 calls, with a minimum number of calls) rather than a handful of failures.",
         },
@@ -875,13 +836,7 @@ export const reliabilityModule: Module = {
           body: "Which of these are bulkheads? Pick all that apply.",
           question: {
             type: "choice",
-            options: [
-              "A separate database connection pool for the reporting queries",
-              "A cap of 10 concurrent requests per customer",
-              "A retry with jitter",
-              "Running the image-resizing code in its own process",
-            ],
-            answer: [0, 1, 3],
+            options: ["A separate connection pool for reporting queries", "A cap of 10 concurrent requests per customer", "Retries that wait a random time (jitter)", "Running image resizing in its own process"], answer: [0, 1, 3],
           },
           explanation: "A bulkhead is any **boundary that limits how much of a shared resource one party can use**: separate pools, per-tenant concurrency limits, separate processes or machines. Retry-with-jitter is a different tool: it shapes *when* you try, not *how much* of a shared thing you may use.",
         },
@@ -910,13 +865,7 @@ export const reliabilityModule: Module = {
           body: "The pricing service is down. Which fallback is the **dangerous** one?",
           question: {
             type: "choice",
-            options: [
-              "Show the last known price, marked as such, and re-check at checkout",
-              "Show a default price of €0.00 so the page still looks complete",
-              "Disable the Buy button and say “prices temporarily unavailable”",
-              "Show the saved price and block checkout until pricing answers",
-            ],
-            answer: 1,
+            options: ["Show the last known price, marked as such, and re-check at checkout", "Disable the Buy button and say “prices temporarily unavailable”", "Show a default price of €0.00 so the page still looks complete", "Show the saved price and block checkout until pricing answers"], answer: 2,
           },
           explanation: "A fallback must never invent facts that cost money. Showing a price of €0.00 (or any made-up value) is worse than an error. Good fallbacks are **honest** (labelled saved copies) or **safe** (something that can't do harm, like a hidden section).",
         },
@@ -926,8 +875,7 @@ export const reliabilityModule: Module = {
           body: "A fallback path has existed for two years but has never actually run in production. How much should you trust it?",
           question: {
             type: "choice",
-            options: ["Fully: it was reviewed once", "Very little: code that never runs usually has bugs waiting", "Completely, because it is simple", "It does not matter"],
-            answer: 1,
+            options: ["Very little: code that never runs hides bugs", "Fully, since it was reviewed when written", "Completely, since it is only a few lines", "A fair amount: it passed code review"], answer: 0,
           },
           explanation: "Rarely-run code rots: its cache has expired, its config is wrong, its dependency changed. Teams **test fallbacks on purpose** by switching a dependency off in staging, and sometimes in production, to prove the degraded mode still works.",
         },
@@ -999,7 +947,7 @@ export const reliabilityModule: Module = {
           title: "The hang",
           body: "Under **Hang** (calls are accepted but never answered), the slowest 5% of shoppers wait the full 3 seconds. Which single protection brings the wait down to a fraction of a second? Try each one.",
           widget: { type: "rel-client", props: { scenario: "hang" }, live: true },
-          question: { type: "choice", options: ["Retries with jitter", "A timeout", "A saved-copy fallback", "None can"], answer: 1 },
+          question: { type: "choice", options: ["Retries with jitter", "A timeout on each call", "A saved-copy fallback", "None of the three can"], answer: 1 },
           explanation: "Only a **timeout** makes a hung call give up early, since retries and fallbacks both have to *wait* for the first attempt to fail before they can act. This is why a timeout is the first line of defence, and the others build on it.",
         },
         {
