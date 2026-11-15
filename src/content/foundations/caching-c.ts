@@ -163,7 +163,7 @@ ETag: "v7"
           ],
           answer: 2,
         },
-        explanation: "Hashed files never change under the same URL, so they can be kept for a year. The HTML must be revalidated each time so visitors learn about the newest hashed URLs. Caching the HTML for a year (the last option) would pin visitors to the old CSS forever.",
+        explanation: "Hashed files never change under the same URL, so they can be kept for a year. The HTML must be revalidated each time so visitors learn about the newest hashed URLs. Caching the HTML for a year (as in “Both: max-age=31536000”) would pin visitors to the old CSS forever.",
       },
       {
         kind: "code",
@@ -396,13 +396,7 @@ Vary: Cookie                    one copy per cookie value (!)
         body: "Your Redis cache has an outage. Requests that used to hit it now go to the database, which can only handle a fraction of the load. What's the most sensible behaviour for the app?",
         question: {
           type: "choice",
-          options: [
-            "Retry the cache in a tight loop until it's back",
-            "Fall back to the database but limit concurrent queries and shed load or serve a degraded page, instead of letting every request through",
-            "Let every request go straight to the database; it'll cope",
-            "Return an error for every request until the cache recovers",
-          ],
-          answer: 1,
+          options: ["Retry the cache in a tight loop until it's back", "Let every request go straight to the database; it'll cope", "Return an error for every request until the cache recovers", "Fall back to the database, but cap its load and shed the rest"], answer: 3,
         },
         explanation: "A cache that has become **load-bearing** (the system would collapse without it, like a wall that holds up the roof) is a dependency like any other. Plan for its absence with the tools from the reliability module: timeouts, circuit breakers, and **load shedding** so the database isn't buried by the sudden miss storm. If the answer to “what if the cache is gone?” is “everything falls over”, the cache is now a single point of failure.",
       },
@@ -420,13 +414,7 @@ Vary: Cookie                    one copy per cookie value (!)
         body: "A cache key is built as `\"dashboard:\" + date`. Every logged-in user sees a dashboard computed from their own data. What goes wrong?",
         question: {
           type: "choice",
-          options: [
-            "Nothing: dates are unique enough",
-            "The first user to load the dashboard that day fills the entry, and everyone else is shown their data",
-            "Only the TTL would be affected",
-            "The cache would evict entries too quickly",
-          ],
-          answer: 1,
+          options: ["Every user is shown the first user's dashboard", "Nothing: dates are unique enough", "Only the TTL would be affected", "The cache would evict entries too quickly"], answer: 0,
         },
         explanation: "The key identifies the **day** but not the **user**, so the first person's dashboard is served to everybody. Add whatever makes the answer different (the user, the tenant, the language, the filters) to the key, or don't cache a personal page in a shared cache at all.",
       },
@@ -463,13 +451,7 @@ Vary: Cookie                    one copy per cookie value (!)
         body: "Encore's organiser dashboard takes 6 seconds. It runs one query that scans a 40-million-row table with no index on the filter column, and every organiser sees different data. What's the best first move?",
         question: {
           type: "choice",
-          options: [
-            "Put the whole page in a shared CDN cache for an hour",
-            "Add an index (and check the query plan) so the query is fast on its own, then cache only if still needed",
-            "Increase the cache TTL to a week",
-            "Cache each organiser's page in write-behind mode",
-          ],
-          answer: 1,
+          options: ["Put the whole page in a shared CDN cache for an hour", "Add an index and check the query plan, then cache if needed", "Raise the cache TTL to a week so misses are rare", "Cache each organiser's page in write-behind mode"], answer: 1,
         },
         explanation: "The page is per-organiser, so a shared cache would leak data, and a cache wouldn't fix the underlying scan: each miss would still take 6 seconds. Start by fixing the query. You'll learn how in the next module, where *indexes and query plans* get their own lessons.",
       },

@@ -422,13 +422,7 @@ seats left (at purchase)          0: don't cache    a wrong number oversells
         body: "Which of these should use **sliding** expiry?",
         question: {
           type: "choice",
-          options: [
-            "A cached exchange rate",
-            "A user's login session, kept alive while they're active",
-            "A cached copy of a news homepage",
-            "The result of an expensive report that changes hourly",
-          ],
-          answer: 1,
+          options: ["A cached exchange rate", "A cached copy of a news homepage", "The result of an expensive report that changes hourly", "A login session, kept alive while the user is active"], answer: 3,
         },
         explanation: "A session belongs to *one* user and should live as long as that user keeps showing up. The other three are shared data that changes on someone else's schedule, so they need a hard deadline.",
       },
@@ -599,13 +593,7 @@ seats left (at purchase)          0: don't cache    a wrong number oversells
         body: "A cache with plain LRU has a 90% hit rate all day, then drops to 20% for twenty minutes after a bulk export job runs. What's the most likely cause?",
         question: {
           type: "choice",
-          options: [
-            "The export job's one-off reads evicted the hot entries",
-            "The TTLs are too long",
-            "LFU would have performed worse",
-            "The cache has too many hits",
-          ],
-          answer: 0,
+          options: ["A one-off export evicted the hot entries", "The TTLs on hot entries are too long", "LFU would have done even worse here", "The cache grew too large to search"], answer: 0,
         },
         explanation: "A burst of keys that will never be requested again pushed the valuable entries out, and the hot keys had to be reloaded afterwards. The cure is not a bigger cache; it's keeping one-off traffic from entering the cache (or from being promoted).",
       },
