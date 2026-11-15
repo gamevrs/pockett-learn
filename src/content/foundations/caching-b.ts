@@ -267,13 +267,7 @@ def get(cache, key):
         body: "Match the symptom to the best fix: *“Right after every deploy flushes the cache, the database spikes to ten times normal load for about ten seconds, then calms down.”*",
         question: {
           type: "choice",
-          options: [
-            "Make every TTL longer",
-            "Warm the cache before sending traffic to the new version, and add jitter",
-            "Switch from LRU to LFU",
-            "Remove the cache and read the database directly",
-          ],
-          answer: 1,
+          options: ["Make every TTL longer, so entries last for days", "Warm the cache before the new version takes traffic", "Switch from LRU to LFU so hot keys survive", "Remove the cache and read the database directly"], answer: 1,
         },
         explanation: "An empty cache means every key misses together: a **cold-start stampede**. Pre-warm the hottest keys before the new version takes traffic, and jitter the TTLs so the first expiries don't line up. A longer TTL only delays the next spike.",
       },
@@ -461,13 +455,7 @@ hit rate   misses per second (to the database)
         widget: { type: "cache-hitrate", props: { keys: 1000, size: 1000, skewed: true, cold: true, controls: ["cold"] }, live: true },
         question: {
           type: "choice",
-          options: [
-            "Yes, because the cache is big enough for everything",
-            "No: it must first be filled by misses, so the early hit rate is much lower",
-            "Yes, because popular keys are loaded first",
-            "No: a cache can never reach 100%",
-          ],
-          answer: 1,
+          options: ["Yes, because the cache is big enough for everything", "Yes, because popular keys are loaded first", "No: a cache can never reach 100%", "No: it has to be filled by misses first"], answer: 3,
         },
         explanation: "Capacity is only the *ceiling*. Every key still has to miss once to get in. Plan for cold starts: warm the cache from a list of hot keys, bring caches up gradually behind a load balancer, and make sure the database can survive the first minute.",
       },
@@ -487,8 +475,7 @@ hit rate   misses per second (to the database)
         body: "Cache A: hit rate 87%, a miss costs 5 ms. Cache B: hit rate 45%, a miss costs 800 ms. At the same request rate, which one saves more total waiting?",
         question: {
           type: "choice",
-          options: ["Cache A, because 87% beats 45%", "Cache B, because each hit avoids a far more expensive miss", "They save the same", "Neither saves anything"],
-          answer: 1,
+          options: ["Cache A, since 87% is nearly double 45%", "They save about the same amount of time", "Cache B: each hit skips a far costlier miss", "Neither: a hit rate under 50% saves nothing"], answer: 2,
         },
         explanation: "Time saved ≈ hits × cost of a miss. A: 0.87 × 5 = 4.4 ms per request. B: 0.45 × 800 = 360 ms per request. **Cache B is worth about 80× more**, which is why you cache the expensive things first even if their hit rate looks modest.",
       },
