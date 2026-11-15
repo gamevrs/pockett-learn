@@ -66,10 +66,10 @@ const lessons: ConceptLesson[] = [
         body: "Which of these instructions is precise enough to be an algorithm for finding the largest card?",
         question: {
           type: "choice",
-          options: ["Look over the cards and pick the one that seems biggest.", "Turn over cards until you find a big one.", "Pick the middle card, since it's probably about average.", "Hold the first card. Swap it for any bigger card, until none are left."],
+          options: ["Look over the cards and pick the one that seems biggest.", "Turn over cards until you find a big one.", "Pick the middle card, since it's probably about average.", "Hold the first card. Check each other card once; keep the bigger."],
           answer: 3,
         },
-        explanation: "Only the hold-and-swap steps (hold the first card, turn over the rest one at a time, swap whenever one is bigger) say exactly what to do at every moment **and when to stop**. \"Seems biggest\" and \"a big one\" need judgement, and a computer has none: it can only follow exact steps.",
+        explanation: "Only the hold-and-check steps (hold the first card, turn over the rest one at a time, keep whichever is bigger) say exactly what to do at every moment **and when to stop**. \"Seems biggest\" and \"a big one\" need judgement, and a computer has none: it can only follow exact steps.",
       },
       {
         kind: "question",
