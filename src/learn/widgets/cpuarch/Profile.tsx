@@ -24,12 +24,14 @@ export interface CountersProps {
   derived?: boolean;
   /** Add a "this is the slow one" button for the learner to mark one program. */
   pick?: boolean;
+  /** Show only the scenarios with these ids (e.g. one program for an explain step). Default all. */
+  only?: string[];
 }
 
 export const DEFAULT_SCENARIOS: Scenario[] = [
-  { id: "sum", title: "Sum an array in order", what: "A loop that adds up 100 million numbers stored one after another.", cycles: 1_200_000_000, instructions: 3_000_000_000, branches: 300_000_000, branchMisses: 100_000, cacheMisses: 2_000_000 },
+  { id: "sum", title: "Sum an array in order", what: "A loop that adds up 100 million numbers stored one after another.", cycles: 200_000_000, instructions: 400_000_000, branches: 100_000_000, branchMisses: 30_000, cacheMisses: 2_000_000 },
   { id: "list", title: "Walk a scattered list", what: "Follow pointers through 10 million list nodes spread all over memory.", cycles: 4_000_000_000, instructions: 800_000_000, branches: 160_000_000, branchMisses: 400_000, cacheMisses: 40_000_000 },
-  { id: "count", title: "Count big values in shuffled data", what: "if (x >= 128) count++ over 240 million random bytes.", cycles: 2_400_000_000, instructions: 2_400_000_000, branches: 480_000_000, branchMisses: 120_000_000, cacheMisses: 3_000_000 },
+  { id: "count", title: "Count big random bytes", what: "if (x >= 128) count++ over 240 million random bytes.", cycles: 2_400_000_000, instructions: 2_400_000_000, branches: 480_000_000, branchMisses: 120_000_000, cacheMisses: 3_000_000 },
 ];
 
 export interface CountersState {
@@ -47,7 +49,8 @@ export const derive = (s: Scenario) => ({
 
 /** A perf-stat-style counter printout for a few made-up programs. Read the counters and decide where the cycles go. */
 export function Counters({ props, onChange }: WidgetProps<CountersProps>) {
-  const scenarios = props.scenarios ?? DEFAULT_SCENARIOS;
+  const all = props.scenarios ?? DEFAULT_SCENARIOS;
+  const scenarios = props.only ? all.filter((x) => props.only!.includes(x.id)) : all;
   const showDerived = props.derived ?? true;
   const [cur, setCur] = useState(0);
   const [viewed, setViewed] = useState<string[]>([scenarios[0].id]);

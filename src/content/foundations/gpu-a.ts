@@ -1,7 +1,8 @@
 import type { ConceptLesson } from "../../learn/types.ts";
 
 /**
- * GPU module, lessons 1 to 5: why GPUs exist, the graphics pipeline, kernels and threads, warps and divergence, GPU memory.
+ * GPU module, lessons 1 to 5 plus lesson 11 (races, atomics and reductions; placed after lesson 5 so levels never go backwards):
+ * why GPUs exist, the graphics pipeline, kernels and threads, warps and divergence, GPU memory, reductions.
  * CUDA words are the main vocabulary (they are the most widely taught); the other vendors' names are given when a term first appears.
  */
 export const gpuLessonsA: ConceptLesson[] = [
@@ -24,7 +25,7 @@ export const gpuLessonsA: ConceptLesson[] = [
         kind: "question",
         title: "Make the CPU win",
         body: "Pick or build a job so that the **CPU** finishes first, then press **Run the race**. Hint: think about steps that each need the answer of the step before.",
-        widget: { type: "gpu-race", props: { chain: 0, items: 4096 } },
+        widget: { type: "gpu-race", props: { chain: 0, items: 8192 } },
         question: {
           type: "widget",
           goal: { winner: "cpu", ran: true },
@@ -80,18 +81,18 @@ export const gpuLessonsA: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "A GPU is simply a faster CPU that does everything better",
-            "A GPU's cores are slower and simpler, but there are thousands of them, so it wins when the work splits into many independent pieces",
-            "A GPU can only draw pictures; it cannot do ordinary calculations",
+            "A GPU is a faster CPU: its cores beat a CPU's on every kind of job",
+            "A GPU can only draw pictures; it cannot run ordinary calculations",
+            "A GPU's many simple cores win when work splits into independent pieces",
           ],
-          answer: 1,
+          answer: 2,
           feedback: {
             0: "A GPU is slower at a single sequential task; you would not run your operating system on it.",
-            2: "GPUs run general calculations too (science, AI, video). Drawing is just where they started.",
+            1: "GPUs run general calculations too (science, AI, video). Drawing is just where they started.",
           },
           hint: "Think of the painters: which crowd wins on a chain of dependent steps?",
         },
-        explanation: "A GPU trades single-core speed for sheer numbers. It shines on big, regular, independent work and loses on chains of dependent steps. Real systems use **both**: the CPU runs the program and hands the crowd-friendly parts to the GPU.",
+        explanation: "A GPU's cores are slower and simpler than a CPU's, but there are thousands of them: it trades single-core speed for sheer numbers. It shines on big, regular, independent work and loses on chains of dependent steps. Real systems use **both**: the CPU runs the program and hands the crowd-friendly parts to the GPU.",
       },
       {
         kind: "recap",
@@ -127,12 +128,12 @@ export const gpuLessonsA: ConceptLesson[] = [
         widget: { type: "gpu-pipeline", props: { scenes: ["vertices"] } },
         question: {
           type: "choice",
-          options: ["A fragment", "A vertex", "A shader", "A pixel"],
-          answer: 1,
+          options: ["A pixel", "A fragment", "A shader", "A vertex"],
+          answer: 3,
           feedback: {
-            0: "A fragment is a pixel-sized piece of a triangle, which comes later in the pipeline.",
+            0: "A pixel is a dot on the screen. The corners of a triangle are called vertices.",
+            1: "A fragment is a pixel-sized piece of a triangle, which comes later in the pipeline.",
             2: "A shader is a small program, not a point.",
-            3: "A pixel is a dot on the screen. The corners of a triangle are called vertices.",
           },
           hint: "The plural is \"vertices\".",
         },
@@ -154,10 +155,10 @@ export const gpuLessonsA: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "Because each pixel's colour does not depend on any other pixel's colour",
-            "Because the colours are all the same",
-            "Because the screen refreshes faster than the shader runs",
-            "Because the CPU does the work in advance",
+            "Each pixel's colour does not depend on any other pixel's colour",
+            "All the covered pixels get the same colour, so one answer is reused",
+            "The screen refreshes faster than the shader runs, hiding the order",
+            "The CPU works out the colours in advance and the GPU only copies them",
           ],
           answer: 0,
           feedback: {
@@ -194,7 +195,7 @@ export const gpuLessonsA: ConceptLesson[] = [
       {
         kind: "code",
         title: "Write a shader for one pixel",
-        body: "Write `shade(x, width)`, the fragment shader for the left-to-right fade. It gets a pixel's column `x` (0 for the leftmost) and the screen `width` in pixels, and returns a grey level from **0** (black) to **255** (white): the leftmost pixel is 0 and the rightmost (column `width - 1`) is 255.\n\nUse whole-number maths: `x * 255 // (width - 1)`. Notice that you only write the code for **one** pixel.",
+        body: "Write `shade(x, width)`, the fragment shader for the left-to-right fade. It gets a pixel's column `x` (0 for the leftmost) and the screen `width` in pixels, and returns a grey level from **0** (black) to **255** (white): the leftmost pixel is 0 and the rightmost (column `width - 1`) is 255.\n\nUse whole-number maths (`//`) so the result is a whole grey level. Notice that you only write the code for **one** pixel.",
         language: "python",
         starter: `def shade(x, width):
     # return the grey level (0..255) for the pixel in column x
@@ -255,7 +256,7 @@ export const gpuLessonsA: ConceptLesson[] = [
         kind: "question",
         title: "Cover 20 elements with 2 blocks",
         body: "Change the block size so the whole array of **20 elements** is covered by exactly **2 blocks**.",
-        widget: { type: "gpu-grid", props: { n: 20, blockSize: 8 } },
+        widget: { type: "gpu-grid", props: { n: 20, blockSize: 4 } },
         question: { type: "widget", goal: { n: 20, blocks: 2 }, prompt: "Make 2 blocks cover 20 elements.", hint: "Each block needs at least 10 threads. Which block sizes on offer are big enough?" },
         explanation: "With blocks of **16** threads, 2 blocks give 32 threads, enough for 20 elements, and 12 threads are left over. With 8 you need 3 blocks (24 threads); with 4 you need 5.",
       },
@@ -273,18 +274,18 @@ export const gpuLessonsA: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "Nothing: the GPU skips threads that have no data",
-            "The 24 extra threads would read and write memory past the end of the arrays, which can corrupt data or crash",
-            "The GPU would launch fewer blocks automatically",
+            "The 24 extra threads would touch memory past the end of the arrays",
+            "Nothing: the GPU notices which threads have no data and skips them",
+            "The GPU would trim the last block so it ends exactly at element 999",
           ],
-          answer: 1,
+          answer: 0,
           feedback: {
-            0: "The GPU runs every thread you launch; it has no idea how long your arrays are.",
-            2: "The block count is whatever you asked for. Only your own code can keep extra threads away from the data.",
+            1: "The GPU runs every thread you launch; it has no idea how long your arrays are.",
+            2: "The block count and size are whatever you asked for. Only your own code can keep extra threads away from the data.",
           },
           hint: "The GPU does not know your array length. Who stops thread 1,000 from touching element 1,000?",
         },
-        explanation: "The grid is always a whole number of blocks, so there are often spare threads. The **bounds check** `if (i < n)` is what stops them touching memory that is not yours. Forgetting it is one of the most common GPU bugs.",
+        explanation: "The 24 spare threads would read and write past the end of the arrays, which can corrupt other data or crash the program. The grid is always a whole number of blocks, so there are often spare threads. The **bounds check** `if (i < n)` is what stops them touching memory that is not yours. Forgetting it is one of the most common GPU bugs.",
       },
       {
         kind: "code",
@@ -307,7 +308,7 @@ export const gpuLessonsA: ConceptLesson[] = [
       {
         kind: "code",
         title: "How many blocks to launch?",
-        body: "Write `blocks_needed(n, block_size)`: how many blocks cover `n` elements. It must **round up**, and an exact fit must not add a block: 1,024 elements with 256 threads need 4 blocks, not 5.\n\nTrick: for whole numbers, `(n + block_size - 1) // block_size` rounds up.",
+        body: "Write `blocks_needed(n, block_size)`: how many blocks cover `n` elements. It must **round up**, and an exact fit must not add a block: 1,024 elements with 256 threads need 4 blocks, not 5.\n\nUse whole-number maths only (no floats, no imports): there is a one-line trick that makes floor division round up.",
         language: "python",
         starter: `def blocks_needed(n, block_size):
     return -1
@@ -324,12 +325,18 @@ export const gpuLessonsA: ConceptLesson[] = [
         hints: ["Ordinary division gives a fraction; floor division `//` drops it, so add `block_size - 1` first to push partial blocks over the edge."],
       },
       {
+        kind: "explain",
+        title: "The host side: a whole program",
+        body: "A kernel never runs on its own. A normal program on the CPU (the **host**) allocates memory on the GPU (the **device**), copies the inputs over, launches the kernel, waits, and copies the result back. Here is the whole thing for vector add, in CUDA:\n\n```cpp\n#include <cstdio>\n#include <cstdlib>\n#include <cuda_runtime.h>\n\n// Stop with a message if a CUDA call fails.\n#define CHECK(call) do { cudaError_t e = (call); if (e != cudaSuccess) { \\\n    printf(\"CUDA error: %s (line %d)\\n\", cudaGetErrorString(e), __LINE__); exit(1); } } while (0)\n\n__global__ void add(const float *a, const float *b, float *c, int n) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;\n    if (i < n) c[i] = a[i] + b[i];\n}\n\nint main() {\n    const int n = 1000000;\n    size_t bytes = n * sizeof(float);\n    float *ha = (float *)malloc(bytes), *hb = (float *)malloc(bytes), *hc = (float *)malloc(bytes);\n    for (int i = 0; i < n; i++) { ha[i] = 1.0f; hb[i] = 2.0f; }\n\n    float *da, *db, *dc;                                       // pointers into GPU memory\n    CHECK(cudaMalloc(&da, bytes));\n    CHECK(cudaMalloc(&db, bytes));\n    CHECK(cudaMalloc(&dc, bytes));\n    CHECK(cudaMemcpy(da, ha, bytes, cudaMemcpyHostToDevice));   // copy in\n    CHECK(cudaMemcpy(db, hb, bytes, cudaMemcpyHostToDevice));\n\n    int blocks = (n + 255) / 256;                              // round up: 3,907 blocks\n    add<<<blocks, 256>>>(da, db, dc, n);                       // launch; returns at once\n    CHECK(cudaGetLastError());                                 // was the launch itself valid?\n    CHECK(cudaDeviceSynchronize());                            // wait; errors inside the kernel show up here\n\n    CHECK(cudaMemcpy(hc, dc, bytes, cudaMemcpyDeviceToHost));   // copy out\n    printf(\"c[0] = %.1f\\n\", hc[0]);                            // prints c[0] = 3.0\n    cudaFree(da); cudaFree(db); cudaFree(dc);\n    free(ha); free(hb); free(hc);\n    return 0;\n}\n```\n\nYou build it with NVIDIA's compiler (`nvcc add.cu -o add`) and run it like any program. The `<<<blocks, 256>>>` part is the launch: grid size, then block size. The launch is **asynchronous** (the CPU carries on at once), which matters when you time things in *Profiling and scaling*.\n\nThe same kernel in other systems (shown as examples; each also needs its own host code to create buffers and dispatch):\n\n```text\n// Metal Shading Language (Apple)\nkernel void add(device const float *a [[buffer(0)]], device const float *b [[buffer(1)]],\n                device float *c [[buffer(2)]], constant uint &n [[buffer(3)]],\n                uint i [[thread_position_in_grid]]) {\n    if (i < n) c[i] = a[i] + b[i];\n}\n\n// WGSL (WebGPU, runs in the browser)\n@group(0) @binding(0) var<storage, read> a: array<f32>;\n@group(0) @binding(1) var<storage, read> b: array<f32>;\n@group(0) @binding(2) var<storage, read_write> c: array<f32>;\n@compute @workgroup_size(256)\nfn main(@builtin(global_invocation_id) id: vec3<u32>) {\n    let i = id.x;\n    if (i < arrayLength(&c)) { c[i] = a[i] + b[i]; }\n}\n\n// OpenCL C\n__kernel void add(__global const float *a, __global const float *b, __global float *c, int n) {\n    int i = get_global_id(0);\n    if (i < n) c[i] = a[i] + b[i];\n}\n```\n\nNotice that Metal, WGSL and OpenCL hand each thread its global index directly instead of making you compute it. From Python, libraries such as CuPy, Numba (`@cuda.jit`) or Triton (examples) let you write or call kernels without the C++ host code; the steps underneath are the same.",
+      },
+      {
         kind: "recap",
         points: [
           "A **kernel** is a function written for one item; the GPU runs it as thousands of **threads**.",
           "Threads form **blocks**, and blocks form the **grid**. Other APIs say work-items/work-groups (OpenCL) or threads/threadgroups (Metal).",
           "**Global index = blockIdx × blockDim + threadIdx** tells each thread which element is its own.",
           "Round the block count **up** with `(n + size - 1) // size`, and add a **bounds check** `if (i < n)` for the spare threads.",
+          "The **host** program allocates GPU memory, copies in, launches `kernel<<<blocks, threads>>>`, synchronises and copies out; Metal, WGSL and OpenCL follow the same steps.",
         ],
       },
     ],
@@ -348,7 +355,7 @@ export const gpuLessonsA: ConceptLesson[] = [
         kind: "explain",
         title: "A marching band of 32",
         body: "A GPU does not run its threads fully on their own. It groups them into **warps** of **32 threads** (NVIDIA's word, and the usual way to teach this). All 32 threads of a warp execute the **same instruction at the same moment**, each on its own data, like a rowing crew pulling together on one drum beat. This style is called **SIMT**: single instruction, multiple threads.\n\nThe word and the size vary: AMD calls the group a *wavefront*, 32 or 64 lanes wide depending on the chip; Intel and Apple have their own names (Apple's *SIMD-groups* are 32 wide). The lesson is the same everywhere.\n\nIf you did the CPU module's *SIMD: one instruction, many numbers* lesson, a warp is like a 32-lane vector register. The difference is in how you write it: you code each thread as if it were alone (SIMT), and the hardware keeps the lanes in step, switching off the lanes that skip an `if`.\n\nThis makes the hardware cheap: one instruction decoder serves 32 lanes. The catch shows up with `if`. Below, a warp's 32 **lanes** (a lane is one thread's slot in the warp) meet an `if`. Try the different conditions and watch the passes.",
-        widget: { type: "gpu-warp", props: { branch: "below" } },
+        widget: { type: "gpu-warp", props: { branch: "even" } },
       },
       {
         kind: "question",
@@ -362,7 +369,7 @@ export const gpuLessonsA: ConceptLesson[] = [
         kind: "question",
         title: "Both sides run",
         body: "Lanes 0 to 15 take the `if` side, which costs **2 cycles**. Lanes 16 to 31 take the `else` side, which costs **6 cycles**. How many cycles does the warp spend on this branch in total?",
-        widget: { type: "gpu-warp", props: { branch: "below" }, after: true },
+        widget: { type: "gpu-warp", props: { branch: "below", k: 16, ifCycles: 2, elseCycles: 6 }, after: true },
         question: { type: "number", answer: 8, unit: "cycles", hint: "The warp runs one side, then the other. Do the two costs add or overlap?" },
         explanation: "**2 + 6 = 8 cycles.** While the `if` lanes work, the `else` lanes are switched off and wait; then it swaps. The warp cannot run both sides at once because it has only one instruction stream.",
       },
@@ -373,26 +380,26 @@ export const gpuLessonsA: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "The GPU is not clever enough to evaluate the condition",
-            "The warp has one instruction stream, so it runs the `if` side with the `else` lanes switched off, then the `else` side with the `if` lanes switched off",
-            "Each thread secretly runs both sides and keeps one answer",
-            "The compiler always converts `if` into a loop",
+            "Lanes cannot test a condition, so the warp must try both outcomes",
+            "Every lane works out both sides and then throws one answer away",
+            "The warp issues one instruction stream, so it runs one side at a time",
+            "The compiler turns each `if` into a loop that runs once per side",
           ],
-          answer: 1,
+          answer: 2,
           feedback: {
             0: "The condition is evaluated per lane just fine; the problem is what to run next.",
-            2: "Each lane runs only its own side's work; the other side's lanes are masked off (switched off).",
+            1: "Each lane runs only its own side's work; the other side's lanes are masked off (switched off).",
             3: "The compiler may turn small branches into \"predicated\" instructions, but not into loops.",
           },
           hint: "How many instructions can a warp issue at a time?",
         },
-        explanation: "One instruction stream, so one side at a time. Lanes not on that side are **masked off**: they sit idle for those cycles. Modern NVIDIA chips can interleave the two sides and let lanes make progress independently, but the cost is the same in effect: divergent paths do not run at the same moment.",
+        explanation: "One instruction stream, so one side at a time: the `if` side with the `else` lanes **masked off** (idle), then the `else` side with the `if` lanes masked off. Since Volta (2017), NVIDIA chips can interleave the two sides and let lanes make progress independently, but the cost is the same in effect: divergent paths do not run at the same moment. The practical consequence: never assume a warp's lanes are in lockstep; when lanes exchange data, use `__syncwarp()` and the `*_sync` intrinsics (the lesson *Races, atomics and reductions* shows them).",
       },
       {
         kind: "question",
         title: "How much is wasted?",
         body: "A warp splits: **8 lanes** take a 6-cycle `if` side and **24 lanes** take a 2-cycle `else` side. The branch lasts 8 cycles. What percentage of lane-cycles do useful work? (Lane-cycles are 32 lanes × 8 cycles = 256 slots.)",
-        widget: { type: "gpu-warp", props: { branch: "below" }, after: true },
+        widget: { type: "gpu-warp", props: { branch: "below", k: 8, ifCycles: 6, elseCycles: 2 }, after: true },
         question: { type: "number", answer: 37.5, tolerance: 0.5, unit: "%", hint: "Useful slots = 8 lanes × 6 cycles + 24 lanes × 2 cycles. Divide by 256." },
         explanation: "Useful lane-cycles = 8 × 6 + 24 × 2 = 96. Out of 256 slots that is **37.5%**. Utilisation is how much of the warp's width does real work, and divergence is the main way to lose it.",
       },
@@ -404,15 +411,15 @@ export const gpuLessonsA: ConceptLesson[] = [
           type: "choice",
           options: [
             "if (threadIdx.x % 2 == 0)",
-            "if (data[i] > 0), where the data is random positive and negative numbers",
-            "if (threadIdx.x < 20)",
             "if (blockIdx.x == 0)",
+            "if (threadIdx.x < 20)",
+            "if (data[i] > 0), with random signs",
           ],
-          answer: 3,
+          answer: 1,
           feedback: {
             0: "Even and odd threads sit side by side in the same warp, so this splits every warp in half.",
-            1: "Random data makes neighbouring lanes disagree, so most warps diverge.",
             2: "Threads 0 to 19 and 20 to 31 are in the same warp (warp 0), so that warp splits. (Other warps are all-false.)",
+            3: "Random positive and negative data makes neighbouring lanes disagree, so most warps diverge.",
           },
           hint: "A warp's lanes all share one block. Which values are the same for all of them?",
         },
@@ -450,16 +457,16 @@ export const gpuLessonsA: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "Launch fewer threads so there are fewer warps",
-            "Sort or group the items so that neighbouring threads take the same branch",
-            "Add more else branches so each is shorter",
-            "Use bigger blocks",
+            "Launch fewer threads, so fewer warps exist to diverge",
+            "Group the items so neighbouring threads take the same branch",
+            "Split the work into more `else` branches, each one shorter",
+            "Use bigger blocks, so each warp has more lanes to share",
           ],
           answer: 1,
           feedback: {
             0: "Fewer threads means less work done per second, and the remaining warps still split.",
             2: "More branches usually means more passes for a warp that lands in several of them.",
-            3: "Block size does not change which lanes inside one warp disagree.",
+            3: "A warp is always 32 lanes; block size does not change which lanes inside one warp disagree.",
           },
           hint: "Divergence happens when neighbouring lanes disagree. How can you make neighbours agree?",
         },
@@ -468,7 +475,7 @@ export const gpuLessonsA: ConceptLesson[] = [
       {
         kind: "recap",
         points: [
-          "Threads run in **warps** of 32 (NVIDIA; AMD wavefronts are 32 or 64 wide) that execute one instruction together: **SIMT**.",
+          "Threads run in **warps** of 32 (NVIDIA; AMD wavefronts are 32 or 64 wide) that issue one instruction at a time for all lanes: **SIMT**. Since Volta, do not assume the lanes stay in lockstep; synchronise explicitly when they share data.",
           "When lanes disagree at an `if`, the warp runs **both sides** one after the other, with the lanes not on that side switched off: **divergence**.",
           "Utilisation = useful lane-cycles ÷ (32 × cycles). Divergence is the main way to lose it.",
           "Conditions that are the same across a warp are free; make neighbouring threads take the same path by grouping similar work.",
@@ -489,7 +496,7 @@ export const gpuLessonsA: ConceptLesson[] = [
       {
         kind: "explain",
         title: "A ladder of memories",
-        body: "Like a CPU (you met its hierarchy in *Inside the computer*), a GPU has memories of different sizes and speeds (the memory module's *The memory hierarchy* and *Latency vs bandwidth* lessons cover the ideas in depth). From closest and fastest to farthest:\n\n- **Registers**: private to one thread, fastest, a few dozen to a couple of hundred per thread, about one cycle.\n- **Shared memory**: a small, fast scratchpad on the chip, shared by all threads of one **block**. *You* decide what goes in it. Roughly tens of cycles.\n- **L2 cache**: shared by the whole chip, filled automatically.\n- **Global memory**: the big memory on the card (gigabytes). It is built from **HBM** (high-bandwidth memory, stacked chips on data-centre cards) or **GDDR** (on graphics cards). Several hundred cycles away (often a few hundred nanoseconds, a slower first byte than a CPU's RAM), but with huge bandwidth: roughly 2 to 3+ terabytes per second on recent data-centre cards, around 0.5 to 1 TB/s on consumer cards (typical figures; they change every generation).\n- **Host memory**: the computer's ordinary RAM, across the **PCIe** link. PCIe 4.0 x16 moves about **32 GB/s** in each direction at best (PCIe 5.0 about 64), a small fraction of the card's own bandwidth.\n\nOne exception: phones and Apple chips use **unified memory**, where CPU and GPU share the same RAM, so there is no copy over a slow link at all.",
+        body: "Like a CPU (you met its hierarchy in *Inside the computer*), a GPU has memories of different sizes and speeds (the memory module's *The memory hierarchy* and *Latency vs bandwidth* lessons cover the ideas in depth). From closest and fastest to farthest:\n\n- **Registers**: private to one thread, fastest, a few dozen to a couple of hundred per thread, about one cycle.\n- **Shared memory**: a small, fast scratchpad on the chip, shared by all threads of one **block**. *You* decide what goes in it. Roughly tens of cycles.\n- **L2 cache**: shared by the whole chip, filled automatically.\n- **Global memory**: the big memory on the card (gigabytes). It is built from **HBM** (high-bandwidth memory, stacked chips on data-centre cards) or **GDDR** (on graphics cards). Several hundred cycles away (often a few hundred nanoseconds, a slower first byte than a CPU's RAM), but with huge bandwidth: roughly 2 to 3+ terabytes per second on recent data-centre cards, around 0.5 to 1 TB/s on consumer cards (typical figures; they change every generation).\n- **Host memory**: the computer's ordinary RAM, across the **PCIe** link. PCIe 4.0 x16 moves about **32 GB/s** in each direction at best (PCIe 5.0 about 64), a small fraction of the card's own bandwidth.\n\nNot every GPU sits across a PCIe link: chips where the CPU and GPU share one RAM get their own step later in this lesson.",
       },
       {
         kind: "question",
@@ -509,16 +516,16 @@ export const gpuLessonsA: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "RAM that the CPU and GPU both read",
-            "A small, fast on-chip scratchpad that all threads in one block can read and write, managed by the programmer",
-            "A cache that all blocks of the grid share automatically",
-            "Another name for global memory",
+            "Ordinary RAM that the CPU and the GPU can both read and write",
+            "A cache on the chip that every block of the grid shares automatically",
+            "The card's big HBM or GDDR memory, shared by every thread on the GPU",
+            "A small on-chip scratchpad for one block's threads, filled by your code",
           ],
-          answer: 1,
+          answer: 3,
           feedback: {
             0: "That would be unified or pinned host memory. The name \"shared\" here means shared among threads in a block.",
-            2: "It is shared only within one block, and nothing is automatic: you copy data in yourself.",
-            3: "Global memory is the big off-chip memory; shared memory is small and on the chip.",
+            1: "It is shared only within one block, and nothing is automatic: you copy data in yourself. (The L2 cache is the automatic, chip-wide one.)",
+            2: "That is global memory: big and off the chip. Shared memory is small and on the chip.",
           },
           hint: "\"Shared\" by whom? Think of the threads of one block working together.",
         },
@@ -543,8 +550,8 @@ export const gpuLessonsA: ConceptLesson[] = [
         title: "Make the copy small",
         body: "Now make the copy a **small share** of the GPU path: **10% or less** of its time.",
         widget: { type: "gpu-transfer", props: { mb: 1024, opsPerElement: 10, kernels: 1, pcie: 32 } },
-        question: { type: "widget", goal: { maxCopyPercent: 10 }, prompt: "Get the copy share to 10% or less.", hint: "Keep the data on the GPU and run lots of kernels on it, or do more maths per number." },
-        explanation: "Running **many kernels** on data that stays on the card (the usual shape of neural-network training, and of many simulations) spreads the one-time copy over a lot of useful work. Both fixes work: more maths per byte, or more reuse per copy.",
+        question: { type: "widget", goal: { maxCopyPercent: 10 }, prompt: "Get the copy share to 10% or less.", hint: "One lever is not enough here: you need both the most maths per number and many kernels on the same data." },
+        explanation: "The two levers **multiply**: the GPU's work is maths per number × kernels per copy. At the top maths setting, one kernel still leaves the copy at over 80% of the time; you also need dozens of kernels on data that stays on the card (the usual shape of neural-network training, and of many simulations) to spread the one-time copy over enough useful work. A faster link helps too, but array size does not: a bigger array means more copying *and* more maths, in the same ratio.",
       },
       {
         kind: "question",
@@ -573,12 +580,151 @@ export const gpuLessonsA: ConceptLesson[] = [
         hints: ["One copy takes nbytes / (pcie_gb_s * 1e9) seconds.", "You copy twice: in and out."],
       },
       {
+        kind: "explain",
+        title: "When CPU and GPU share memory",
+        body: "Everything above assumed a **discrete** card: its own memory, across PCIe. Many GPUs are not built like that.\n\n- **Shared-RAM chips**: phones, Apple's M-series and the integrated GPUs in most laptops (Intel, AMD) put the CPU and GPU on one chip, using the **same RAM**. Apple calls this *unified memory*. There is no copy over a slow link: both sides can use the same buffer. The catch is that there is **one** bandwidth figure for everything (typically about 50 to 800 GB/s on such chips, well below a data-centre card's HBM), and the CPU and GPU share it.\n- **CUDA's \"Unified Memory\"** (`cudaMallocManaged`) is a different thing with a confusingly similar name. It gives the CPU and a discrete GPU **one address space**, so the same pointer works on both sides, but the data still **moves**: pages migrate over PCIe when the other side touches them. It saves you writing the copies, not the time they take.\n- **Tile-based rendering**: phone GPUs draw the screen one small tile (say 32 × 32 pixels) at a time, keeping that tile's colours and depth in fast on-chip memory, and write each finished tile to RAM once. Because their RAM bandwidth is shared and power-hungry, saving those trips matters more than raw speed.\n\nSo the first question about any GPU is: *where does the data live, and what is the one bandwidth number that limits it?*",
+      },
+      {
         kind: "recap",
         points: [
           "A GPU's memory ladder: **registers** (per thread) → **shared memory** (per block, programmer-managed) → **L2 cache** → **global memory** (HBM/GDDR on the card) → **host RAM** over PCIe.",
           "Typical numbers: HBM on data-centre cards is in the **TB/s** range; PCIe 4.0 x16 is about **32 GB/s** each way. Always check the actual hardware.",
           "A discrete GPU path is **copy in → kernels → copy out**; for little maths per byte, the copy dominates and the CPU can win.",
-          "Keep data on the card and reuse it across many kernels. Phones and Apple chips share memory between CPU and GPU, so they skip the copy.",
+          "Keep data on the card and reuse it across many kernels: maths per number and reuse per copy multiply.",
+          "Phones, Apple chips and laptop iGPUs share one RAM with the CPU, so they skip the copy but share the bandwidth. CUDA's managed \"Unified Memory\" shares an address space, not the RAM: data still crosses PCIe.",
+        ],
+      },
+    ],
+  },
+
+  // ── Lesson 11 (placed after lesson 5): races, atomics and reductions ──
+  {
+    id: "fnd-gpu-11-races-reductions",
+    title: "Races, atomics and reductions",
+    summary: "Thousands of threads adding to one total lose updates. Fix it with atomics, then do it fast with a tree and warp shuffles.",
+    minutes: 10,
+    xp: 75,
+    level: "Advanced",
+    steps: [
+      {
+        kind: "explain",
+        title: "Everyone adds to one total",
+        body: "After vector add, the next kernel most people write is a **sum**: add up a million numbers. The obvious version gives every thread one number to add to a shared total:\n\n```cpp\n__global__ void total(const float *x, float *sum, int n) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;\n    if (i < n) *sum += x[i];   // looks harmless; it is not\n}\n```\n\n`*sum += x[i]` is really **three** steps: read `sum`, add, write `sum` back. If two threads both read the old value before either writes, both write \"old + mine\" and one addition vanishes. That is a **data race**: the answer depends on the timing of threads you do not control. It is like two people updating a tally on a whiteboard at the same moment: both read 41, both write 42, and one vote is lost.\n\nBelow, each thread *i* holds the number *i* + 1. Try the three ways of adding them up, and the thread counts. (A toy: in its race, every thread reads before any thread writes, the worst case. On real hardware the timing varies, so the wrong answer changes from run to run.)",
+        widget: { type: "gpu-reduce", props: { method: "plain", n: 8 } },
+      },
+      {
+        kind: "question",
+        title: "Lost updates",
+        body: "In the toy race, **16** threads each run `sum += x[i]`. Every thread reads `sum` before any thread writes, and each write replaces the one before. How many of the 16 updates are **lost**?",
+        widget: { type: "gpu-reduce", props: { method: "plain", n: 16 }, after: true },
+        question: { type: "number", answer: 15, unit: "updates", hint: "Only one write can be the last one, and it was computed from a sum of 0." },
+        explanation: "All 16 threads read 0, so each writes just its own number; only the last write survives. **15** updates are lost and the \"total\" is 16 instead of 136. On a real GPU some threads would read a partly updated value, so you would get some number in between, and a different one on each run, which makes the bug hard to spot.",
+      },
+      {
+        kind: "question",
+        title: "What atomicAdd promises",
+        body: "The direct fix is an **atomic** operation: `atomicAdd(sum, x[i]);` instead of `*sum += x[i];`. (CUDA also has atomic min, max, exchange and compare-and-swap; Metal, OpenCL, WGSL and HIP have their own atomic functions.) What exactly does `atomicAdd` guarantee?",
+        question: {
+          type: "choice",
+          options: [
+            "The threads' additions happen in thread order, lowest index first",
+            "Each read-add-write is indivisible, so no update can be lost",
+            "All the additions to one address finish in a single memory cycle",
+            "The total is locked to one thread for the rest of the kernel",
+          ],
+          answer: 1,
+          feedback: {
+            0: "The order is not specified at all; only that each update happens whole.",
+            2: "The opposite: updates to one address are applied one after another, which is why atomics on a single total are slow.",
+            3: "Nothing is locked for long: each update is indivisible on its own, and any thread may do the next one.",
+          },
+          hint: "The race happened because another thread slipped in between the read and the write.",
+        },
+        explanation: "An atomic does the read, the add and the write as **one indivisible step**, so no other thread can slip in between. It does **not** fix the order, and updates to the *same* address are served one after another, so a million threads adding to one total wait in a queue. Atomics shine when updates are spread out, such as a histogram with many bins. One more catch: floating-point addition is not exactly associative ((a + b) + c can differ from a + (b + c) in the last digits), so a different order can give a slightly different float total from run to run.",
+      },
+      {
+        kind: "explain",
+        title: "A tree of partial sums",
+        body: "The fast way to sum is a **reduction tree**: pair the numbers up and add each pair, then pair the results, and so on. *n* numbers need only **log₂ n rounds**, and every addition in a round is independent, so the threads do them at the same time.\n\nInside one block, the tree runs in **shared memory**:\n\n```cpp\n__global__ void block_sum(const float *x, float *sum, int n) {   // launch with 256 threads per block\n    __shared__ float s[256];                // one slot per thread of the block\n    int t = threadIdx.x;\n    int i = blockIdx.x * 256 + t;\n    s[t] = (i < n) ? x[i] : 0.0f;           // each thread loads one number\n    __syncthreads();                        // wait until every slot is written\n    for (int half = 128; half > 0; half /= 2) {\n        if (t < half) s[t] += s[t + half];  // the first half adds in the second half\n        __syncthreads();                    // finish this round before the next\n    }\n    if (t == 0) atomicAdd(sum, s[0]);       // one atomic per block, not per number\n}\n```\n\n`__syncthreads()` is a **barrier**: every thread of the block waits there until all of them have arrived, so no thread reads a slot that another has not written yet. It must be reached by *all* the block's threads, which is why it sits outside the `if`. (Metal calls it `threadgroup_barrier`, OpenCL `barrier`, WGSL `workgroupBarrier`.)\n\nPick the tree in the widget and watch the partial sums halve each round.",
+        widget: { type: "gpu-reduce", props: { method: "tree", n: 16 } },
+      },
+      {
+        kind: "question",
+        title: "Right and fast",
+        body: "Now with **32 threads**: get the **right total** in **at most 5 steps**.",
+        widget: { type: "gpu-reduce", props: { method: "plain", n: 32 } },
+        question: { type: "widget", goal: { n: 32, correct: true, maxSteps: 5 }, prompt: "With 32 threads, get the right total in 5 steps or fewer.", hint: "atomicAdd is right but takes one step per thread. Which method halves the work every round?" },
+        explanation: "The tree takes log₂ 32 = **5** rounds and gets 528; atomicAdd also gets 528 but needs 32 one-at-a-time updates; the plain race is quick and wrong. Real kernels use both: a tree inside each block, then **one** atomic (or a second small kernel) to combine the blocks' totals.",
+      },
+      {
+        kind: "question",
+        title: "Rounds for a full block",
+        body: "A block of **1,024 threads** sums 1,024 numbers with the tree. How many rounds does it take?",
+        question: { type: "number", answer: 10, unit: "rounds", hint: "Each round halves the count: 1,024 → 512 → … → 1. How many halvings?" },
+        explanation: "log₂ 1,024 = **10** rounds. A million numbers in blocks of 256 need 8 rounds per block plus 3,907 atomics (one per block) instead of a million atomics on one address.",
+      },
+      {
+        kind: "code",
+        title: "Simulate the tree",
+        body: "Write `tree_sum(xs)` for a list whose length is a power of two. Do it the way the block reduction does: each round, every value in the **first half** adds the value **half-way along**, and only the first half is kept for the next round. Stop when one value is left. Return a pair: `(total, rounds)`.\n\nDo not change the list you were given (work on a copy).",
+        language: "python",
+        starter: `def tree_sum(xs):
+    s = list(xs)   # a copy, so the caller's list is untouched
+    rounds = 0
+    # your code here: one round per pass, until one value is left
+    return s[0], rounds
+`,
+        solution: `def tree_sum(xs):
+    s = list(xs)
+    rounds = 0
+    while len(s) > 1:
+        half = len(s) // 2
+        s = [s[i] + s[i + half] for i in range(half)]
+        rounds += 1
+    return s[0], rounds
+`,
+        tests: [
+          { id: "eight", description: "1 to 8 sums to 36 in 3 rounds", assertionCode: `r = tree_sum([1, 2, 3, 4, 5, 6, 7, 8])\nassert r == (36, 3), f"got {r}"` },
+          { id: "warp", description: "32 ones take 5 rounds", assertionCode: `r = tree_sum([1] * 32)\nassert r == (32, 5), f"got {r}"` },
+          { id: "pair", description: "Two values take 1 round", assertionCode: `r = tree_sum([10, 20])\nassert r == (30, 1), f"got {r}"` },
+          { id: "copy", description: "The input list is not changed", assertionCode: `xs = [4, 3, 2, 1]\nr = tree_sum(xs)\nassert r == (10, 2) and xs == [4, 3, 2, 1], f"got {r}, list now {xs}"` },
+        ],
+        hints: ["Loop while more than one value is left. Each pass works with half = len(s) // 2.", "Build the next, shorter list from pairs that are half a list apart, and count the pass."],
+      },
+      {
+        kind: "explain",
+        title: "Inside a warp: shuffles, and no lockstep",
+        body: "The last five rounds of a block's tree involve 32 values or fewer: one warp. Lanes of a warp can pass values **directly between their registers** with a **shuffle**, with no shared memory and no block-wide barrier:\n\n```cpp\n__device__ float warp_sum(float v) {\n    for (int offset = 16; offset > 0; offset /= 2)\n        v += __shfl_down_sync(0xffffffff, v, offset);  // add the value held by lane (me + offset)\n    return v;                                          // lane 0 now holds the warp's total\n}\n```\n\n`0xffffffff` is the **mask**: all 32 lanes take part. Five shuffles sum a warp. (Vulkan and WebGPU call these *subgroup* operations, such as `subgroupAdd`; Metal has `simd_sum`; HIP has the same shuffles, over 64-lane wavefronts on many AMD chips.)\n\nWhy the `_sync` in the name? Older code skipped synchronisation inside a warp, trusting that its 32 lanes always ran in lockstep. Since NVIDIA's Volta generation (2017) lanes can be scheduled **independently**, so that trust is no longer safe: a lane may read a value another lane has not written yet. The `*_sync` intrinsics and `__syncwarp()` make the exchange explicit.\n\nThe full recipe for a big sum: each thread first adds up many elements in a loop, then a warp shuffle, then one value per warp through shared memory, then one atomic per block. In practice you call a library (CUB or Thrust on NVIDIA, or `sum()` in PyTorch or CuPy; names are examples), which does all of this tuned for your chip.",
+      },
+      {
+        kind: "question",
+        title: "Code that trusted the warp",
+        body: "Old code finishes a block sum by letting the 32 lanes of one warp read each other's shared-memory slots with **no synchronisation at all**, assuming the warp runs in lockstep. On newer GPUs it sometimes gives wrong totals. What is the right fix?",
+        question: {
+          type: "choice",
+          options: [
+            "Call `__syncthreads()` inside `if (threadIdx.x < 32)` only",
+            "Launch 32-thread blocks so that each block is a single warp",
+            "Swap values with `__shfl_down_sync`, or add `__syncwarp()` calls",
+            "Declare the shared array `volatile` so reads skip the registers",
+          ],
+          answer: 2,
+          feedback: {
+            0: "A block barrier that only some threads reach is a bug in itself: it can hang the block or give undefined results.",
+            1: "One warp per block still gives no lockstep guarantee, and tiny blocks waste the SM.",
+            3: "`volatile` was the old trick, and it is not enough once lanes are scheduled independently: it forces the reads but does not order them.",
+          },
+          hint: "Since Volta, what does the hardware no longer promise about a warp's lanes, and which intrinsics state the sync explicitly?",
+        },
+        explanation: "Make the exchange explicit: `__shfl_down_sync` with a full mask (or shared memory plus `__syncwarp()` between steps) tells the hardware which lanes must meet. That is correct on every generation, and the shuffle version is also faster, since it skips shared memory.",
+      },
+      {
+        kind: "recap",
+        points: [
+          "`sum += x` from many threads is a **data race**: read, add and write can interleave, and updates are lost, differently on each run.",
+          "**Atomics** (`atomicAdd`) make each update indivisible: correct, but updates to one address queue up. Good for spread-out updates such as histograms.",
+          "A **reduction tree** sums *n* values in **log₂ n** rounds: in shared memory with `__syncthreads()` between rounds, then **warp shuffles** (`__shfl_down_sync`), then one atomic per block.",
+          "Since Volta, never assume a warp's lanes are in lockstep: use `__syncwarp()` and the `*_sync` intrinsics. Float sums can differ in the last digits when the order changes. In practice, call a library reduction.",
         ],
       },
     ],

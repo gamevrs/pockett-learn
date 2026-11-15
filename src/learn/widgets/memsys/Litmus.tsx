@@ -232,7 +232,7 @@ export function Litmus({ props, onChange, revealed }: WidgetProps<LitmusProps>) 
           <RotateCcw className="h-4 w-4" /> Clear orderings
         </Btn>
       </div>
-      <p className="mt-2 text-center text-[11px] text-ink-3">Toy model of the textbook cases: single shared memory, per-thread reordering only where the model allows. Real chips and compilers have more rules.</p>
+      <p className="mt-2 text-center text-[11px] text-ink-3">Toy model of the textbook cases: single shared memory, per-thread reordering only where the model allows. The orderings are C++ promises; &quot;relaxed&quot; shows only what the hardware does, and a compiler may reorder relaxed operations even on x86. Real chips and compilers have more rules.</p>
     </div>
   );
 }

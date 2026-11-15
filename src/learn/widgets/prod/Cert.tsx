@@ -35,12 +35,12 @@ export function Cert({ props, onChange }: WidgetProps<CertProps>) {
   const [markets, setMarkets] = useState<string[]>(props.markets ?? ["us"]);
 
   const compute = (r: CertInput["radio"], p: CertInput["power"], m: string[]): CertState => {
-    const items = certPlan({ radio: r, power: p, markets: m.length });
+    const items = certPlan({ radio: r, power: p, markets: m.length, marketIds: m });
     return { radio: r, power: p, markets: m, items: items.length, effort: certEffort(items), moduleSaves: r === "module", needsTransport: items.some((i) => i.id === "transport") };
   };
   const st = compute(radio, power, markets);
-  const items = certPlan({ radio, power, markets: markets.length });
-  const worst = certPlan({ radio: "chipdown", power: "liion", markets: 4 });
+  const items = certPlan({ radio, power, markets: markets.length, marketIds: markets });
+  const worst = certPlan({ radio: "chipdown", power: "liion", markets: 4, marketIds: MARKETS.map((m) => m.id) });
   const maxEffort = certEffort(worst);
 
   const upd = (r: CertInput["radio"], p: CertInput["power"], m: string[]) => {

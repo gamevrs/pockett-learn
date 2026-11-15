@@ -256,7 +256,7 @@ export function OpAmpLab({
 
   const r = RAILS[rails];
   const yR: [number, number] = [r.vneg - 1, r.vpos + 1];
-  const yTicks = [r.vneg, 0, r.vpos].map((v) => ({ value: v, label: `${v}` }));
+  const yTicks = Array.from(new Set([r.vneg, 0, r.vpos])).map((v) => ({ value: v, label: `${v}` }));
 
   const hasR = mode === "inverting" || mode === "noninv";
   const rule =

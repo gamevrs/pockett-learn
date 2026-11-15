@@ -18,6 +18,13 @@ import { AmpStage, checkAmp } from "./AmpStage";
 import { OpAmpLab, checkOpAmp } from "./OpAmpLab";
 import { AdcSampler, checkAdc } from "./AdcSampler";
 
+// --- lessons 11-14 (analog-d to analog-g) imports ---
+import { EsdBench, checkEsd } from "./EsdBench";
+import { ZenerBench, checkZener } from "./ZenerBench";
+import { ChargeLab, checkCharge } from "./ChargeLab";
+import { Converter, checkConverter } from "./Converter";
+import { HBridge, checkHBridge } from "./HBridge";
+
 /**
  * Widgets for the "Components in action: capacitors to op-amps" module. Every key MUST be prefixed "analog-" so it stays unique
  * across the per-module registries.
@@ -45,4 +52,11 @@ export const ANALOG_WIDGETS: WidgetRegistry = {
   "analog-amp": { Component: AmpStage, check: checkAmp },
   "analog-opamp": { Component: OpAmpLab, check: checkOpAmp },
   "analog-adc": { Component: AdcSampler, check: checkAdc },
+
+  // --- lessons 11-14 (analog-d to analog-g) ---
+  "analog-esd": { Component: EsdBench, check: checkEsd },
+  "analog-zener": { Component: ZenerBench, check: checkZener },
+  "analog-charger": { Component: ChargeLab, check: checkCharge },
+  "analog-converter": { Component: Converter, check: checkConverter },
+  "analog-hbridge": { Component: HBridge, check: checkHBridge },
 };

@@ -36,7 +36,7 @@ export const analogLessonsA: ConceptLesson[] = [
           unit: "µC",
           hint: "100 µF × 5 V. The prefix works out neatly: µF times volts gives µC.",
         },
-        explanation: "Q = C × V = 100 µF × 5 V = **500 µC**. Double the voltage and it stores double the charge; use a 200 µF part instead and, again, double. A capacitor that big is small by power-supply standards, yet it can briefly deliver a large current.",
+        explanation: "Q = C × V = 100 µF × 5 V = **500 µC**. Double the voltage and it stores double the charge; use a 200 µF part instead and, again, double. 100 µF is modest by power-supply standards (smoothing capacitors are often thousands of µF), yet it can briefly deliver a large current.",
       },
       {
         kind: "explain",
@@ -46,7 +46,7 @@ export const analogLessonsA: ConceptLesson[] = [
           "As charge piles up, the capacitor's own voltage rises and pushes back. The resistor now sees *less* voltage, so the current drops, so the capacitor fills more slowly. The result is not a straight line but a curve that quickly rises, then eases off.",
           "How fast depends on one number, the **time constant** **τ = R × C** (τ is the Greek letter tau). With R in ohms and C in farads, τ comes out in **seconds**. After **one τ** the capacitor has reached **63.2%** of the supply voltage, after **2τ** it is at **86.5%**. A bigger R or a bigger C means a bigger τ and a slower curve. Try both sliders.",
         ),
-        widget: { type: "analog-rc", props: { r: 10000, c: 10e-6 }, live: true },
+        widget: { type: "analog-rc", props: { r: 1000, c: 10e-6 }, live: true },
       },
       {
         kind: "question",
@@ -64,14 +64,14 @@ export const analogLessonsA: ConceptLesson[] = [
             3: "That is where it is after 2τ (86.5%), not 1τ.",
           },
         },
-        explanation: "After 1τ the capacitor has covered **63.2%** of the way: 0.632 × 5 V ≈ 3.16 V. After 2τ it covers 86.5% of the *remaining* gap again, and so on. The curve is the same shape whatever R, C and supply you pick. Only the time scale changes.",
+        explanation: "After 1τ the capacitor has covered **63.2%** of the way: 0.632 × 5 V ≈ 3.16 V. In the next τ it covers 63.2% of the *remaining* gap again (so 86.5% in total after 2τ), and so on. The curve is the same shape whatever R, C and supply you pick. Only the time scale changes.",
       },
       {
         kind: "question",
         title: "Set the clock to 100 ms",
         body: "Set **R and C** so the time constant is about **100 ms** (0.1 s), within 5%.",
         widget: { type: "analog-rc", props: { r: 10000, c: 1e-6 } },
-        question: { type: "widget", goal: { tau: 0.1, tol: 0.05 }, hint: "τ = R × C. 10 kΩ × 10 µF is one pair that works. There are others." },
+        question: { type: "widget", goal: { tau: 0.1, tol: 0.05 }, hint: "τ = R × C, with R in ohms and C in farads, so convert the µF first. Many pairs work: pick a convenient R, then work out the C it needs." },
         explanation: "τ = R × C. 10 kΩ × 10 µF = 10 000 Ω × 0.000 01 F = 0.1 s, and so do 1 kΩ × 100 µF and the nearby 4.7 kΩ × 22 µF. Circuits like timers and delays pick R and C exactly this way: choose the time you want, then split it into a convenient pair.",
       },
       {
@@ -101,14 +101,14 @@ export const analogLessonsA: ConceptLesson[] = [
         kind: "code",
         title: "Write the charging curve",
         body: P(
-          "Charging from empty, the voltage across the capacitor at time t is **v × (1 − e^(−t ÷ RC))**.",
-          "Write `rc_voltage(v, r, c, t)` that returns this voltage. Use `math.exp` for e raised to a power. `r` is in ohms, `c` in farads and `t` in seconds.",
+          "A capacitor charges from empty through a resistor from a supply of `v` volts. Write `rc_voltage(v, r, c, t)` that returns the voltage across it `t` seconds after the switch closes.",
+          "Use what the lesson showed. At t = 0 the capacitor is empty, so the voltage is 0. It climbs towards `v`, quickly at first and then more slowly, and it never quite arrives. At t = r × c (one time constant) it is at 63.2% of `v`. Python's `math.exp` gives e raised to a power. `r` is in ohms, `c` in farads and `t` in seconds.",
         ),
         language: "python",
         starter: `import math
 
 def rc_voltage(v, r, c, t):
-    # voltage across a charging capacitor after t seconds
+    # your code here
     return v
 `,
         solution: `import math
@@ -121,7 +121,7 @@ def rc_voltage(v, r, c, t):
           { id: "start", description: "At t = 0 the capacitor is empty", assertionCode: `assert abs(rc_voltage(9, 10000, 1e-5, 0)) < 1e-9, f"at t = 0 expected 0, got {rc_voltage(9, 10000, 1e-5, 0)}"` },
           { id: "five", description: "After 5τ it is at about 99.3%", assertionCode: `assert abs(rc_voltage(5, 1000, 1e-6, 5e-3) - 4.9663) < 0.001, f"at 5 time constants expected about 4.966, got {rc_voltage(5, 1000, 1e-6, 5e-3)}"` },
         ],
-        hints: ["math.exp(x) is e raised to the power x. The exponent is negative: -t / (r * c).", "At t = 0 the exponential is 1, so (1 - 1) = 0 and the voltage is 0."],
+        hints: ["Think of the fraction of the way to `v` that the capacitor has covered. The part still to go starts at 1 (all of it) and shrinks as time passes, using math.exp.", "Time is measured in time constants: t divided by r × c. Shrinking means a negative exponent. Check that t = 0 gives 0."],
       },
       {
         kind: "recap",
@@ -152,7 +152,7 @@ def rc_voltage(v, r, c, t):
           "The two ends have names. Current goes in at the **anode** and out at the **cathode**. On the symbol the triangle points the way current flows and the bar is the cathode. On the real part a **band** or stripe marks the cathode end. (On a typical LED the longer leg is the anode, but trimmed legs fool you, so look for the flat edge on the lens or check with the datasheet.)",
           "An **LED** (light-emitting diode) is a diode that also gives off light when current flows forward through it. Below is a battery, a resistor and an LED. Press **Flip the LED** and watch what happens when it faces the wrong way.",
         ),
-        widget: { type: "analog-led", props: { vs: 5, colour: "red", r: 330, lock: ["vs", "colour", "r"] }, live: true },
+        widget: { type: "analog-led", props: { vs: 5, colour: "green", r: 470, lock: ["vs", "colour", "r"] }, live: true },
       },
       {
         kind: "question",
@@ -178,7 +178,7 @@ def rc_voltage(v, r, c, t):
         body: "A white LED has a typical forward drop of about **3.1 V**. You connect it, the right way round, to one **1.5 V** AA cell (no resistor needed at this voltage). What happens?",
         question: {
           type: "choice",
-          options: ["It glows dimly: less voltage just means less brightness", "It stays dark: 1.5 V is below the voltage it needs before it conducts", "It glows at full brightness: LEDs only need a tiny current", "It lights only if you flip it around"],
+          options: ["It glows dimly: less voltage means less light", "It stays dark: 1.5 V is below its forward drop", "It glows brightly: LEDs only need a tiny current", "It only lights if you turn it the other way round"],
           answer: 1,
           hint: "Think about the valve: it needs a minimum push before it opens at all.",
           feedback: {
@@ -196,10 +196,10 @@ def rc_voltage(v, r, c, t):
           "Above Vf the current rises *very* steeply with a tiny extra voltage. Connect an LED straight across a battery and it draws as much as the battery can give, far beyond what it can take. It overheats and dies in a flash, and the battery is nearly short-circuited. So an LED always gets a **series resistor** to set the current.",
           "The resistor carries the leftover voltage, **Vs − Vf**, and Ohm's law (the circuits lesson *Ohm's law*) gives its size for a wanted current I:",
           "**R = (Vs − Vf) ÷ I**",
-          "A typical indicator LED runs at about **5 to 20 mA** (typical; small 3 mm and 5 mm LEDs are often rated 20 mA continuous, but check the datasheet). Example: 5 V supply, red LED at 2 V, wanted 10 mA: R = (5 − 2) ÷ 0.010 = **300 Ω**.",
-          "Resistors only come in standard values, the **E12** series (100, 120, 150, 180, 220, 270, 330, 390, 470, 560, 680, 820 and ×10 of those). Round **up** to the next one, so the current ends up a little *lower* than planned, which is the safe side. Here that is **330 Ω**. The resistor also turns the leftover into heat: **P = I² × R**. For 10 mA through 330 Ω that is 0.033 W, and a common 1/4 W resistor barely warms.",
+          "A typical indicator LED runs at about **5 to 20 mA** (typical; small 3 mm and 5 mm LEDs are often rated 20 mA continuous, but check the datasheet). Example: 12 V supply, green LED at 2.2 V, wanted 10 mA: R = (12 − 2.2) ÷ 0.010 = **980 Ω**.",
+          "Resistors only come in standard values, the **E12** series (100, 120, 150, 180, 220, 270, 330, 390, 470, 560, 680, 820 and ×10 of those). Round **up** to the next one, so the current ends up a little *lower* than planned, which is the safe side. Here that is **1 kΩ**, which gives 9.8 mA. The resistor also turns the leftover into heat: **P = I² × R**. For 9.8 mA through 1 kΩ that is about 0.096 W, comfortably inside the 1/4 W rating of a common resistor.",
         ),
-        widget: { type: "analog-led", props: { vs: 5, colour: "red", r: 330, showCalc: true, targetMa: 10 }, live: true },
+        widget: { type: "analog-led", props: { vs: 12, colour: "green", r: 1000, showCalc: true, targetMa: 10 }, live: true },
       },
       {
         kind: "question",
@@ -212,8 +212,8 @@ def rc_voltage(v, r, c, t):
         kind: "question",
         title: "Light it, safely",
         body: "The red LED is on **5 V** with **no resistor**. Choose a standard resistor so the current is **between 8 and 12 mA**.",
-        widget: { type: "analog-led", props: { vs: 5, colour: "red", r: 0, lock: ["vs", "colour"], showCalc: true } },
-        question: { type: "widget", goal: { vs: 5, colour: "red", iMin: 0.008, iMax: 0.012 }, hint: "You need about (5 − 2) ÷ 0.010 = 300 Ω. Pick the E12 value nearest that, rounding up if you can." },
+        widget: { type: "analog-led", props: { vs: 5, colour: "red", r: 0, lock: ["vs", "colour"] } },
+        question: { type: "widget", goal: { vs: 5, colour: "red", iMin: 0.008, iMax: 0.012 }, hint: "Use R = (Vs − Vf) ÷ I for a current near 10 mA, then pick an E12 value close to your answer, rounding up if you can." },
         explanation: "With no resistor only the battery's own tiny internal resistance limits the current, and the LED dies at once. 330 Ω gives about 9 mA and 270 Ω about 11 mA, both inside the window. The resistor takes the 3 V the LED does not want and turns it into a little heat.",
       },
       {
@@ -224,7 +224,7 @@ def rc_voltage(v, r, c, t):
         ),
         language: "python",
         starter: `def led_resistor(vs, vf, i):
-    # R = (Vs - Vf) / I
+    # your code here
     return 0
 `,
         solution: `def led_resistor(vs, vf, i):
@@ -235,7 +235,7 @@ def rc_voltage(v, r, c, t):
           { id: "three", description: "3.3 V, 2.0 V LED, 5 mA needs 260 Ω", assertionCode: `assert abs(led_resistor(3.3, 2.0, 0.005) - 260) < 1e-6, f"expected 260, got {led_resistor(3.3, 2.0, 0.005)}"` },
           { id: "nine", description: "9 V, 2.2 V LED, 15 mA needs about 453.3 Ω", assertionCode: `assert abs(led_resistor(9, 2.2, 0.015) - 453.3333) < 0.01, f"expected about 453.33, got {led_resistor(9, 2.2, 0.015)}"` },
         ],
-        hints: ["The voltage across the resistor is vs - vf.", "Divide that by the current i (in amps, so 10 mA is 0.01)."],
+        hints: ["How much voltage is left for the resistor once the LED has taken its drop?", "Ohm's law turns that voltage and the wanted current into a resistance. Keep the current in amps (10 mA is 0.01)."],
       },
       {
         kind: "recap",
@@ -284,7 +284,7 @@ def rc_voltage(v, r, c, t):
         title: "How slow is this coil?",
         body: "A coil has **L = 0.5 H** and a winding resistance of **R = 50 Ω**. What is its time constant τ = L ÷ R, in **milliseconds**?",
         question: { type: "number", answer: 10, tolerance: 0.1, unit: "ms", hint: "Divide 0.5 by 50 to get seconds, then convert to milliseconds (×1000)." },
-        explanation: "τ = L ÷ R = 0.5 H ÷ 50 Ω = 0.01 s = **10 ms**. After about 5τ, 50 ms, the current has essentially settled. A relay's \"click\" is slower than you might think: the coil really does take tens of milliseconds to build its field.",
+        explanation: "τ = L ÷ R = 0.5 H ÷ 50 Ω = 0.01 s = **10 ms**. After about 5τ, 50 ms, the current has essentially settled. A relay's \"click\" is not instant: a relay typically takes a few to about 15 ms to pull in (typical), partly because the coil's current has to build first.",
       },
       {
         kind: "question",
@@ -300,9 +300,9 @@ def rc_voltage(v, r, c, t):
           "Now open the switch. The coil is storing energy in its field, and V = L × di/dt says that any attempt to change the current quickly produces a big voltage. Cutting the current in a very short time means a **very large voltage**, in whatever direction keeps the current flowing. This is the **flyback** or **inductive kick**.",
           "The voltage rises until something gives: an **arc** jumps across the switch contacts, a transistor **breaks down**, or stray capacitance soaks up the energy. This toy cannot model those, so it puts a **stand-in resistor** across the open switch and the peak it shows is the coil current times that resistance. **That height depends on the stand-in**, not on anything real. In real life, spikes of **hundreds of volts** from relay coils and motors are common, and they destroy transistors and chips.",
           "The cure is a **flyback diode** across the coil, with its **cathode to the + side**. While the switch is closed the diode is reverse biased and does nothing. When the switch opens, the diode gives the current a path: the voltage cannot go beyond about **supply + 0.7 V** and the current circulates through the coil and diode, fading away. The price is a slightly **slower release**, because the field takes a bit longer to disappear.",
-          "**Safety:** the spike from a big coil (ignition coils, relay coils, motor windings) can reach hundreds of volts and bite hard. Never touch coil terminals while switching, and use only low-voltage supplies for experiments. Turn the diode on and off below, with the switch closed first and then open.",
+          "**Safety:** the spike from a big coil (ignition coils, relay coils, motor windings) can reach hundreds of volts and bite hard. Never touch coil terminals while switching, and use only low-voltage supplies for experiments. The bench below starts with the diode fitted. Take it off and put it back, and compare the peak at the switch.",
         ),
-        widget: { type: "analog-rl", props: { l: 0.1, r: 470, diode: false }, live: true },
+        widget: { type: "analog-rl", props: { l: 0.2, r: 220, diode: true }, live: true },
       },
       {
         kind: "question",
@@ -311,10 +311,10 @@ def rc_voltage(v, r, c, t):
         question: {
           type: "choice",
           options: [
-            "The coil overheats because the current stops",
-            "The relay contacts weld shut because the coil field gets stronger",
-            "The battery is drained flat",
-            "A brief, huge voltage spike appears across the transistor and can destroy it",
+            "The coil overheats once the current is cut off",
+            "The relay contacts weld shut because the field grows stronger",
+            "The battery is drained flat through the open transistor",
+            "A huge voltage spike appears across the transistor",
           ],
           answer: 3,
           hint: "V = L × di/dt: what happens to the voltage when the current is cut in a tiny fraction of a second?",
@@ -395,7 +395,7 @@ def rc_voltage(v, r, c, t):
         title: "How big is an AC voltage?",
         body: P(
           "A wave has several \"sizes\". The **peak** (or amplitude) is its highest point, measured from zero. The **peak-to-peak** value runs from the lowest point to the highest, which is twice the peak for a wave that swings equally both ways.",
-          "But neither says how *hard the wave works*. An AC voltage spends half its time near zero, so its plain average is zero and tells you nothing. Instead we use the **RMS** value (root mean square: square the voltage at every moment, take the average, then the square root). Its meaning: the **RMS voltage heats a resistor exactly as much as the same steady DC voltage**. That is why a \"230 V\" socket heats a kettle like 230 V of DC would.",
+          "But neither says how *hard the wave works*. An AC voltage spends half its time positive and half negative, so the two halves cancel and its plain average is zero. That tells you nothing about how hard it works. Instead we use the **RMS** value (root mean square: square the voltage at every moment, take the average, then the square root). Its meaning: the **RMS voltage heats a resistor exactly as much as the same steady DC voltage**. That is why a \"230 V\" socket heats a kettle like 230 V of DC would.",
           "For a **sine wave only**: **RMS = peak ÷ √2 ≈ 0.707 × peak**. Other shapes have other factors. Switch between the shapes below and compare the dashed RMS lines and the two RMS readouts (one is computed from the samples, the other from the formula: they match).",
         ),
         widget: { type: "analog-ac", props: { freq: 50, amp: 5, second: false, lock: ["freq"] }, live: true },
@@ -406,7 +406,7 @@ def rc_voltage(v, r, c, t):
         body: "A square wave swings between **+5 V** and **−5 V**, spending all of its time at one extreme or the other. What is its **RMS** voltage?",
         question: {
           type: "choice",
-          options: ["5 V: it is always at full height", "3.5 V: peak ÷ √2, like any AC", "2.9 V: peak ÷ √3", "10 V: the peak-to-peak value"],
+          options: ["5 V, equal to the peak voltage", "3.5 V, peak ÷ √2 as for any AC", "2.9 V, peak ÷ √3", "10 V, the peak-to-peak value"],
           answer: 0,
           hint: "Square every value: both +5 and −5 give 25. What is the average of a number that is always 25, and its square root?",
           feedback: {
@@ -425,7 +425,7 @@ def rc_voltage(v, r, c, t):
           "If signal B reaches its peaks *before* A does, B **leads** A. If it reaches them after, B **lags**. With a lead of 90°, B peaks a quarter of a period earlier. At 180° the two are mirror images, one up exactly when the other is down.",
           "Phase only means something between two signals at the same frequency. It matters because capacitors and inductors shift the current against the voltage, as the next lessons show. Drag the **phase slider** for the orange signal B.",
         ),
-        widget: { type: "analog-ac", props: { freq: 50, amp: 5, second: true, phase: 0, lock: ["freq", "amp", "shape"] }, live: true },
+        widget: { type: "analog-ac", props: { freq: 50, amp: 5, second: true, phase: -45, lock: ["freq", "amp", "shape"] }, live: true },
       },
       {
         kind: "question",
@@ -446,6 +446,19 @@ def rc_voltage(v, r, c, t):
         widget: { type: "analog-ac", props: { freq: 50, amp: 325, second: false, mains: true, lock: ["shape"] }, live: true },
       },
       {
+        kind: "question",
+        title: "Peak of a transformer secondary",
+        body: "A transformer's secondary is rated **12 V RMS** (a sine). What is its **peak** voltage, in volts?",
+        question: {
+          type: "number",
+          answer: 17.0,
+          tolerance: 0.1,
+          unit: "V",
+          hint: "A sine's RMS is its peak divided by √2, so the peak is the larger number. Go back the other way.",
+        },
+        explanation: "Peak = RMS × √2 = 12 V × 1.414 = **17.0 V**. *Power supplies* uses exactly this number: the rectifier and capacitor see 17 V peaks (less the diode drops), not 12 V. Mains is the same story: 230 V RMS peaks at about 325 V.",
+      },
+      {
         kind: "code",
         title: "RMS of a sine",
         body: P(
@@ -455,7 +468,7 @@ def rc_voltage(v, r, c, t):
         starter: `import math
 
 def rms(peak):
-    # RMS of a sine wave: peak divided by the square root of 2
+    # your code here
     return peak
 `,
         solution: `import math
@@ -468,7 +481,7 @@ def rms(peak):
           { id: "one", description: "A 1 V peak sine is about 0.7071 V RMS", assertionCode: `assert abs(rms(1) - 0.7071) < 0.001, f"expected about 0.7071, got {rms(1)}"` },
           { id: "twelve", description: "A 12 V peak sine is about 8.485 V RMS", assertionCode: `assert abs(rms(12) - 8.485) < 0.01, f"expected about 8.485, got {rms(12)}"` },
         ],
-        hints: ["The factor is 1 ÷ √2, so divide the peak by math.sqrt(2).", "Check: a 325 V peak should give about 230 V, which is the mains label."],
+        hints: ["For a sine, the RMS is a fixed fraction of the peak: the 0.707 from the lesson, which comes from a square root.", "Check: a 325 V peak should give about 230 V, which is the mains label."],
       },
       {
         kind: "recap",

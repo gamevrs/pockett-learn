@@ -5,7 +5,7 @@ const txt = (s: string) => "~~~text\n" + s.trim() + "\n~~~";
 /** Paragraphs joined with blank lines. */
 const P = (...paras: string[]) => paras.join("\n\n");
 
-/** Lessons 8 and 9 of "Components and PCB design": EMC, and manufacturing the board. */
+/** Lessons 8, 10 and 9 of "Components and PCB design", in that order: EMC, heat, and manufacturing the board (ids keep their numbers; array position sets the order). */
 export const pcbLessonsD: ConceptLesson[] = [
   // ─────────────────────────────── 8. EMC ───────────────────────────────
   {
@@ -48,7 +48,7 @@ f = frequency of the current's changes`),
         body: P(
           "The loop is made of the **forward path** (the trace carrying the signal) and the **return path** (where that current flows back to its source). In *Power and ground* you saw that at high frequency the return current hugs the plane **right under the trace**. That keeps the loop thin and the area tiny.",
           "Now cut that path. If the trace crosses a **split in the plane**, or the plane has a slot, the return current must detour round it. The loop grows, often by a factor of tens or hundreds. The same signal now radiates much more, and nothing in the schematic changed.",
-          "In the widget the three routing choices are rough, typical sizes: a trace over a solid plane (about **10 mm²**), a return forced round a split (about **400 mm²**), and a two-layer board with a return wire far away (about **2000 mm²**). Rules that follow: keep traces over unbroken planes, never route a fast signal across a gap, and add a **stitching via** next to a layer change so the return current can change layers with the signal.",
+          "In the widget the three routing choices are rough, typical sizes: a trace over a solid plane (about **10 mm²**), a return forced round a split (about **400 mm²**), and a two-layer board with a return wire far away (about **2000 mm²**). Rules that follow: keep traces over unbroken planes, never route a fast signal across a gap, and add a **stitching via** next to a layer change so the return current can change layers with the signal. (That works when both reference planes are the same net, GND to GND. If the reference changes from GND to a power plane, use a stitching capacitor between them instead.)",
         ),
       },
       {
@@ -58,15 +58,15 @@ f = frequency of the current's changes`),
         question: {
           type: "choice",
           options: [
-            "A long trace whose return path is routed round a slot in the plane",
             "A trace running directly over an unbroken ground plane",
+            "A long trace whose return path is routed round a slot in the plane",
             "A trace on a two-layer board with the ground wire on the far side of the board",
             "They all radiate the same, because the current is the same",
           ],
-          answer: 1,
+          answer: 0,
           hint: "Think loop area. Where does the return current flow in each layout, and how far is it from the trace?",
           feedback: {
-            0: "The slot makes the return current detour, which grows the loop. That is a bigger antenna.",
+            1: "The slot makes the return current detour, which grows the loop. That is a bigger antenna.",
             2: "A far-away return makes a large loop too. This is the worst of the three for radiation.",
             3: "The current is the same, but the field also scales with loop area. The areas differ by a factor of tens.",
           },
@@ -91,11 +91,11 @@ f = frequency of the current's changes`),
         widget: { type: "pcb-emc", props: {} },
         question: {
           type: "widget",
-          goal: { pass: true, minMarginDb: 6 },
-          prompt: "Make the worst margin 6 dB or more.",
-          hint: "The cheapest fix costs nothing but careful routing. Which setting changes the loop area by a factor of forty?",
+          goal: { pass: true, minMarginDb: 6, areaMm2: 10 },
+          prompt: "Fix the layout (loop area 10 mm² or less) and make the worst margin 6 dB or more.",
+          hint: "The clock and its current are the product's job, so leave them alone. Which setting changes the loop area by a factor of forty?",
         },
-        explanation: "Shrinking the loop from 400 mm² to 10 mm² takes **about 32 dB** off every line and gives roughly +29 dB of margin. Slowing the edges to 10 ns alone only reaches about +5.7 dB at the defaults, so it falls just short; the source filter adds only a little. The lesson of the toy: **fix the geometry first**, then use edge rate and filters as helpers.",
+        explanation: "Shrinking the loop from 400 mm² to 10 mm² takes **about 32 dB** off every line and gives roughly +29 dB of margin. Slowing the edges to 10 ns alone only reaches about +5.7 dB at the defaults, and 10 ns edges plus the filter scrape past by about 0.1 dB, while the loop fix alone gives about +29 dB. That is why the goal asks for the geometry fix: you cannot slow the clock or cut its current without changing the product. The lesson of the toy: **fix the geometry first**, then use edge rate and filters as helpers.",
       },
       {
         kind: "explain",
@@ -114,7 +114,7 @@ f = frequency of the current's changes`),
         starter: `import math
 
 def field_dbuv(f_hz, area_mm2, i_ma, r_m=3.0):
-    # Ott: E = 263e-16 * f**2 * A * I / r  (V/m), then 20*log10(E / 1e-6)
+    # your code here
     return 0.0
 `,
         solution: `import math
@@ -131,7 +131,7 @@ def field_dbuv(f_hz, area_mm2, i_ma, r_m=3.0):
           { id: "freq", description: "Doubling the frequency adds about 12 dB", assertionCode: `d = field_dbuv(200e6, 100, 10) - field_dbuv(100e6, 100, 10)\nassert abs(d - 12.04) < 0.05, f"got {d}, expected 12.04"` },
           { id: "other", description: "50 MHz, 10 mm², 20 mA is about 12.8 dBµV/m", assertionCode: `v = field_dbuv(50e6, 10, 20)\nassert abs(v - 12.84) < 0.1, f"got {v}, expected about 12.84"` },
         ],
-        hints: ["Convert units first: area_mm2 * 1e-6 gives m², i_ma * 1e-3 gives A.", "E = 263e-16 * f_hz ** 2 * area * amps / r_m.", "Return 20 * math.log10(e / 1e-6)."],
+        hints: ["Convert units first: the formula wants metres squared and amps.", "Work out E in V/m from the formula in the step text, then convert it to a decibel ratio against 1 µV/m."],
       },
       {
         kind: "question",
@@ -145,19 +145,19 @@ def field_dbuv(f_hz, area_mm2, i_ma, r_m=3.0):
           type: "choice",
           options: [
             "Book the formal test straight away so you learn the real answer",
-            "Skip testing; the toy model said it passes",
-            "Scan the first board with a near-field probe and a spectrum analyser on the bench, fix the hot spots, then book a pre-scan",
+            "Probe the first board on the bench, fix hot spots, then pre-scan",
+            "Trust the toy model: it said the board passes",
             "Wrap the board in aluminium foil and call it shielded",
           ],
-          answer: 2,
+          answer: 1,
           hint: "Which option costs the least and finds problems earliest, before an expensive formal test?",
           feedback: {
             0: "That gives the real answer, but it is the most expensive way to find a simple problem. Do the cheap checks first.",
-            1: "A toy estimate ignores cable common-mode current, so it cannot promise a pass. Only measurement can.",
+            2: "A toy estimate ignores cable common-mode current, so it cannot promise a pass. Only measurement can.",
             3: "A foil wrap with gaps and open cable ports leaks, and it is not a design. Fix the sources first, then shield well.",
           },
         },
-        explanation: "The sensible order is cheap to expensive: **near-field probing on the bench**, fix what lights up, a **pre-scan** at a lab, and only then the **formal test**. Pre-compliance does not replace the formal test; it just makes a surprise failure much less likely.",
+        explanation: "The sensible order is cheap to expensive: **near-field probing on the bench** (a probe and a spectrum analyser), fix what lights up, a **pre-scan** at a lab, and only then the **formal test**. Pre-compliance does not replace the formal test; it just makes a surprise failure much less likely.",
       },
       {
         kind: "recap",
@@ -167,6 +167,116 @@ def field_dbuv(f_hz, area_mm2, i_ma, r_m=3.0):
           "Keep the **return path** under the trace, never route a fast signal across a plane split, and use **slower edges** (fewer harmonics) where speed is not needed.",
           "Filters (resistor, ferrite, RC at connectors) and shields help, but **cables** carrying common-mode current are often the real antenna. The toy ignores them; only measurement tells the truth.",
           "Test cheap-to-expensive: **near-field probe and analyser**, a lab **pre-scan**, then the **formal test**.",
+        ],
+      },
+    ],
+  },
+
+  // ─────────────────────────────── 10. Heat ───────────────────────────────
+  {
+    id: "fnd-pcb-10-thermal",
+    title: "Heat: the board is the heat sink",
+    summary: "From P and θJA to junction temperature, then how copper area and thermal vias under an exposed pad lower θJA, with a via-in-pad solder trap.",
+    minutes: 10,
+    xp: 70,
+    level: "Advanced",
+    steps: [
+      {
+        kind: "explain",
+        title: "Where the heat comes from",
+        body: P(
+          "Every part wastes some power as heat, and heat is what kills boards. A linear regulator wastes **(VIN − VOUT) × IOUT**; a chip wastes more the faster it runs. The datasheet's **θJA** (junction to ambient, in °C per watt) turns watts into degrees: **TJ = TA + P × θJA**, with TJ the junction temperature and TA the air around the board. You met it in *Reading a datasheet*.",
+          "Two cautions. TJ must stay under the part's rated maximum (often 125 °C or 150 °C), and good designs leave margin, because parts age faster when hot. And the θJA in a datasheet was measured on **the maker's own test board**, usually a small, standardised one. Yours will be better or worse, and the next steps show what changes it. **Safety:** a working power part can burn fingers, so let it cool before touching.",
+        ),
+      },
+      {
+        kind: "explain",
+        title: "The board is the heat sink",
+        body: P(
+          "A datasheet's θJA holds only for **its own test board**, so here is why yours differs. A power chip cannot shed heat from its plastic body alone (a **toy** figure here: about 150 °C/W, weak). Nearly all of it leaves **down through the chip into your board's copper**, which spreads it out and hands it to the air. So the copper you give it sets the θJA you really get.",
+          "Many power chips come with an **exposed pad** (also called a thermal pad): a bare metal square under a QFN or DFN, or the metal tab of the PK3302's SOT-223, which you solder to copper on purpose. Two layout levers then do the work:\n- **Copper area.** A bigger pour around the pad sheds more heat, with diminishing returns. Still air carries away only about **22 W per m² per kelvin** from a copper face (typical, natural convection and radiation).\n- **Thermal vias.** A **thermal via** is a plated hole under or beside the pad that carries heat to copper on the other face or an inner plane. One plain 0.3 mm via through a 1.6 mm board is about **150 °C/W** (typical, 100 to 200), a thin copper tube. So you use a small grid of them side by side (the datasheet's land pattern often shows one), which puts them in parallel.",
+          "More vias help only until the copper is the limit: past that, extra holes buy almost nothing. One trap: a via open in the pad can wick solder away from the joint during reflow. Fabs offer tented, plugged or filled vias for this, and the datasheet's land pattern says what the maker expects. *Manufacturing the board* returns to this. **Safety:** a working power chip, and the copper around it, can be hot enough to burn.",
+          "The widget is a **toy** with typical values. A chip turns **1.2 W** into heat in a box at **50 °C**, and we want the junction at **105 °C or lower**, so there is margin below the 125 °C rating. Start with the little pad and no vias, and try the controls.",
+        ),
+        widget: { type: "pcb-thermal", props: { area: 2, vias: 0 } },
+      },
+      {
+        kind: "question",
+        title: "TJ from a datasheet θJA",
+        body: "A QFN's datasheet gives **θJA = 45 °C/W** on its test board. In your design it wastes **1.2 W** inside a box where the air is **50 °C**. What is the junction temperature TJ, in °C? (Assume your board behaves like the test board.)",
+        question: {
+          type: "number",
+          answer: 104,
+          tolerance: 0.5,
+          unit: "°C",
+          hint: "TJ = TA + P × θJA: multiply the watts by the degrees per watt, then add the air temperature.",
+        },
+        explanation: "TJ = 50 + 1.2 × 45 = 50 + 54 = **104 °C**, under a 125 °C rating but with only 21 °C of margin, and only if your board really cools like the test board. A smaller copper area would raise θJA and TJ.",
+      },
+      {
+        kind: "question",
+        title: "Cool the chip, spend little board",
+        body: "The same chip, 1.2 W in a 50 °C box. You can spare at most **6 cm² of copper** for it. Choose the copper area and the number of thermal vias so that **TJ is 105 °C or lower**.",
+        widget: { type: "pcb-thermal", props: {} },
+        question: {
+          type: "widget",
+          goal: { maxTj: 105, maxAreaCm2: 6, minVias: 1 },
+          prompt: "Junction at 105 °C or lower, using no more than 6 cm² of copper and at least one thermal via.",
+          hint: "Copper alone at 6 cm² is not enough. Which second lever carries heat to a second copper face?",
+        },
+        explanation: "At 6 cm² with no vias the junction reaches about **114 °C**. Four vias join the far-side copper and bring it to about **97 °C**, passing. Nine vias give about 95 °C and sixteen about 94 °C, so the returns fade fast: copper is the limit by then. Ten cm² with no vias would also pass (about 97 °C), but it spends board space you did not have. These are toy values; a real design checks the datasheet's θJA curves for copper area and measures a prototype with a thermocouple or thermal camera.",
+      },
+      {
+        kind: "question",
+        title: "What are the via grid and pad for?",
+        body: "A QFN's datasheet shows a **3 × 3 grid of 0.3 mm vias** inside its exposed-pad land pattern, with the note \"connect to a copper area\". What is the grid for?",
+        question: {
+          type: "choice",
+          options: [
+            "They carry the chip's supply current to the inner power plane",
+            "They let flux gas escape during reflow, and nothing else",
+            "They tie the pad to ground so the chip is shielded",
+            "They move heat from the pad to copper on the other layers",
+          ],
+          answer: 3,
+          hint: "The pad is bare metal under the chip, and its job is to get heat out. Which of these is about heat?",
+          feedback: {
+            0: "Supply current uses the chip's pins, not the exposed pad. The pad is a heat path.",
+            1: "Gas escape is a side effect at best. The grid is there to carry heat.",
+            2: "The pad is often grounded, but the vias in a grid of this kind are placed to carry heat, not to shield.",
+          },
+        },
+        explanation: "The vias are **thermal vias**: nine in parallel are about 17 °C/W (150 ÷ 9, typical) instead of 150 °C/W for one, so the heat can reach copper on the other layers and spread there. The same note warns that open vias in the pad can steal solder, so check what your fab and the datasheet recommend (tented, plugged or filled).",
+      },
+      {
+        kind: "question",
+        title: "Vias in the pad",
+        body: "A layout puts open thermal vias straight through a QFN's exposed pad. What can go wrong when the board goes through reflow?",
+        question: {
+          type: "choice",
+          options: [
+            "The vias melt and short the layers together",
+            "Flux fills the holes and traps heat inside the board",
+            "Solder can wick down the holes and leave a weak joint",
+            "The stencil clogs because the pad has holes in it",
+          ],
+          answer: 2,
+          hint: "Molten solder flows toward hot copper. What does an open hole under the pad offer it?",
+          feedback: {
+            0: "The vias are copper tubes, and copper does not melt at reflow temperatures. The trouble is with the solder.",
+            1: "Flux does not seal a hole or trap heat. The problem is where the molten solder goes.",
+            3: "A stencil prints paste over the pad's openings; holes in the pad do not clog it. The solder itself is the issue.",
+          },
+        },
+        explanation: "Molten solder wets copper and can **wick down an open via**, leaving too little under the chip: a weak, voided joint with worse heat flow. The usual fixes are tented, plugged or filled vias, or smaller vias, and the datasheet's land pattern and your fab's rules say which. *Manufacturing the board* covers reflow and X-ray inspection of such joints.",
+      },
+      {
+        kind: "recap",
+        points: [
+          "**TJ = TA + P × θJA.** Keep TJ below the rating with margin, and remember a datasheet's θJA holds only for its own test board.",
+          "Heat leaves mostly **down through the exposed pad** into board copper. **Copper area** and a grid of **thermal vias** lower θJA, with diminishing returns once the copper is the limit (toy and typical values here).",
+          "Open vias in a pad can **wick solder** during reflow: tent, plug or fill them as the datasheet and fab advise.",
+          "Hot parts and the copper around them can burn: measure before you touch.",
         ],
       },
     ],
@@ -288,20 +398,20 @@ Fab drawing   stackup, finish, impedance and other notes`),
         question: {
           type: "choice",
           options: [
-            "It makes the file bigger, which fabs charge for",
             "The silkscreen cannot be printed without it",
-            "Part numbers set the pick-and-place coordinates",
-            "A value alone does not say the package, voltage rating or dielectric; the MPN pins down the exact part and lets you list approved alternates when it is out of stock or discontinued",
+            "The value alone does not say the package, voltage rating or dielectric",
+            "The pick-and-place file needs it to find each footprint",
+            "The stencil openings are cut separately for each part number",
           ],
-          answer: 3,
+          answer: 1,
           hint: "\"100 nF\" fits hundreds of different capacitors. What else do you need to choose one?",
           feedback: {
-            0: "File size is irrelevant. The reason is about getting the right part bought.",
-            1: "The silkscreen shows reference designators like C1 and R2, not part numbers.",
-            2: "Coordinates come from the placement file and your layout, not from part numbers.",
+            0: "The silkscreen shows reference designators like C1 and R2, not part numbers.",
+            2: "That file lists X, Y and rotation per reference designator. The footprint comes from your layout, not from a part number lookup.",
+            3: "Stencil openings follow the paste layer of your board, not the part numbers.",
           },
         },
-        explanation: "\"100 nF\" does not fix the **package** (0402 or 0805), **voltage rating**, **dielectric** or tolerance, so the buyer would have to guess. An MPN names one exact part, and a good BOM lists **alternates** too, because parts go out of stock or become **obsolete** (discontinued). A board with no approved alternates can stop a whole production run.",
+        explanation: "The MPN names one exact part. \"100 nF\" does not fix the **package** (0402 or 0805), **voltage rating**, **dielectric** or tolerance, so the buyer would have to guess. An MPN names one exact part, and a good BOM lists **alternates** too, because parts go out of stock or become **obsolete** (discontinued). A board with no approved alternates can stop a whole production run.",
       },
       {
         kind: "question",

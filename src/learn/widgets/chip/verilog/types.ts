@@ -59,7 +59,15 @@ export type Item =
   | ({ k: "decl"; dir?: Dir; net?: "wire" | "reg"; range?: Range; names: { name: string; line: number; col: number; init?: Expr }[] } & Pos)
   | ({ k: "param"; range?: Range; defs: { name: string; value: Expr; line: number; col: number }[] } & Pos)
   | ({ k: "assign"; lv: LV; rhs: Expr } & Pos)
-  | ({ k: "always"; star: boolean; edges: { edge: "pos" | "neg"; sig: string; line: number; col: number }[]; body: Stmt; kw: string } & Pos);
+  | ({
+      k: "always";
+      star: boolean;
+      edges: { edge: "pos" | "neg"; sig: string; line: number; col: number }[];
+      /** Plain signals in an explicit combinational list, e.g. `@(a or b)` (absent for `@*` and edge lists). */
+      levels?: { sig: string; line: number; col: number }[];
+      body: Stmt;
+      kw: string;
+    } & Pos);
 
 export interface Module extends Pos {
   name: string;

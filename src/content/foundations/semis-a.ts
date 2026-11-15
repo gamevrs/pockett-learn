@@ -25,7 +25,7 @@ export const semisLessonsA: ConceptLesson[] = [
           "- the **valence band** (lower floor) holds the electrons that are busy in bonds. It is completely full: cars bumper to bumper, nobody can move.\n- the **conduction band** (upper floor) is where an electron can drive around freely and carry current. It starts out empty.",
           "Pick a material below and compare. Copper has no gap at all: its floors overlap, so plenty of electrons are always free.",
         ),
-        widget: { type: "semi-bands", props: { material: "copper" } },
+        widget: { type: "semi-bands", props: { material: "copper", materials: ["copper", "ge", "si", "gaas", "diamond", "glass"] } },
       },
       {
         kind: "question",
@@ -34,17 +34,17 @@ export const semisLessonsA: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "Its electrons are heavier, so they push harder",
-            "Heat from the room lifts electrons across a small gap",
-            "Its bands overlap, so a large number of electrons are already free to move",
-            "Copper atoms themselves flow along the wire",
+            "Its bands overlap, so many electrons are always free",
+            "Room heat keeps lifting its electrons across a small gap",
+            "Its electrons are heavier, so each one carries more charge",
+            "Its ions drift along the wire and carry the charge",
           ],
-          answer: 2,
+          answer: 0,
           hint: "Look at the band picture for copper. Is there any gap to cross?",
           feedback: {
-            0: "Every electron has the same mass and charge. What differs between materials is how many are free.",
             1: "That is how a semiconductor gets its few free electrons. Copper doesn't need heat: there is no gap.",
-            3: "The atoms stay put in the crystal. Only electrons move.",
+            2: "Every electron has the same mass and charge. What differs between materials is how many are free.",
+            3: "The atoms (ions) stay put in the crystal. Only electrons move.",
           },
         },
         explanation: "In a metal the full band and the empty band **overlap**, so a sea of electrons is always free. That is why metals conduct well even when very cold.",
@@ -63,10 +63,10 @@ gallium arsenide  1.42 eV                    semiconductor
 diamond           about 5.5 eV               insulator
 glass (SiO2)      about 9 eV                 insulator
 `),
-          "Heat is what jumps the gap: atoms jiggle, and now and then an electron gets a big enough kick. In a **semiconductor** the gap is small enough that a few electrons make it at room temperature; in an **insulator** practically none ever do. Each jumping electron also leaves an empty spot behind in the full band: a **hole** (the next lesson is about those). Drag the temperature for silicon and watch the count.",
+          "Heat is what jumps the gap: atoms jiggle, and now and then an electron gets a big enough kick. In a **semiconductor** the gap is small enough that a few electrons make it at room temperature; in an **insulator** practically none ever do. Each jumping electron also leaves an empty spot behind in the full band: a **hole** (the next lesson is about those). Drag the temperature for germanium and watch the count, then compare silicon at the same temperature.",
           "Where the car park breaks down: real electrons are not cars on fixed floors, they are waves spread over the whole crystal, and \"band\" means a range of allowed energies, not a place.",
         ),
-        widget: { type: "semi-bands", props: { material: "si" } },
+        widget: { type: "semi-bands", props: { material: "ge", materials: ["copper", "ge", "si", "gaas", "diamond", "glass"] } },
       },
       {
         kind: "question",
@@ -89,7 +89,20 @@ glass (SiO2)      about 9 eV                 insulator
           "A photon with **more energy than the gap** can lift an electron straight across. A photon with less simply passes through: the material is transparent to it. That is why glass, with its 9 eV gap, lets visible light through, and why a silicon solar cell or camera sensor absorbs it.",
           "Choose a material and shine different colours. Which light goes straight through silicon?",
         ),
-        widget: { type: "semi-bands", props: { material: "si", light: true } },
+        widget: { type: "semi-bands", props: { material: "si", light: true, materials: ["copper", "ge", "si", "gaas", "diamond", "glass"] } },
+      },
+      {
+        kind: "question",
+        title: "Through one, not the other",
+        body: "Gallium arsenide's gap is **1.42 eV**, silicon's **1.12 eV**. Find a colour of light that passes straight through **gallium arsenide** but would be absorbed by **silicon**.",
+        widget: { type: "semi-bands", props: { material: "si", light: true, materials: ["si", "gaas"] } },
+        question: {
+          type: "widget",
+          goal: { material: "gaas", light: true, photo: false, alsoAbsorbs: "si" },
+          prompt: "Choose gallium arsenide and pick a light that it lets through but silicon would absorb.",
+          hint: "The photon needs at least 1.12 eV to be absorbed by silicon, but less than 1.42 eV to pass through gallium arsenide. Work out each light's energy with E ≈ 1240 / λ.",
+        },
+        explanation: "Only **1000 nm** infrared works: 1240 / 1000 ≈ 1.24 eV, more than silicon's 1.12 eV but less than gallium arsenide's 1.42 eV. Red light (1.91 eV) is absorbed by both, and 1550 nm (0.80 eV) passes through both. Every material has such a cut-off, which is why the gap decides what a light sensor or solar cell can see.",
       },
       {
         kind: "question",
@@ -105,17 +118,17 @@ glass (SiO2)      about 9 eV                 insulator
         question: {
           type: "choice",
           options: [
-            "Silicon is a metal, so it conducts better",
-            "Silicon's gap is wide enough to stay well-behaved when warm, it is abundant in sand, and it grows a superb insulating oxide (SiO₂) on its own surface",
-            "Silicon has no band gap, so it can be switched faster",
-            "Silicon is the only element that can be made into crystals",
+            "Its electrons move faster than germanium's do",
+            "Its smaller gap lets it switch at a lower voltage",
+            "It is the only element that grows large, flawless single crystals",
+            "A wider gap for hot chips, cheap sand, and a native oxide",
           ],
-          answer: 1,
+          answer: 3,
           hint: "Think about what happens to a small-gap material as a chip warms up, and what else a chip needs besides a semiconductor.",
           feedback: {
-            0: "Silicon is a semiconductor, not a metal: it has a 1.12 eV gap.",
-            2: "It does have a gap, 1.12 eV. A material with no gap could not be switched off.",
-            3: "Many materials form crystals, germanium and gallium arsenide included.",
+            0: "The reverse: electrons and holes both move faster in germanium. Speed was not what decided it.",
+            1: "Silicon's gap (1.12 eV) is larger than germanium's (0.66 eV), not smaller.",
+            2: "Many materials form large crystals, germanium and gallium arsenide included.",
           },
         },
         explanation: "Germanium's 0.66 eV gap lets heat free too many electrons once it gets warm. Silicon's 1.12 eV is a better balance; silicon is the second most common element in the Earth's crust; and heating it in oxygen grows **silicon dioxide**, an excellent insulator that the transistor in lesson 4 depends on.",
@@ -136,7 +149,7 @@ glass (SiO2)      about 9 eV                 insulator
   {
     id: "fnd-semi-2-doping",
     title: "Doping: n-type and p-type",
-    summary: "Swap one atom in a million and silicon conducts hundreds of thousands of times better. Free electrons, holes, and why chips are made of two kinds of silicon.",
+    summary: "Swap one atom in five million and silicon conducts hundreds of thousands of times better. Free electrons, holes, and why chips are made of two kinds of silicon.",
     minutes: 10,
     xp: 50,
     level: "Beginner",
@@ -195,17 +208,17 @@ glass (SiO2)      about 9 eV                 insulator
         question: {
           type: "choice",
           options: [
-            "Like strongly doped n-type: eight carriers in total",
-            "It conducts twice as well as with only phosphorus",
-            "It becomes a metal",
-            "Almost like pure silicon: each spare electron falls into a hole and they cancel",
+            "Strongly n-type: eight carriers add up",
+            "Almost like pure silicon: the carriers cancel",
+            "Twice as conductive as phosphorus alone",
+            "p-type, because holes always win out",
           ],
-          answer: 3,
+          answer: 1,
           hint: "A spare electron and a missing electron. What happens when they meet?",
           feedback: {
             0: "The carriers are not independent: a free electron that meets a hole fills it, and both disappear.",
-            1: "The electrons fill the holes, so the carriers cancel instead of adding up.",
-            2: "Doping changes the carrier count; it does not remove the band gap.",
+            2: "The electrons fill the holes, so the carriers cancel instead of adding up.",
+            3: "Neither side wins when the numbers are equal: four spare electrons fill four holes.",
           },
         },
         explanation: "Equal doping **compensates**: free electrons fill the holes and the region acts almost like undoped silicon. Fabs use this deliberately. A region can be switched from n-type to p-type by adding more of the other dopant on top, and that is how wells and transistors are built inside one wafer.",
@@ -216,9 +229,7 @@ glass (SiO2)      about 9 eV                 insulator
         body: P(
           "The grid above exaggerates wildly: one dopant in every few atoms. A cubic centimetre of silicon holds about **5 × 10²² atoms**. Typical doping in a chip is somewhere between **10¹⁵ and 10²⁰ dopant atoms per cm³**, so anywhere from one in fifty million to one in a few hundred.",
           "Even the light end of that range matters hugely, because pure silicon has so few free electrons to begin with (about 10¹⁰ per cm³ at room temperature). There is also a neat rule: **electrons × holes = ni²**, a constant for a given material and temperature. Push the electrons up a millionfold and the holes drop a millionfold.",
-          "Slide the doping level and watch the resistivity (how hard it is for current to flow through a 1 cm cube; lower is better).",
         ),
-        widget: { type: "semi-dope", props: { mode: "calc", type: "n", exp: 13 } },
       },
       {
         kind: "question",
@@ -230,7 +241,10 @@ glass (SiO2)      about 9 eV                 insulator
       {
         kind: "question",
         title: "Make it conduct",
-        body: "Make **n-type** silicon that conducts at least **100,000 times** better than pure silicon. Use the smallest doping that does it.",
+        body: P(
+          "Now with real concentrations. Slide the doping level and watch the **resistivity** (how hard it is for current to flow through a 1 cm cube; lower is better).",
+          "Make **n-type** silicon that conducts at least **100,000 times** better than pure silicon. Use the smallest doping that does it.",
+        ),
         widget: { type: "semi-dope", props: { mode: "calc", type: "n", exp: 13 } },
         question: {
           type: "widget",
@@ -278,17 +292,17 @@ glass (SiO2)      about 9 eV                 insulator
         question: {
           type: "choice",
           options: [
-            "Fixed charged dopant atoms, with almost no free electrons or holes",
-            "A thick layer of extra free electrons",
-            "Air: the two sides do not quite touch",
-            "Metal atoms that join the two halves",
+            "Free electrons and holes in equal numbers",
+            "Extra electrons pushed over from the n side",
+            "Fixed dopant ions, with almost no free carriers",
+            "Undoped silicon, with no dopant atoms left in it at all",
           ],
-          answer: 0,
+          answer: 2,
           hint: "Think about what happens to an electron that crosses over and meets a hole.",
           feedback: {
-            1: "The free electrons near the junction are exactly what got used up: they fell into holes.",
-            2: "The two sides are one continuous crystal; only the doping changes.",
-            3: "There is no metal at the junction. It is all silicon.",
+            0: "The electrons and holes near the junction met and cancelled. What is left has almost none of either.",
+            1: "The electrons that crossed fell into holes; they did not pile up as free carriers.",
+            3: "The dopant atoms are still there, fixed in the lattice. They have only lost their free carriers, which leaves them charged.",
           },
         },
         explanation: "The carriers near the boundary **cancelled each other**, so the depletion region holds only **fixed ions**: negative on the p side, positive on the n side. With no free carriers it behaves like an insulator, and its charges set up the barrier.",
@@ -298,9 +312,9 @@ glass (SiO2)      about 9 eV                 insulator
         title: "Reverse bias: a wider wall",
         body: P(
           "Now connect a battery with its **minus** terminal on the p side and **plus** on the n side. That is **reverse bias**. The battery pulls holes away to the left and electrons away to the right, so the depletion region gets **wider** and the barrier gets higher.",
-          "Almost nothing flows: only a tiny **leakage** of the few minority carriers. Here it is about 10 femtoamps (10⁻¹⁴ A). Drag the slider into negative voltages and watch the width.",
+          "Almost nothing flows: only a tiny **leakage** of the few minority carriers. Here it is about 10 femtoamps (10⁻¹⁴ A). Drag the slider between 0 V and −1 V and watch the width.",
         ),
-        widget: { type: "semi-pn", props: { v: 0, noCurve: true } },
+        widget: { type: "semi-pn", props: { v: -1, noCurve: true } },
       },
       {
         kind: "question",
@@ -313,7 +327,7 @@ glass (SiO2)      about 9 eV                 insulator
           prompt: "Move the voltage negative until the depletion width reads 1.00 µm or more.",
           hint: "The width grows with the square root of (built-in voltage minus bias), so it widens slowly. Go well past −2 V.",
         },
-        explanation: "At about **−3.2 V** the region reaches 1 µm, from 0.43 µm at zero bias. The width follows W ∝ √(Vbi − V), so doubling it takes about four times the voltage. A reverse-biased junction is a small capacitor whose plates move apart as you raise the voltage; radio tuners use that effect (the varactor diode).",
+        explanation: "At about **−3.2 V** the region reaches 1 µm, from 0.43 µm at zero bias. The width follows W ∝ √(Vbi − V), so doubling it takes four times the total voltage across the junction (Vbi − V): from 0.71 V at zero bias to about 2.9 V, a bias of about −2.1 V for 0.86 µm. A reverse-biased junction is a small capacitor whose plates move apart as you raise the voltage; radio tuners use that effect (the varactor diode).",
       },
       {
         kind: "explain",
@@ -324,7 +338,7 @@ glass (SiO2)      about 9 eV                 insulator
           txt("I = Is x ( e^(V / Vt) - 1 )      Vt = kT/q ≈ 0.0259 V at room temperature"),
           "**Is** (the saturation current) is tiny, 10 fA in this model. Nothing much happens until a few hundred millivolts, then the current shoots up. That is where the familiar \"silicon diodes drop about 0.6 to 0.7 V\" comes from: it is not a hard threshold, just the voltage where an exponential gets large enough to notice.",
         ),
-        widget: { type: "semi-pn", props: { v: 0 } },
+        widget: { type: "semi-pn", props: { v: 0.4 } },
       },
       {
         kind: "question",
@@ -379,17 +393,17 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
         question: {
           type: "choice",
           options: [
-            "Amplifying a microphone signal",
+            "Turning AC into DC by passing one direction",
+            "Amplifying a weak microphone signal",
             "Storing a bit while the power is off",
-            "Turning AC from a transformer into DC, by letting current through in one direction only",
-            "Making a wire conduct better",
+            "Switching a current on and off from a third terminal",
           ],
-          answer: 2,
+          answer: 0,
           hint: "What does a diode do to a current that keeps changing direction?",
           feedback: {
-            0: "Amplifying needs a device whose output is controlled by an input, like the transistor in the next lesson.",
-            1: "Bits that survive power-off live in flash memory, built from special transistors.",
-            3: "A diode adds a voltage drop. It never beats a plain wire.",
+            1: "Amplifying needs a device whose output is controlled by an input, like the transistor in the next lesson.",
+            2: "Bits that survive power-off live in flash memory, built from special transistors.",
+            3: "A diode has only two terminals. Control from a third one is what a transistor adds (next lesson).",
           },
         },
         explanation: "A **rectifier** uses diodes to pass only one direction of an alternating current: the first stage of nearly every power supply. The same junction, made from a material whose electrons give off light as they cross, is an **LED**; the colour follows the band gap. The module \"Components in action: capacitors to op-amps\" puts diodes and LEDs into real circuits.",
@@ -410,7 +424,7 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
   {
     id: "fnd-semi-4-mosfet",
     title: "The MOSFET: a switch made of silicon",
-    summary: "Gate, oxide, channel, threshold: how a voltage on an insulated plate opens a path for current, and how NMOS and PMOS pair up into CMOS.",
+    summary: "Gate, oxide, channel, threshold: how a voltage on an insulated plate opens a path for current, the linear and saturation regions, and how NMOS and PMOS pair up into CMOS.",
     minutes: 11,
     xp: 60,
     level: "Intermediate",
@@ -432,17 +446,17 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
         question: {
           type: "choice",
           options: [
-            "The oxide blocks the current between source and drain",
-            "The path crosses two PN junctions back to back, and one of them is always reverse-biased",
-            "The source is not connected to anything",
-            "Silicon cannot carry current at room temperature",
+            "The oxide layer blocks the path between them",
+            "The source is not connected to anything yet",
+            "Doped silicon carries no current when cold",
+            "Two back-to-back junctions; one is reverse-biased",
           ],
-          answer: 1,
+          answer: 3,
           hint: "Walk from the drain to the source through the silicon: n+, then p, then n+. What did the last lesson say about such boundaries?",
           feedback: {
             0: "The oxide sits on top, under the gate. Current from drain to source would flow through the silicon below it.",
-            2: "In a circuit the source is connected, usually to ground. The problem is inside the silicon.",
-            3: "Doped silicon conducts well. The trouble is the junctions in the way.",
+            1: "In a circuit the source is connected, usually to ground. The problem is inside the silicon.",
+            2: "Doped silicon conducts well at room temperature. The trouble is the junctions in the way.",
           },
         },
         explanation: "Drain to source is n → p → n: **two diodes back to back**. Whichever way you push, one is reverse-biased, so only leakage flows. The transistor is **off**.",
@@ -453,52 +467,60 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
         body: P(
           "The gate, the oxide and the body form a **capacitor**: two conductors with an insulator between. Put a positive voltage on the gate and it attracts negative charge to the silicon surface right under the oxide.",
           "At first the gate just pushes the body's holes away, leaving a **depleted** layer. Raise it past the **threshold voltage** (Vth) and it pulls enough electrons to the surface to flip that thin layer to n-type: an **inversion layer**, or **channel**. Now n+ source, n channel and n+ drain are joined, and current flows.",
-          "Raise the gate voltage slowly and watch the three stages.",
+          "Raise the gate voltage slowly from here and watch the three stages: carriers pushed away, then a channel, then a current that grows with the **square** of the overdrive (how far Vgs is past Vth): I = ½·k·(Vgs − Vth)², with k = 2 mA/V² in this toy.",
         ),
-        widget: { type: "semi-mosfet", props: { type: "nmos", vgs: 0 } },
+        widget: { type: "semi-mosfet", props: { type: "nmos", vgs: 0.4 } },
+      },
+      {
+        kind: "explain",
+        title: "Drain voltage: linear, then saturation",
+        body: P(
+          "So far the drain sat at the full 3.3 V supply. Now let it vary. With the channel formed, a **small** drain voltage pulls electrons along the whole channel, and the current grows almost in proportion to Vds: the transistor acts like a **resistor** whose value the gate sets. This is the **linear** (or **triode**) region.",
+          "Raise Vds further and the channel gets thinner near the drain, because the gate-to-channel voltage there is only Vgs − Vds. Once **Vds reaches Vgs − Vth** the channel **pinches off** at the drain end and the current stops growing: the **saturation** region, where I = ½·k·(Vgs − Vth)², the square law from the last step.",
+          txt(`
+linear (Vds < Vgs - Vth):       I = k x [ (Vgs - Vth) x Vds - Vds^2 / 2 ]
+saturation (Vds >= Vgs - Vth):  I = 1/2 x k x (Vgs - Vth)^2
+`),
+          "Move both sliders and watch where the curve flattens.",
+        ),
+        widget: { type: "semi-mosfet", props: { type: "nmos", vgs: 1.7, drain: true, vds: 0.5 } },
       },
       {
         kind: "question",
-        title: "Two milliamps",
-        body: "Turn this NMOS transistor on hard enough to carry at least **2 mA**.",
-        widget: { type: "semi-mosfet", props: { type: "nmos", vgs: 0 } },
+        title: "Where the current levels off",
+        body: "Set the gate to **2.2 V**, then find the **smallest drain voltage** at which the current stops growing: the edge of saturation.",
+        widget: { type: "semi-mosfet", props: { type: "nmos", vgs: 0, drain: true, vds: 0.5, hideRegion: true } },
         question: {
           type: "widget",
-          goal: { type: "nmos", minIdA: 2e-3 },
-          prompt: "Raise the gate voltage until the drain current reads at least 2 mA.",
-          hint: "Below 0.7 V nothing happens. Above it the current grows with the square of how far past the threshold you are.",
+          goal: { type: "nmos", vgs: 2.2, vds: 1.5 },
+          prompt: "Set Vgs to 2.2 V and the drain voltage to the point where the channel just pinches off.",
+          hint: "Saturation starts when Vds = Vgs − Vth. Or watch the drain current: below the edge it still creeps up with each 0.1 V step.",
         },
-        explanation: "At **2.2 V** the current is ½ × 2 mA/V² × (2.2 − 0.7)² = 2.25 mA. The further past the threshold (the **overdrive**), the more electrons in the channel and the more current flows.",
-      },
-      {
-        kind: "question",
-        title: "Use the square law",
-        body: "This model uses **I = ½ · k · (Vgs − Vth)²** with k = 2 mA/V² and Vth = 0.7 V. Work out the drain current at **Vgs = 1.7 V**, in milliamps.",
-        question: { type: "number", answer: 1, tolerance: 0.05, unit: "mA", hint: "First find Vgs − Vth, then square it." },
-        explanation: "1.7 − 0.7 = 1 V of overdrive; ½ × 2 × 1² = **1 mA**. Double the overdrive to 2 V and the current is four times bigger: that is the \"square law\" of a simple long-channel transistor. Short modern transistors bend this law, but the idea holds.",
+        explanation: "Vds,sat = Vgs − Vth = 2.2 − 0.7 = **1.5 V**. Below it the current still climbs (2.21 mA at 1.3 V, 2.24 mA at 1.4 V); from 1.5 V on it stays at ½ × 2 mA/V² × 1.5² = **2.25 mA** however high the drain goes. Amplifiers run transistors in saturation, where the current depends on the gate and hardly on the drain; a logic switch that is on sits in the linear region (next step).",
       },
       {
         kind: "explain",
         title: "A switch, not a valve",
         body: P(
-          "Digital circuits only use the two ends: gate at **0 V** (off) or at the **supply** (fully on). A MOSFET is a superb switch for three reasons:",
+          "Digital circuits only use the two ends: gate at **0 V** (off) or at the **supply** (fully on). A switch that is on has almost no voltage across it: its drain sits within a few tens of millivolts of its source, deep in the **linear** region, where the transistor behaves like a small resistor. A MOSFET is a superb switch for three reasons:",
           "- **No gate current.** The oxide is an insulator, so a steady gate voltage costs no steady current. Only charging and discharging the tiny gate capacitor takes energy.\n- **Tiny.** Modern transistors are tens of nanometres across, so billions fit on a chip.\n- **One voltage controls another.** The output of one transistor can drive the gates of the next, so logic can be chained.\n\nThe same physics, scaled up to amps, is the discrete **power MOSFET** a microcontroller pin uses to drive a motor or an LED strip: see *Transistors as switches* in the Analog module.",
           "The oxide has to be extremely thin for the gate to have strong control: in the 2000s it reached about 1.2 nm, a handful of atomic layers, and electrons began to tunnel straight through it. Chipmakers replaced it with thicker **high-k** materials (based on hafnium oxide) that control the channel just as strongly with less leakage.",
         ),
       },
       {
-        kind: "explain",
-        title: "PMOS: the mirror image",
-        body: P(
-          "Swap every doping type: an **n-type body**, **p+ source and drain**. Now the gate must go **negative** relative to the source to pull **holes** to the surface and form a p-type channel. That is a **PMOS** transistor.",
-          "Holes move more slowly than electrons, so a PMOS of the same size carries less current. Designers make PMOS transistors wider to compensate. Switch between the two below.",
-        ),
-        widget: { type: "semi-mosfet", props: { type: "pmos", both: true, vgs: 0 } },
+        kind: "question",
+        title: "The on-resistance",
+        body: "Deep in the linear region the Vds² term is tiny, so I ≈ k·(Vgs − Vth)·Vds: the switch is a resistor **R = 1 / (k·(Vgs − Vth))**. For this toy NMOS (k = 2 mA/V², Vth = 0.7 V) driven fully on at **Vgs = 3.3 V**, what is its on-resistance? Give it in ohms.",
+        question: { type: "number", answer: 192.3, tolerance: 4, unit: "Ω", hint: "First the overdrive Vgs − Vth, then multiply it by k (in A/V²) and take one over the result." },
+        explanation: "Overdrive 3.3 − 0.7 = 2.6 V; R = 1 / (0.002 × 2.6) ≈ **192 Ω**. A weaker gate drive gives a higher resistance, so a switch that is not driven hard runs slow and hot. Real logic transistors are far narrower and sit in the kilohms; a power MOSFET, thousands of cells in parallel, gets down to milliohms (typical figures).",
       },
       {
         kind: "question",
-        title: "Turn on the PMOS",
-        body: "Switch to **PMOS** and turn it on to carry at least **1 mA**.",
+        title: "PMOS: the mirror image",
+        body: P(
+          "Swap every doping type: an **n-type body**, **p+ source and drain**. Now the gate must go **negative** relative to the source to pull **holes** to the surface and form a p-type channel. That is a **PMOS** transistor. Holes move more slowly than electrons, so a PMOS of the same size carries less current.",
+          "Switch to **PMOS** and turn it on to carry at least **1 mA**.",
+        ),
         widget: { type: "semi-mosfet", props: { type: "nmos", both: true, vgs: 0 } },
         question: {
           type: "widget",
@@ -510,33 +532,33 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
       },
       {
         kind: "question",
-        title: "Pairs: CMOS",
-        body: "A **CMOS inverter** puts a PMOS between the supply and the output and an NMOS between the output and ground, with both gates joined to the input. With the input **high**, what happens?",
+        title: "Why the PMOS is drawn wider",
+        body: "In this toy a PMOS has **k = 1 mA/V²** and an NMOS of the same size **2 mA/V²**. In a CMOS inverter (a PMOS pulling the output up, an NMOS pulling it down, as in the module \"Digital logic from transistors\") both should be equally strong. What does the designer change?",
         question: {
           type: "choice",
           options: [
-            "Both transistors turn on and current flows straight from supply to ground",
-            "Both turn off and the output floats",
-            "The PMOS turns on and the output goes high",
-            "The NMOS turns on, the PMOS turns off, and the output is pulled low",
+            "Make the PMOS channel about twice as long",
+            "Make the PMOS about twice as wide",
+            "Give the PMOS a thicker gate oxide",
+            "Drive the PMOS gate with twice the supply",
           ],
-          answer: 3,
-          hint: "An NMOS turns on with a high gate. A PMOS turns on when its gate is well below its source, which sits at the supply.",
+          answer: 1,
+          hint: "k grows with the channel's width and shrinks with its length: a wider channel is more lanes for the carriers.",
           feedback: {
-            0: "That would waste power constantly. In CMOS exactly one of the pair is on in each steady state.",
-            1: "One of the two always turns on: a high input turns on the NMOS.",
-            2: "A high input is at the PMOS's own source voltage, so its Vgs is 0: off.",
+            0: "A longer channel carries less current, not more: k falls as the length grows.",
+            2: "A thicker oxide weakens the gate's grip on the channel and lowers k further.",
+            3: "Both gates share one input that swings between 0 V and the supply; there is no bigger voltage to give the PMOS.",
           },
         },
-        explanation: "High in: the **NMOS is on** and pulls the output to ground, while the PMOS is off. Low in: the reverse. In either steady state one transistor is off, so **no current flows from supply to ground**: CMOS logic uses power mainly while switching. The module \"Digital logic from transistors\" builds NAND, NOR and flip-flops from these pairs, and *From gates to an adder* and *Inside a memory chip* (the six-transistor SRAM cell) show what they become.",
+        explanation: "k is proportional to the carrier mobility times **W/L** (channel width over length). Holes have roughly half the mobility of electrons in silicon, so a PMOS about **twice as wide** matches the NMOS. In the layout the PMOS also sits in an **n-well**: an island of n-type silicon in the p-type wafer, giving it the n-type body it needs. With both equally strong, one transistor of the pair is always off in a steady state, so almost no current flows from supply to ground: CMOS uses power mainly while switching.",
       },
       {
         kind: "recap",
         points: [
           "A **MOSFET** has a source, a drain, a body and a **gate** insulated by a thin **oxide**. Off by default: two back-to-back junctions.",
-          "Past the **threshold voltage**, the gate pulls carriers to the surface and forms a **channel**; current rises with the overdrive (square law in the simple model).",
-          "No steady gate current makes it an excellent, chainable **switch**. **NMOS** uses electrons; **PMOS** uses holes and a negative gate.",
-          "**CMOS** pairs them so that one is always off: almost no current while the logic sits still.",
+          "Past the **threshold voltage**, the gate pulls carriers to the surface and forms a **channel**.",
+          "Small Vds: the **linear** (triode) region, a gate-controlled resistor, where an on logic switch sits. Vds ≥ Vgs − Vth: **saturation**, I = ½·k·(Vgs − Vth)².",
+          "**NMOS** uses electrons; **PMOS** uses holes and a negative gate, and is drawn about twice as wide. **CMOS** pairs them so one is always off.",
         ],
       },
     ],
@@ -546,7 +568,7 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
   {
     id: "fnd-semi-5-scaling",
     title: "Scaling and Moore's law",
-    summary: "Fifty years of shrinking transistors: the doubling trend, why smaller once meant faster and cooler for free, why that stopped, and how FinFETs and gate-all-around keep going.",
+    summary: "Fifty years of shrinking transistors: the doubling trend, why smaller once meant faster and cooler for free, why that stopped, how FinFETs and gate-all-around keep going, and the semiconductors beyond silicon.",
     minutes: 12,
     xp: 65,
     level: "Intermediate",
@@ -558,7 +580,7 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
           "In 1965 Gordon Moore, later a co-founder of Intel, noticed that the number of components on the most cost-effective chip was **doubling every year**. In 1975 he revised it to **about every two years**. The industry then turned the observation into a target, and for decades roughly kept to it.",
           "\"Moore's law\" is not physics. It is an economic and engineering trend, kept alive by enormous investment, and the doubling period has never been exact. The dots below are approximate published transistor counts for well-known chips. Move the slider to change the doubling period of the orange prediction.",
         ),
-        widget: { type: "semi-moore", props: { period: 1 } },
+        widget: { type: "semi-moore", props: { period: 3.5 } },
       },
       {
         kind: "question",
@@ -571,14 +593,7 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
           prompt: "Move the slider until the orange line runs through the dots (the typical miss falls below about ×2).",
           hint: "One year is far too fast: the line shoots off the chart. Try periods between 1.5 and 3 years.",
         },
-        explanation: "**Two years** fits: the line misses the chips by less than a factor of two on average across half a century, from 2,300 transistors in the Intel 4004 to tens of billions in today's largest chips. (Recent progress per chip leans more on bigger dies and packaging, as lessons 9 and 10 show.)",
-      },
-      {
-        kind: "question",
-        title: "Count the doublings",
-        body: "If the count doubles every **2 years**, how many doublings happen between **1971 and 2021**?",
-        question: { type: "number", answer: 25, tolerance: 0, unit: "doublings", hint: "How many 2-year periods fit into 50 years?" },
-        explanation: "50 / 2 = **25 doublings**, a factor of 2²⁵ ≈ 33 million. 2,300 × 33 million ≈ 77 billion transistors, about the size of the biggest single chips of the early 2020s.",
+        explanation: "**Two years** fits: the line misses the chips by less than a factor of two on average across half a century. From 1971 to 2021 that is 25 doublings, a factor of 2²⁵ ≈ 33 million: 2,300 transistors in the Intel 4004 become about 77 billion, the size of the biggest single chips of the early 2020s. (Recent progress per chip leans more on bigger dies and packaging, as the lessons on yield and on packaging show.)",
       },
       {
         kind: "explain",
@@ -611,7 +626,7 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
           "The catch: a transistor below threshold is not perfectly off. A small **subthreshold leakage** flows, and it grows **about ten times for every 60 to 100 mV** the threshold drops (60 mV per decade is the physical best at room temperature, the same 60 mV as the diode in lesson 3). A billion slightly leaky switches add up to watts of power doing nothing.",
           "Try it: lower the supply, then see what the threshold has to do.",
         ),
-        widget: { type: "semi-leak", props: {} },
+        widget: { type: "semi-leak", props: { vdd: 1.2, vth: 0.45 } },
       },
       {
         kind: "question",
@@ -644,19 +659,39 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
           type: "choice",
           options: [
             "Every transistor gate is exactly 3 nm long",
-            "The smallest wire is 3 nm wide",
-            "It is a marketing name for a generation; actual dimensions such as gate pitch are many times larger and differ between companies",
-            "The chip is 3 nm thick",
+            "The tightest metal pitch on the chip is 3 nm",
+            "A generation label; real pitches are far larger",
+            "The finest line the scanner can print in one exposure",
           ],
           answer: 2,
           hint: "Node names once matched a real dimension. Do they still?",
           feedback: {
             0: "Gate lengths stopped tracking the node name in the late 1990s. A \"3 nm\" transistor's gate is well over 3 nm long.",
             1: "The tightest metal wires at such nodes are reported at a pitch of roughly 20 to 25 nm, far wider than 3 nm.",
-            3: "A wafer is about 0.775 mm thick. The name has nothing to do with thickness.",
+            3: "Even EUV prints lines of roughly 12 nm and more in one exposure (the lithography lesson works it out); nothing prints 3 nm lines.",
           },
         },
         explanation: "Modern **node names are labels**, not measurements. Until the 1990s the number matched the gate length; since then it has simply kept shrinking by about 0.7× per generation as a name. Published estimates for \"5 nm\" class processes put the spacing between neighbouring gates around 50 nm. Two companies' \"7 nm\" can also differ in density, so engineers compare actual pitches and transistor densities instead.",
+      },
+      {
+        kind: "question",
+        title: "Beyond silicon: wide gaps and fast electrons",
+        body: P(
+          "Shrinking is silicon's story, but several other semiconductors are made in volume for jobs silicon does badly (typical room-temperature values):",
+          txt(`
+material   gap      breakdown field   typical jobs
+Si         1.12 eV  ~0.3 MV/cm        logic, memory, most power parts
+GaAs       1.42 eV  ~0.4 MV/cm        phone radio amplifiers, LEDs, lasers
+InP        1.34 eV  ~0.5 MV/cm        the fastest radio chips, 1550 nm lasers
+SiC (4H)   3.26 eV  ~2.5-3 MV/cm      car inverters, solar, 1,200 V switches
+GaN        3.4 eV   ~3.3 MV/cm        compact chargers, radar, base stations
+`),
+          "**Wide band gap** materials (SiC, GaN) hold about ten times the electric field before electrons tear loose (**breakdown**), and heat frees almost no carriers in them (try 600 K below). **GaAs** and **InP** win on speed: electrons move several times faster than in silicon, which suits radio frequencies.",
+          "A switch that must block a voltage V needs a layer roughly **t ≈ V / E_breakdown** thick (a rough uniform-field estimate). How thin can that layer be in **GaN** blocking **650 V**? Give it in micrometres.",
+        ),
+        widget: { type: "semi-bands", props: { material: "gan", tempK: 600, materials: ["si", "gaas", "sic", "gan"] } },
+        question: { type: "number", answer: 1.97, tolerance: 0.15, unit: "µm", hint: "3.3 MV/cm is 3.3 × 10⁶ V per cm. Divide 650 V by it to get centimetres, then multiply by 10⁴ for micrometres." },
+        explanation: "650 / (3.3 × 10⁶ V/cm) ≈ 2.0 × 10⁻⁴ cm ≈ **2 µm**. Silicon needs 650 / (0.3 × 10⁶) ≈ 22 µm, about eleven times thicker, and a thicker, more lightly doped layer has far more resistance. (Real layers are about twice the uniform-field estimate, and in a lateral GaN transistor the gate-to-drain spacing plays this role.) That is why, as of 2025, 650 V GaN parts shrink laptop chargers and SiC dominates 800 V electric-car inverters, while GaAs amplifiers sit in most phones. They cost more than silicon: SiC wafers are mostly 150 mm, moving to 200 mm, and GaN is often grown on silicon or SiC wafers.",
       },
       {
         kind: "recap",
@@ -665,6 +700,7 @@ def diode_current(v, i_s=1e-14, vt=0.0259):
           "**Dennard scaling**: shrinking size and voltage together kept power density constant. It ended around 2005 when voltage stopped falling.",
           "Lower voltage needs a lower threshold, and leakage rises about **10× per 60–100 mV** of threshold. Clocks stalled; cores multiplied.",
           "Planar → **FinFET** (gate on 3 sides) → **gate-all-around** (all sides) for better control. Node names like \"3 nm\" are **labels**.",
+          "Beyond silicon: **SiC** and **GaN** (wide band gap) for high-voltage, hot power switches; **GaAs** and **InP** for radio and light.",
         ],
       },
     ],

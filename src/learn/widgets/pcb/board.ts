@@ -3,11 +3,11 @@
  * Checked in Node against hand-computed answers (see the scratch tests); simplified on purpose.
  */
 
-/** 1 oz/ft² of copper is about 34.8 µm thick (often rounded to 35 µm). */
-export const UM_PER_OZ = 34.8;
+/** 1 oz/ft² of copper is about 35 µm thick (exactly 34.8 µm; 35 µm is the usual rounded figure, used everywhere here). */
+export const UM_PER_OZ = 35;
 /** 1 mil = 0.001 in = 25.4 µm. */
 export const UM_PER_MIL = 25.4;
-/** Copper thickness per ounce in mil, using the usual rounded 35 µm / 25.4 = 1.378 mil. */
+/** Copper thickness per ounce in mil: 35 µm / 25.4 = 1.378 mil. */
 export const MIL_PER_OZ = 1.378;
 
 export const ozToUm = (oz: number) => oz * UM_PER_OZ;

@@ -5,7 +5,10 @@ import { Fab, checkFab } from "./Fab";
 import { Litho, checkLitho } from "./Litho";
 import { Mosfet, checkMosfet } from "./Mosfet";
 import { Pack, TestFlow, checkPack, checkTestFlow } from "./Package";
+import { Opc, checkOpc } from "./Opc";
 import { Pn, checkPn } from "./Pn";
+import { Reliab, checkReliab } from "./Reliab";
+import { Spc, checkSpc } from "./Spc";
 import { Dennard, Gates, Leak, Moore, checkDennard, checkGates, checkLeak, checkMoore } from "./Scaling";
 import { Ingot, Iso, checkIso } from "./Wafer";
 import { Chiplet, Yield, checkChiplet, checkYield } from "./Yield";
@@ -36,4 +39,7 @@ export const SEMI_WIDGETS: WidgetRegistry = {
   "semi-chiplet": { Component: Chiplet, check: checkChiplet },
   "semi-pack": { Component: Pack, check: checkPack },
   "semi-test": { Component: TestFlow, check: checkTestFlow },
+  "semi-reliab": { Component: Reliab, check: checkReliab },
+  "semi-spc": { Component: Spc, check: checkSpc },
+  "semi-opc": { Component: Opc, check: checkOpc },
 };

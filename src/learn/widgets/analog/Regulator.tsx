@@ -91,7 +91,9 @@ export function Regulator({ props, onChange }: WidgetProps<RegulatorProps>) {
         {kind === "linear" && !r.inRegulation && (
           <Note>Vin is below Vout plus the dropout ({vout.toFixed(1)} + {DROPOUT[part]} = {(vout + DROPOUT[part]).toFixed(1)} V), so the regulator cannot hold the output: it sags to about {r.voutActual.toFixed(1)} V. Raise Vin, lower Vout or choose the LDO.</Note>
         )}
-        {kind === "switching" && !r.inRegulation && <Note>A buck converter only steps down, so Vin must be above Vout (with a little headroom). Raise Vin or lower Vout. (A boost converter steps up, but that is a different circuit.)</Note>}
+        {kind === "switching" && !r.inRegulation && (
+          <Note>Vin is not above Vout plus a little headroom ({vout.toFixed(1)} + 0.3 = {(vout + 0.3).toFixed(1)} V), so the buck is in dropout: its switch stays on all the time and the output sags to about Vin {"−"} 0.3 V = {r.voutActual.toFixed(1)} V. A buck can only step down, never up. Raise Vin or lower Vout. (A boost converter steps up, but that is a different circuit.)</Note>
+        )}
         {hot && (
           <Note tone="accent">
             {r.heatW.toFixed(2)} W of heat: this needs a heatsink. A TO-220 package with none is typically good for roughly 1 W; at about {THETA} °C per watt (typical, free air) the toy sum gives {Math.round(rise)} °C above the room, which a real part would never reach: it would overheat, shut down or fail. Never touch a hot regulator.
@@ -104,7 +106,7 @@ export function Regulator({ props, onChange }: WidgetProps<RegulatorProps>) {
         )}
         {kind === "switching" && r.inRegulation && (
           <Note>
-            A buck converter stores energy in an inductor and switches it thousands of times a second, so the heat depends on its efficiency, not on the voltage gap. Real ones are typically 80 to 95% efficient, but they add switching noise that sensitive analog circuits may need filtered.
+            A buck converter stores energy in an inductor and switches it hundreds of thousands to millions of times a second (typical), so the heat depends on its efficiency, not on the voltage gap. Real ones are typically 80 to 95% efficient, but they add switching noise that sensitive analog circuits may need filtered.
           </Note>
         )}
         <ToyNote>Toy model: a constant load current, the dropout and thermal figures as typical values (check the datasheet), and the small standby current of the regulator ignored. The switching efficiency is a typical value you choose, not a calculation.</ToyNote>

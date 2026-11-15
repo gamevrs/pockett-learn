@@ -144,13 +144,15 @@ function score(assign: Record<string, string>, list: Workload[]) {
   return { correct, total: list.length, allCorrect: correct === list.length && list.length > 0 };
 }
 
-export function Soc({ props, onChange, revealed }: WidgetProps<SocProps>) {
+export function Soc({ props, onChange, revealed, status }: WidgetProps<SocProps>) {
   const mode = props.mode ?? "assign";
   const list = props.workloads ? WORKLOADS.filter((w) => props.workloads!.includes(w.id)) : WORKLOADS;
   const [assign, setAssign] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(list[0]?.id ?? null);
   const locked = Boolean(revealed);
+  // In a question the per-job verdicts and the score wait for Check (status "idle"); explain steps pass no status.
+  const quiet = status === "idle";
 
   const report = (a: Record<string, string>, sel: string | null) => {
     const sc = score(a, list);
@@ -217,7 +219,11 @@ export function Soc({ props, onChange, revealed }: WidgetProps<SocProps>) {
                     }`}
                   >
                     <span className="block font-medium">{w.name}</span>
-                    {got ? (
+                    {got && quiet ? (
+                      <span className="mt-0.5 block text-ink-2">
+                        Assigned to <span className="font-medium text-ink">{BLOCK_BY_ID[got]?.name ?? got}</span>. Press Check to see how it did.
+                      </span>
+                    ) : got ? (
                       <span className="mt-0.5 block text-ink-2">
                         <span aria-hidden className="font-semibold" style={{ color: ok ? "var(--good)" : "var(--bad)" }}>
                           {ok ? "✓" : "✗"}
@@ -273,7 +279,11 @@ export function Soc({ props, onChange, revealed }: WidgetProps<SocProps>) {
 
       {mode === "assign" && (
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-          <Readout label="Correct" value={`${sc.correct} of ${sc.total}`} accent={sc.allCorrect} />
+          {quiet ? (
+            <Readout label="Assigned" value={`${Object.keys(assign).filter((k) => list.some((w) => w.id === k)).length} of ${sc.total}`} />
+          ) : (
+            <Readout label="Correct" value={`${sc.correct} of ${sc.total}`} accent={sc.allCorrect} />
+          )}
         </div>
       )}
       <ToyNote>A generic phone-class SoC; real chips differ (some have no NPU, some run the ISP on the DSP).</ToyNote>

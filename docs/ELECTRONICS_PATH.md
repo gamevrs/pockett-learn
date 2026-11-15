@@ -24,95 +24,113 @@ Bits and logic gates (bits module, "Logic gates"), Inside the computer (fnd-comp
 - Process nodes: say clearly that modern "nm" node names are marketing labels, not a physical gate length. EUV wavelength 13.5 nm, DUV ArF 193 nm. Cleanroom classes named as ISO classes. Fab economics as order-of-magnitude, labelled.
 - Simulators are toys and say so on screen; numbers they show must be correct for their stated model (sanity-check the pure logic with a node script outside the repo).
 
+Each list below is the module's `lessons` array in order. Array position decides order; ids never change, so a
+lesson added later takes the next free N wherever it sits (e.g. `fnd-analog-11-protection` is the third lesson).
+
 ## Module `circuits` — "Electronics from zero: circuits" (ids `fnd-circ-N-…`, widgets `circ-`)
-1. Beginner — What electricity is: charge, current (flow), voltage (push), the water analogy and where it breaks.
-2. Beginner — Ohm's law: V = IR in a live circuit; change one, watch the others.
-3. Beginner — Power and heat: P = VI; why resistors get hot; ratings; batteries in mAh/Wh.
-4. Beginner — Series and parallel: combining resistors; current splits, voltage shares.
-5. Intermediate — Kirchhoff's laws: currents at a node sum to zero, voltages round a loop sum to zero; solving a two-loop circuit.
-6. Intermediate — The voltage divider and loading: Vout formula, what a load does to it, potentiometers and sensors (LDR, thermistor).
-7. Intermediate — Reading schematics and measuring: symbols, nets, ground; using a multimeter (volts across, amps in series, resistance unpowered); safety.
-8. Intermediate — Sources and real-world limits: internal resistance, batteries vs bench supplies, current limiting, short circuits, fuses.
+1. Beginner — What electricity is (`fnd-circ-1-what-is-electricity`): charge, current (flow), voltage (push), the water analogy and where it breaks.
+2. Beginner — Ohm's law (`fnd-circ-2-ohms-law`): V = IR in a live circuit; change one, watch the others.
+3. Beginner — Power and heat (`fnd-circ-3-power-heat`): P = VI; why resistors get hot; ratings; batteries in mAh/Wh.
+4. Beginner — Series and parallel (`fnd-circ-4-series-parallel`): combining resistors; current splits, voltage shares.
+5. Intermediate — Kirchhoff's laws (`fnd-circ-5-kirchhoff`): currents at a node sum to zero, voltages round a loop sum to zero; solving a two-loop circuit.
+6. Intermediate — The voltage divider and loading (`fnd-circ-6-voltage-divider`): Vout formula, what a load does to it, potentiometers and sensors (LDR, thermistor).
+7. Intermediate — Reading schematics and measuring (`fnd-circ-7-schematics-measuring`): symbols, nets, ground; using a multimeter (volts across, amps in series, resistance unpowered); safety.
+8. Intermediate — Sources and real-world limits (`fnd-circ-8-real-sources`): internal resistance, batteries vs bench supplies, current limiting, short circuits, fuses.
+9. Intermediate — On the bench (`fnd-circ-9-on-the-bench`): breadboard internals and common wiring faults, through-hole and SMD soldering and rework, good and bad joints, safety (fumes, burns, leaded solder).
+10. Intermediate — Using an oscilloscope (`fnd-circ-10-oscilloscope`): a toy scope with V/div and time/div, the trigger, the 10× probe and its channel setting, the ground-lead loop that makes a signal ring.
 
 ## Module `analog` — "Components in action: capacitors to op-amps" (ids `fnd-analog-N-…`, widgets `analog-`)
-1. Beginner — Capacitors: storing charge; Q = CV; RC charging and discharging, τ = RC.
-2. Beginner — Diodes and LEDs: one-way valves, forward drop, the LED resistor calculation.
-3. Intermediate — Inductors and magnetism: resisting change in current, RL time constant, flyback spikes and why relays need a diode.
-4. Intermediate — Alternating current: frequency, period, peak vs RMS, phase; mains vs signals.
-5. Intermediate — Impedance and filters: reactance of C and L vs frequency, RC low-pass/high-pass, cutoff and −3 dB, a Bode-style response.
-6. Intermediate — Power supplies: transformer → rectifier → smoothing capacitor → regulator; ripple; linear vs switching regulators and efficiency.
-7. Advanced — Transistors as switches: BJT and MOSFET, driving a motor/LED from a 3.3 V pin, logic-level MOSFETs, base/gate resistors, flyback protection.
-8. Advanced — Transistors as amplifiers: small signals, gain, biasing (one common-emitter or common-source example, conceptually), clipping.
-9. Advanced — Op-amps: the two golden rules, inverting and non-inverting amplifiers, buffer, comparator, real limits (rails, bandwidth).
-10. Professional — From analog to digital and back: sampling, Nyquist and aliasing, quantisation and resolution, ADC/DAC types, anti-alias filters; practice with SPICE (ngspice/LTspice as examples).
+1. Beginner — Capacitors: storing charge (`fnd-analog-1-capacitors`): Q = CV; RC charging and discharging, τ = RC.
+2. Beginner — Diodes and LEDs (`fnd-analog-2-diodes-leds`): one-way valves, forward drop, the LED resistor calculation.
+3. Intermediate — Protecting a circuit (`fnd-analog-11-protection`): Zener clamp and its resistor, Schottky diodes for OR-ing, P-MOSFET reverse-battery protection, polyfuses and inrush, ESD (kV but µJ) and a TVS at the connector (ESD pulse widget).
+4. Intermediate — Inductors and magnetism (`fnd-analog-3-inductors`): resisting change in current, RL time constant, flyback spikes and why relays need a diode.
+5. Intermediate — Alternating current (`fnd-analog-4-ac`): frequency, period, peak vs RMS, phase; mains vs signals.
+6. Intermediate — Impedance and filters (`fnd-analog-5-filters`): reactance of C and L vs frequency, RC low-pass/high-pass, cutoff and −3 dB, a Bode-style response.
+7. Intermediate — Power supplies (`fnd-analog-6-power-supplies`): transformer → rectifier → smoothing capacitor → regulator; ripple; linear vs switching regulators and efficiency.
+8. Intermediate — Batteries and power management (`fnd-analog-12-batteries`): chemistries and voltages, mAh vs Wh, C-rate, internal resistance vs temperature, Li-ion CC/CV charging (widget, with a safety note), protection ICs, power path, coin-cell pulse derating.
+9. Advanced — Transistors as switches (`fnd-analog-7-transistor-switches`): BJT and MOSFET, driving a motor/LED from a 3.3 V pin, logic-level MOSFETs, base/gate resistors, flyback protection.
+10. Advanced — Switching converters in depth (`fnd-analog-13-switching-converters`): buck D = Vout/Vin, boost Vout = Vin/(1 − D), inductor ripple vs L and f, conduction vs switching losses, the hot loop (links *Power and ground*), module vs discrete.
+11. Advanced — Motors, actuators and drivers (`fnd-analog-14-motors`): back-EMF and stall current, the H-bridge, shoot-through and dead time, PWM speed, shunt current sensing, steppers, servos and driver ICs.
+12. Advanced — Transistors as amplifiers (`fnd-analog-8-amplifiers`): small signals, gain, biasing (one common-emitter or common-source example, conceptually), clipping.
+13. Advanced — Op-amps (`fnd-analog-9-op-amps`): the two golden rules, inverting and non-inverting amplifiers, buffer, comparator, real limits (rails, bandwidth).
+14. Professional — From analog to digital and back (`fnd-analog-10-adc-dac`): sampling, Nyquist and aliasing, quantisation and resolution, ADC/DAC types, anti-alias filters; practice with SPICE (ngspice/LTspice as examples).
 
 ## Module `digital` — "Digital logic from transistors" (ids `fnd-digi-N-…`, widgets `digi-`)
-1. Beginner — From switch to gate: a transistor as a switch, the CMOS inverter (pull-up PMOS, pull-down NMOS).
-2. Beginner — CMOS gates: NAND and NOR from transistors; why NAND is universal; why CMOS draws almost no static current.
-3. Intermediate — Combinational building blocks: multiplexers, decoders, encoders; truth tables to gates (links to "From gates to an adder").
-4. Intermediate — Remembering a bit: SR latch, D latch, edge-triggered D flip-flop.
-5. Intermediate — Registers and counters: clocked registers, shift registers, binary counters, clock dividers.
-6. Advanced — State machines: Moore/Mealy, a traffic light or vending machine, state diagram → next-state logic.
-7. Advanced — Timing: propagation delay, critical path, setup and hold, max clock frequency, clock skew.
-8. Professional — Metastability and clock domains: what happens when setup is violated, two-flop synchronisers, debouncing a button, async FIFOs (conceptually).
+1. Beginner — From switch to gate (`fnd-digi-1-switch-to-gate`): a transistor as a switch, the CMOS inverter (pull-up PMOS, pull-down NMOS), dynamic power α·C·V²·f.
+2. Beginner — CMOS gates: NAND and NOR (`fnd-digi-2-cmos-gates`): NAND and NOR from transistors; why NAND is universal; why CMOS draws almost no static current.
+3. Intermediate — Multiplexers, decoders and lookup tables (`fnd-digi-3-building-blocks`): multiplexers, decoders, priority encoders; any truth table in a multiplexer (links to "From gates to an adder").
+4. Intermediate — Remembering a bit (`fnd-digi-4-latches-flipflops`): SR latch, D latch, edge-triggered D flip-flop.
+5. Intermediate — Registers, shift registers and counters (`fnd-digi-5-registers-counters`): clocked registers, shift registers, binary counters, clock dividers.
+6. Advanced — State machines (`fnd-digi-6-state-machines`): Moore/Mealy, a traffic light or vending machine, state diagram → next-state logic.
+7. Advanced — Timing: how fast can the clock go? (`fnd-digi-7-timing`): propagation delay, critical path, setup and hold, max clock frequency, clock skew.
+8. Professional — Metastability, synchronisers and debouncing (`fnd-digi-8-metastability`): what happens when setup is violated, MTBF, two-flop synchronisers, clock-domain crossing and Gray code, debouncing a button.
 
 ## Module `pcb` — "Components and PCB design" (ids `fnd-pcb-N-…`, widgets `pcb-`)
-1. Beginner — Meet the parts: resistors (colour codes and SMD codes), capacitors (ceramic, electrolytic), ICs and packages (THT vs SMD, SOIC/QFN/BGA), connectors.
-2. Beginner — Reading a datasheet: absolute maximum vs recommended ratings, electrical characteristics, typical application circuit, pinout.
-3. Intermediate — From idea to schematic: blocks, nets, power symbols, decoupling, reference designators, ERC.
-4. Intermediate — Footprints and the board: layers and stackups, copper weight, vias, solder mask and silkscreen.
-5. Intermediate — Placement and routing: placement first, trace width vs current (IPC-2152 as the reference, a simplified calculator), clearances, keeping loops small.
-6. Advanced — Power and ground: return paths, ground planes, decoupling placement, star vs plane grounding, split-plane pitfalls.
-7. Advanced — Signal integrity: rise time not frequency, when a trace is "long" (transmission lines), characteristic impedance, reflections and termination, crosstalk.
-8. Advanced — EMC: why boards radiate, loop area, return path discontinuities, filtering and shielding basics; what pre-compliance testing is.
-9. Professional — Manufacturing the board: DRC, design for manufacture and assembly, Gerbers/drill/BOM/pick-and-place files, panelisation, assembly (reflow), inspection (AOI/X-ray), test points; KiCad/Altium as examples.
+1. Beginner — Meet the parts (`fnd-pcb-1-parts`): resistors (colour codes and SMD codes), capacitors (ceramic, electrolytic), ICs and packages (THT vs SMD, SOIC/QFN/BGA), connectors.
+2. Beginner — Reading a datasheet (`fnd-pcb-2-datasheet`): absolute maximum vs recommended ratings, electrical characteristics, θJA and junction temperature, typical application circuit, pinout.
+3. Intermediate — From idea to schematic (`fnd-pcb-3-schematic`): blocks, nets, power symbols, decoupling, reference designators, ERC.
+4. Intermediate — Footprints and the board (`fnd-pcb-4-board`): layers and stackups, copper weight, vias, solder mask and silkscreen.
+5. Intermediate — Placement and routing (`fnd-pcb-5-routing`): placement first, trace width vs current (IPC-2152 as the reference, a simplified calculator), clearances, keeping loops small.
+6. Advanced — Power and ground (`fnd-pcb-6-power-ground`): return paths, ground planes, slots and splits, decoupling placement, star vs plane grounding.
+7. Advanced — Signal integrity (`fnd-pcb-7-signal-integrity`): rise time not frequency, when a trace is "long" (transmission lines), characteristic impedance, reflections and termination, crosstalk.
+8. Advanced — EMC: boards that don't shout (`fnd-pcb-8-emc`): why boards radiate, loop area, return path discontinuities, filtering and shielding basics; what pre-compliance testing is.
+9. Advanced — Heat: the board is the heat sink (`fnd-pcb-10-thermal`): TJ = TA + P × θJA, why a datasheet θJA holds only for its test board, copper area and thermal vias under an exposed pad, via-in-pad solder wicking.
+10. Professional — Manufacturing the board (`fnd-pcb-9-manufacturing`): DRC, design for manufacture and assembly, Gerbers/drill/BOM/pick-and-place files, panelisation, assembly (reflow), inspection (AOI/X-ray), test points; KiCad/Altium as examples.
 
 ## Module `embedded` — "Programming chips: firmware, MCUs and SoCs" (ids `fnd-emb-N-…`, widgets `emb-`)
-1. Beginner — Microcontrollers vs computers: an MCU's CPU, flash, RAM and peripherals on one chip; blink an LED as the first program.
-2. Beginner — Registers and memory-mapped I/O: peripherals as addresses; set/clear/toggle bits with masks; volatile.
-3. Intermediate — GPIO in depth: input/output modes, pull-ups, open-drain, reading a button, debouncing in software.
-4. Intermediate — Timers and PWM: prescalers, compare values, duty cycle, dimming an LED and driving a servo.
-5. Intermediate — Interrupts: ISRs, the vector table, priorities and nesting, latency, keeping ISRs short, shared data and races.
-6. Intermediate — Talking to other chips: UART framing, I²C addressing and ACK, SPI modes; reading a sensor.
-7. Advanced — DMA: moving data without the CPU, channels, circular buffers, double buffering, cache coherence caveat.
-8. Advanced — Boot and memory map: reset vector, startup code, linker script sections (.text/.data/.bss), flash vs RAM, bootloaders.
-9. Advanced — RTOS and power: tasks, scheduling, priorities, queues, priority inversion; sleep modes and wake-up sources; measuring current.
-10. Professional — SoCs: CPU clusters, GPU, NPU, DSP, memory controller, interconnect; running Linux; device trees and drivers; programming the SoC's GPU/NPU (link to the GPU module); real dev boards as examples.
+1. Beginner — Microcontrollers vs computers (`fnd-emb-1-mcu`): an MCU's CPU, flash, RAM and peripherals on one chip; blink an LED as the first program.
+2. Beginner — Registers and memory-mapped I/O (`fnd-emb-2-registers`): peripherals as addresses; set/clear/toggle bits with masks (in C); volatile.
+3. Intermediate — Firmware in C (`fnd-emb-11-c-firmware`): vendor headers as register structs on a mocked GPIO/RCC, multi-bit fields done safely (C++ code steps), the toolchain loop (arm-none-eabi-gcc, size, OpenOCD/pyOCD, gdb), will it fit, reading a HardFault.
+4. Intermediate — GPIO in depth (`fnd-emb-3-gpio`): input/output modes, pull-ups, open-drain, reading a button, debouncing in software.
+5. Intermediate — Timers and PWM (`fnd-emb-4-timers`): prescalers, compare values, duty cycle, dimming an LED and driving a servo.
+6. Intermediate — Interrupts (`fnd-emb-5-interrupts`): ISRs, the vector table, priorities and nesting, latency, keeping ISRs short, shared data and races.
+7. Intermediate — Talking to other chips (`fnd-emb-6-protocols`): UART framing, I²C addressing and ACK, SPI modes; reading a sensor.
+8. Advanced — Links between chips (`fnd-emb-12-links`): SerDes lanes, 8b/10b vs 128b/130b, PCIe link training and enumeration, USB enumeration and classes, Ethernet MAC vs PHY and magnetics, CAN arbitration.
+9. Advanced — DMA: moving data without the CPU (`fnd-emb-7-dma`): channels, circular buffers, double buffering, cache coherence caveat.
+10. Advanced — Boot and the memory map (`fnd-emb-8-boot`): reset vector, startup code, linker script sections (.text/.rodata/.data/.bss), flash vs RAM, bootloaders, the secure-boot chain of trust.
+11. Advanced — RTOS and power (`fnd-emb-9-rtos-power`): tasks, scheduling, priorities, queues, priority inversion; sleep modes and wake-up sources; measuring current.
+12. Professional — SoCs: many processors on one chip (`fnd-emb-10-soc`): CPU clusters, GPU, NPU, DSP, memory controller, interconnect; running Linux; device trees and drivers; real dev boards as examples.
+13. Professional — Drivers and accelerators on an SoC (`fnd-emb-13-drivers-accel`): /dev/i2c-1 and ioctl(I2C_SLAVE) from user space, an i2c_driver skeleton with of_match_table and probe(), NPU/GPU delegates with CPU fallback, unified vs managed memory (link to the GPU module).
 
 ## Module `products` — "Building real products" (ids `fnd-prod-N-…`, widgets `prod-`)
-1. Beginner — From idea to requirements: what the product must do, constraints (cost, size, power, battery life), turning wishes into measurable requirements.
-2. Beginner — Architecture and parts: block diagram, choosing an MCU/SoC, sensors and power, make vs buy (modules), the BOM cost.
-3. Intermediate — Prototyping: dev boards and breadboards, proving the riskiest part first, from prototype to a custom board (EVT/DVT/PVT as names).
-4. Intermediate — Firmware architecture: layers (HAL, drivers, application), state machines, configuration, logging; testability built in.
-5. Intermediate — Bring-up: first power-on checklist (current limit, rails, clocks, programming), smoke tests.
-6. Advanced — Debugging hardware: multimeter, oscilloscope (triggering, probing), logic analyser and protocol decode, debugger (SWD/JTAG, breakpoints), printf vs tracing; a systematic method.
-7. Advanced — Testing: unit tests on the host, hardware-in-the-loop, environmental and reliability tests, production test fixtures and yield.
-8. Advanced — Certification and safety: EMC (FCC/CE as examples), electrical safety, radio modules, batteries; why pre-certified modules save time.
-9. Professional — Shipping and living in the field: manufacturing at scale (DFM, yield, cost), secure boot and OTA updates, field failures and returns, iterating on hardware revisions.
+1. Beginner — From idea to requirements (`fnd-prod-1-requirements`): what the product must do, constraints (cost, size, power, battery life), turning wishes into measurable requirements.
+2. Beginner — Architecture and parts (`fnd-prod-2-architecture`): block diagram, choosing an MCU/SoC, sensors and power, make vs buy (modules), the BOM cost.
+3. Intermediate — Prototyping: prove the scary part first (`fnd-prod-3-prototyping`): dev boards and breadboards, proving the riskiest part first, from prototype to a custom board (EVT/DVT/PVT as names).
+4. Intermediate — Firmware architecture (`fnd-prod-4-firmware`): layers (HAL, drivers, application), state machines, configuration, logging; testability built in.
+5. Intermediate — Bring-up: the first power-on (`fnd-prod-5-bringup`): first power-on checklist (current limit, rails, clocks, programming), smoke tests.
+6. Advanced — Debugging hardware (`fnd-prod-6-debugging`): multimeter, oscilloscope (triggering, probing), logic analyser and protocol decode, debugger (SWD/JTAG, breakpoints), printf vs tracing; a systematic method.
+7. Advanced — Testing: from host tests to the production line (`fnd-prod-7-testing`): unit tests on the host, hardware-in-the-loop, environmental and reliability tests, production test fixtures and yield.
+8. Advanced — Radio and antennas (`fnd-prod-10-radio`): dB and dBm, a link budget and path loss (range widget), antenna keep-out and matching, BLE vs Wi-Fi vs LoRa power and range.
+9. Advanced — Certification and safety (`fnd-prod-8-certification`): EMC and radio rules (FCC/CE as examples), what a pre-certified module covers, battery and coin-cell safety, IP ratings, conformal coating and ingress tests for the enclosure, a path to the test lab.
+10. Professional — Shipping and living in the field (`fnd-prod-9-shipping`): manufacturing at scale (DFM, yield, cost), secure boot and OTA updates, field failures and returns, iterating on hardware revisions.
 
 ## Module `semis` — "Semiconductors: physics to fab" (ids `fnd-semi-N-…`, widgets `semi-`)
-1. Beginner — Conductors, insulators and semiconductors: electrons, bands and the band gap in plain words; why silicon.
-2. Beginner — Doping: n-type and p-type, electrons and holes, how a tiny amount changes conductivity.
-3. Intermediate — The PN junction: depletion region, forward vs reverse bias; the diode explained.
-4. Intermediate — The MOSFET: gate, channel, threshold voltage; on/off as a switch; NMOS vs PMOS → CMOS (links to the digital module).
-5. Intermediate — Scaling and Moore's law: smaller transistors, why speed/power improved, why it got hard (leakage, power density); FinFET and gate-all-around; node names as labels.
-6. Advanced — Making a wafer: sand → polysilicon → ingot → wafers; cleanrooms (ISO classes).
-7. Advanced — The fab process loop: oxidation/deposition, photolithography, etching, ion implantation, CMP, metal interconnect; repeated dozens of times (a process-flow simulator).
-8. Advanced — Lithography: resolution, wavelength (DUV 193 nm, EUV 13.5 nm), numerical aperture, multi-patterning; masks.
-9. Professional — Yield and cost: defects, die size vs yield (Poisson model), dies per wafer, binning; why big chips are expensive and chiplets help.
-10. Professional — Packaging and test: wafer sort, dicing, wire bond vs flip chip, advanced packaging (2.5D interposers, 3D stacking, HBM), final test and burn-in.
+1. Beginner — Conductors, insulators and semiconductors (`fnd-semi-1-bands`): electrons, bands and the band gap in plain words; why silicon.
+2. Beginner — Doping: n-type and p-type (`fnd-semi-2-doping`): electrons and holes, how a tiny amount changes conductivity.
+3. Intermediate — The PN junction (`fnd-semi-3-pn-junction`): depletion region, forward vs reverse bias; the diode explained.
+4. Intermediate — The MOSFET: a switch made of silicon (`fnd-semi-4-mosfet`): gate, channel, threshold voltage; on/off as a switch; NMOS vs PMOS → CMOS (links to the digital module).
+5. Intermediate — Scaling and Moore's law (`fnd-semi-5-scaling`): smaller transistors, why speed/power improved, why it got hard (leakage, power density); FinFET and gate-all-around; node names as labels; wide-band-gap and RF semiconductors (GaN, SiC, GaAs, InP).
+6. Advanced — Making a wafer (`fnd-semi-6-wafer`): sand → polysilicon → ingot → wafers; cleanrooms (ISO classes).
+7. Advanced — The fab process loop (`fnd-semi-7-process`): oxidation/deposition, photolithography, etching, ion implantation, CMP, metal interconnect; repeated dozens of times (a process-flow simulator).
+8. Advanced — Lithography: printing with light (`fnd-semi-8-lithography`): resolution, wavelength (DUV 193 nm, EUV 13.5 nm), numerical aperture, multi-patterning; masks.
+9. Advanced — Measuring and controlling the process (`fnd-semi-11-process-control`): metrology (CD-SEM, overlay), SPC control charts, defect inspection and wafer-map yield learning, OPC and mask inspection, CMP dummy fill and restricted design rules.
+10. Professional — Yield and cost (`fnd-semi-9-yield`): defects, die size vs yield (Poisson model), dies per wafer, binning; why big chips are expensive and chiplets help.
+11. Professional — Why chips wear out (`fnd-semi-12-reliability`): electromigration, TDDB, NBTI and hot carriers, ESD and latch-up (taps and guard rings), the bathtub curve, accelerated tests, FIT rates, AEC-Q100/JESD22 as examples.
+12. Professional — Packaging and test (`fnd-semi-10-package-test`): wafer sort, dicing, wire bond vs flip chip, advanced packaging (2.5D interposers, 3D stacking, HBM, hybrid bonding), chiplets/UCIe and co-packaged optics, final test and burn-in.
 
 ## Module `chipdesign` — "Designing chips: from RTL to tape-out" (ids `fnd-chip-N-…`, widgets `chip-`)
-1. Beginner — How chips are designed: the flow from spec to RTL to gates to layout to masks; who does what.
-2. Beginner — Hardware is not software: everything runs at once, wires and registers, clocks; describing hardware vs running instructions.
-3. Intermediate — Verilog basics: modules, ports, `assign` for combinational logic, a simulator that shows the waveforms (toy RTL sim).
-4. Intermediate — Sequential logic in Verilog: `always @(posedge clk)`, non-blocking assignment, a counter and a state machine.
-5. Intermediate — Testbenches and simulation: driving inputs, checking outputs, waveforms, self-checking tests.
-6. Advanced — Synthesis: from RTL to a gate netlist, standard cells, area/speed trade-offs; what isn't synthesisable.
-7. Advanced — Static timing analysis: paths, slack, setup/hold checks, fixing a failing path (pipelining, retiming).
-8. Advanced — Physical design: floorplan, placement, clock tree, routing; DRC and LVS; power (dynamic α·C·V²·f, leakage, clock gating).
-9. Professional — Verification at scale and DFT: coverage, constrained-random, formal (as concepts, UVM as an example), scan chains and BIST for manufacturing test.
-10. Professional — FPGA vs ASIC and tape-out: prototyping on FPGAs, mask costs and risk, open-source flows (Yosys, OpenROAD, Sky130 as examples), what "tape-out" means.
+1. Beginner — How chips are designed (`fnd-chip-1-design-flow`): the flow from spec to RTL to gates to layout to masks; who does what (fabless, foundry, IDM, OSAT; PDKs and MPW shuttles).
+2. Beginner — Hardware is not software (`fnd-chip-2-hardware-not-software`): everything runs at once, wires and registers, clocks; describing hardware vs running instructions.
+3. Intermediate — Verilog basics: modules, ports and assign (`fnd-chip-3-verilog-basics`): modules, ports, `assign` for combinational logic, a simulator that shows the waveforms (toy RTL sim).
+4. Intermediate — Sequential logic: always @(posedge clk) (`fnd-chip-4-sequential-verilog`): non-blocking assignment, a register, a counter and a state machine.
+5. Intermediate — Testbenches and simulation (`fnd-chip-5-testbenches`): driving inputs, checking outputs, waveforms, self-checking tests.
+6. Advanced — Synthesis: from RTL to gates (`fnd-chip-6-synthesis`): from RTL to a gate netlist, standard cells, area/speed trade-offs; what isn't synthesisable.
+7. Advanced — Static timing analysis (`fnd-chip-7-timing`): paths, slack, setup/hold checks, fixing a failing path (pipelining, retiming).
+8. Advanced — Physical design: floorplan to routing (`fnd-chip-8-physical-design`): floorplan, placement, clock tree, routing; DRC and LVS; power (dynamic α·C·V²·f, leakage, clock gating).
+9. Advanced — Low power and sign-off: domains, corners and variation (`fnd-chip-11-low-power-signoff`): power gating, isolation, level shifters, multi-Vt, DVFS, UPF; PVT corners, OCV derates, IR drop and crosstalk.
+10. Professional — Verification at scale and design for test (`fnd-chip-9-verification-dft`): coverage, constrained-random, formal (as concepts, UVM as an example), scan chains and BIST for manufacturing test.
+11. Professional — FPGA vs ASIC and tape-out (`fnd-chip-10-fpga-asic-tapeout`): prototyping on FPGAs, the cost crossover, mask costs and respin risk, open-source flows (Yosys, OpenROAD, Sky130 as examples), what "tape-out" means.
+12. Professional — FPGA hands-on: from RTL to a board (`fnd-chip-12-fpga-hands-on`): LUTs, flip-flops, block RAM and DSP blocks, a two-flop synchroniser in the toy Verilog sim, the Yosys/nextpnr flow, pin and timing constraints, reading a timing report.
 
 ## Implementation notes
 

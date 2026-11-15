@@ -7,6 +7,7 @@ import { Multimeter, checkMultimeter } from "./Multimeter";
 import { Network, checkNetwork } from "./Network";
 import { Ohm, checkOhm } from "./Ohm";
 import { Power, checkPower } from "./Power";
+import { Scope, checkScope } from "./Scope";
 import { Source, checkSource } from "./Source";
 import { Nets, Symbols, checkNets, checkSymbols } from "./Symbols";
 import { Water, checkWater } from "./Water";
@@ -33,4 +34,5 @@ export const CIRC_WIDGETS: WidgetRegistry = {
   "circ-multimeter": { Component: Multimeter, check: checkMultimeter },
   "circ-source": { Component: Source, check: checkSource },
   "circ-fuse": { Component: Fuse, check: checkFuse },
+  "circ-scope": { Component: Scope, check: checkScope },
 };
