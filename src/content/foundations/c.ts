@@ -54,7 +54,7 @@ export const cModule: Module = {
           kind: "question",
           title: "Pick the right type",
           body: "You need to store a person's age (a whole number like 34). Which type fits best?",
-          question: { type: "choice", options: ["`char`, because it's small", "`int`", "`double`, to be safe", "`pointer`"], answer: 1 },
+          question: { type: "choice", options: ["`char`, because it's small", "`double`, to be safe", "`pointer`", "`int`"], answer: 3 },
           explanation: "`int` is the natural choice for a whole number. A `char` only reaches 127 (or 255 unsigned), which is too tight to be safe for arbitrary counts; `double` wastes space and can't represent every value exactly; a pointer holds an address, not a value.",
         },
         {
@@ -163,8 +163,8 @@ export const cModule: Module = {
           body: "`int *p = &x;` and `x` is `3` at address `0x1000`. Which statement is true?",
           question: {
             type: "choice",
-            options: ["`p` is 3 and `*p` is `0x1000`", "`p` is `0x1000` and `*p` is 3", "`p` and `*p` are both 3", "`p` and `*p` are both `0x1000`"],
-            answer: 1,
+            options: ["`p` is `0x1000` and `*p` is 3", "`p` is 3 and `*p` is `0x1000`", "`p` and `*p` are both 3", "`p` and `*p` are both `0x1000`"],
+            answer: 0,
           },
           explanation: "`p` holds the **address** `0x1000`; `*p` follows it to the **value** `3`. Mixing these up (using the address as if it were the value) is one of the most common pointer bugs.",
         },
@@ -239,7 +239,7 @@ export const cModule: Module = {
           kind: "question",
           title: "Scaling by element size",
           body: "`char letters[6]` starts at `0x3000`. What is `&letters[3]`?",
-          question: { type: "choice", options: ["`0x300C` (3 × 4)", "`0x3003` (3 × 1)", "`0x3000`", "`0x3006`"], answer: 1 },
+          question: { type: "choice", options: ["`0x300C` (3 × 4)", "`0x3000`", "`0x3006`", "`0x3003` (3 × 1)"], answer: 3 },
           explanation: "A `char` is 1 byte, so `letters + 3` moves just 3 bytes: `0x3000 + 3` = **`0x3003`**. The same index gives a different address depending on the element size.",
         },
         {
@@ -262,8 +262,8 @@ export const cModule: Module = {
           body: "You loop over `int a[5]` with `for (int i = 0; i < 5; i++)`. (Read it as: start `i` at 0; keep going while `i < 5`; add 1 to `i` after each pass.) Why is the test `i < 5` and not `i <= 5`?",
           question: {
             type: "choice",
-            options: ["Style; either works", "`i <= 5` would read `a[5]`, one element past the end", "C counts arrays from 1", "`<=` is slower than `<`"],
-            answer: 1,
+            options: ["It's only style; either test works fine", "C counts array positions from 1, not 0", "`i <= 5` would read `a[5]`, past the end", "`<=` runs slower than `<` on most chips"],
+            answer: 2,
           },
           explanation: "Valid indexes are 0 to 4. `i <= 5` would let `i` reach 5 and touch `a[5]`, which is out of bounds. Off-by-one errors like this are classic C bugs; `i < length` keeps you in range.",
         },
@@ -327,13 +327,8 @@ export const cModule: Module = {
           body: "With no `'\\0'`, `strlen` walks off the end of the 5-byte array. What is the real problem?",
           question: {
             type: "choice",
-            options: [
-              "It always returns 0",
-              "It returns the array's size, 5",
-              "It reads memory past the array until it chances on a 0 byte, giving a wrong, unpredictable length",
-              "The compiler refuses to build it",
-            ],
-            answer: 2,
+            options: ["It reads on past the array until some 0 byte", "It stops at the array's end and returns 5", "It returns 0 because the text has no end", "The compiler refuses to build the program"],
+            answer: 0,
           },
           explanation: "Without a terminator `strlen` can't know where the text ends. It reads past the array into unrelated memory, returning a wrong length that depends on whatever bytes happen to be there, and it may crash. Nothing warns you.",
         },
@@ -398,8 +393,8 @@ export const cModule: Module = {
           body: "In the trace, `square` has a local `int r`. After `square` returns and you're back in `main`, what has happened to `r`?",
           question: {
             type: "choice",
-            options: ["It's still there, `main` can read it", "Its frame was popped, so `r` no longer exists", "It moved to the heap", "It became a global variable"],
-            answer: 1,
+            options: ["Its frame was popped, so `r` is gone", "It's still there, and `main` can read it", "It moved to the heap", "It became a global variable"],
+            answer: 0,
           },
           explanation: "`r` lived in `square`'s stack frame. When `square` returned, the frame was popped and `r`'s memory was reclaimed. A function can only hand back a **value** (here, 25); it can't keep its locals alive.",
         },
@@ -414,13 +409,8 @@ export const cModule: Module = {
           body: "`bad()` returns `&r`, the address of its local `int r`. The caller stores it in `p` and later does `*p`. Why is that a bug?",
           question: {
             type: "choice",
-            options: [
-              "`&r` is NULL",
-              "`r`'s frame is gone after `bad` returns, so `p` points at memory that no longer belongs to `r`",
-              "You can never return a pointer in C",
-              "`*p` is always 0",
-            ],
-            answer: 1,
+            options: ["C never lets a function return a pointer", "`&r` is NULL, so `*p` crashes at once", "`r`'s frame is gone, so `p` points at dead memory", "`*p` always reads back as 0"],
+            answer: 2,
           },
           explanation: "`r` lives in `bad`'s frame, which is popped on return. `p` holds an address into dead stack space. Reading `*p` is undefined: the value may look right by luck, then break when another call reuses those bytes. To return memory that outlives the call, use the heap.",
         },
@@ -449,7 +439,7 @@ export const cModule: Module = {
           body: "A function calls `malloc` and returns without ever calling `free`, and no pointer to the block is kept. The program keeps running. What is this?",
           question: {
             type: "choice",
-            options: ["A segmentation fault", "A memory leak: the block stays allocated but can never be reached or freed", "A dangling pointer", "Nothing; the heap clears itself each line"],
+            options: ["A segmentation fault", "A memory leak: allocated, but unreachable", "A dangling pointer", "Nothing, the heap frees it when the function ends"],
             answer: 1,
           },
           explanation: "That's a **memory leak**. The heap block is still marked in use, but no pointer reaches it, so it can never be freed. Leak enough and a long-running program slowly eats all available memory.",
@@ -460,13 +450,8 @@ export const cModule: Module = {
           body: "In the trace, after `free(a)` the variable `a` still holds `0x5000`. What's wrong with doing `a[0] = 99` on the next line?",
           question: {
             type: "choice",
-            options: [
-              "Nothing, the block is still yours",
-              "`a` is NULL now",
-              "The block was returned to the heap, so writing through `a` is use-after-free: undefined behaviour",
-              "It only fails if the block was the last one allocated",
-            ],
-            answer: 2,
+            options: ["Nothing, the block is still yours", "`a` was set to NULL by `free`", "It only fails if it was the last block allocated", "Use-after-free: the block went back to the heap"],
+            answer: 3,
           },
           explanation: "`free` gives the block back to the heap; `a` becomes a **dangling pointer**. Writing through it is **use-after-free**: the heap may have handed those bytes to something else. A common habit is to set `a = NULL` right after `free` so a later misuse fails loudly instead of silently corrupting memory.",
         },
@@ -532,15 +517,10 @@ export const cModule: Module = {
           body: "Which change stops the overflow regardless of how long the input is?",
           question: {
             type: "choice",
-            options: [
-              "Make `name` a little bigger, say `char name[16]`",
-              "Use a length-limited copy that never writes more than `name` can hold (e.g. `snprintf(name, sizeof(name), \"%s\", input)`, which writes at most `sizeof(name)` bytes into `name`)",
-              "Put `is_admin` before `name` instead",
-              "Set `is_admin = 0` again after the copy",
-            ],
-            answer: 1,
+            options: ["Make `name` a little bigger, say `char name[16]`", "Put `is_admin` before `name` so it is out of the way", "Copy with a limit: `snprintf(name, sizeof(name), \"%s\", input)`", "Set `is_admin = 0` again right after the copy finishes"],
+            answer: 2,
           },
-          explanation: "Only a **bounded copy** is a real fix: it refuses to write more than the buffer's size, so any input is truncated instead of spilling. A bigger buffer just needs a longer input to overflow; reordering variables moves the damage; resetting the flag ignores that the return address and other data are also at risk.",
+          explanation: "Only a **bounded copy** is a real fix. `snprintf` with `sizeof(name)` writes at most `sizeof(name)` bytes into `name`, so any input is truncated instead of spilling. A bigger buffer just needs a longer input to overflow; reordering variables moves the damage; resetting the flag ignores that the return address and other data are also at risk.",
         },
         {
           kind: "explain",
@@ -553,13 +533,8 @@ export const cModule: Module = {
           body: "A program reads an uninitialised `int` and it happens to print `0` every time you test it. Why is relying on that risky?",
           question: {
             type: "choice",
-            options: [
-              "Uninitialised ints are always 0, so it's fine",
-              "It's undefined behaviour: the value isn't guaranteed, and may change with a different compiler, build or run",
-              "It will definitely crash on the next run",
-              "Printing always resets memory to 0",
-            ],
-            answer: 1,
+            options: ["It's undefined behaviour; the value isn't guaranteed", "Uninitialised ints are always 0, so it's fine", "It will definitely crash on the next run", "Printing always resets memory to 0"],
+            answer: 0,
           },
           explanation: "An uninitialised variable holds whatever bytes were already there. Getting `0` is luck, not a rule. Because it's **undefined behaviour**, a new compiler, optimisation flag or unrelated code change can make it something else, turning a hidden bug into a sudden failure. Always initialise before you read.",
         },
@@ -596,12 +571,7 @@ export const cModule: Module = {
           body: "Lines starting with `#`, like `#include <stdio.h>` and `#define TIMES 3`, are handled first, before any real compiling. What does the **preprocessor** do with them?",
           question: {
             type: "choice",
-            options: [
-              "Runs the program",
-              "Pastes in the included files and replaces each macro with its text, producing more C",
-              "Turns the code into machine instructions",
-              "Checks for spelling mistakes in variable names",
-            ],
+            options: ["It runs the program and shows its output", "It pastes in included files and expands macros", "It turns the code into machine instructions", "It checks variable names for spelling mistakes"],
             answer: 1,
           },
           explanation: "The preprocessor is text substitution: it pastes the contents of headers like `stdio.h` where you `#include` them, replaces macros (`TIMES` → `3`), and strips comments. Its output is still C, just expanded, which the compiler then handles.",
