@@ -55,8 +55,8 @@ export const aiLessonsA: ConceptLesson[] = [
         body: "Which of these will most likely use the most tokens?",
         question: {
           type: "choice",
-          options: ["The word “cat”", "The word “unbelievable”", "A single space"],
-          answer: 1,
+          options: ["The common word “the”", "One space between words", "The word “unbelievable”"],
+          answer: 2,
         },
         explanation: "Short, common words are about one token. A longer word is cut into several pieces, so “unbelievable” costs more. This is why you budget by tokens, not by words.",
       },
@@ -81,8 +81,8 @@ export const aiLessonsA: ConceptLesson[] = [
         body: "A bot must read out the library's opening hours the same way every time. Which temperature suits it?",
         question: {
           type: "choice",
-          options: ["Low (near 0): steady, repeatable answers", "High: so the wording stays fresh and surprising"],
-          answer: 0,
+          options: ["High: so the wording stays fresh and surprising", "Low (near 0): steady, repeatable answers"],
+          answer: 1,
         },
         explanation: "For facts you want the most likely, steadiest wording, so a **low** temperature. High temperature is for when variety is the point, such as naming a pet or writing a poem. Even at 0, a very small difference in the prompt can still change the answer.",
       },
@@ -101,9 +101,9 @@ export const aiLessonsA: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "“What is our school's late fee per day?” when the model has never seen the school's rules",
+            "“What is our school's late fee per day?”",
             "“What is two plus two?”",
-            "“Summarise this paragraph”, with the paragraph pasted into the prompt",
+            "“Summarise this paragraph”, which is pasted in",
           ],
           answer: 0,
         },
@@ -145,7 +145,7 @@ export const aiLessonsA: ConceptLesson[] = [
         title: "Who is nearest?",
         body: "Make **flat tyre** the query (pick it from the list or tap its dot). Which phrase is its nearest neighbour?",
         widget: { type: "ai-space", props: { k: 1, fixedK: true }, live: true },
-        question: { type: "choice", options: ["puncture patch", "inner tube", "brake pads", "late fee"], answer: 0 },
+        question: { type: "choice", options: ["puncture patch", "borrow a novel", "inner tube", "damaged book"], answer: 0 },
         explanation: "**Puncture patch** points almost the same way as flat tyre. Inner tube is close too, but it sits a few degrees further round. Notice what is *not* needed: the two phrases share no words, only a topic.",
       },
       {
@@ -192,7 +192,7 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         kind: "question",
         title: "Longer is not closer",
         body: "Two phrases point in **exactly the same direction**, but one arrow is three times as long as the other. What does cosine similarity say?",
-        question: { type: "choice", options: ["1.0: same direction", "0.33: one third as similar", "3.0: three times as similar", "0: they differ in length"], answer: 0 },
+        question: { type: "choice", options: ["0.33: one third as similar", "3.0: three times as similar", "0: they differ in length", "1.0: same direction"], answer: 3 },
         explanation: "Cosine divides the lengths away, so scaling an arrow never changes it: the answer is **1.0**. That is the point. A short phrase and a long paragraph about the same topic should still match.",
       },
       {
@@ -316,12 +316,12 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         question: {
           type: "choice",
           options: [
-            "Long links there cross the map in a few hops, so you arrive in the right neighbourhood before the careful search",
             "The top layer stores the most accurate version of each vector",
             "It lets the index skip the distance calculation altogether",
             "Upper layers are searched in parallel on different machines",
+            "Long links there cross the map in a few hops, landing near the answer",
           ],
-          answer: 0,
+          answer: 3,
         },
         explanation: "Each layer is a coarser map of the one below. Starting on the coarse map means the expensive, detailed search begins **near** the answer instead of at a random point. Only the base layer is searched thoroughly, which is where *ef* applies.",
       },
@@ -433,12 +433,12 @@ cosine(a, b) = (a · b) / (|a| × |b|)
         question: {
           type: "choice",
           options: [
-            "Keep the exact scan in Postgres: 14 ms is well inside the budget, and 5 queries a second use under a tenth of one core",
             "Deploy a dedicated vector database, because 150,000 is too many to scan",
+            "Keep the exact scan in Postgres: 14 ms is well inside the budget",
             "Switch to a cluster index with nprobe = 1 to make it as fast as possible",
             "Cache every possible question in advance",
           ],
-          answer: 0,
+          answer: 1,
         },
         explanation: "Measure first. 14 ms × 5 per second is about 7% of a core, and recall stays at 100%. Move to an ANN index when the numbers say so: more data, tighter latency, or more traffic than one machine can scan.",
       },

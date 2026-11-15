@@ -75,12 +75,12 @@ export const aiLessonsC: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "The first words appear much sooner; the total time to finish is the same",
             "The whole answer finishes about twice as fast",
-            "The model uses fewer tokens",
-            "The GPU does less work",
+            "The model writes the answer using fewer tokens",
+            "The GPU does less work for the same answer",
+            "First words appear sooner; total time stays the same",
           ],
-          answer: 0,
+          answer: 3,
         },
         explanation: "Streaming changes what the user **sees**, not what the GPU **does**. With a 300-token answer, the first word arrives after prefill and one decode step instead of after all 300. People forgive a long answer they can already start reading, and they can stop it early.",
       },
@@ -173,12 +173,12 @@ parameters:
         question: {
           type: "choice",
           options: [
-            "The harness, your code, after validating the request against the schema and your rules",
             "The model, directly, because it wrote the request",
             "The model provider’s servers",
             "The payment system, which reads the model’s text",
+            "The harness, your code, after checking the request",
           ],
-          answer: 0,
+          answer: 3,
         },
         explanation: "The model only ever **writes text** that looks like a request. Whether a request becomes an action is decided by ordinary code you control. That is the best news in the whole design: every safeguard you would put in front of any other API (validation, permissions, limits, approvals, logs) works here too.",
       },
@@ -197,12 +197,12 @@ parameters:
         question: {
           type: "choice",
           options: [
-            "Send an idempotency key with the refund, so the payment system recognises a repeat and returns the first result",
-            "Never retry any tool call",
-            "Ask the model to be more careful",
+            "Never retry any tool call, whatever the error",
+            "Send an idempotency key, so repeats are recognised",
+            "Tell the model to be more careful with refunds",
             "Use a longer timeout so the retry never happens",
           ],
-          answer: 0,
+          answer: 1,
         },
         explanation: "A timeout means “I don’t know whether it worked”, which is different from “it failed”. A unique key per intended action lets the server say “I already did that one”. Reads can be retried freely; **writes need a key** (or a check-then-act design) before any retry logic exists.",
       },
