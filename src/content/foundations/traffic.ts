@@ -73,13 +73,7 @@ export const trafficModule: Module = {
           body: "A dashboard shows a server averaging **95% busy**. Which statement is right?",
           question: {
             type: "choice",
-            options: [
-              "That's efficient: only 5% is wasted",
-              "Latency is extremely sensitive: small traffic wobbles will cause big delays",
-              "It can take 5% more traffic comfortably",
-              "Nothing can be said without knowing the language it's written in",
-            ],
-            answer: 1,
+            options: ["That's efficient: only 5% is wasted", "It can take 5% more traffic comfortably", "It's fine: below 100% nothing ever queues", "Small traffic wobbles will cause big delays"], answer: 3,
           },
           explanation: "At 95% the average request takes about 20× its work time in total (19× of it just waiting), and any extra load drives that toward infinity. The mean hides bursts, too. “Efficient” in the sense of high utilisation and “healthy” are different things.",
         },
@@ -129,13 +123,7 @@ export const trafficModule: Module = {
           body: "Which of these are good reasons to rate-limit callers? Pick all that apply.",
           question: {
             type: "choice",
-            options: [
-              "One customer's runaway script shouldn't starve everyone else",
-              "Slowing down password-guessing attacks",
-              "Making a single user's requests faster",
-              "Keeping the cost of a paid backend predictable",
-            ],
-            answer: [0, 1, 3],
+            options: ["A runaway script shouldn't starve other users", "Slowing down password-guessing attacks", "Making a single user's requests faster", "Keeping the cost of a paid backend predictable"], answer: [0, 1, 3],
           },
           explanation: "A limit protects **fairness** (nobody hogs shared capacity), **security** (guessing and scraping need volume) and **cost**. It doesn't make anybody's own requests faster; if anything it makes the heaviest user slower.",
         },
@@ -228,13 +216,7 @@ export const trafficModule: Module = {
           body: "A limit of **1,000 requests per hour per user**, with a million active users. In the worst case, what does a sliding **log** have to remember?",
           question: {
             type: "choice",
-            options: [
-              "One number per user: 1 million numbers",
-              "Up to 1,000 timestamps per user: up to a billion timestamps",
-              "Nothing: it recomputes from the request logs",
-              "One number per window per user",
-            ],
-            answer: 1,
+            options: ["Up to 1,000 timestamps per user (a billion in all)", "One number per user: 1 million numbers", "Nothing: it recomputes from the request logs", "One number per window per user"], answer: 0,
           },
           explanation: "Exactness has a memory cost: every allowed request in the window is a stored timestamp. That's fine for a few thousand keys with small limits, but heavy at scale. Hence the next trick.",
         },
@@ -262,8 +244,7 @@ export const trafficModule: Module = {
           body: "You rate-limit millions of API keys and want to avoid the boundary burst, with as little memory per key as possible. Which fits best?",
           question: {
             type: "choice",
-            options: ["Fixed window: one counter, simplest", "Sliding window log: exact", "Sliding window counter: two counters, nearly exact", "No limit: let the backend cope"],
-            answer: 2,
+            options: ["Fixed window: one counter, simplest", "Sliding window log: exact timestamps", "Sliding window counter: nearly exact", "No limit: let the backend cope"], answer: 2,
           },
           explanation: "The sliding counter trades a small approximation for a tiny, constant memory footprint. Pure fixed windows are fine when 2× bursts are harmless; the exact log is right when the count must be precise and the keys are few (say, login attempts per user).",
         },
@@ -449,13 +430,7 @@ export const trafficModule: Module = {
           body: "The shared counter store becomes unreachable. What should your servers do about rate limiting?\n\nTwo terms: to **fail open** is to let everything through when the safety check breaks (like a door that unlocks in a power cut); to **fail closed** is to refuse everything (a door that locks).",
           question: {
             type: "choice",
-            options: [
-              "Always reject every request, to be safe",
-              "Always allow every request, so users are not affected",
-              "It depends on what the limit protects: for capacity, usually allow (fail open); for security limits like password guesses, usually refuse (fail closed)",
-              "Crash, and let the operators sort it out",
-            ],
-            answer: 2,
+            options: ["Always reject everything, to stay safe until it returns", "Always allow every request, so users are not affected", "It depends: open for capacity, closed for security limits", "Stop the servers until the counter store is back"], answer: 2,
           },
           explanation: "A limiter shouldn't turn into a **single point of failure** (one part whose breakdown stops everything) for the whole site, so for fairness and capacity limits **failing open** is common. But for limits that guard against abuse (login attempts, text-message sending that costs money), letting everything through is the dangerous direction. Decide on purpose, per limit.",
         },
@@ -534,13 +509,7 @@ export const trafficModule: Module = {
           body: "Which problem does adding a queue actually **solve**?",
           question: {
             type: "choice",
-            options: [
-              "Work arriving faster than the consumer, all day long",
-              "Short bursts above the consumer's speed, when the average rate is fine",
-              "A consumer that crashes whenever it gets work",
-              "A network that drops packets",
-            ],
-            answer: 1,
+            options: ["Work arriving faster than the consumer, all day long", "Short bursts above the consumer's speed, if the average is fine", "A consumer that crashes whenever it gets work", "A network that drops packets"], answer: 1,
           },
           explanation: "Queues smooth **variation**. They do nothing about a mismatch in the *average*: for that you need more consumers, less work, or pushback on producers (the next lesson).",
         },
@@ -550,8 +519,7 @@ export const trafficModule: Module = {
           body: "A queue has been growing steadily for an hour. What's the sensible **first** reaction?",
           question: {
             type: "choice",
-            options: ["Make the queue bigger", "Add consumers, or reduce what's arriving", "Add a second queue in front of the first", "Restart the broker"],
-            answer: 1,
+            options: ["Add consumers, or reduce what's arriving", "Make the queue bigger", "Add a second queue in front of the first", "Restart the broker"], answer: 0,
           },
           explanation: "A bigger queue only delays the bad news. The imbalance is between arrival rate and processing rate, so fix *that* (scale out the consumers, trim the work, push back on the producers) and then worry about the buffer.",
         },
@@ -602,8 +570,7 @@ export const trafficModule: Module = {
           body: "Of the three bounded policies, which one tells the **producer immediately** and explicitly that its work was not accepted?",
           question: {
             type: "choice",
-            options: ["Block the producer", "Refuse new work (reject it)", "Drop the oldest item", "None of them"],
-            answer: 1,
+            options: ["Block the producer until space opens", "Drop the oldest item in the queue", "All three tell it at the same time", "Refuse new work (reject it)"], answer: 3,
           },
           explanation: "A **rejection** is an explicit answer (think HTTP 429 or 503) that the producer can react to: back off, retry later, or tell the user. Blocking makes the producer *wait* without an answer. Dropping the oldest throws away something the producer already believed was safely queued, often silently.",
         },
@@ -659,13 +626,7 @@ export const trafficModule: Module = {
           body: "Why is an **unbounded** queue risky in production?",
           question: {
             type: "choice",
-            options: [
-              "It's slower than a bounded one",
-              "It hides overload until memory runs out or every wait is too long to be useful",
-              "Messages arrive out of order",
-              "It can only be used from one thread",
-            ],
-            answer: 1,
+            options: ["It is slower than a bounded queue", "It hides overload until memory runs out", "Messages can arrive out of order", "It can only be used from one thread"], answer: 1,
           },
           explanation: "Unbounded queues fail **late and badly**: first latency creeps up unnoticed, then memory fills, then the process falls over, taking the queue's contents with it. A limit makes the failure early, visible, and small. Rule of thumb: **bound everything** (queues, pools, buffers).",
         },
@@ -716,13 +677,7 @@ export const trafficModule: Module = {
           body: "Under first-come, first-served, almost nothing useful is delivered, even though the server is working flat out. Why?",
           question: {
             type: "choice",
-            options: [
-              "The server is too slow at each individual request",
-              "By the time it reaches a request, its caller has already given up, so the finished work is wasted",
-              "First-come, first-served is unfair to bots",
-              "The queue lost the requests",
-            ],
-            answer: 1,
+            options: ["The server is too slow at each individual request", "The queue silently dropped the requests", "Callers have already given up by then, so the work is wasted", "Requests are processed twice, wasting capacity"], answer: 2,
           },
           explanation: "With a long queue every request waits too long. The server spends its whole capacity on answers whose recipients have gone: all effort, no **goodput** (useful work). This is why overloaded systems often *collapse* instead of merely slowing down, and why you'd rather refuse a request at once than serve it too late.",
         },
@@ -777,13 +732,7 @@ export const trafficModule: Module = {
           body: "A load balancer starts answering **503 with `Retry-After: 5`** to excess requests. What should well-behaved clients do?",
           question: {
             type: "choice",
-            options: [
-              "Retry immediately, in case it was a glitch",
-              "Wait at least 5 seconds (with jitter), and use their retry budget",
-              "Open more parallel connections",
-              "Give up permanently",
-            ],
-            answer: 1,
+            options: ["Wait at least 5 seconds, with some jitter", "Retry immediately, in case it was a glitch", "Open more parallel connections", "Give up on the service for good"], answer: 0,
           },
           explanation: "Shedding only works if clients cooperate: obey `Retry-After`, back off, and spread retries with jitter, exactly as in the retry lessons. Clients that retry instantly turn load shedding into a self-inflicted denial of service.",
         },
@@ -868,16 +817,10 @@ export const trafficModule: Module = {
         {
           kind: "question",
           title: "Straight to the DLQ",
-          body: "Which failures should go **straight to the dead-letter queue**, without being retried? Pick all that apply.",
+          body: "Which failures should go **straight to the dead-letter queue**, without being retried? (JSON is text shaped like `{\"name\": \"Ana\"}`.) Pick all that apply.",
           question: {
             type: "choice",
-            options: [
-              "The message body isn't valid JSON (text shaped like {\"name\": \"Ana\"}, and this one is garbled)",
-              "The database timed out",
-              "The message refers to a product id that doesn't exist",
-              "The downstream service answered 503",
-            ],
-            answer: [0, 2],
+            options: ["The message body is garbled, not valid JSON", "The database timed out while saving the order", "The message names a product id that doesn't exist", "The downstream service answered 503, try later"], answer: [0, 2],
           },
           explanation: "A broken payload and a reference to something that doesn't exist are **permanent**: no amount of retrying changes them. A timeout or a 503 is plausibly **transient**: retry with backoff, and dead-letter only if the failures persist.",
         },
@@ -969,13 +912,7 @@ export const trafficModule: Module = {
           body: "The consumer keeps its list of processed message ids **in memory**, and crashes. What's the problem?",
           question: {
             type: "choice",
-            options: [
-              "None: it can rebuild the list from the broker",
-              "The list is gone after the restart, so repeats look new again",
-              "The list is too slow to read",
-              "Brokers refuse consumers that remember ids",
-            ],
-            answer: 1,
+            options: ["None: it can rebuild the list from the broker", "The list is lost on restart, so repeats look new again", "The list is too slow to read", "Brokers refuse consumers that remember ids"], answer: 1,
           },
           explanation: "The very crash that causes duplicates also erases an in-memory list. The record of processed ids must be **durable** (a database), ideally written **in the same transaction** (a group of changes saved all-or-nothing) as the effect itself, so “did the work” and “remembers doing it” are always true or false together.",
         },
@@ -985,13 +922,7 @@ export const trafficModule: Module = {
           body: "At-least-once redelivery can also bring **old** messages back after newer ones. A consumer applies “set customer 12's address to X” from an old message **after** a newer one. What helps?",
           question: {
             type: "choice",
-            options: [
-              "Nothing can be done about ordering",
-              "Put a version or sequence number in each message and ignore anything older than what is already applied",
-              "Retry the old message faster",
-              "Delete the newer message",
-            ],
-            answer: 1,
+            options: ["Process messages faster so none arrive late", "Retry the old message after the newer one", "Delete the newer message so they match", "Add a version number and ignore older messages"], answer: 3,
           },
           explanation: "Idempotency handles *repeats*; **versions** handle *stale* messages. A consumer that records the latest sequence number it applied can discard anything older, so a late redelivery can't undo newer data.",
         },
