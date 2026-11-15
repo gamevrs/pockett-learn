@@ -135,10 +135,10 @@ export const bitsModule: Module = {
           body: "A byte holds **11111111**, which is 255, the biggest number 8 bits can make. What happens when you add 1?",
           question: {
             type: "choice",
-            options: ["It becomes 256", "It wraps back to 0: the last carry has nowhere to go", "It stays stuck at 255", "The computer shows an error"],
-            answer: 1,
+            options: ["It becomes 256", "It stays stuck at 255", "The computer shows an error", "It wraps back to 0"],
+            answer: 3,
           },
-          explanation: "Every bit rolls over to 0 and the final carry falls off the end, leaving **00000000**. This is called **overflow**. It's a real source of bugs: a score or counter stored in one byte jumps from 255 straight back to 0.",
+          explanation: "Every bit rolls over to 0 and the final carry has nowhere to go: it falls off the end, leaving **00000000**. This is called **overflow**. It's a real source of bugs: a score or counter stored in one byte jumps from 255 straight back to 0.",
         },
         {
           kind: "question",
@@ -239,7 +239,7 @@ export const bitsModule: Module = {
             type: "choice",
             options: [
               "The factory filled it with hidden files",
-              "Nowhere: it's the same bytes divided by a bigger unit",
+              "Nowhere: same bytes, bigger unit",
               "The drive is faulty",
               "The operating system keeps 7% for itself",
             ],

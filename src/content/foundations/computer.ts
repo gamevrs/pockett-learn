@@ -44,8 +44,8 @@ export const computerModule: Module = {
           body: "You're halfway through an essay and haven't saved yet. The power cuts out. Where was the unsaved part of your essay, the part that's now lost?",
           question: {
             type: "choice",
-            options: ["In memory (RAM)", "In storage (the SSD, a drive with no moving parts)", "Inside the CPU", "On the screen"],
-            answer: 0,
+            options: ["In storage (the SSD, a drive with no moving parts)", "Inside the CPU", "In memory (RAM)", "On the screen"],
+            answer: 2,
           },
           explanation: "While you work, a document lives in **memory (RAM)**, which is fast but forgets everything without power. Saving copies it to **storage**, which keeps it. The screen only *shows* a picture of your work; the actual bytes were in RAM.",
         },
@@ -145,14 +145,14 @@ export const computerModule: Module = {
           question: {
             type: "choice",
             options: [
-              "Memory is fast but forgets without power and is smaller; storage keeps data and is bigger, but much slower",
               "Storage is only for photos and music; memory is for everything else",
+              "Memory is fast but forgets; storage is slower but keeps data",
               "Memory is just a backup copy of storage, in case it breaks",
               "They're the same thing; storage is simply the older name for memory",
             ],
-            answer: 0,
+            answer: 1,
           },
-          explanation: "Each one is good at what the other is bad at. Memory is quick enough to keep up with the CPU but forgets everything at power-off; storage remembers for years but is slow. So programs and files **live** in storage and get **copied** into memory while in use.",
+          explanation: "Each one is good at what the other is bad at. Memory is smaller but quick enough to keep up with the CPU but forgets everything at power-off; storage is bigger and remembers for years, but is slow. So programs and files **live** in storage and get **copied** into memory while in use.",
         },
         {
           kind: "recap",
@@ -194,7 +194,7 @@ export const computerModule: Module = {
           title: "Where vs what",
           body: "Look at boxes 4 and 9 below. What is *the value at address 9*?",
           widget: { type: "computer-memory", props: { mode: "view", size: 12, initial: [0, 0, 0, 0, 9, 0, 0, 0, 0, 4, 0, 0] } },
-          question: { type: "choice", options: ["4", "9", "13", "Nothing: it's empty"], answer: 0 },
+          question: { type: "choice", options: ["Nothing: it's empty", "9", "13", "4"], answer: 3 },
           explanation: "Box 9 holds **4**. An address says *where*; the value says *what*. They're both just numbers, which is exactly why they're easy to mix up. Keep asking: is this number a place, or the thing in the place?",
         },
         {
@@ -209,7 +209,7 @@ export const computerModule: Module = {
           kind: "question",
           title: "Write over it",
           body: "Address 2 holds **200**. You write **13** to address 2, then read address 2. What do you get?",
-          question: { type: "choice", options: ["13", "200", "213", "Both: 200 and 13"], answer: 0 },
+          question: { type: "choice", options: ["Both: 200 and 13", "13", "200", "213"], answer: 1 },
           explanation: "A box holds exactly one byte, so writing **replaces** what was there: you read back 13, and the 200 is gone for good. There's no undo inside memory. If a program needs the old value, it must copy it somewhere else first.",
         },
         {
@@ -279,12 +279,12 @@ export const computerModule: Module = {
           question: {
             type: "choice",
             options: [
-              "In memory, as bytes, right next to the data",
-              "Built into the CPU at the factory",
               "In storage: the CPU reads each instruction from the disk",
+              "Built into the CPU at the factory",
+              "In memory, as bytes, right next to the data",
               "They're typed in by the user as it runs",
             ],
-            answer: 0,
+            answer: 2,
           },
           explanation: "The program sits in **memory**, as ordinary bytes, alongside the numbers it works on (addresses 13 to 15 here). This idea, programs stored in memory just like data, is what makes a computer general-purpose: load different bytes and the same CPU does a different job.",
         },
@@ -309,8 +309,8 @@ export const computerModule: Module = {
           body: "In memory, an instruction is just a byte. In this CPU, the first hex digit says **what to do** (the *opcode*) and the second says **which address**:\n\n```text\n0 HALT    1 LOAD    2 ADD     3 SUB\n4 STORE   5 JUMP    6 JZ      7 OUT\n```\n\nSo `0x1E` means LOAD from address E (14). What does the byte **0x2A** tell the CPU to do?",
           question: {
             type: "choice",
-            options: ["Add the value at address 10 to A", "Add 2 and 10 together", "Load the value at address 42", "Store 42 in A"],
-            answer: 0,
+            options: ["Add 2 and 10 together", "Load the value at address 42", "Store 42 in A", "Add the value at address 10 to A"],
+            answer: 3,
           },
           explanation: "Opcode **2** is ADD, and **A** in hex is 10, so `0x2A` is ADD 10: add the value at address 10 to A. That's all *decode* is: splitting the byte into its parts. The same byte, read as data, would just be the number 42. The CPU can't tell the difference; it only knows what PC points at.",
         },
@@ -329,8 +329,8 @@ export const computerModule: Module = {
           widget: { type: "computer-cpu", props: { program: COUNT_UP, names: { "15": "one" }, predict: true, granularity: "instruction", maxTicks: 90 } },
           question: {
             type: "choice",
-            options: ["Show 1, 2, 3, 4… and never stop", "Show 1 once, then stop", "Show 1 over and over", "Crash at address 4"],
-            answer: 0,
+            options: ["Show 1 once, then stop", "Show 1, 2, 3… forever", "Show 1 over and over", "Crash at address 4"],
+            answer: 1,
           },
           explanation: "After OUT, JUMP 1 sends PC back to address 1, so ADD 15 runs again and again, adding 1 each time: 1, 2, 3, … There's no HALT on that path, so it never stops: a **loop**. Every \"repeat these steps\" loop, in any programming language, becomes a jump like this underneath.",
         },
@@ -421,8 +421,8 @@ export const computerModule: Module = {
           widget: { type: "computer-clock", props: { job: 24, split: false, controls: ["cores"], initial: { ghz: 3, cores: 1, ipc: 2 } }, live: true },
           question: {
             type: "choice",
-            options: ["Nothing: only one core can work on it, the others sit idle", "It halves every time you double the cores", "It gets slower, because cores get in each other's way", "The job finishes instantly"],
-            answer: 0,
+            options: ["It halves every time you double the cores", "It gets slower, because cores get in each other's way", "Nothing: only one core can work on it, the others sit idle", "The job finishes instantly"],
+            answer: 2,
           },
           explanation: "Extra cores only help when there are **separate** things to do at the same time, like several apps, or a job cut into independent pieces. A strictly step-by-step job runs on one core, so its speed comes down to that core's clock and work per tick.",
         },
@@ -433,14 +433,14 @@ export const computerModule: Module = {
           question: {
             type: "choice",
             options: [
-              "Every tick switches billions of tiny transistors, and faster switching produces far more heat than can be carried away",
-              "Software can't run faster than 6 GHz",
-              "A clock can't count past 6 billion",
-              "Nobody would need that speed",
+              "Faster switching makes more heat than can be cooled away",
+              "Programs can't be written to run faster than 6 GHz",
+              "A clock circuit can't count past 6 billion ticks",
+              "Nobody would notice, since screens only refresh at 60 Hz",
             ],
             answer: 0,
           },
-          explanation: "Power and heat climb steeply with clock speed, and each tick also has to be long enough for signals to settle across the circuit. So since the mid-2000s, chips got faster mainly by doing **more per tick** and adding **more cores**, not by raising the clock.",
+          explanation: "Every tick switches billions of tiny transistors, so power and heat climb steeply with clock speed, and each tick also has to be long enough for signals to settle across the circuit. So since the mid-2000s, chips got faster mainly by doing **more per tick** and adding **more cores**, not by raising the clock.",
         },
         {
           kind: "recap",
@@ -491,12 +491,12 @@ export const computerModule: Module = {
           question: {
             type: "choice",
             options: [
-              "The address goes CPU → memory; the data comes back memory → CPU",
               "Both go from the CPU to memory",
-              "Both come from memory to the CPU",
               "The address goes memory → CPU; the data goes CPU → memory",
+              "The address goes CPU → memory; the data comes back memory → CPU",
+              "Both come from memory to the CPU",
             ],
-            answer: 0,
+            answer: 2,
           },
           explanation: "The CPU always drives the address lines: it's the one asking. The data lines work both ways: CPU → memory on a write, memory → CPU on a read. Go back and watch the little arrow on the data lane if you want to see it.",
         },
@@ -536,12 +536,12 @@ export const computerModule: Module = {
           question: {
             type: "choice",
             options: [
-              "If two parts drive different values onto the same wire, the signals clash and the data is garbled",
               "The wires can only carry electricity in one direction",
               "Taking turns saves power, but they could all send at once if needed",
               "Memory can only remember one device's data",
+              "Two parts sending at once would clash and garble the data",
             ],
-            answer: 0,
+            answer: 3,
           },
           explanation: "A wire can only be 0 or 1 at any moment. If memory pushes a 1 while the keyboard pushes a 0, the result is garbage (and the circuits fight each other). So a bus has rules about who may talk when, and the address on the lines decides which device answers.",
         },
@@ -616,12 +616,12 @@ export const computerModule: Module = {
           question: {
             type: "choice",
             options: [
-              "Programs keep reusing the same data, and they tend to use data that sits next to what they just used",
               "Programs rarely read the same address twice",
               "The cache secretly holds a copy of all of RAM",
+              "Programs reuse data, and data near what they just used",
               "The CPU only reads from storage, never from RAM",
             ],
-            answer: 0,
+            answer: 2,
           },
           explanation: "A loop touches the same variables on every pass (reuse in **time**), and walking through a list reads neighbouring addresses (reuse in **space**). Real caches exploit both: on a miss they fetch a whole block of nearby bytes, typically 64 at once. This is called **locality**, and fast code is usually code with good locality.",
         },
@@ -677,12 +677,12 @@ export const computerModule: Module = {
           question: {
             type: "choice",
             options: [
-              "Checking more often notices keys sooner, but wastes more ticks on checks",
               "Checking more often is better in every way",
               "Checking less often notices keys sooner",
               "How often you check makes no difference",
+              "Keys are noticed sooner, but more ticks are wasted",
             ],
-            answer: 0,
+            answer: 3,
           },
           explanation: "Every 2 ticks: keys barely wait, but half of the CPU's time goes on checking. Every 8 ticks: less waste, but keys wait longer. There's no good setting, because the CPU is guessing when something will happen.",
         },
@@ -707,14 +707,14 @@ export const computerModule: Module = {
           question: {
             type: "choice",
             options: [
-              "Picks up exactly where it was interrupted, because it saved its PC and registers first",
+              "Carries on where it left off, using the saved PC",
               "Restarts the interrupted program from the beginning",
               "Waits until another key is pressed",
               "Skips the instruction it was about to run",
             ],
             answer: 0,
           },
-          explanation: "Saving the PC and registers is the whole trick. Restore them and the interrupted program carries on with the very next instruction, with no idea anything happened. This happens thousands of times a second on your computer right now.",
+          explanation: "Before running the handler, the CPU saved its PC and registers. That is the whole trick. Restore them and the interrupted program carries on with the very next instruction, with no idea anything happened. This happens thousands of times a second on your computer right now.",
         },
         {
           kind: "explain",
@@ -855,12 +855,12 @@ export const computerModule: Module = {
           question: {
             type: "choice",
             options: [
-              "Firmware is small and generic; each operating system ships its own bootloader that knows how to load it",
               "The bootloader makes the CPU run faster",
-              "Firmware can't read storage at all",
-              "There's no reason; it's just tradition",
+              "Firmware can't read from storage devices at all",
+              "There's no real reason; it's just old habit",
+              "Firmware is generic; each OS brings its own loader",
             ],
-            answer: 0,
+            answer: 3,
           },
           explanation: "The firmware is made by the motherboard's maker and has to work with any operating system, so it only knows how to find and start a bootloader. The bootloader (such as GRUB or Windows Boot Manager) knows its own OS: where the kernel is and how to start it. Some systems can skip it, but the split keeps each piece simple.",
         },
