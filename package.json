@@ -14,6 +14,7 @@
     "test:sync": "node scripts/test-sync-merge.mjs && node scripts/test-progress-ids.mjs",
     "test:elec": "node scripts/test-elec-kit.mjs",
     "test:runner": "node scripts/runner/test.mjs",
+    "test:app-links": "node scripts/test-app-links.mjs",
     "ui:check": "node scripts/ui-check.mjs"
   },
   "dependencies": {
