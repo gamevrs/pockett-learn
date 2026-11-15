@@ -87,7 +87,7 @@ export const assemblyModule: Module = {
           kind: "question",
           title: "Read an opcode",
           body: "The first number in each row is the **opcode**: it says *which* operation to do. The other two say what to do it with. In this CPU, opcode **1** means \"put a number into a register\", so `1 0 7` put 7 into R0.\n\nWhat does the instruction `1 2 9` do?",
-          question: { type: "choice", options: ["Puts 2 into R9", "Puts 9 into R2", "Adds 2 and 9", "Outputs the number 129"], answer: 1 },
+          question: { type: "choice", options: ["Puts 9 into R2", "Puts 2 into R9", "Adds 2 and 9", "Outputs the number 129"], answer: 0 },
           explanation: "Opcode 1 means \"put a number in a register\": the next number picks the register (R**2**) and the last one is the number (**9**). The CPU never sees words like \"put\". It sees 1, 2, 9, and its circuits are wired to react to that pattern.",
         },
         {
@@ -114,10 +114,10 @@ export const assemblyModule: Module = {
             options: [
               "Nothing: both put 3 into R0",
               "The second one is an error",
-              "They have different opcodes: one puts the number 3 in R0, the other copies whatever is in register R3",
               "The # makes the number bigger",
+              "They use different opcodes",
             ],
-            answer: 2,
+            answer: 3,
           },
           explanation: "`MOV R0, #3` is opcode **1** (a number goes in) and `MOV R0, R3` is opcode **2** (copy a register). Their other numbers are both `0 3`, so only the opcode tells them apart. That's why the `#` matters, and why our assembler won't let you leave it out.",
         },
@@ -225,11 +225,11 @@ export const assemblyModule: Module = {
             type: "choice",
             options: [
               "Registers keep their values when the power goes off",
-              "Registers are inside the CPU, so using them is far faster than going out to memory",
               "Registers can hold bigger numbers than memory can",
               "Memory can only store text",
+              "They sit inside the CPU, so they are far faster than memory",
             ],
-            answer: 1,
+            answer: 3,
           },
           explanation: "Registers sit right next to the circuits that calculate, so using one takes about a clock tick, while a trip out to main memory can take a hundred times longer. Programs pull the values they're working on into registers, work there, and write results back. (Registers lose their contents without power, just like memory.)",
         },
@@ -264,7 +264,7 @@ export const assemblyModule: Module = {
           title: "Which one changes?",
           body: "After `SUB R0, R1` runs, what has changed?",
           widget: { type: "asm-cpu", props: { program: "MOV R0, #10\nMOV R1, #3\nSUB R0, R1\nHLT", locked: true, predict: true, allow: MATHS } },
-          question: { type: "choice", options: ["R1 becomes 7", "R0 becomes −7", "R0 becomes 7", "Nothing: SUB just shows the answer"], answer: 2 },
+          question: { type: "choice", options: ["R0 becomes 7", "R1 becomes 7", "R0 becomes −7", "Nothing: SUB just shows the answer"], answer: 0 },
           explanation: "`SUB R0, R1` means R0 = R0 − R1 = 10 − 3 = **7**. The result always lands in the first register, and R1 is left alone.",
         },
         {
@@ -278,7 +278,7 @@ export const assemblyModule: Module = {
           title: "Order matters",
           body: "What does this program output?",
           widget: { type: "asm-cpu", props: { program: "MOV R0, #5\nMOV R1, #2\nSUB R1, R0\nOUT R1\nHLT", locked: true, predict: true, allow: MATHS } },
-          question: { type: "choice", options: ["3", "−3", "2", "5"], answer: 1 },
+          question: { type: "choice", options: ["3", "−7", "−3", "7"], answer: 2 },
           explanation: "`SUB R1, R0` means R1 = R1 − R0 = 2 − 5 = **−3**. Swapping the operands of a subtraction changes the answer.\n\nHow does a register hold −3? With the trick from the bits module (**two's complement**): the leftmost bit counts as a negative place value. In 8 bits, −3 is `11111101` (−128 + 64 + 32 + 16 + 8 + 4 + 1 = −3). The CPU does not need a separate minus sign; it just reads the same bit pattern as a negative number when asked. (This toy CPU may use more than 8 bits, but the idea is the same.)",
         },
         {
@@ -367,14 +367,14 @@ export const assemblyModule: Module = {
           question: {
             type: "choice",
             options: [
-              "They do the same thing",
+              "`MOV` puts 5 itself in R2; `LOAD` fetches what's at address 5",
               "`MOV` writes to memory and `LOAD` writes to a register",
-              "`LOAD` is just a slower `MOV`",
-              "`MOV R2, #5` puts the number 5 in R2; `LOAD R2, [5]` copies whatever number is stored at address 5",
+              "`LOAD` is just a slower `MOV` with the same result",
+              "They do the same thing, just spelled differently",
             ],
-            answer: 3,
+            answer: 0,
           },
-          explanation: "`#5` is the number itself, written right into the instruction. `[5]` is the cell at address 5, which could hold anything. That's also why `LOAD` takes longer: it has to go out to memory to find out.",
+          explanation: "`MOV R2, #5` puts the number 5 in R2. `LOAD R2, [5]` copies whatever number is stored at address 5. `#5` is the number itself, written right into the instruction. `[5]` is the cell at address 5, which could hold anything. That's also why `LOAD` takes longer: it has to go out to memory to find out.",
         },
         {
           kind: "question",
@@ -626,11 +626,11 @@ export const assemblyModule: Module = {
               "Nothing: HLT stops it anyway",
               "When x is not 0, nothing is output",
               "The assembler refuses: every JNZ needs a JMP",
-              "When x is 0, it outputs 1 and then 2, because the CPU runs straight on into the else part",
+              "When x is 0, it outputs 1 and then 2",
             ],
             answer: 3,
           },
-          explanation: "Labels aren't walls. The CPU just runs the next address, so after the *if* part it carries on into the *else* part. `JMP end` is what makes the two branches exclusive.",
+          explanation: "Labels aren't walls. The CPU just runs straight on to the next address, so when x is 0, after the *if* part it carries on into the *else* part. `JMP end` is what makes the two branches exclusive.",
         },
         {
           kind: "question",
@@ -775,14 +775,14 @@ export const assemblyModule: Module = {
           question: {
             type: "choice",
             options: [
-              "Nothing: each function gets its own registers",
+              "R1 is overwritten; `triple` should PUSH and POP it",
+              "Nothing: each function gets its own set of registers",
               "The CPU spots the clash and stops with an error",
-              "The caller's R1 is overwritten. The fix: `triple` PUSHes R1 at the start and POPs it back just before RET",
-              "R1 is put back automatically by RET",
+              "RET puts R1 back, so nothing is ever lost",
             ],
-            answer: 2,
+            answer: 0,
           },
-          explanation: "There's only one set of registers, shared by all the code. A function that borrows a register should save it on the stack first and restore it before returning. Compilers follow agreed rules, called a **calling convention** (an agreement about who saves which registers), about which registers a function must leave as it found them.",
+          explanation: "There's only one set of registers, shared by all the code, so the caller's R1 is overwritten. The fix is for `triple` to PUSH R1 at the start and POP it back just before RET. A function that borrows a register should save it on the stack first and restore it before returning. Compilers follow agreed rules, called a **calling convention** (an agreement about who saves which registers), about which registers a function must leave as it found them.",
         },
         {
           kind: "explain",
@@ -854,11 +854,11 @@ export const assemblyModule: Module = {
             type: "choice",
             options: [
               "They're stored next to each instruction so the CPU can look them up",
+              "The compiler picked a register or address and dropped the name",
               "They became labels like `loop`",
-              "The compiler gave each variable a place, a register or a memory address, and the names were thrown away",
               "The CPU can only work with one variable at a time",
             ],
-            answer: 2,
+            answer: 1,
           },
           explanation: "Names are for people. A compiler decides where each variable lives (here R0 and R1; with more variables, memory addresses) and writes those locations into the instructions. Labels go the same way: `loop` became address 2.",
         },
@@ -875,19 +875,19 @@ export const assemblyModule: Module = {
             type: "choice",
             options: [
               "A CPU can read Python directly if the program is simple enough",
-              "A compiled C program runs as machine code; a Python program is carried out by an interpreter, a machine-code program that reads its bytecode",
               "Interpreted programs don't need the CPU",
               "Compiling and interpreting run equally fast; only the file names differ",
+              "C is compiled to machine code; Python is run by an interpreter",
             ],
-            answer: 1,
+            answer: 3,
           },
-          explanation: "Everything ends up as machine code on the CPU. The difference is *when* and *how*: translated ahead of time (a compiler), or carried out by a go-between program while it runs (an interpreter).",
+          explanation: "A compiled C program runs as machine code; a Python program is carried out by an interpreter, which is itself a machine-code program that reads the bytecode. Everything ends up as machine code on the CPU. The difference is *when* and *how*: translated ahead of time (a compiler), or carried out by a go-between program while it runs (an interpreter).",
         },
         {
           kind: "question",
           title: "A familiar loop",
           body: "Inside CPython's interpreter is a loop that keeps doing three things: get the next bytecode instruction, work out which one it is, carry it out. What does that remind you of?",
-          question: { type: "choice", options: ["A stack overflow", "The assembler", "The CPU's fetch-decode-execute cycle, done in software", "A conditional jump"], answer: 2 },
+          question: { type: "choice", options: ["A stack overflow, when too many calls pile up", "The CPU's fetch-decode-execute cycle, in software", "The assembler turning text into numbers", "A conditional jump that skips some lines"], answer: 1 },
           explanation: "It's the same cycle one level up. The CPU fetches, decodes and executes machine code; the interpreter fetches, decodes and executes bytecode, and every bytecode step costs many real machine instructions.",
         },
         {
@@ -948,7 +948,7 @@ export const assemblyModule: Module = {
           body: "You are handed only the compiled program, with no debugging information. Which of these can you still work out from it?",
           question: {
             type: "choice",
-            options: ["The comment that explains the idea", "That a variable was called `prices`", "What the program does, step by step, because the instructions are all there", "Which person wrote it"],
+            options: ["The comment that explains the idea", "That a variable was called `prices`", "What the program does, step by step", "Which person wrote it"],
             answer: 2,
             feedback: {
               0: "Comments are for people and are dropped before the CPU sees anything. Nothing in the numbers records them.",
@@ -994,7 +994,7 @@ export const assemblyModule: Module = {
           body: "In the graph, the block with the `JMP 1` at the bottom sends an arrow back up to an earlier block. What does that shape mean?",
           question: {
             type: "choice",
-            options: ["An if statement with no else", "A call to another function", "A mistake in the program", "A loop: the same blocks run again until the test at the top says stop"],
+            options: ["An if statement with no else", "A call to another function", "A mistake in the program", "A loop: the same blocks run again"],
             answer: 3,
             feedback: {
               0: "An if only goes forward: one way or another, then on. An arrow back to an earlier block makes the code run again.",
@@ -1003,7 +1003,7 @@ export const assemblyModule: Module = {
             },
             hint: "Remember how `JMP loop` was used in the loops lesson: where does the program go next?",
           },
-          explanation: "A jump back to an earlier block means that code can run **again**, which is what a loop is. The test at the top (`CMP` and `JLT`) decides when to leave. Decompilers look for exactly this shape to write `while` and `for`.",
+          explanation: "A jump back to an earlier block means that code can run **again**, until the test at the top says stop, which is what a loop is. The test at the top (`CMP` and `JLT`) decides when to leave. Decompilers look for exactly this shape to write `while` and `for`.",
         },
         {
           kind: "explain",
