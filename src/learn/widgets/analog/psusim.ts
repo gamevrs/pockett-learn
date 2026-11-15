@@ -137,10 +137,11 @@ export function regulate(opts: { kind: "linear" | "switching"; vin: number; vout
     const pout = vo * i;
     return { kind, vin, vout, voutActual: vo, i, pin, pout, heatW: pin - pout, eff: pin > 0 ? pout / pin : 0, inRegulation: inReg };
   }
-  // buck: steps down only; needs headroom above the output
+  // buck: steps down only; needs a little headroom above the output. Too close to Vout (or below it) it is in
+  // dropout: the switch stays on (100% duty), the output follows Vin minus a small drop, and it cannot step up.
   const inReg = vin > vout + 0.3;
-  if (!inReg) return { kind, vin, vout, voutActual: 0, i, pin: 0, pout: 0, heatW: 0, eff: 0, inRegulation: false };
-  const pout = vout * i;
+  const vo = inReg ? vout : Math.max(0, vin - 0.3);
+  const pout = vo * i;
   const pin = pout / switchingEff;
-  return { kind, vin, vout, voutActual: vout, i, pin, pout, heatW: pin - pout, eff: switchingEff, inRegulation: true };
+  return { kind, vin, vout, voutActual: vo, i, pin, pout, heatW: pin - pout, eff: switchingEff, inRegulation: inReg };
 }

@@ -60,6 +60,25 @@ const FSM_CODE = (s2: string) => `module det101(input clk, input rst, input x, o
   assign z = (state == S3);
 endmodule`;
 
+/** The same detector as a three-state Mealy machine: z reacts to x in the same cycle. */
+const MEALY_CODE = `module det101(input clk, input rst, input x, output z);
+  // Mealy machine: z is 1 in S2 while x is 1 (the final 1 of 1, 0, 1 is arriving now).
+  localparam S0 = 2'd0;   // nothing useful seen yet
+  localparam S1 = 2'd1;   // last input was 1
+  localparam S2 = 2'd2;   // last two inputs were 1, 0
+  reg [1:0] state;
+  always @(posedge clk) begin
+    if (rst) state <= S0;
+    else case (state)
+      S0: state <= x ? S1 : S0;
+      S1: state <= x ? S1 : S2;
+      S2: state <= x ? S1 : S0;
+      default: state <= S0;
+    endcase
+  end
+  assign z = (state == S2) & x;
+endmodule`;
+
 /** Lessons 1 to 5 of "Designing chips: from RTL to tape-out": the flow, hardware thinking, Verilog, sequential logic, testbenches. */
 export const chipdesignLessonsA: ConceptLesson[] = [
   // ─────────────────────────────── 1. How chips are designed ───────────────────────────────
@@ -93,7 +112,7 @@ export const chipdesignLessonsA: ConceptLesson[] = [
           prompt: "Tap the stage that checks timing on every path without simulating (the card should show its name).",
           hint: "Its short name on the map is \"Timing\", and its full name starts with the word \"Static\".",
         },
-        explanation: "That is **static timing analysis (STA)**: \"static\" because it adds up delays on paper (well, in a program) instead of running the design with test inputs. It covers every path, which no set of test vectors could. Lesson 7 of this module is about it.",
+        explanation: "That is **static timing analysis (STA)**: \"static\" because it adds up delays on paper (well, in a program) instead of running the design with test inputs. It covers every path, which no set of test vectors could. The lesson *Static timing analysis*, later in this module, is about it.",
       },
       {
         kind: "question",
@@ -161,7 +180,7 @@ export const chipdesignLessonsA: ConceptLesson[] = [
         body: P(
           "On paper the flow is a line. In practice it is full of **loops**: a stage fails its check and the design goes back. A failing test sends you back to the RTL. A path that is too slow after routing might need a pipeline register (an RTL change), a tighter synthesis run or a small fix in the layout. A layout that can't be routed sends you back to placement.",
           "The earlier a problem is found, the cheaper it is to fix, which is why teams spend so much effort on simulation before any layout is drawn. Switch the map to loops mode and tap **Timing** to see where it can send you.",
-          "After tape-out, a mistake means a new set of masks (the stencils used to print each layer). At advanced nodes that costs millions of dollars, which makes \"get it right first time\" the whole point of the flow.",
+          "After tape-out, a mistake means a new set of masks (the stencils used to print each layer). Published estimates put a mask set at roughly a million dollars at mature nodes and tens of millions at the leading edge, which makes \"get it right first time\" the whole point of the flow.",
         ),
         widget: { type: "chip-flow", props: { mode: "loops", highlight: ["sta"], fabHref: "/learn/fnd-semi-7-process" } },
       },
@@ -185,7 +204,7 @@ export const chipdesignLessonsA: ConceptLesson[] = [
             2: "Expensive in effort, since placement and routing may have to be redone, but no new masks are needed yet.",
           },
         },
-        explanation: "Chips back from the fab with a logic bug need a **respin**: fix the design, redo the back end and pay for new masks. That is why simulation and verification get so much effort (lesson 9 of this module).",
+        explanation: "Chips back from the fab with a logic bug need a **respin**: fix the design, redo the back end and pay for new masks. That is why simulation and verification get so much effort (*Verification at scale and design for test*, later in this module).",
       },
       {
         kind: "question",
@@ -195,8 +214,8 @@ export const chipdesignLessonsA: ConceptLesson[] = [
           type: "choice",
           options: [
             "The RTL source files and the testbench",
-            "A box of finished, packaged chips to be tested",
-            "The final layout data (GDSII or OASIS files): the shapes for every layer",
+            "A box of finished chips, ready to be tested",
+            "The final layout data (GDSII or OASIS files)",
             "A list of the tests the chip passed in simulation",
           ],
           answer: 2,
@@ -207,7 +226,34 @@ export const chipdesignLessonsA: ConceptLesson[] = [
             3: "Test results are your own sign-off evidence. The foundry needs the shapes to build.",
           },
         },
-        explanation: "The output of the back end is a **layout**: polygons for each layer, stored in a standard format called **GDSII** or **OASIS**. The foundry turns it into masks. A single bad shape can ruin every chip, which is why the layout goes through DRC and LVS first.",
+        explanation: "The output of the back end is a **layout**: polygons for every layer, stored in a standard format called **GDSII** or **OASIS**. The foundry turns it into masks. A single bad shape can ruin every chip, which is why the layout goes through DRC and LVS first.",
+      },
+      {
+        kind: "question",
+        title: "Who makes what?",
+        body: P(
+          "Few companies do every stage themselves. The industry splits roughly like this (the company names are examples, not a complete list):",
+          "- **Fabless** companies design chips but own no factory: they write the RTL, run the flow of this module and buy the manufacturing (NVIDIA, AMD, Qualcomm and many start-ups).\n- **Foundries** manufacture wafers for other companies (TSMC, Samsung Foundry, GlobalFoundries, UMC, Intel Foundry).\n- **IDMs** (integrated device manufacturers) design *and* make their own chips (Intel, Texas Instruments, Infineon).\n- **OSATs** (outsourced semiconductor assembly and test) package and test the dies (ASE, Amkor, JCET).\n- **EDA vendors** sell the design tools (Synopsys, Cadence, Siemens EDA), and **IP vendors** license ready-made blocks such as processor cores (Arm, or open RISC-V cores).",
+          "What ties a design team to one foundry's process is the **PDK** (process design kit): the transistor models for circuit simulation, the DRC and LVS rule decks, the standard-cell and I/O libraries, and technology files that describe the layers to the EDA tools. Small teams and universities often share a **multi-project wafer (MPW)** run, also called a **shuttle**: many designs on one mask set, splitting its cost.",
+          "A start-up has designed a chip and owns no factory. Which two kinds of company does it pay to turn its layout into packaged, tested parts?",
+        ),
+        question: {
+          type: "choice",
+          options: [
+            "A foundry for wafers, an OSAT to package and test",
+            "An IDM to redo the design, a foundry for wafers",
+            "An OSAT for wafers, a foundry to package them",
+            "An EDA vendor for wafers, an IP vendor to test",
+          ],
+          answer: 0,
+          hint: "Which kind of company makes wafers, and which one puts dies into packages?",
+          feedback: {
+            1: "The start-up has already done the design. An IDM designs and makes its own chips; it doesn't finish other companies' designs.",
+            2: "Backwards: foundries make wafers, and OSATs package and test the dies.",
+            3: "EDA vendors sell design tools and IP vendors license blocks; neither makes or tests chips.",
+          },
+        },
+        explanation: "A fabless company sends its layout to a **foundry**, which builds the wafers (the layout was drawn with that foundry's PDK), and an **OSAT** then dices, packages and tests the dies; some foundries offer packaging too. *Packaging and test* in the Semiconductors part covers that last stage, and *FPGA vs ASIC and tape-out* at the end of this module comes back to PDKs and shuttles.",
       },
       {
         kind: "recap",
@@ -215,6 +261,7 @@ export const chipdesignLessonsA: ConceptLesson[] = [
           "Chips are **described** in code (RTL), and **EDA tools** turn the description into layout. The flow runs: spec, RTL, simulation, synthesis, floorplan, placement, clock tree, routing, timing, DRC/LVS, tape-out, fab.",
           "**Front end**: what the chip does (up to the gate-level netlist). **Back end**: where everything goes and the checks on it. The **foundry** manufactures from the layout data.",
           "The flow **loops**: failed checks send you back, and the later a bug appears, the more it costs. After tape-out a fix means new masks.",
+          "**Fabless** companies design, **foundries** make wafers, **IDMs** do both, **OSATs** package and test. The **PDK** is the foundry's kit of models, rules and libraries; **MPW shuttles** share one mask set between many small designs.",
         ],
       },
     ],
@@ -255,9 +302,9 @@ export const chipdesignLessonsA: ConceptLesson[] = [
       {
         kind: "question",
         title: "Ten results",
-        body: "The toy CPU takes 6 cycles per result. How many cycles does it take to compute the expression for **10 different sets of inputs**, one after the other?",
-        question: { type: "number", answer: 60, tolerance: 0, unit: "cycles", hint: "6 cycles per result, 10 results." },
-        explanation: "6 × 10 = **60 cycles**. A circuit like this one needs 1 clock cycle per result, so 10 cycles. Its clock period would be longer than the CPU's (the multiplier is slow), but you still win by a wide margin. That is why chips use dedicated hardware for jobs done millions of times, such as video decoding.",
+        body: "The toy CPU takes 6 cycles per result. Suppose its simple core runs with a **1.5 ns** clock, while the circuit needs a **4.8 ns** clock (its multiplier is slow) but produces one result per cycle. For **10 different sets of inputs**, one after the other, how many **nanoseconds sooner** does the circuit finish?",
+        question: { type: "number", answer: 42, tolerance: 0.5, unit: "ns", hint: "Work out each side's total time: cycles per result × results × clock period. Then subtract." },
+        explanation: "CPU: 6 cycles × 10 results × 1.5 ns = 90 ns. Circuit: 10 cycles × 4.8 ns = 48 ns. The circuit finishes **42 ns** sooner, even with a clock more than three times slower, because it does all three operations in one cycle. That is why chips use dedicated hardware for jobs done millions of times, such as video decoding. (Both clock periods are toy numbers.)",
       },
       {
         kind: "explain",
@@ -326,10 +373,10 @@ with pipeline     3.6 ns         2 cycles = 7.2 ns  1 result / 3.6 ns
       },
       {
         kind: "question",
-        title: "Latency in nanoseconds",
-        body: "The pipelined circuit has a clock period of **3.6 ns** and takes **2 clock cycles** from input to output. What is its latency?",
-        question: { type: "number", answer: 7.2, tolerance: 0.05, unit: "ns", hint: "Latency = number of cycles × clock period." },
-        explanation: "2 × 3.6 = **7.2 ns**, which is *worse* than the 4.8 ns of the unpipelined version. But throughput is better: 1000 / 3.6 ≈ 278 million results per second versus 1000 / 4.8 ≈ 208 million. Pipelining trades latency for throughput.",
+        title: "Ten results, pipelined",
+        body: "The pipelined circuit has a **3.6 ns** clock and takes **2 cycles** from input to output, then delivers a new result every cycle. Feeding it the same 10 input sets back to back, how many **nanoseconds** pass from the first input until the **tenth** result is out? (Unpipelined, it was 10 × 4.8 = 48 ns.)",
+        question: { type: "number", answer: 39.6, tolerance: 0.1, unit: "ns", hint: "The first result needs 2 cycles; each of the other 9 needs one more cycle. Multiply the total number of cycles by the period." },
+        explanation: "2 + 9 = 11 cycles × 3.6 ns = **39.6 ns**, against 48 ns without the pipeline. Each single result takes longer (latency 2 × 3.6 = 7.2 ns instead of 4.8 ns), but a stream of them finishes sooner: throughput rises from about 208 million to 278 million results per second. Pipelining trades latency for throughput, and the longer the stream, the more it pays.",
       },
       {
         kind: "question",
@@ -679,17 +726,17 @@ endmodule`,
         question: {
           type: "choice",
           options: [
-            "Blocking assignments are not allowed inside always blocks",
-            "`a = b;` changed a straight away, so `b = a;` then copied the new a (which was already 5)",
+            "Blocking assignments are not allowed in always blocks",
+            "`a = b;` changed a at once, so `b = a;` copied the new a",
             "The registers need a reset before they can swap",
-            "The simulator cannot swap two values",
+            "Both lines read their right-hand sides at the same time",
           ],
           answer: 1,
           hint: "Follow the two lines in order, remembering that `=` updates the left side at once.",
           feedback: {
             0: "They are allowed; that's exactly why this bug is easy to write. The tool may only warn you.",
             2: "A reset isn't the issue: the load already put 3 and 5 in the registers.",
-            3: "The non-blocking version swaps fine, so the design idea works.",
+            3: "That is how `<=` behaves, and it is why the non-blocking version swaps correctly. Blocking `=` runs line by line.",
           },
         },
         explanation: "With `=`: `a = b` makes a equal to 5 immediately, then `b = a` copies that new 5 into b. Both are 5, and the old a (3) is lost. With `<=` both right-hand sides are read **before** either register changes, so they trade values. The rule of thumb: **`<=` in clocked blocks, `=` in combinational `always @*` blocks**.",
@@ -701,9 +748,9 @@ endmodule`,
         question: {
           type: "choice",
           options: [
-            "Use `<=` in `always @(posedge clk)` blocks, `=` in combinational `always @*` blocks",
-            "Use `=` everywhere because it is faster to simulate",
-            "Use `<=` in combinational blocks and `=` in clocked blocks",
+            "`<=` in clocked blocks, `=` in `always @*` blocks",
+            "`=` everywhere, because it simulates faster",
+            "`<=` in `always @*` blocks, `=` in clocked blocks",
             "Mix them freely: the tool picks the right one",
           ],
           answer: 0,
@@ -720,8 +767,8 @@ endmodule`,
         kind: "explain",
         title: "A state machine",
         body: P(
-          "A **finite state machine (FSM)** is a register holding the current **state**, plus logic that picks the next state from the current state and the inputs. \"Digital logic from transistors\" introduces the idea; here is how it looks in Verilog.",
-          "This one watches a stream of bits `x` and raises `z` when it has just seen **1, 0, 1**. The states are `localparam` constants (named values), and a `case` statement lists what happens in each state:",
+          "A **finite state machine (FSM)** is a register holding the current **state**, plus logic that picks the next state from the current state and the inputs. *State machines* in \"Digital logic from transistors\" drew a 1-0-1 sequence detector as a diagram, in a Moore and a Mealy version. Here is the **Moore** one written in Verilog, so you can compare the code with the diagram you already know.",
+          "It watches a stream of bits `x` and raises `z` when it has just seen **1, 0, 1**. The states are `localparam` constants (named values), and a `case` statement lists what happens in each state:",
           txt(`
 state   meaning                   x=0   x=1
 S0      nothing useful yet        S0    S1
@@ -763,10 +810,26 @@ S3      last three were 1,0,1     S2    S1      (z = 1 here)
       },
       {
         kind: "question",
-        title: "Overlapping patterns",
-        body: "The machine above feeds S3 back to S2 on x = 0, so overlapping patterns count. Reset it, then feed the bits **1, 0, 1, 0, 1**. How many times does z pulse high (in separate clock cycles)?",
-        question: { type: "number", answer: 2, tolerance: 0, hint: "Track the state after each bit: S0 → S1 → S2 → S3 → (x=0) → S2 → (x=1) → ?" },
-        explanation: "States after each bit: S1, S2, S3 (z=1), S2, S3 (z=1). The middle 1 is shared by both patterns, **1 0 1** at positions 1–3 and 3–5, so z pulses **twice**. Whether a design should allow overlap is a decision you write into the spec, not something the code settles by itself.",
+        title: "Make it Mealy",
+        body: P(
+          "Now write the **Mealy** version from *State machines*: only three states, with z computed from the state **and** the current input, so it rises in the same cycle as the final 1 instead of a cycle later.",
+          "Change the code below so that: there is no S3; from S2 a 1 goes to S1 (that 1 can start the next pattern) and a 0 goes to S0; and `z` is 1 exactly when the machine is in S2 **and** x is 1. The target compares the values just **before** each clock edge, because a Mealy output reacts to the input, not to the edge.",
+        ),
+        widget: { type: "chip-verilog", props: { code: FSM_CODE("state <= x ? S3 : S0;"), title: "Moore to Mealy", stimulus: { clock: "clk", steps: [1, 0, 1, 1, 0, 1, 0, 0].map((x) => ({ rst: 0, x })) } } },
+        question: {
+          type: "widget",
+          goal: {
+            stimulus: { clock: "clk", steps: [1, 0, 1, 1, 0, 1, 0, 0].map((x) => ({ rst: 0, x })) },
+            expect: { state: [0, 1, 2, 1, 1, 2, 1, 2], z: [0, 0, 1, 0, 0, 1, 0, 0] },
+            sample: "pre",
+            mustContain: ["<="],
+            mustNotContain: ["\\bS3\\b"],
+            solution: MEALY_CODE,
+          },
+          prompt: "Edit the machine into a three-state Mealy detector whose z matches the target before each clock edge.",
+          hint: "Delete the S3 localparam and its case line, change the S2 line to `state <= x ? S1 : S0;`, and make the output `assign z = (state == S2) & x;`.",
+        },
+        explanation: "With z = (state == S2) & x the output appears while the last 1 is still on the input, in the same cycle; the Moore version had to move into S3 first. One state fewer, an output that reacts sooner, and the price the digital module mentioned: z now follows any glitch on x within the cycle. Overlap still works, because from S2 a 1 goes to S1, the \"last input was 1\" state.",
       },
       {
         kind: "recap",
@@ -774,7 +837,7 @@ S3      last three were 1,0,1     S2    S1      (z = 1 here)
           "`always @(posedge clk)` describes logic that updates only on the rising clock edge: that is a **flip-flop** (a `reg` is just a signal assigned in an always block).",
           "Use **`<=`** (non-blocking: read all right-hand sides, update together) in clocked blocks and **`=`** (blocking: immediate) in combinational `always @*`. Swapping two registers shows why.",
           "Priority in an `if / else if` chain matters: reset first, then enable, otherwise the register holds.",
-          "An **FSM** is a state register plus `case` logic with named `localparam` states. Moore: outputs from the state alone.",
+          "An **FSM** is a state register plus `case` logic with named `localparam` states. Moore: outputs from the state alone. Mealy: outputs from the state and the inputs, so one state fewer and a reaction in the same cycle.",
           "The toy starts registers at 0; real simulators start them at `x` until reset, so real designs reset their registers explicitly.",
         ],
       },
@@ -872,17 +935,17 @@ endmodule
             "Random vectors are guaranteed to cover every case",
             "They are always faster to simulate than directed ones",
             "Random tests don't need a reference model",
-            "They reach combinations you didn't think of, which is where unexpected bugs hide",
+            "They reach combinations nobody thought to test",
           ],
           answer: 3,
           hint: "Your directed list is limited by what you thought of; the bug you haven't imagined isn't on it.",
           feedback: {
-            0: "Nothing random guarantees full coverage: that's the topic of lesson 9 (coverage).",
+            0: "Nothing random guarantees full coverage: that's the topic of *Verification at scale and design for test* (coverage).",
             1: "Speed isn't the issue. Both kinds cost about the same simulation time per vector.",
             2: "Random tests need a reference model even more: you can't eyeball thousands of results.",
           },
         },
-        explanation: "Directed tests check what you expect to matter; random tests probe what you didn't think of. Big projects use **constrained-random** stimulus (random, but within legal ranges) plus coverage measurement to know what the random vectors reached. The reference model is what makes thousands of random vectors usable.",
+        explanation: "Directed tests check what you expect to matter; random tests probe the combinations you didn't think of, which is where unexpected bugs hide. Big projects use **constrained-random** stimulus (random, but within legal ranges) plus coverage measurement to know what the random vectors reached. The reference model is what makes thousands of random vectors usable.",
       },
       {
         kind: "question",
@@ -924,9 +987,11 @@ endmodule`,
         ),
         language: "python",
         starter: `def golden_adder4(a, b, cin):
-    # total = a + b + cin ; sum is the low 4 bits, cout is the carry out
+    # return (sum, cout) for a 4-bit adder
+    # your code here
     return (0, 0)
 `,
+
         solution: `def golden_adder4(a, b, cin):
     total = a + b + cin
     return (total & 15, total >> 4)

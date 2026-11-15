@@ -207,7 +207,7 @@ export function Multimeter({ props, onChange }: WidgetProps<MultimeterProps>) {
         <Readout label="Ammeter fuse" value={`${METER.fuseA} A`} />
         {correct && <Readout label="Placement" value="correct" accent />}
       </div>
-      <ToyNote>A toy meter: a typical 10 MΩ voltmeter input and a 0.5 A fuse (real meters differ). Never do this on mains voltage.</ToyNote>
+      <ToyNote>A toy meter: a typical 10 MΩ voltmeter input and a 0.5 A fuse, on a 9 V battery with about 1.5 Ω inside (real meters and batteries differ). Never do this on mains voltage.</ToyNote>
     </div>
   );
 }

@@ -85,7 +85,7 @@ export function TraceWidth({ props, onChange, revealed }: WidgetProps<TraceWidth
     <div className="w-full">
       <div className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
         <Slider label="Current" value={current} min={0.1} max={10} step={0.1} onChange={(v) => { setCurrent(v); report(v, rise, oz, external, my); }} disabled={locked} format={(v) => `${v.toFixed(1)} A`} />
-        <Slider label="Allowed temperature rise ΔT" value={rise} min={5} max={60} step={1} onChange={(v) => { setRise(v); report(current, v, oz, external, my); }} disabled={locked} format={(v) => `${v} °C`} />
+        <Slider label="Allowed temperature rise ΔT" value={rise} min={10} max={60} step={1} onChange={(v) => { setRise(v); report(current, v, oz, external, my); }} disabled={locked} format={(v) => `${v} °C`} />
       </div>
       <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-2">
         <div>
@@ -152,7 +152,7 @@ export function TraceWidth({ props, onChange, revealed }: WidgetProps<TraceWidth
           IPC-2221 curves date from the 1950s and are simplified; IPC-2152 is the modern reference and gives different numbers (it accounts for board material, planes nearby and thickness). Real designs add margin, and online calculators often use this same formula.
         </Note>
       </div>
-      <ToyNote>Simplified: steady DC current, one trace in still air, no nearby copper. The curves are fitted for roughly up to 35 A, 0.5 to 3 oz.</ToyNote>
+      <ToyNote>Simplified: steady DC current, one trace in still air, no nearby copper. The curves are fitted for roughly up to 35 A, 0.5 to 3 oz and 10 to 100 °C of rise. This is the simple IPC-2221 estimate; IPC-2152 is the modern reference.</ToyNote>
     </div>
   );
 }

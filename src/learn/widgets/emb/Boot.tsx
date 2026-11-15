@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import type { WidgetProps } from "@/learn/widget";
 import { Btn, Caption, Meter, Note, Readout, Seg, ToyNote } from "./ui";
-import { BOOT_STEPS, linkLayout, toHex, toHexGrouped, type Placed, type SectionSizes } from "./sim";
+import { BOOT_BSS_STEP, BOOT_DATA_STEP, BOOT_STEPS, linkLayout, toHex, toHexGrouped, type Placed, type SectionSizes } from "./sim";
 
 const DEFAULT_SIZES: SectionSizes = { vectors: 0x188, text: 12000, rodata: 1000, data: 256, bss: 1024, heap: 0, stack: 2048 };
 const GARBAGE = 0xa5a5a5a5;
@@ -16,6 +16,8 @@ export interface BootProps {
   sizes?: Partial<SectionSizes>;
   editable?: ("bss" | "stack")[];
   skip?: boolean;
+  /** With `skip`, which steps start switched off (default: both, so the learner has to find and re-enable them). */
+  initialSkip?: { data?: boolean; bss?: boolean };
   task?: string;
 }
 
@@ -65,8 +67,8 @@ function Section({ p, regionSize, hot }: { p: Placed; regionSize: number; hot?: 
 export function Boot({ props, onChange, revealed }: WidgetProps<BootProps>) {
   const [sizes, setSizes] = useState<SectionSizes>({ ...DEFAULT_SIZES, ...props.sizes });
   const [step, setStep] = useState(0);
-  const [skipData, setSkipData] = useState(false);
-  const [skipBss, setSkipBss] = useState(false);
+  const [skipData, setSkipData] = useState(Boolean(props.skip && (props.initialSkip?.data ?? true)));
+  const [skipBss, setSkipBss] = useState(Boolean(props.skip && (props.initialSkip?.bss ?? true)));
   const locked = Boolean(revealed);
   const editable = props.editable ?? [];
 
@@ -77,8 +79,8 @@ export function Boot({ props, onChange, revealed }: WidgetProps<BootProps>) {
     return {
       step: st,
       reachedMain: st >= 6,
-      counter: st >= 3 && !sd ? 42 : null,
-      total: st >= 4 && !sb ? 0 : null,
+      counter: st >= BOOT_DATA_STEP + 1 && !sd ? 42 : null,
+      total: st >= BOOT_BSS_STEP + 1 && !sb ? 0 : null,
       linkOk: l.ok,
       error: l.error ? ldError(l.error) : null,
       ramUsed: l.ramUsed,
@@ -100,7 +102,7 @@ export function Boot({ props, onChange, revealed }: WidgetProps<BootProps>) {
   const flashRev = [...link.flash].filter((p) => p.size > 0).reverse();
   const ramRev = [...link.ram].filter((p) => p.size > 0).reverse();
 
-  const steps: { text: string; skipped: boolean }[] = BOOT_STEPS.map((t, i) => ({ text: t, skipped: (i === 2 && skipData) || (i === 3 && skipBss) }));
+  const steps: { text: string; skipped: boolean }[] = BOOT_STEPS.map((t, i) => ({ text: t, skipped: (i === BOOT_DATA_STEP && skipData) || (i === BOOT_BSS_STEP && skipBss) }));
   const mainNote = cur.reachedMain && (skipData || skipBss);
 
   return (

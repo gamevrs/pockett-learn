@@ -40,7 +40,7 @@ const R = 348;
 const T = 12;
 const B = 212;
 const XMIN = 0.05;
-const XMAX = 5000;
+const XMAX = 20000;
 const YMIN = 0.05;
 const YMAX = 3000;
 const lx = (v: number) => L + ((Math.log10(v) - Math.log10(XMIN)) / (Math.log10(XMAX) - Math.log10(XMIN))) * (R - L);
@@ -160,6 +160,7 @@ export function Roofline({ props, onChange }: WidgetProps<RooflineProps>) {
         <Readout label="Ridge" value={`${Math.round(rg)} FLOP/B`} accent />
       </div>
       <Caption className="mt-2">Round example numbers, not any product&apos;s spec</Caption>
+      <p className="mt-1 text-xs text-ink-3">Decode intensity ≈ batch size assumes 16-bit weights (8-bit weights double it) and ignores each user&apos;s KV-cache reads, which grow with the batch and pull decode back to the left.</p>
     </div>
   );
 }

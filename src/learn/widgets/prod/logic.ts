@@ -20,7 +20,7 @@ export function isMeasurable(text: string): { ok: boolean; reason: string } {
   const vague = words.find((w) => VAGUE.includes(w.replace(/[^a-z]/g, "")));
   if (!text.trim()) return { ok: false, reason: "Type a requirement to test." };
   if (hasNumber && hasUnit) return { ok: true, reason: "Has a number and a unit, so two people could test it and agree." };
-  if (vague && !hasNumber) return { ok: false, reason: `"${vague}" is a judgement, not a number. How long, how small, how cheap?` };
+  if (vague && !hasNumber) return { ok: false, reason: `"${vague.replace(/[^a-z]/g, "")}" is a judgement, not a number. How long, how small, how cheap?` };
   if (!hasNumber) return { ok: false, reason: "No number, so there is nothing to test against." };
   return { ok: false, reason: "There is a number but no unit (months? mm? dollars?), so it is not testable yet." };
 }
@@ -315,6 +315,8 @@ export interface CertInput {
   radio: "module" | "chipdown";
   power: "aa" | "coin" | "liion";
   markets: number;
+  /** Market ids ("us", "eu", "uk", "ca"); decides which cybersecurity rules are named. */
+  marketIds?: string[];
 }
 
 export interface CertItem {
@@ -346,8 +348,10 @@ export function certPlan(c: CertInput): CertItem[] {
     detail:
       c.power === "liion"
         ? "A rechargeable lithium-ion pack needs a protection circuit and a safety-tested cell or pack (IEC 62133 is an example standard), plus a safe charger design."
-        : "Low-voltage primary cells (alkaline or coin) are the easiest case. Still check the product-safety standard for your category and market.",
-    effort: c.power === "liion" ? 3 : 1,
+        : c.power === "coin"
+          ? "A coin or button cell is a serious hazard if a child swallows it: it can cause severe internal burns within hours. Expect a child-resistant battery compartment (for example one that needs a tool, or two separate movements at once, to open) and warnings on the product and its packaging. The US rule 16 CFR 1263 (from Reese's Law) is one example; IEC 62368-1 has coin-cell clauses for equipment in its scope. Check with a test lab which rules apply."
+          : "Low-voltage alkaline AA cells are the simplest case. Still check the product-safety standard for your category and market.",
+    effort: c.power === "liion" ? 3 : c.power === "coin" ? 2 : 1,
   });
   if (c.power !== "aa") {
     items.push({
@@ -357,6 +361,22 @@ export function certPlan(c: CertInput): CertItem[] {
       effort: c.power === "liion" ? 3 : 1,
     });
   }
+  const ids = c.marketIds ?? [];
+  const eu = ids.includes("eu");
+  const uk = ids.includes("uk");
+  const cyber: string[] = [];
+  if (eu)
+    cyber.push(
+      "EU: since 1 August 2025, radio equipment that can reach the internet, directly or through other equipment such as a phone app, must meet the RED cybersecurity requirements: Article 3.3(d) (do not harm the network) and (e) (protect personal data), plus (f) (protect against fraud) for products that handle money. The EN 18031 series is the example standard. As of 2025, the Cyber Resilience Act adds wider rules, most of them from December 2027.",
+    );
+  if (uk) cyber.push("UK: the PSTI rules (since April 2024) ban shared default passwords and ask for a way to report security problems and a stated period of security updates.");
+  if (!eu && !uk) cyber.push("Not a legal test in every market, but still expected: signed updates, no shared default passwords, protected data.");
+  items.push({
+    id: "cyber",
+    title: "Cybersecurity of a connected product",
+    detail: `${cyber.join(" ")} In practice: secure boot and signed OTA updates, no shared default passwords, and protected user data. Ask a test lab which rules apply as of your launch date.`,
+    effort: eu || uk ? 1 : 0,
+  });
   items.push({
     id: "env",
     title: "Materials and end-of-life rules",
@@ -367,3 +387,79 @@ export function certPlan(c: CertInput): CertItem[] {
 }
 
 export const certEffort = (items: CertItem[]) => items.reduce((a, i) => a + i.effort, 0);
+
+// ───────────── radio link budget ─────────────
+
+export type RadioKind = "ble" | "wifi" | "lora";
+
+/** Typical round numbers for each radio (they vary by chip, data rate and supply). TX current is the radio's draw while transmitting. */
+export const RADIO_KINDS: Record<RadioKind, { label: string; freqMHz: number; sensDbm: number; powers: { dbm: number; ma: number }[]; talksTo: string }> = {
+  ble: {
+    label: "Bluetooth LE",
+    freqMHz: 2440,
+    sensDbm: -95,
+    powers: [
+      { dbm: -8, ma: 3.5 },
+      { dbm: -4, ma: 4 },
+      { dbm: 0, ma: 5 },
+      { dbm: 4, ma: 8 },
+      { dbm: 8, ma: 15 },
+    ],
+    talksTo: "a phone or a hub",
+  },
+  wifi: {
+    label: "Wi-Fi",
+    freqMHz: 2440,
+    sensDbm: -90,
+    powers: [
+      { dbm: 10, ma: 150 },
+      { dbm: 15, ma: 190 },
+      { dbm: 20, ma: 240 },
+    ],
+    talksTo: "the home router",
+  },
+  lora: {
+    label: "LoRa (868 MHz)",
+    freqMHz: 868,
+    sensDbm: -137,
+    powers: [
+      { dbm: 2, ma: 20 },
+      { dbm: 8, ma: 30 },
+      { dbm: 14, ma: 45 },
+    ],
+    talksTo: "a LoRa gateway (not a phone)",
+  },
+};
+
+/** Free-space path loss at 1 m, dB: 20·log10(f in MHz) − 27.55. About 40 dB at 2.44 GHz and 31 dB at 868 MHz. */
+export const pathLoss1m = (freqMHz: number) => 20 * Math.log10(freqMHz) - 27.55;
+
+/** Log-distance path loss, dB: the 1 m loss plus 10·n·log10(d). n = 2 is free space; indoors n is often about 3 (a typical figure). */
+export const pathLossDb = (freqMHz: number, distM: number, n: number) => pathLoss1m(freqMHz) + 10 * n * Math.log10(Math.max(distM, 1));
+
+export interface LinkInput {
+  txDbm: number;
+  /** antenna gains at both ends, dBi (0 in the toy) */
+  gainDb: number;
+  /** extra losses: a detuned antenna, walls, dB */
+  extraLossDb: number;
+  freqMHz: number;
+  sensDbm: number;
+  n: number;
+  distM: number;
+}
+
+/** Received power and margin over the receiver's sensitivity at one distance. */
+export function linkAt(l: LinkInput) {
+  const pl = pathLossDb(l.freqMHz, l.distM, l.n);
+  const rxDbm = l.txDbm + l.gainDb - pl - l.extraLossDb;
+  return { pathLossDb: pl, rxDbm, marginDb: rxDbm - l.sensDbm };
+}
+
+/** The distance at which the margin falls to `marginDb`. */
+export function maxRangeM(l: Omit<LinkInput, "distM">, marginDb: number): number {
+  const budget = l.txDbm + l.gainDb - l.sensDbm - marginDb - l.extraLossDb - pathLoss1m(l.freqMHz);
+  return budget <= 0 ? 1 : 10 ** (budget / (10 * l.n));
+}
+
+export const dbmToMw = (dbm: number) => 10 ** (dbm / 10);

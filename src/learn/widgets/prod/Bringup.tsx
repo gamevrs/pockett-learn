@@ -49,7 +49,7 @@ const FAULT_NAME: Record<Fault, string> = {
   good: "a healthy board",
   short: "a short on the 3V3 rail",
   wrongreg: "wrong feedback resistors on the regulator (1.6 V instead of 3.3 V)",
-  noclock: "a crystal that is not oscillating",
+  noclock: "a crystal that never starts, so the firmware waits for it forever",
 };
 
 /** A bench bring-up of mystery Sprout boards: set a current limit, power on, read the supply, probe, and diagnose. */
@@ -125,7 +125,7 @@ export function Bringup({ props, onChange }: WidgetProps<BringupProps>) {
           fault === "good"
             ? "Connected. Chip ID read, firmware loaded, LED blinks."
             : fault === "noclock"
-              ? "Connects and reads the chip ID, but the core never runs: a clock-failure flag is set."
+              ? "Connects and halts the core: it booted on its internal RC oscillator and is spinning in the clock-setup loop, waiting forever for the external crystal to report ready."
               : fault === "wrongreg"
                 ? "Target voltage reads 1.60 V, below the MCU's minimum supply (typically 1.8 V; check the datasheet). Connection is unreliable."
                 : "No target voltage seen. Cannot connect.";
@@ -150,6 +150,13 @@ export function Bringup({ props, onChange }: WidgetProps<BringupProps>) {
     !powered ? "Off" : sup.mode === "CV" ? `Constant voltage: ${formatSI(SUPPLY_V, "V")}, ${formatSI(sup.amps, "A")}` : `CURRENT LIMIT: ${formatSI(vTop, "V")}, ${formatSI(sup.amps, "A")}`;
   const flow = powered ? iBoard : 0;
   const unsafe = powered && fault === "short" && limitMa >= 500;
+  const startOver = () => {
+    resetBoard(0);
+    setSolved([]);
+    setOverdrove(false);
+    setLimitMa(50);
+    emit(boards[0], false, 50, [], false);
+  };
 
   return (
     <div className="w-full" data-widget>
@@ -187,6 +194,12 @@ export function Bringup({ props, onChange }: WidgetProps<BringupProps>) {
           <Note tone="accent">
             With almost no limit, a {formatSI(b.loadOhms, "Ω")} short pulls whatever the supply can give: about {power.toFixed(1)} W of heat in a pinhead-sized spot. Traces lift, parts crack. Always start low.
           </Note>
+        )}
+        {overdrove && !unsafe && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Note tone="accent">This session powered the shorted board with a limit of 500 mA or more. On a real bench that can cook it, so it does not count as a safe bring-up. Start again with a low limit.</Note>
+            <Btn onClick={startOver}>Start again</Btn>
+          </div>
         )}
         {powered && sup.mode === "CC" && !unsafe && (
           <Note>The board wants {formatSI(sup.wanted, "A")} but the supply only allows {formatSI(sup.amps, "A")}, so the voltage collapses to {formatSI(vTop, "V")}. The limit just saved the board.</Note>

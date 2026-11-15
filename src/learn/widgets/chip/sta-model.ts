@@ -255,9 +255,12 @@ export function stateOfSta(cfg: StaConfig): StaState {
 }
 
 /**
- * goal: { preset?: string, setupMet?: boolean, holdMet?: boolean, periodNs?: number, minFmaxMhz?: number, minBuffers?: number, pipelined?: boolean }.
+ * goal: { preset?: string, setupMet?: boolean, holdMet?: boolean, periodNs?: number, skewPs?: number, maxUpsized?: number, minFmaxMhz?: number,
+ *         minBuffers?: number, pipelined?: boolean }.
  * Everything is recomputed from state.preset / periodNs / skewPs / regAfter / upsized / buffers; the wns/fmax fields in state are never trusted.
  * periodNs is a requirement on the clock: the learner's period must be at most this long (so slowing the clock cannot satisfy it).
+ * skewPs pins the clock skew exactly (a "fix the design, not the clock" goal cannot be met by sliding the skew), and
+ * maxUpsized caps how many gates may be upsized (a retiming goal cannot be met by upsizing instead).
  */
 export function checkSta(state: unknown, goal: Record<string, unknown>): boolean {
   const s = state as Partial<StaState> | undefined;
@@ -272,6 +275,14 @@ export function checkSta(state: unknown, goal: Record<string, unknown>): boolean
   if (typeof goal.periodNs === "number") {
     any = true;
     if (cfg.periodNs > goal.periodNs + 1e-9) return false;
+  }
+  if (typeof goal.skewPs === "number") {
+    any = true;
+    if (Math.abs(cfg.skewPs - goal.skewPs) > 1e-9) return false;
+  }
+  if (typeof goal.maxUpsized === "number") {
+    any = true;
+    if (cfg.upsized.length > goal.maxUpsized) return false;
   }
   if (goal.setupMet === true) {
     any = true;

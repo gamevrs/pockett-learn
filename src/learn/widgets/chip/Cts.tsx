@@ -39,7 +39,7 @@ const BLURB: Record<Arch, string> = {
 };
 const SCALE = 500;
 const X0 = 64;
-const Y0 = 60;
+const Y0 = 76; // room above the source dot for its CLK label
 const PITCH = 85;
 
 export function Cts({ props, onChange, goal, status }: WidgetProps<CtsProps>) {

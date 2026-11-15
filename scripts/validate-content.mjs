@@ -144,6 +144,32 @@ if (!only || only === "foundations") {
       else if (ti < lastTier) problems.push(`foundations/${lesson.id}: level "${lesson.level}" goes backwards in module "${mod.id}" (after ${TIERS[lastTier]})`);
       else lastTier = ti;
     }
+    // Guessable choices (warnings): a correct option much longer than every distractor, or one answer position
+    // holding most of a module's answers, lets a learner pass by length or position instead of understanding.
+    const answerAt = new Map();
+    let singleChoices = 0;
+    for (const lesson of mod.lessons) {
+      lesson.steps.forEach((st, si) => {
+        if (st.kind !== "question" || st.question.type !== "choice") return;
+        const q = st.question;
+        const right = Array.isArray(q.answer) ? q.answer : [q.answer];
+        if (right.length !== 1 || q.options.length < 2) return;
+        const a = right[0];
+        if (!Number.isInteger(a) || a < 0 || a >= q.options.length) return;
+        singleChoices++;
+        answerAt.set(a, (answerAt.get(a) ?? 0) + 1);
+        const longestWrong = Math.max(...q.options.filter((_, i) => i !== a).map((o) => o.length));
+        const ratio = q.options[a].length / Math.max(1, longestWrong);
+        if (ratio > 1.3) {
+          warn.push(`foundations/${lesson.id} step ${si + 1} ("${st.title ?? ""}"): the correct option is ${ratio.toFixed(2)}× the longest distractor (keep it ≤ 1.3×: trim it to the claim, move the reasoning to the explanation)`);
+        }
+      });
+    }
+    if (singleChoices >= 8) {
+      for (const [a, n] of answerAt) {
+        if (n / singleChoices > 0.6) warn.push(`foundations/${mod.id}: the correct answer sits at index ${a} (option ${a + 1}) in ${n} of its ${singleChoices} single-answer choice questions (keep each position ≤ 60%)`);
+      }
+    }
     for (const lesson of mod.lessons) {
       const tag = `foundations/${lesson.id}`;
       if (!lesson.id.startsWith("fnd-")) problems.push(`${tag}: lesson ids must start with "fnd-"`);

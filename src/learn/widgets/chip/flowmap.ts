@@ -67,7 +67,7 @@ export const FLOW_STAGES: FlowStage[] = [
     side: "front",
     input: "RTL, a standard-cell library (the menu of gates) and constraints (clock period, area, power goals).",
     output: "A gate-level netlist: the same logic as a network of library cells and flip-flops.",
-    who: "Physical design engineer (working with the RTL designer)",
+    who: "RTL or synthesis engineer (front-end implementation), handing the netlist to physical design",
     tools: "Yosys is an open-source example; commercial synthesis tools do the same job.",
     what: "A program turns the code into gates and picks cells so that the design meets its constraints. It runs again after any RTL change.",
     loops: [{ to: "rtl", why: "If the netlist is too big or too slow for the constraints, change the RTL (or relax the constraints) and re-synthesize." }],

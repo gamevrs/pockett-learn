@@ -24,6 +24,30 @@ const MIXED = [
   { text: "F add r8, r6", lat: 1, deps: [4] },
 ];
 
+/** A smaller mix for the out-of-order explain step, so the graded MIXED program is new when it is asked. */
+const MIXED_DEMO = [
+  { text: "A load r1", lat: 4, deps: [] },
+  { text: "B add r2, r1", lat: 1, deps: [0] },
+  { text: "C add r3, r4", lat: 1, deps: [] },
+  { text: "D add r5, r3", lat: 1, deps: [2] },
+];
+/** A different profile for the flame-graph explain step (the graded one uses the widget's default tree). */
+const FLAME_DEMO = {
+  name: "main",
+  total: 100,
+  children: [
+    { name: "init", total: 20 },
+    {
+      name: "serve",
+      total: 80,
+      children: [
+        { name: "render", total: 45, children: [{ name: "json", total: 15 }] },
+        { name: "query", total: 25 },
+      ],
+    },
+  ],
+};
+
 /** Lessons 6 to 10 of "How a CPU runs your code": branch prediction, out-of-order, many cores, SIMD, measuring. */
 export const cpuLessonsB: ConceptLesson[] = [
   // ─────────────────────────────── 6. Branch prediction ───────────────────────────────
@@ -75,16 +99,21 @@ export const cpuLessonsB: ConceptLesson[] = [
         body: "On the 8-trip loop, the 1-bit predictor is wrong **twice** per loop. Why?",
         question: {
           type: "choice",
-          options: ["It is wrong when the loop exits, and then wrong again on the first branch of the next run because it just remembered 'not taken'", "It can not count to 8", "It guesses randomly", "It is only wrong at the very start of the program"],
-          answer: 0,
+          options: [
+            "It needs eight trips round the loop before it learns",
+            "Its single bit overflows once the loop passes 7",
+            "It misses the exit, then the next loop's first branch",
+            "It guesses at random when the history is mixed",
+          ],
+          answer: 2,
           hint: "What does 'last time' say right after the loop has just exited?",
           feedback: {
-            1: "It does not count at all. It only remembers the last outcome.",
-            2: "It is perfectly deterministic: it repeats whatever happened last.",
-            3: "It keeps being wrong in every loop, not just at the start.",
+            0: "It learns after a single outcome: it only ever remembers the last one. That is exactly its weakness.",
+            1: "One bit cannot count, so there is nothing to overflow. It stores only 'taken' or 'not taken'.",
+            3: "It is perfectly deterministic: it repeats whatever happened last, every time.",
           },
         },
-        explanation: "After the exit (not taken) the 1-bit predictor says 'not taken' for the next loop's first branch, which is wrong. The 2-bit counter only drops one step on the exit, still says 'taken', and stays right. That is the whole point of the extra bit.",
+        explanation: "The loop exit (not taken) is a miss, and it leaves the 1-bit predictor remembering 'not taken'. So it also says 'not taken' for the next loop's first branch, which is wrong. The 2-bit counter only drops one step on the exit, still says 'taken', and stays right. That is the whole point of the extra bit.",
       },
       {
         kind: "explain",
@@ -105,7 +134,7 @@ export const cpuLessonsB: ConceptLesson[] = [
         body: "With the 15-cycle penalty, how many **cycles** does the 2-bit predictor waste on the **sorted** data?",
         widget: { type: "cpuarch-branch", props: { patterns: ["sorted", "unsorted"], predictors: ["two-bit"], initialPattern: "unsorted", initialPredictor: "two-bit" }, after: true },
         question: { type: "number", answer: 30, hint: "Count the filled tiles on the sorted data and multiply by 15." },
-        explanation: "Only **2** wrong guesses (once when the data flips from 'no' to 'yes', plus one warming up), so 2 × 15 = **30 cycles**. On the shuffled data it is wrong around 35 times out of 64, wasting hundreds of cycles for the same work.",
+        explanation: "Only **2** wrong guesses, both right where the data flips: the counter has sunk to 0 during the long run of 'no', so it takes two 'yes' results to climb back to 'taken'. 2 × 15 = **30 cycles**. On the shuffled data it is wrong 37 times out of 64, wasting hundreds of cycles for the same work.",
       },
       {
         kind: "explain",
@@ -185,7 +214,7 @@ export const cpuLessonsB: ConceptLesson[] = [
         kind: "question",
         title: "A chain does not care",
         body: "Four dependent additions at issue width 4. How many cycles does the chain take?",
-        widget: { type: "cpuarch-ooo", props: { program: CHAIN, chooseOrder: false }, live: true },
+        widget: { type: "cpuarch-ooo", props: { program: CHAIN, chooseOrder: false }, after: true },
         question: { type: "number", answer: 4, hint: "Each add has to wait for the one before it, however many lanes there are." },
         explanation: "**4 cycles**, the same as at width 1. The amount of work that *can* run side by side is the program's **instruction-level parallelism (ILP)**, and a dependency chain has an ILP of 1. Extra lanes sit empty.",
       },
@@ -193,9 +222,9 @@ export const cpuLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "Independent work uses the lanes",
         body: P(
-          "Now eight instructions that do not depend on each other. With one lane they take 8 cycles; with wider issue they overlap. The speed-up is limited by **how many independent instructions the code offers**, not by how wide the core is.",
+          "Now six instructions that do not depend on each other. With one lane they take 6 cycles; with wider issue they overlap. The speed-up is limited by **how many independent instructions the code offers**, not by how wide the core is.",
         ),
-        widget: { type: "cpuarch-ooo", props: { program: INDEPENDENT, chooseOrder: false } },
+        widget: { type: "cpuarch-ooo", props: { program: INDEPENDENT.slice(0, 6), chooseOrder: false } },
       },
       {
         kind: "question",
@@ -209,17 +238,17 @@ export const cpuLessonsB: ConceptLesson[] = [
         kind: "explain",
         title: "Out of order: do not wait in line",
         body: P(
-          "Now a realistic mix. A **load** takes 4 cycles; a **multiply** takes 3. In **in-order** issue, instruction B (which needs the load) blocks everything behind it, even instructions C to F that need nothing from A.",
-          "An **out-of-order** core keeps a window of waiting instructions and starts any whose inputs are ready, whatever their position. Compare the two.",
+          "Now a mix. A **load** takes 4 cycles. In **in-order** issue, instruction B (which needs the load) blocks everything behind it, even C and D that need nothing from A.",
+          "An **out-of-order** core keeps a window of waiting instructions and starts any whose inputs are ready, whatever their position. Compare the two on this short example; a longer mix follows.",
         ),
-        widget: { type: "cpuarch-ooo", props: { program: MIXED } },
+        widget: { type: "cpuarch-ooo", props: { program: MIXED_DEMO } },
       },
       {
         kind: "question",
         title: "Look ahead",
-        body: "Find a setting that runs this code in **5 cycles or fewer**.",
+        body: "This longer mix adds a **multiply** (3 cycles). Find a setting that runs it in **5 cycles or fewer**.",
         widget: { type: "cpuarch-ooo", props: { program: MIXED } },
-        question: { type: "widget", goal: { outOfOrder: true, maxCycles: 5 }, hint: "In order never gets below 7 cycles here. You need both looking ahead and more than one lane." },
+        question: { type: "widget", goal: { outOfOrder: true, maxCycles: 5 }, hint: "In order never gets below 9 cycles here. You need both looking ahead and more than one lane." },
         explanation: "Out of order at width 2 or more takes **5 cycles**, against 9 cycles in order at width 2. The slow load keeps running while the multiply and the independent adds sail past it.",
       },
       {
@@ -237,13 +266,18 @@ export const cpuLessonsB: ConceptLesson[] = [
         body: "What problem does **register renaming** solve?",
         question: {
           type: "choice",
-          options: ["It makes registers bigger", "It lets the CPU skip the decode stage", "Reusing a register name no longer forces instructions to wait for each other", "It speeds up the clock"],
-          answer: 2,
+          options: [
+            "False dependencies from reused register names",
+            "True dependencies, where one result feeds the next",
+            "Waiting for a slow load to bring its value back",
+            "Running out of registers in deeply nested calls",
+          ],
+          answer: 0,
           hint: "Think about two unrelated calculations that both happen to use the register called r1.",
           feedback: {
-            0: "Renaming does not change register size; it gives extra hidden registers to hand out.",
-            1: "Every instruction is still decoded. Renaming happens right after decode.",
-            3: "The clock is unrelated. Renaming removes waiting between instructions, so more can run each tick.",
+            1: "A real dependency cannot be renamed away: the second instruction truly needs the first one's result.",
+            2: "A slow load is waited out by out-of-order issue and caches. Renaming does not make data arrive sooner.",
+            3: "Spilling registers in deep calls is the compiler's job, and the ISA's register count does not change.",
           },
         },
         explanation: "Without renaming, the second use of `r1` would have to wait for the first to finish with it, even though the values are unrelated. With hidden registers the two live side by side, exposing more ILP.",
@@ -300,13 +334,18 @@ export const cpuLessonsB: ConceptLesson[] = [
         body: "A 4-core chip with SMT shows up as 8 logical processors. Running 8 busy threads on it, compared to 4 threads on the same chip, is usually:",
         question: {
           type: "choice",
-          options: ["Exactly twice as fast", "Often somewhat faster (tens of percent), but nowhere near twice", "Always slower", "The same speed, since the hardware is shared"],
-          answer: 1,
+          options: [
+            "Exactly twice as fast, like a second core",
+            "Always a little slower, from sharing caches",
+            "The same speed, since the units are shared",
+            "Somewhat faster, often by tens of percent",
+          ],
+          answer: 3,
           hint: "The two threads share one set of execution units, so they only help each other when one would otherwise be idle.",
           feedback: {
             0: "That would need a real second core. SMT threads share the same execution units, so they mostly fill idle gaps.",
-            2: "Not always. SMT helps when a thread stalls, and the other thread uses the gap.",
-            3: "There is a gain, because stalled cycles get used. It is just much smaller than a second core would give.",
+            1: "Not always. Sharing caches can hurt some workloads, but usually the other thread uses cycles that would sit idle.",
+            2: "There is a gain, because stalled cycles get used. It is just much smaller than a second core would give.",
           },
         },
         explanation: "SMT squeezes more out of one core by filling idle slots. The gain depends heavily on the workload: typically tens of percent, and sometimes close to nothing for code that already keeps the units busy. It is not a second core.",
@@ -317,9 +356,9 @@ export const cpuLessonsB: ConceptLesson[] = [
         body: P(
           "Say a job takes 10 seconds, and 90% of it can be split across cores while 10% has to run in a single line (reading the input, combining the answers). Even with infinite cores the 1 second of serial work remains. That is **Amdahl's law**:",
           "**speedup = 1 ÷ ((1 − p) + p ÷ n)**, where **p** is the share that runs in parallel and **n** is the number of cores.",
-          "Drag the sliders. Notice how fast the curve flattens.",
+          "Drag the sliders (this starts at 75% parallel on 4 cores). Notice how fast the curve flattens.",
         ),
-        widget: { type: "cpuarch-amdahl", props: { parallel: 90, cores: 8 } },
+        widget: { type: "cpuarch-amdahl", props: { parallel: 75, cores: 4 } },
       },
       {
         kind: "question",
@@ -343,13 +382,13 @@ export const cpuLessonsB: ConceptLesson[] = [
         widget: { type: "cpuarch-amdahl", props: { parallel: 90, cores: 8, lockParallel: true }, live: true },
         question: {
           type: "choice",
-          options: ["2×", "About 1.4×", "No change at all", "It gets slower"],
-          answer: 1,
+          options: ["2×", "No change at all", "It gets slower", "About 1.4×"],
+          answer: 3,
           hint: "Read the speedup at 8 cores, then at 16 cores, and divide.",
           feedback: {
             0: "Double the cores would be double the speed only if everything was parallel. The 10% serial part limits it.",
-            2: "The parallel part does get twice as many workers, so there is some gain (4.7× to 6.4×).",
-            3: "In Amdahl's model extra cores never hurt. In real life, overheads can, but that is not what the law says.",
+            1: "The parallel part does get twice as many workers, so there is some gain (4.7× to 6.4×).",
+            2: "In Amdahl's model extra cores never hurt. In real life, overheads can, but that is not what the law says.",
           },
         },
         explanation: "8 cores give about 4.7× and 16 give about 6.4×: roughly **1.4× more** for double the hardware. Each doubling buys less than the last.",
@@ -369,7 +408,7 @@ export const cpuLessonsB: ConceptLesson[] = [
         body: "Write `speedup(p, n)`: the speedup on `n` cores when a fraction `p` (0 to 1) of the work is parallel.",
         language: "python",
         starter: `def speedup(p, n):
-    # 1 / ((1 - p) + p / n)
+    # your code here
     return 0
 `,
         solution: `def speedup(p, n):
@@ -409,7 +448,7 @@ export const cpuLessonsB: ConceptLesson[] = [
         title: "A wider register",
         body: P(
           "Adding two arrays element by element, `c[i] = a[i] + b[i]`, runs the same tiny step again and again. **SIMD** (single instruction, multiple data) is the CPU's answer: a **vector register** holds several numbers side by side, and **one instruction** adds all of them at once. Each slot is called a **lane**.",
-          "A 128-bit vector register holds four 32-bit numbers, so one add does the work of four. Pick the number of lanes and watch the instruction count fall. (GPUs take the same idea much further, with 32 lanes per warp: see *Warps and divergence* in the GPU module.)",
+          "A 128-bit vector register holds four 32-bit numbers, so one add does the work of four. Pick the number of lanes and watch the instruction count fall. (GPUs take the same idea much further: 32 threads per warp on NVIDIA GPUs, and AMD wavefronts of 32 or 64. See *Warps and divergence* in the GPU module.)",
         ),
         widget: { type: "cpuarch-simd", props: { lanes: [1, 4, 8], n: 16 } },
       },
@@ -463,13 +502,13 @@ for (int i = 1; i < n; i++)
         body: "Which of these loops is **hard** to vectorise?",
         question: {
           type: "choice",
-          options: ["c[i] = a[i] * 2", "a[i] = a[i-1] + b[i]", "c[i] = a[i] + b[i]", "d[i] = a[i] * a[i]"],
-          answer: 1,
+          options: ["c[i] = a[i] * 2", "c[i] = a[i] + b[i]", "d[i] = a[i] * a[i]", "a[i] = a[i-1] + b[i]"],
+          answer: 3,
           hint: "Which loop needs the answer from the previous step before it can do the next?",
           feedback: {
             0: "Each element is independent: element 5 does not need element 4. That vectorises easily.",
-            2: "Independent elements again, the classic easy case.",
-            3: "Squaring each element does not depend on any neighbour. Easy to vectorise.",
+            1: "Independent elements again, the classic easy case.",
+            2: "Squaring each element does not depend on any neighbour. Easy to vectorise.",
           },
         },
         explanation: "`a[i] = a[i-1] + b[i]` is a **loop-carried dependency**: each element needs the one just computed, so they can not all be done at once. Other common blockers: pointers that might overlap (aliasing), unpredictable branches inside the loop, calls to functions the compiler can not see into, and memory access that jumps around instead of walking forward.",
@@ -480,13 +519,18 @@ for (int i = 1; i < n; i++)
         body: "You are summing and multiplying big lists of numbers in Python and want the CPU's vector units to work. What is the usual practical route?",
         question: {
           type: "choice",
-          options: ["Write assembly by hand inside your Python loop", "Use a library like NumPy, whose compiled loops are built to use SIMD", "Add more threads to a plain Python for loop", "Turn up the monitor refresh rate"],
-          answer: 1,
+          options: [
+            "Use NumPy, whose compiled loops use SIMD",
+            "Write assembly by hand inside the loop",
+            "Add threads to a plain Python for loop",
+            "Swap lists for Python's array module",
+          ],
+          answer: 0,
           hint: "Python itself runs one object at a time. Where do fast array loops live?",
           feedback: {
-            0: "Possible but rarely sensible. Libraries already ship tuned vector code for you.",
+            1: "Python cannot run inline assembly, and an extension for one loop is rarely sensible. Libraries already ship tuned vector code.",
             2: "More threads do not make each Python step wider, and Python's own overhead per step stays.",
-            3: "The monitor is unrelated to the CPU's vector units.",
+            3: "The array module stores numbers compactly, but a Python loop over it still handles one number per step.",
           },
         },
         explanation: "Libraries such as NumPy run whole-array operations in compiled code that is written (or compiled) to use SIMD where the CPU has it. Moving a hot loop from plain Python into one array operation often gives a large speed-up for this reason (among others).",
@@ -537,9 +581,9 @@ for (int i = 1; i < n; i++)
         body: P(
           "Everything in this module comes down to one habit: **measure before you change anything**. Intuition about performance is wrong surprisingly often.",
           "Modern CPUs count what they do in special **performance counters**: cycles, instructions retired, branches, branch misses, cache misses and more. A tool reads them for you. From them you work out:\n\n- **IPC** = instructions ÷ cycles. Low (under 1) usually means the core is stalled waiting, often on memory. Higher means it is busy. What counts as 'good' depends on the chip and the code.\n- **Branch-miss rate** = branch misses ÷ branches. A few percent is normal; a big number points at unpredictable branches.\n- **Cache misses per thousand instructions**: high means the program is waiting on memory.",
-          "Below are counters for three made-up programs, laid out like the output of a typical Linux tool (`perf stat`). Click through them and read the numbers.",
+          "Below are counters for a made-up program, laid out like the output of a typical Linux tool (`perf stat`). Read the numbers and the derived lines under them. The next steps give you more programs to diagnose.",
         ),
-        widget: { type: "cpuarch-counters", props: {} },
+        widget: { type: "cpuarch-counters", props: { only: ["sum"] } },
       },
       {
         kind: "question",
@@ -553,18 +597,18 @@ for (int i = 1; i < n; i++)
         kind: "question",
         title: "Who is guessing badly?",
         body: "Which program has a **branch-miss rate** that stands out as a problem?",
-        widget: { type: "cpuarch-counters", props: {}, live: true },
+        widget: { type: "cpuarch-counters", props: { derived: false }, live: true },
         question: {
           type: "choice",
-          options: ["Sum an array in order", "Walk a scattered list", "Count big values in shuffled data"],
-          answer: 2,
-          hint: "Find the row where branch-misses is a large share of branches.",
+          options: ["Walk a scattered list", "Count big random bytes", "Sum an array in order"],
+          answer: 1,
+          hint: "The derived lines are hidden this time: divide branch-misses by branches for each program.",
           feedback: {
-            0: "Its branch-miss rate is tiny (0.03%): a simple loop is very easy to predict.",
-            1: "Its branch-misses are rare. Its problem is memory, not branches.",
+            0: "Its branch-misses are rare (0.25%). Its problem is memory, not branches.",
+            2: "Its branch-miss rate is tiny (0.03%): a simple loop is very easy to predict.",
           },
         },
-        explanation: "The shuffled-data count has about 25% of its branches mispredicted. That matches the data-dependent `if` from the branch-prediction lesson. Same tool, different diagnosis: the counters point at *which* kind of stall to chase.",
+        explanation: "The random-byte count has 120 million misses out of 480 million branches: **25%** mispredicted. That matches the data-dependent `if` from the branch-prediction lesson. Same tool, different diagnosis: the counters point at *which* kind of stall to chase.",
       },
       {
         kind: "explain",
@@ -573,12 +617,12 @@ for (int i = 1; i < n; i++)
           "Counters tell you *what kind* of problem, not *where*. A **sampling profiler** answers that. Many times a second (say a hundred) it pauses the program, records which function is running and the whole call stack, then lets it continue. After thousands of samples, the functions that appear most often are where the time goes.",
           "A **flame graph** draws those samples: each block is a function, **wider = more samples**, and a block sits on top of the function that called it. Importantly, left-to-right is *not* time order. Tap blocks to see two numbers: **total** (the function and everything it called) and **self** (only its own code).",
         ),
-        widget: { type: "cpuarch-flame", props: {} },
+        widget: { type: "cpuarch-flame", props: { tree: FLAME_DEMO } },
       },
       {
         kind: "question",
         title: "Find the hot spot",
-        body: "Tap the function with the most **self** time: the one whose *own* code is hottest.",
+        body: "Here is a different program's profile. Tap the function with the most **self** time: the one whose *own* code is hottest.",
         widget: { type: "cpuarch-flame", props: {} },
         question: { type: "widget", goal: { selected: "sha" }, prompt: "Tap the block with the highest self time.", hint: "Total time includes everything a function calls. Look for the biggest self number, not the widest block near the bottom." },
         explanation: "`sha` has 30% self time: that is where the CPU is really working. `main` and `crunch` are wide, but almost all their time is spent inside the functions they call, so tuning them directly would change little.",
@@ -589,16 +633,21 @@ for (int i = 1; i < n; i++)
         body: "`main` is at the bottom and has 100% total time. A teammate says: 'main is the bottleneck, optimise it!' What is the best reply?",
         question: {
           type: "choice",
-          options: ["Agreed: 100% is the biggest number", "Its self time is 0%; the time is in the functions it calls, so look further up the graph", "We can not tell without a faster CPU", "Delete main"],
-          answer: 1,
+          options: [
+            "Agreed: 100% total is the biggest number",
+            "Rewrite main in a faster language first",
+            "Profile again at a higher sample rate",
+            "No: main's self time is 0%, look higher",
+          ],
+          answer: 3,
           hint: "The root function is always 100% total, because everything runs under it.",
           feedback: {
             0: "The root always shows 100% total, because every sample is inside it somewhere. That says nothing about where the work is.",
-            2: "The profile already tells us a lot. We just need to read self time.",
-            3: "A program without main does not run. The point is to find which called function does the work.",
+            1: "main's own code barely runs. Rewriting it would leave the hot callees exactly as slow.",
+            2: "More samples sharpen the picture, but this one is already clear: main's self time is 0%.",
           },
         },
-        explanation: "A function's **total** includes its callees, so the root is always 100%. **Self** time shows who actually burns the cycles. Start with the biggest self-time blocks, then ask why they are slow, using the counters.",
+        explanation: "A function's **total** includes its callees, so the root is always 100%. Its self time is 0%: the time is in the functions it calls, further up the graph. **Self** time shows who actually burns the cycles. Start with the biggest self-time blocks, then ask why they are slow, using the counters.",
       },
       {
         kind: "question",

@@ -341,10 +341,18 @@ export interface DebounceState {
 }
 
 const PRESS_AT = 10;
-const RELEASE_AT = 60;
+const HOLD_MS = 50;
+
+/**
+ * When the press happens, ms. Each seed ("Another press") presses at a slightly different moment (10.0 to 12.4 ms,
+ * on the 0.1 ms grid), so the press never sits at a fixed spot relative to the code's read times: a setting cannot
+ * pass by luck of alignment, and the same seed always gives the same press.
+ */
+export const pressAtFor = (seed: number) => PRESS_AT + (((Math.abs(Math.round(seed)) * 7) % 25) / 10);
 
 function runDebounce(sampleMs: number, stable: number, bounceMs: number, seed: number) {
-  const raw = bounceEdges(PRESS_AT, RELEASE_AT, bounceMs, seed);
+  const pressAt = pressAtFor(seed);
+  const raw = bounceEdges(pressAt, pressAt + HOLD_MS, bounceMs, seed);
   const d = debounce(raw, sampleMs, stable, 100);
   return { raw, d, state: { sampleMs, stable, bounceMs, presses: d.presses, rawPresses: d.rawPresses, delayMs: d.delayMs, seed } satisfies DebounceState };
 }
@@ -376,16 +384,16 @@ export function Debounce({ props, onChange, revealed }: WidgetProps<DebounceProp
   const report = (s: number, n: number, b: number, sd: number) => onChange?.(runDebounce(s, n, b, sd).state);
 
   const t0 = zoom === "zoom" ? 8 : 0;
-  const t1 = zoom === "zoom" ? 20 : 100;
+  const t1 = zoom === "zoom" ? 24 : 100;
   const X0 = 14;
   const W = 332;
   const xOf = (t: number) => X0 + ((t - t0) / (t1 - t0)) * W;
   const skip = sampleMs < 1 ? 2 : 1;
   const ticks = d.samples.filter((s, i) => i % skip === 0 && s.t >= t0 && s.t <= t1);
-  const axis = zoom === "zoom" ? [8, 11, 14, 17, 20] : [0, 25, 50, 75, 100];
+  const axis = zoom === "zoom" ? [8, 12, 16, 20, 24] : [0, 25, 50, 75, 100];
   const events = [
-    { t: PRESS_AT, label: "pressed" },
-    { t: RELEASE_AT, label: "released" },
+    { t: pressAtFor(seed), label: "pressed" },
+    { t: pressAtFor(seed) + HOLD_MS, label: "released" },
   ].filter((e) => e.t >= t0 && e.t <= t1);
 
   const bounceOptions = BOUNCES.includes(bounceMs) ? BOUNCES : [...BOUNCES, bounceMs].sort((a, b) => a - b);
@@ -447,7 +455,7 @@ export function Debounce({ props, onChange, revealed }: WidgetProps<DebounceProp
           onChange={setZoom}
           options={[
             { value: "whole", label: "Whole press" },
-            { value: "zoom", label: "Zoom on the press (8–20 ms)" },
+            { value: "zoom", label: "Zoom on the press (8–24 ms)" },
           ]}
         />
       </div>
@@ -507,12 +515,27 @@ export function Debounce({ props, onChange, revealed }: WidgetProps<DebounceProp
   );
 }
 
-/** goal: { presses?, maxDelayMs?, minBounceMs? } */
+/**
+ * goal: { presses?, maxDelayMs?, minBounceMs?, minAgreeMs?, seeds?: [from, to] }
+ * - presses / maxDelayMs: checked on the learner's current run, and (with `seeds`) on every seed from..to inclusive.
+ * - minAgreeMs: sampleMs × stable must be at least this (the agreeing reads must cover the bounce window).
+ * - seeds: re-run the simulation for each seed with the learner's sampleMs / stable / bounceMs, so pressing
+ *   "Another press" cannot make a lucky setting pass.
+ */
 export function checkDebounce(state: unknown, goal: Record<string, unknown>): boolean {
   const s = state as DebounceState | undefined;
   if (!s) return false;
-  if (typeof goal.presses === "number" && s.presses !== goal.presses) return false;
-  if (typeof goal.maxDelayMs === "number" && (s.delayMs === null || s.delayMs > goal.maxDelayMs)) return false;
   if (typeof goal.minBounceMs === "number" && s.bounceMs < goal.minBounceMs) return false;
+  if (typeof goal.minAgreeMs === "number" && !(s.sampleMs * s.stable >= goal.minAgreeMs - 1e-9)) return false;
+  const seeds = goal.seeds;
+  // With a seed range the learner's own seed does not matter: only the range is judged.
+  const runs: { presses: number; delayMs: number | null }[] = Array.isArray(seeds) ? [] : [s];
+  if (Array.isArray(seeds) && typeof seeds[0] === "number" && typeof seeds[1] === "number") {
+    for (let sd = seeds[0]; sd <= seeds[1]; sd++) runs.push(runDebounce(s.sampleMs, s.stable, s.bounceMs, sd).state);
+  }
+  for (const r of runs) {
+    if (typeof goal.presses === "number" && r.presses !== goal.presses) return false;
+    if (typeof goal.maxDelayMs === "number" && (r.delayMs === null || r.delayMs > goal.maxDelayMs)) return false;
+  }
   return true;
 }

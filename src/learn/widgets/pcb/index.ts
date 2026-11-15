@@ -12,6 +12,7 @@ import { Resistor, Smd, checkResistor, checkSmd } from "./Resistor";
 import { ReturnPath, checkReturnPath } from "./ReturnPath";
 import { Route, checkRoute } from "./Route";
 import { Stackup, checkStackup } from "./Stackup";
+import { Thermal, checkThermal } from "./Thermal";
 import { TraceWidth, checkTraceWidth } from "./TraceWidth";
 
 /**
@@ -33,6 +34,7 @@ export const PCB_WIDGETS: WidgetRegistry = {
   "pcb-tracewidth": { Component: TraceWidth, check: checkTraceWidth },
   "pcb-route": { Component: Route, check: checkRoute },
   "pcb-returnpath": { Component: ReturnPath, check: checkReturnPath },
+  "pcb-thermal": { Component: Thermal, check: checkThermal },
   "pcb-decap": { Component: Decap, check: checkDecap },
   "pcb-critical": { Component: Critical, check: checkCritical },
   "pcb-bounce": { Component: Bounce, check: checkBounce },

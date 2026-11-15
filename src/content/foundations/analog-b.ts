@@ -2,8 +2,6 @@ import type { ConceptLesson } from "../../learn/types.ts";
 
 /** Fenced plain-text block (tables, diagrams) for lesson prose. */
 const txt = (s: string) => "~~~text\n" + s.trim() + "\n~~~";
-/** Fenced Python block for lesson prose. */
-const py = (s: string) => "~~~python\n" + s.trim() + "\n~~~";
 /** Paragraphs joined with blank lines. */
 const P = (...paras: string[]) => paras.join("\n\n");
 
@@ -56,7 +54,7 @@ fc = 1 / (2π R C)
           "It is the same RC as the time constant from *Capacitors: storing charge*: fc = 1 / (2π τ). At fc the output is **0.707** (that is 1/√2) of the input, not one half: the resistor's and capacitor's voltages are 90° apart, so their sizes combine like the sides of a right triangle, √(R² + XC²) = R√2. A low-pass output is also delayed there by a **phase shift of −45°**. This 0.707 point is called the **−3 dB point**.",
           "The plot shows the filter's **gain** (output size divided by input size, in decibels, which we define next) against frequency. Try both types, and drag the test frequency across the cutoff.",
         ),
-        widget: { type: "analog-filter", props: { r: 1000, c: 1e-7, type: "low", testF: 100 } },
+        widget: { type: "analog-filter", props: { r: 1500, c: 1e-7, type: "low", testF: 100 } },
       },
       {
         kind: "question",
@@ -94,10 +92,10 @@ Vout / Vin    dB
         question: {
           type: "choice",
           options: [
-            "About 0.5 (−6 dB)",
-            "About 0.1 (−20 dB): ten times the frequency, ten times less voltage",
-            "About 0.707 (−3 dB), the same as at the cutoff",
-            "About 0.01 (−40 dB)",
+            "About 0.5 (−6 dB), half the input",
+            "About 0.1 (−20 dB), a tenth",
+            "About 0.707 (−3 dB), as at the cutoff",
+            "About 0.01 (−40 dB), a hundredth",
           ],
           answer: 1,
           hint: "A first-order filter falls 20 dB per decade. How many decades is 10 kHz above 1 kHz?",
@@ -107,7 +105,7 @@ Vout / Vin    dB
             3: "−40 dB is two decades above fc (100 kHz here). 10 kHz is just one decade.",
           },
         },
-        explanation: "10 kHz is one decade above fc, so the gain is about −20 dB, which is a voltage ratio of **0.1** (exactly 1 / √101 ≈ 0.0995). A first-order filter is gentle; steeper cuts need more filter stages.",
+        explanation: "10 kHz is one decade above fc: ten times the frequency, ten times less voltage. The gain is about −20 dB, which is a voltage ratio of **0.1** (exactly 1 / √101 ≈ 0.0995). A first-order filter is gentle; steeper cuts need more filter stages.",
       },
       {
         kind: "question",
@@ -126,18 +124,13 @@ Vout / Vin    dB
         kind: "code",
         title: "Cutoff calculator",
         body: P(
-          "Write a function **`cutoff(r, c)`** that returns the cutoff frequency of an RC filter in hertz, given the resistance `r` in ohms and the capacitance `c` in farads. In Python, `math.pi` is π.",
-          py(`
-import math
-
-# fc = 1 / (2 π R C)
-`),
+          "Write a function **`cutoff(r, c)`** that returns the cutoff frequency of an RC filter in hertz, given the resistance `r` in ohms and the capacitance `c` in farads. The cutoff is where XC equals R (see *A filter is a divider with a capacitor in it* above). In Python, `math.pi` is π.",
         ),
         language: "python",
         starter: `import math
 
 def cutoff(r, c):
-    # return fc in hertz
+    # your code here
     return 0
 `,
         solution: `import math
@@ -150,7 +143,7 @@ def cutoff(r, c):
           { id: "10k-10n", description: "10 kΩ with 10 nF is about 1591.5 Hz", assertionCode: `assert abs(cutoff(10000, 10e-9) - 1591.5) < 0.5, f"got {cutoff(10000, 10e-9)}, expected about 1591.5"` },
           { id: "double", description: "Doubling the resistance halves the cutoff: 2 kΩ with 1 µF is about 79.58 Hz", assertionCode: `assert abs(cutoff(2000, 1e-6) - 79.577) < 0.02, f"got {cutoff(2000, 1e-6)}, expected about 79.58"` },
         ],
-        hints: ["The denominator is 2 times math.pi times r times c.", "Return 1 / (2 * math.pi * r * c)."],
+        hints: ["Start from the definition: at the cutoff, XC = R, and XC = 1 / (2π f C). Solve that for f.", "r is in ohms and c in farads, so no unit conversion is needed. math.pi is π."],
       },
       {
         kind: "recap",
@@ -263,10 +256,10 @@ P = (Vin − Vout) × I
 efficiency ≈ Vout / Vin
 `),
           "It also needs headroom: its input must exceed the output by the **dropout voltage**, typically about 2 V for a classic 7805-class part and as little as about 0.3 V for a **low-dropout (LDO)** part (typical values; check the datasheet).",
-          "A **switching (buck) regulator** turns a transistor on and off thousands of times a second and uses an inductor to store energy and release it at the lower voltage (see *Inductors and magnetism*). It stores and moves energy instead of burning it, so it is typically **80 to 95% efficient**, but it adds switching noise and needs more parts.",
-          "Try 12 V in, 5 V out, 0.5 A, then switch types. Watch the heat, and the warning when a plain package would need a heatsink. A hot regulator can burn you.",
+          "A **switching (buck) regulator** turns a transistor on and off hundreds of thousands to millions of times a second (typical) and uses an inductor to store energy and release it at the lower voltage (see *Inductors and magnetism*). That high frequency is why the inductor can be small. It stores and moves energy instead of burning it, so it is typically **80 to 95% efficient**, but it adds switching noise and needs more parts.",
+          "Try 9 V in, 3.3 V out, 0.3 A, then switch types. Watch the heat, and the warning when a plain package would need a heatsink. A hot regulator can burn you.",
         ),
-        widget: { type: "analog-regulator", props: { kind: "linear", vin: 12, vout: 5, i: 0.5 } },
+        widget: { type: "analog-regulator", props: { kind: "linear", vin: 9, vout: 3.3, i: 0.3 } },
       },
       {
         kind: "question",
@@ -282,10 +275,10 @@ efficiency ≈ Vout / Vin
         question: {
           type: "choice",
           options: [
-            "A switching (buck) regulator, because efficiency is always the top priority",
-            "A bare resistor in series, because it is the simplest part",
-            "A low-dropout linear regulator, because it adds no switching noise and wastes almost nothing here",
-            "No regulator: the ripple will be small enough anyway",
+            "A switching (buck) regulator, for efficiency",
+            "A series resistor, the simplest way to drop 1 V",
+            "A low-dropout (LDO) linear regulator",
+            "No regulator: the ripple is small enough",
           ],
           answer: 2,
           hint: "Compare the heat burned, (Vin − Vout) × I, with how much you care about switching noise.",
@@ -295,7 +288,7 @@ efficiency ≈ Vout / Vin
             3: "Rectifier ripple and load changes would pass straight into the preamp, which is exactly what a regulator is there to remove.",
           },
         },
-        explanation: "Burning (6 − 5) × 0.02 = **0.02 W** is nothing, so the linear regulator's inefficiency costs almost nothing, and it is quiet because nothing switches. A low-dropout part is needed because only 1 V of headroom is available. A buck regulator wins when the voltage gap or current is large.",
+        explanation: "A linear regulator adds no switching noise, and here it wastes almost nothing: burning (6 − 5) × 0.02 = **0.02 W** is nothing, so its inefficiency costs almost nothing. A low-dropout part is needed because only 1 V of headroom is available. A buck regulator wins when the voltage gap or current is large.",
       },
       {
         kind: "recap",
@@ -343,9 +336,9 @@ Ic = β · Ib
           txt(`
 Rb = (Vgpio − VBE) / Ib
 `),
-          "The widget starts with a relay coil and a 4.7 kΩ base resistor. Is it saturated? Change Rb (the preferred E12 values) and β and watch VCE and the heat.",
+          "The widget starts with an LED strip (150 mA from 12 V) and a 3.3 kΩ base resistor. Is it saturated? Change Rb (the preferred E12 values) and β and watch VCE and the heat.",
         ),
-        widget: { type: "analog-switch", props: { device: "bjt", load: "relay", rb: 4700, beta: 100 } },
+        widget: { type: "analog-switch", props: { device: "bjt", load: "led", rb: 3300, beta: 100 } },
       },
       {
         kind: "question",
@@ -364,16 +357,12 @@ Rb = (Vgpio − VBE) / Ib
         kind: "code",
         title: "Base resistor calculator",
         body: P(
-          "Write **`base_resistor(v_gpio, vbe, ic, beta, overdrive)`**. It should return the base resistor in ohms that gives a base current of `overdrive` times the minimum needed to saturate: the load current `ic` divided by `beta`.",
-          py(`
-# Ib_needed = ic / beta
-# Ib        = overdrive * Ib_needed
-# Rb        = (v_gpio - vbe) / Ib
-`),
+          "Write **`base_resistor(v_gpio, vbe, ic, beta, overdrive)`**. It should return the base resistor in ohms that gives a base current of `overdrive` times the minimum needed to saturate.",
+          "In words: the minimum base current comes from the load current `ic` and the gain `beta`. Multiply it by `overdrive` to get the base current you want. Then use Ohm's law on the base resistor, which has the pin voltage minus the base-emitter drop `vbe` across it.",
         ),
         language: "python",
         starter: `def base_resistor(v_gpio, vbe, ic, beta, overdrive):
-    # return Rb in ohms
+    # your code here
     return 0
 `,
         solution: `def base_resistor(v_gpio, vbe, ic, beta, overdrive):
@@ -385,7 +374,7 @@ Rb = (Vgpio − VBE) / Ib
           { id: "relay-5v", description: "70 mA at beta 100, 5x overdrive, 5 V pin: about 1228.6 ohms", assertionCode: `assert abs(base_resistor(5, 0.7, 0.07, 100, 5) - 1228.57) < 0.1, f"got {base_resistor(5, 0.7, 0.07, 100, 5)}, expected about 1228.57"` },
           { id: "low-beta", description: "400 mA at beta 50, 2x overdrive: 162.5 ohms", assertionCode: `assert abs(base_resistor(3.3, 0.7, 0.4, 50, 2) - 162.5) < 0.01, f"got {base_resistor(3.3, 0.7, 0.4, 50, 2)}, expected 162.5"` },
         ],
-        hints: ["First find the base current you want: overdrive * ic / beta.", "Then Ohm's law across the base resistor: (v_gpio - vbe) / ib."],
+        hints: ["First find the base current you want: the minimum for saturation, scaled by the overdrive.", "Then Ohm's law across the base resistor, using the voltage left after the base-emitter drop."],
       },
       {
         kind: "explain",
@@ -393,7 +382,7 @@ Rb = (Vgpio − VBE) / Ib
         body: P(
           "An **N-channel MOSFET** has a **gate (G)**, **drain (D)** and **source (S)**. The gate is insulated from the channel, so it needs essentially **no steady current**: the voltage between gate and source, **VGS**, alone decides how well the channel conducts (*The MOSFET: a switch made of silicon* in the Semiconductors part shows how that gate voltage opens a channel). (Charging the gate does draw a brief current, like charging a tiny capacitor.) When it is on, the channel behaves like a small resistor, **RDS(on)**, and the heat is simply **P = I² × RDS(on)**.",
           "Be careful with the threshold voltage **VGS(th)**: it is where the MOSFET just *starts* to conduct (datasheets measure it at a tiny current), not where it is fully on. For a 3.3 V pin, look for a **logic-level** MOSFET whose RDS(on) is specified at **VGS = 2.5 V or 4.5 V**. A part that lists RDS(on) only at VGS = 10 V may barely turn on from 3.3 V and run very hot.",
-          "Two cheap extras, both typically tiny resistors:\n- A **gate resistor** (typically tens to a few hundred ohms) limits the brief charging spike and ringing.\n- A **gate pull-down** (typically 10 to 100 kΩ from gate to ground) keeps the gate at 0 V while the microcontroller boots and its pins float; otherwise the load could switch on at random.",
+          "Two extras, both small, cheap resistors:\n- A **gate resistor** (typically tens to a few hundred ohms) limits the brief charging spike and ringing.\n- A **gate pull-down** (typically 10 to 100 kΩ from gate to ground) keeps the gate at 0 V while the microcontroller boots and its pins float; otherwise the load could switch on at random.",
           "In the widget, pick the **small motor** and compare the two MOSFET parts. The \"standard\" part uses a made-up, labelled toy value of about 8 Ω at 3.3 V; real parts vary a lot.",
         ),
         widget: { type: "analog-switch", props: { device: "mosfet", load: "motor", part: "standard", diode: true } },

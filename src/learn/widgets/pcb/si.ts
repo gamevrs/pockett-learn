@@ -324,7 +324,7 @@ export function stairAt(steps: { t: number; v: number }[], t: number): number {
 
 // ───────────────────────────── microstrip Z0 (pcb-z0) ─────────────────────────────
 
-export const OZ_MM: Record<string, number> = { "0.5": 0.0174, "1": 0.0348, "2": 0.0696 };
+export const OZ_MM: Record<string, number> = { "0.5": 0.0175, "1": 0.035, "2": 0.07 };
 
 /** IPC-2141 microstrip approximation: Z0 = 87/sqrt(er + 1.41) · ln(5.98 h / (0.8 w + t)). Inputs in the same length unit. */
 export function microstripZ0(w: number, h: number, t: number, er: number): number {

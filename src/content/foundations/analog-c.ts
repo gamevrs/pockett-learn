@@ -51,7 +51,7 @@ export const analogLessonsC: ConceptLesson[] = [
         body: P(
           "A transistor only amplifies while it sits in the active region, so we first park it there with a steady DC voltage, the **bias**. The spot where it rests with no input is the **operating point** (or quiescent point). The signal we want to amplify is a **small signal**: a small wiggle riding on top of that DC level.",
           "The **gain** is how many times bigger the wiggle gets: **Av = Vout / Vin**, comparing the wiggles only (the steady DC level does not count). A stage that flips the wiggle upside down has a negative gain.",
-          "Gains are often quoted in **decibels** (the same unit as the −3 dB of **Impedance and filters**). For a voltage ratio, **gain in dB = 20 × log₁₀(Av)**. A gain of ×10 is 20 dB, ×100 is 40 dB, and ×2 is about 6 dB.",
+          "Gains are often quoted in **decibels** (the same unit as the −3 dB of **Impedance and filters**). For a voltage ratio, **gain in dB = 20 × log₁₀(|Av|)**, using the size of the gain; the sign only says it inverts. A gain of ×10 is 20 dB, ×100 is 40 dB, and ×2 is about 6 dB.",
         ),
       },
       {
@@ -128,9 +128,9 @@ export const analogLessonsC: ConceptLesson[] = [
           type: "choice",
           options: [
             "It is fully on (saturated), pulling the collector down",
-            "It is fully off (cut off): no current flows, so RC drops no voltage",
-            "It is working normally in the active region",
-            "It has failed as a short circuit",
+            "It is fully off (cut off), so no current flows",
+            "It is in its active region, following the input",
+            "It has failed and become a short circuit",
           ],
           answer: 1,
           hint: "A voltage at the supply means nothing is pulling the collector down.",
@@ -141,13 +141,13 @@ export const analogLessonsC: ConceptLesson[] = [
           },
         },
         explanation:
-          "At the supply voltage no current flows through RC, so it drops no voltage and the collector sits at the supply: the transistor is **cut off**. To fix it, shrink the input, lower the gain, or move the bias toward mid-supply.",
+          "At the supply voltage no current flows through RC, so RC drops no voltage and the collector sits at the supply: the transistor is **cut off**. To fix it, shrink the input, lower the gain, or move the bias toward mid-supply.",
       },
       {
         kind: "recap",
         points: [
           "Between off and saturated a transistor is a **valve**: in the active region its output follows its input, so a small signal comes out bigger.",
-          "**Bias** sets the operating point; the small signal is a wiggle on top. **Gain = Vout / Vin**, and in decibels **20 × log₁₀(Av)**.",
+          "**Bias** sets the operating point; the small signal is a wiggle on top. **Gain = Vout / Vin**, and in decibels **20 × log₁₀(|Av|)** (the size of the gain; the sign only says it inverts).",
           "A common-emitter stage inverts and has a gain of roughly **−RC / RE** (an approximation); coupling capacitors pass the signal and block the DC.",
           "Bias near **mid-supply** so the output can swing both ways; a flat top is cut-off, a flat bottom is saturation, and both are **distortion**.",
         ],
@@ -191,21 +191,21 @@ export const analogLessonsC: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "It outputs +100 V (1 mV × 100,000)",
-            "It outputs 1 mV, the difference",
             "It goes to its positive limit, a little under +5 V",
+            "It outputs +100 V, as the formula gives",
+            "It outputs 1 mV, the difference itself",
             "It stays at 0 V because the inputs are almost equal",
           ],
-          answer: 2,
+          answer: 0,
           hint: "The formula asks for far more voltage than the supply has. What happens to an output that cannot reach the voltage it wants?",
           feedback: {
-            0: "The formula does ask for 100 V, but the output cannot exceed its supply, so it stops at the limit instead.",
-            1: "That would be a gain of 1. The op-amp multiplies the difference by A, which is huge.",
+            1: "The formula does ask for 100 V, but the output cannot exceed its supply, so it stops at the limit instead.",
+            2: "That would be a gain of 1. The op-amp multiplies the difference by A, which is huge.",
             3: "Open loop, even a tiny difference is multiplied by A. Only feedback can hold the output near zero.",
           },
         },
         explanation:
-          "Vout = A × 1 mV would be 100 V, which the ±5 V supply cannot deliver, so the output stops at its positive limit. Swap the inputs and it would go to the negative limit. That is a comparator. The trick that makes op-amps useful as *amplifiers* is to give them feedback.",
+          "Vout = A × 1 mV would be 100 V, which the ±5 V supply cannot deliver, so the output stops at its positive limit, a little under +5 V. Swap the inputs and it would go to the negative limit. That is a comparator. The trick that makes op-amps useful as *amplifiers* is to give them feedback.",
       },
       {
         kind: "explain",
@@ -377,7 +377,7 @@ export const analogLessonsC: ConceptLesson[] = [
         ],
         hints: [
           "By rule 1 V− is 0, so the input current is Vin / Rin. By rule 2 it all flows through Rf.",
-          "Vout / Vin = −Rf / Rin.",
+          "Find Vout from the voltage across Rf (the output sits below V− when current flows from the input), then divide by Vin.",
         ],
       },
       {
@@ -425,7 +425,7 @@ export const analogLessonsC: ConceptLesson[] = [
         question: {
           type: "widget",
           goal: { aliased: true, aliasF: 1000, tol: 1 },
-          hint: "Aliasing needs the input to be above half the sample rate. Then the ADC reports |f − fs| (the distance to the nearest multiple of fs).",
+          hint: "Aliasing needs the input to be above half the sample rate. Then the ADC reports |f − k × fs|, the distance to the nearest multiple of fs (for f between fs/2 and fs that is |f − fs|).",
         },
         explanation:
           "Take f = 3 kHz and fs = 4 kHz: 3 kHz is above fs/2 = 2 kHz, so the samples are exactly those of a |3000 − 4000| = **1000 Hz** wave. Nothing in the numbers says which tone it was. This is **aliasing**: a frequency above fs/2 shows up as a false lower one.",
@@ -446,9 +446,9 @@ export const analogLessonsC: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "20 kHz, the same as the top frequency",
-            "Exactly 40 kHz",
-            "30 kHz",
+            "20 kHz, the top frequency itself",
+            "Exactly 40 kHz, twice the top",
+            "30 kHz, 1.5 times the top",
             "More than 40 kHz, such as 44.1 kHz",
           ],
           answer: 3,
@@ -466,7 +466,7 @@ export const analogLessonsC: ConceptLesson[] = [
         kind: "question",
         title: "Bits and steps",
         body: P(
-          "After sampling, the ADC rounds each voltage to one of **2ⁿ levels** (n = the number of **bits**). One step is the **LSB** (least significant bit): **LSB = Vref / 2ⁿ**, where **Vref** is the voltage that counts as full scale. Rounding leaves a **quantisation error** of up to ±½ LSB. Example: 3.3 V and 12 bits give 3.3 / 4096 ≈ 0.806 mV.",
+          "After sampling, the ADC rounds each voltage to one of **2ⁿ levels** (n = the number of **bits**). One step is the **LSB** (least significant bit): **LSB = Vref / 2ⁿ**, where **Vref** is the voltage that counts as full scale. Reading each code back as the middle of its step leaves a **quantisation error** of up to ±½ LSB. Example: 3.3 V and 12 bits give 3.3 / 4096 ≈ 0.806 mV.",
           "Each extra bit doubles the levels, halves the LSB and adds about 6 dB of ideal signal-to-noise ratio: **SNR ≈ 6.02 × n + 1.76 dB**, for a full-scale sine wave with only quantisation noise (an assumption, real converters are worse).",
           "With **Vref = 3.3 V**, choose enough bits so that **one step is smaller than 1 mV**.",
         ),
@@ -498,10 +498,10 @@ export const analogLessonsC: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "SAR: compact and frugal, with a good balance of speed and resolution",
-            "Flash: a comparator for every level, for the best resolution",
-            "Sigma-delta: the fastest type, for video",
-            "A DAC: it converts digital back to analog",
+            "SAR, the successive-approximation type",
+            "Flash, a comparator for each level",
+            "Sigma-delta, the fastest type for video",
+            "A DAC, converting numbers to voltages",
           ],
           answer: 0,
           hint: "Think about what is cheap in silicon area and power, and what a slow signal needs.",
@@ -512,18 +512,19 @@ export const analogLessonsC: ConceptLesson[] = [
           },
         },
         explanation:
-          "Microcontrollers mostly use a **SAR ADC**: one comparator and some capacitors do a binary search, so it is small, cheap and low-power, and 12 bits at hundreds of kilosamples per second is plenty for temperature.",
+          "Microcontrollers mostly use a **SAR ADC**: one comparator and some capacitors do a binary search, so it is compact, cheap and frugal with power, with a good balance of speed and resolution, and 12 bits at hundreds of kilosamples per second is plenty for temperature.",
       },
       {
         kind: "code",
         title: "Write a quantiser",
         body: P(
-          "Write `quantise(v, vref, bits)` that returns the integer **code** an ideal ADC produces. The convention: `code = int(v / vref * 2**bits)` (rounding down), then **clamp** it to the valid range `0 … 2**bits − 1`. A voltage at or above `vref` gives the top code, and a negative voltage gives 0.",
-          "Worked example: `quantise(1.0, 2.0, 8)` is `int(0.5 * 256) = 128`.",
+          "Write `quantise(v, vref, bits)` that returns the integer **code** an ideal ADC produces. The convention: take the voltage as a fraction of full scale (`vref`), multiply by the number of levels (2 to the power `bits`) and **round down** to a whole number. Then **clamp** the code into the valid range, from 0 up to one less than the number of levels. A voltage at or above `vref` gives the top code, and a negative voltage gives 0.",
+          "Worked example: half of full scale at 8 bits is code 128, half of the 256 levels, so `quantise(1.0, 2.0, 8)` is 128.",
+          "Flooring alone gives 0 to 1 LSB of error. Reading the code back as the middle of its step, (code + 0.5) × LSB, makes it ±½ LSB.",
         ),
         language: "python",
         starter: `def quantise(v, vref, bits):
-    # integer code from 0 to 2**bits - 1
+    # your code here
     return -1
 `,
         solution: `def quantise(v, vref, bits):
@@ -558,8 +559,8 @@ export const analogLessonsC: ConceptLesson[] = [
           },
         ],
         hints: [
-          "Scale the voltage to a fraction of full scale, multiply by 2**bits, and take int().",
-          "Clamp with max(0, min(code, 2**bits - 1)).",
+          "Fraction of full scale, times the number of levels, rounded down: int() floors a positive number.",
+          "The top code is one less than the number of levels and the lowest is 0. Pull the code into that range with min and max.",
         ],
       },
       {

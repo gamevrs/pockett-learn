@@ -16,6 +16,7 @@ import { CodeEditor } from "@/components/workspace/CodeEditor";
 import { sound } from "@/lib/sound/sound";
 import { fireCelebrationConfetti } from "@/lib/ui/confetti";
 import { clearStep, saveStep, savedStep } from "@/learn/position";
+import { WidgetCard } from "./WidgetCard";
 import { answerText, hasAnswer, initialAnswer, isCorrect, QuestionInput, wrongAnswerHelp, type Answer } from "./QuestionInput";
 
 type Status = "idle" | "correct" | "wrong" | "revealed";
@@ -356,7 +357,7 @@ function StepFrame({
                 </p>
               )}
               {widgetDef && "widget" in step && step.widget && (!step.widget.after || answered) && (
-                <div className={`card mt-6 flex justify-center p-4 sm:p-6 ${step.widget.after ? "pop-in" : ""}`} data-widget>
+                <WidgetCard className={step.widget.after ? "pop-in" : ""}>
                   <widgetDef.Component
                     props={step.widget.props ?? {}}
                     onChange={onWidget}
@@ -364,7 +365,7 @@ function StepFrame({
                     status={status}
                     goal={step.kind === "question" && step.question.type === "widget" ? step.question.goal : undefined}
                   />
-                </div>
+                </WidgetCard>
               )}
               {"widget" in step && step.widget && !widgetDef && (
                 <p className="mt-6 rounded-xl border border-dashed border-[var(--line-strong)] p-4 text-sm text-ink-3">Widget “{step.widget.type}” isn&apos;t available.</p>
