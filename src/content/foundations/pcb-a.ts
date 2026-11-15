@@ -81,22 +81,22 @@ export const pcbLessonsA: ConceptLesson[] = [
         kind: "question",
         title: "Which way round?",
         body: P(
-          "Capacitors store charge (see *Components in action: capacitors to op-amps*, \"Capacitors\"). Two kinds appear on almost every board. **Ceramic** capacitors (MLCC) are tiny, have no polarity and handle small values, up to a few µF. **Aluminium electrolytic** capacitors are cans that hold far more capacitance per part, and they are **polarised**: the stripe with minus signs marks the **negative** lead. On a new through-hole one, the **longer lead is positive**. Each capacitor also has a **voltage rating**, a limit you must stay under.",
+          "Capacitors store charge (see *Components in action: capacitors to op-amps*, \"Capacitors: storing charge\"). Two kinds appear on almost every board. **Ceramic** capacitors (MLCC) are tiny, have no polarity and handle small values, up to a few µF. **Aluminium electrolytic** capacitors are cans that hold far more capacitance per part, and they are **polarised**: the stripe with minus signs marks the **negative** lead. On a new through-hole one, the **longer lead is positive**. Each capacitor also has a **voltage rating**, a limit you must stay under.",
           "A new through-hole electrolytic goes across a **5 V rail and ground**. Which connection is right?",
         ),
         question: {
           type: "choice",
           options: [
+            "The stripe side to ground, the longer lead to 5 V",
             "The stripe side to the 5 V rail",
             "Either way: capacitors have no polarity",
-            "The stripe side to ground, the longer lead to 5 V",
             "The longer lead to ground, the stripe side to 5 V",
           ],
-          answer: 2,
+          answer: 0,
           hint: "The stripe is printed with minus signs. Which side of the circuit is the more negative one?",
           feedback: {
-            0: "That puts the negative lead on the positive rail, which is backwards. The stripe marks the negative lead.",
-            1: "Ceramic capacitors have no polarity, but aluminium electrolytics do. Reversed, they can heat up, vent or burst.",
+            1: "That puts the negative lead on the positive rail, which is backwards. The stripe marks the negative lead.",
+            2: "Ceramic capacitors have no polarity, but aluminium electrolytics do. Reversed, they can heat up, vent or burst.",
             3: "That is reversed: the longer lead is the positive one, so it goes to 5 V, and the stripe (negative) goes to ground.",
           },
         },
@@ -129,7 +129,7 @@ export const pcbLessonsA: ConceptLesson[] = [
 MULT = {**{c: 10 ** d for c, d in DIGIT.items()}, "gold": 0.1, "silver": 0.01}
 
 def resistor_from_bands(bands):
-    # digits = everything before the last two bands
+    # your code here
     return 0
 `,
         solution: `DIGIT = {"black": 0, "brown": 1, "red": 2, "orange": 3, "yellow": 4,
@@ -148,7 +148,7 @@ def resistor_from_bands(bands):
           { id: "gold", description: "Gold as the multiplier is × 0.1", assertionCode: `r = resistor_from_bands(["brown", "black", "gold", "gold"])\nassert abs(r - 1.0) < 1e-6, f"got {r}, expected 1.0 (10 x 0.1)"` },
           { id: "five-silver", description: "5 bands with silver: green blue black silver brown is 5.6 Ω", assertionCode: `r = resistor_from_bands(["green", "blue", "black", "silver", "brown"])\nassert abs(r - 5.6) < 1e-6, f"got {r}, expected 5.6 (560 x 0.01)"` },
         ],
-        hints: ["Build the number digit by digit: value = value * 10 + DIGIT[colour].", "bands[:-2] is every band except the last two. bands[-2] is the multiplier."],
+        hints: ["Build the number one digit at a time: each new digit shifts the earlier ones left by one decimal place.", "A slice drops the last two bands, and a negative index picks the multiplier."],
       },
       {
         kind: "question",
@@ -234,19 +234,19 @@ PK3302 input voltage
           type: "choice",
           options: [
             "Agreed: anything under the absolute maximum is allowed",
-            "No: 14 V is above the 12 V recommended maximum, so the specs are not guaranteed and the margin to damage is thin",
             "Agreed, since 14 V is also above the 4.5 V minimum",
             "No: it is only a problem if the output current is above 500 mA",
+            "No: 14 V is over the 12 V recommended maximum, so nothing is guaranteed",
           ],
-          answer: 1,
+          answer: 3,
           hint: "Which table tells you where the part is guaranteed to work? Compare 14 V with that range.",
           feedback: {
             0: "The absolute maximum is the damage line, not a design target. Operation is guaranteed only inside the recommended range.",
-            2: "Being above the minimum is only half of it. The recommended range is 4.5 to 12 V, and 14 V is over the top end.",
-            3: "The input voltage has its own limit. 14 V is outside the 4.5 to 12 V range whatever the load current is.",
+            1: "Being above the minimum is only half of it. The recommended range is 4.5 to 12 V, and 14 V is over the top end.",
+            2: "The input voltage has its own limit. 14 V is outside the 4.5 to 12 V range whatever the load current is.",
           },
         },
-        explanation: "Design **inside the recommended operating conditions**, 4.5 to 12 V here. A 14 V input is below the 16 V damage line but outside the range where any number in the datasheet is promised. Adapters are also often unregulated, so \"14 V\" may really be higher with a light load.",
+        explanation: "Design **inside the recommended operating conditions**, 4.5 to 12 V here. A 14 V input is below the 16 V damage line but outside the range where any number in the datasheet is promised, so the margin to damage is thin. Adapters are also often unregulated, so \"14 V\" may really be higher with a light load.",
       },
       {
         kind: "explain",

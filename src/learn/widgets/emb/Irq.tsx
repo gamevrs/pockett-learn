@@ -122,14 +122,14 @@ export function Irq({ props, onChange, revealed }: WidgetProps<IrqProps>) {
     const me = byId[rec.irq];
     const other = byId[blocker.who];
     waits.push(
-      `${me.name} waited ${to - from} µs for the ${other.name} ISR to finish: ${nesting ? `${me.name} (priority ${prios[me.id]}) is not more urgent than ${other.name} (priority ${prios[other.id]}), and the same or lower priority cannot preempt` : "nesting is off, so a running ISR is never interrupted"}.`,
+      `${me.name} waited ${to - from} µs for the ${other.name} ISR to finish: ${nesting ? `${me.name} (priority ${prios[me.id]}) is not more urgent than ${other.name} (priority ${prios[other.id]}), and the same or lower priority cannot preempt` : "preemption is off, so a running ISR is never interrupted"}.`,
     );
   }
   if (sim.lost > 0) waits.push("A request arrived while the same interrupt was still waiting: there is only one pending bit per interrupt, so it was lost.");
 
   const aria = `Interrupt timeline over ${total} microseconds. ${sim.records
     .map((r) => (r.merged ? `${byId[r.irq].name} raised at ${r.raisedAt} was lost` : `${byId[r.irq].name} raised at ${r.raisedAt}, started ${r.startedAt ?? "never"}${r.latency !== null ? `, latency ${r.latency}` : ""}`))
-    .join("; ")}. Nesting ${nesting ? "on" : "off"}, maximum depth ${sim.maxDepth}.`;
+    .join("; ")}. Preemption ${nesting ? "allowed" : "off"}, maximum depth ${sim.maxDepth}.`;
 
   return (
     <div className="w-full">
@@ -147,9 +147,9 @@ export function Irq({ props, onChange, revealed }: WidgetProps<IrqProps>) {
         ))}
         {!props.lockNesting && (
           <div className="flex flex-col items-start gap-1">
-            <Caption>Nesting (preemption)</Caption>
+            <Caption>Preemption allowed</Caption>
             <LSeg
-              label="Nesting (preemption)"
+              label="Preemption allowed"
               value={nesting ? "on" : "off"}
               onChange={(v) => setNest(v === "on")}
               options={[
@@ -158,6 +158,7 @@ export function Irq({ props, onChange, revealed }: WidgetProps<IrqProps>) {
               ]}
               disabled={locked}
             />
+            <p className="max-w-[26rem] text-[0.8rem] leading-snug text-ink-3">On Cortex-M this is set by the group priority bits; off behaves like an AVR, which disables interrupts on ISR entry.</p>
           </div>
         )}
       </div>
@@ -244,19 +245,19 @@ export function Irq({ props, onChange, revealed }: WidgetProps<IrqProps>) {
         <table className="w-full table-fixed border-collapse text-left text-[0.8rem]">
           <thead>
             <tr className="bg-surface-2 text-ink-2">
-              <th scope="col" className="w-[28%] px-2 py-1.5 font-medium">
+              <th scope="col" className="w-[22%] px-2 py-1.5 font-medium">
                 Source
               </th>
-              <th scope="col" className="px-1 py-1.5 font-medium">
+              <th scope="col" className="w-[19%] px-1 py-1.5 font-medium">
                 Raised
               </th>
-              <th scope="col" className="px-1 py-1.5 font-medium">
+              <th scope="col" className="w-[21%] px-1 py-1.5 font-medium">
                 Started
               </th>
-              <th scope="col" className="px-1 py-1.5 font-medium">
+              <th scope="col" className="w-[22%] px-1 py-1.5 font-medium">
                 Latency
               </th>
-              <th scope="col" className="px-1 py-1.5 font-medium">
+              <th scope="col" className="w-[16%] px-1 py-1.5 font-medium">
                 Done
               </th>
             </tr>
@@ -299,7 +300,7 @@ export function Irq({ props, onChange, revealed }: WidgetProps<IrqProps>) {
         </div>
       )}
 
-      <ToyNote>Toy controller: entry and exit cost 1 µs each (a real Cortex-M class core needs about 12 cycles, well under a microsecond at tens of MHz); no tail-chaining.</ToyNote>
+      <ToyNote>Toy controller: entry and exit cost 1 µs each (a real Cortex-M class core needs about 12 cycles, well under a microsecond at tens of MHz). Tail-chaining (a real core skipping the exit and re-entry between back-to-back ISRs) is not modelled, so back-to-back ISRs here cost slightly more than on a real chip.</ToyNote>
     </div>
   );
 }
@@ -345,6 +346,8 @@ const FIX_NOTE: Record<RaceFix, string> = {
 export interface RaceProps {
   fix?: RaceFix;
   irqAfter?: number;
+  /** Hide the fix selector (the explain step uses it so it cannot solve the next question). */
+  lockFix?: boolean;
   task?: string;
 }
 
@@ -367,13 +370,15 @@ function raceState(fix: RaceFix, irqAfter: number): RaceState {
   return { fix, irqAfter, final: r.final, expected: r.expected, worksForAll, retries: r.retries, delayedBy: r.delayedBy };
 }
 
-export function Race({ props, onChange, revealed }: WidgetProps<RaceProps>) {
+export function Race({ props, onChange, revealed, status }: WidgetProps<RaceProps>) {
   const locked = Boolean(revealed);
   const [fix, setFix] = useState<RaceFix>(props.fix ?? "none");
   const [irqAfter, setIrqAfter] = useState(Math.min(3, Math.max(0, Math.round(props.irqAfter ?? 1))));
   const r = simulateRace(fix, irqAfter);
   const all = [0, 1, 2, 3].map((a) => simulateRace(fix, a));
   const ok = r.final === r.expected;
+  // In a question, no verdict (colours, ticks, "works for every timing") until the learner presses Check.
+  const quiet = status === "idle";
   const change = (f: RaceFix, a: number) => {
     setFix(f);
     setIrqAfter(a);
@@ -389,10 +394,12 @@ export function Race({ props, onChange, revealed }: WidgetProps<RaceProps>) {
       </pre>
 
       <div className="mt-3 flex flex-col gap-3">
-        <div className="flex flex-col items-start gap-1">
-          <Caption>Fix</Caption>
-          <LSeg label="Fix" value={fix} onChange={(v) => change(v, irqAfter)} options={FIXES} disabled={locked} />
-        </div>
+        {!props.lockFix && (
+          <div className="flex flex-col items-start gap-1">
+            <Caption>Fix</Caption>
+            <LSeg label="Fix" value={fix} onChange={(v) => change(v, irqAfter)} options={FIXES} disabled={locked} />
+          </div>
+        )}
         <div className="flex flex-col items-start gap-1">
           <Caption>The interrupt arrives after main&apos;s instruction</Caption>
           <LSeg label="The interrupt arrives after main's instruction number" value={irqAfter} onChange={(v) => change(fix, v)} options={[0, 1, 2, 3].map((n) => ({ value: n, label: String(n) }))} disabled={locked} />
@@ -419,8 +426,8 @@ export function Race({ props, onChange, revealed }: WidgetProps<RaceProps>) {
         ))}
       </ol>
 
-      <p className={`mt-3 rounded-xl border px-3.5 py-2.5 text-[0.95rem] font-semibold ${ok ? "border-[var(--brand)]/40 bg-tint text-ink" : "border-[var(--bad)] bg-surface text-ink"}`} aria-live="polite">
-        {ok ? `✓ Correct: ${r.final}` : `✗ Lost an update: ${r.final}`}
+      <p className={`mt-3 rounded-xl border px-3.5 py-2.5 text-[0.95rem] font-semibold ${quiet ? "border-line bg-surface text-ink" : ok ? "border-[var(--brand)]/40 bg-tint text-ink" : "border-[var(--bad)] bg-surface text-ink"}`} aria-live="polite">
+        {quiet ? `Final count: ${r.final}` : ok ? `✓ Correct: ${r.final}` : `✗ Lost an update: ${r.final}`}
         <span className="font-normal text-ink-2"> (expected {r.expected})</span>
       </p>
 
@@ -429,14 +436,14 @@ export function Race({ props, onChange, revealed }: WidgetProps<RaceProps>) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-[0.85rem]">
           <span className="text-ink-2">Arrival</span>
           {all.map((x, a) => (
-            <span key={a} className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${x.final === x.expected ? "border-line text-ink" : "border-[var(--bad)] text-ink"} ${a === irqAfter ? "bg-tint" : ""}`}>
+            <span key={a} className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${quiet || x.final === x.expected ? "border-line text-ink" : "border-[var(--bad)] text-ink"} ${a === irqAfter ? "bg-tint" : ""}`}>
               <span className="text-ink-3">{a}</span>
               <span aria-hidden>→</span>
-              <b className={x.final === x.expected ? "" : "text-[var(--bad)]"}>{x.final}</b>
+              <b className={quiet || x.final === x.expected ? "" : "text-[var(--bad)]"}>{x.final}</b>
             </span>
           ))}
         </div>
-        <p className="mt-1.5 text-[0.82rem] text-ink-2">{all.every((x) => x.final === x.expected) ? "This fix works for every timing." : "At least one timing still loses an update."}</p>
+        {!quiet && <p className="mt-1.5 text-[0.82rem] text-ink-2">{all.every((x) => x.final === x.expected) ? "This fix works for every timing." : "At least one timing still loses an update."}</p>}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-center gap-2">

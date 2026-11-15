@@ -22,16 +22,16 @@ export const productsLessonsA: ConceptLesson[] = [
         kind: "explain",
         title: "Meet Sprout",
         body: P(
-          "Over the next nine lessons you will build a product on paper: **Sprout**, a small plant monitor. It sits in a flower pot, measures how wet the soil is and how much light the plant gets, and tells your phone over Bluetooth. It runs on a battery for a year without anyone touching it.",
+          "Over the next ten lessons you will build a product on paper: **Sprout**, a small plant monitor. It sits in a flower pot, measures how wet the soil is and how much light the plant gets, and tells your phone over Bluetooth. It runs on a battery for a year without anyone touching it.",
           "Every product starts as a **wish**: \"it should last a long time\", \"it should be small\", \"it should be cheap\". Wishes feel clear, but you cannot build to them or test them. If two people disagree about whether \"long\" was achieved, who is right?",
-          "A **requirement** is a wish turned into something you can check: a number, a unit, and a way to test it. Below, each wish has three possible rewrites. Pick one for each and see which ones pass.",
+          "A **requirement** is a wish turned into something you can check: a number, a unit, and a way to test it. Warm up on a different gadget first: below, two wishes for a travel charger each have three possible rewrites. Pick one for each and see which ones pass. Sprout's own wishes come next.",
         ),
-        widget: { type: "prod-requirements", props: {} },
+        widget: { type: "prod-requirements", props: { practice: true } },
       },
       {
         kind: "question",
         title: "Make every wish testable",
-        body: "Pick a rewrite for **each** of the five wishes so that all five are measurable.",
+        body: "Pick a rewrite for **each** of Sprout's five wishes so that all five are measurable. This time the checker only judges your picks when you press Check.",
         widget: { type: "prod-requirements", props: { tester: false } },
         question: { type: "widget", goal: { allGood: true }, hint: "A measurable rewrite has a number and a unit (months, mm, dollars, seconds, degrees). Words like good, compact and robust are opinions." },
         explanation: "A requirement is only useful if two people could test it separately and agree on pass or fail. \"At least 12 months\" is testable; \"good battery life\" starts an argument. Writing the number forces the team to decide what they actually want.",
@@ -53,12 +53,12 @@ export const productsLessonsA: ConceptLesson[] = [
         widget: { type: "prod-battery", props: {} },
         question: {
           type: "choice",
-          options: ["The radio burst", "The sensor measurement", "Simply being asleep", "They are about equal"],
-          answer: 2,
+          options: ["Simply being asleep", "The radio burst", "The sensor measurement", "They are about equal"],
+          answer: 0,
           hint: "Look at the bars. Sleep current is tiny, but how long does the product spend asleep in 15 minutes?",
           feedback: {
-            0: "The radio is the biggest *burst*, but it is on for only 0.3 s out of 900. The bars show it spends less in total than sleep does.",
-            1: "The measurement is only 100 ms at 2 mA. It is the smallest bar.",
+            1: "The radio is the biggest *burst*, but it is on for only 0.3 s out of 900. The bars show it spends less in total than sleep does.",
+            2: "The measurement is only 100 ms at 2 mA. It is the smallest bar.",
             3: "Check the bars: one of them is more than twice the next.",
           },
         },
@@ -79,7 +79,7 @@ export const productsLessonsA: ConceptLesson[] = [
         title: "A requirements list you can build from",
         body: P(
           "A good list for Sprout looks like this. Each line has a number, a unit, and an obvious test.",
-          "- **R1 Battery life:** at least 12 months at one report every 15 minutes, at 20 °C, on one coin cell.\n- **R2 Parts cost:** under $9 at 1,000 units.\n- **R3 Size:** fits a 60 × 40 mm case.\n- **R4 Setup:** pairs with the phone app in under 60 seconds.\n- **R5 Environment:** works from 0 to 40 °C.",
+          "- **R1 Battery life:** at least 12 months at one report every 15 minutes, at 20 °C, on one coin cell.\n- **R2 Parts cost:** under $9 at 1,000 units.\n- **R3 Size:** fits a 60 × 40 mm case.\n- **R4 Setup:** pairs with the phone app in under 60 seconds.\n- **R5 Environment:** works from 0 to 40 °C.\n- **R6 Water:** survives the splashes of watering (IPX4 is the example rating, tested by a lab with a spray), with the soil probe sealed against wet soil.",
           "Split the list into **must-haves** (the product fails without them) and **nice-to-haves** (cut these first when something has to give). Then write down *how* each one will be tested. If you cannot say how you would test a requirement, it is still a wish.",
           "Notice what the list leaves out: *how* to build it. Requirements say **what** the product must do. Choosing the chip, the battery and the radio is the next lesson.",
         ),
@@ -166,13 +166,13 @@ def is_measurable(requirement):
           "The block diagram is where big decisions are made cheaply. Changing a box on paper costs nothing; changing it after boards are built costs weeks.",
           "Below is Sprout's diagram with real choices attached to each box. Click through the options and watch the parts cost, the certification note and the battery life change. The prices are made up, but the trade-offs are real.",
         ),
-        widget: { type: "prod-architecture", props: {} },
+        widget: { type: "prod-architecture", props: { radio: "chipdown", sensor: "cap", power: "aa" } },
       },
       {
         kind: "question",
         title: "Hit every requirement",
-        body: "From the last lesson: parts under **$9 at 1,000 units**, battery life of at least **12 months**, and no bare metal prongs in the soil. You also want a **pre-certified** radio so you skip radio testing. Build a Sprout that meets all of it.",
-        widget: { type: "prod-architecture", props: {} },
+        body: "From the last lesson: parts under **$9 at 1,000 units**, battery life of at least **12 months**, and no bare metal prongs in the soil. You also want a **pre-certified** radio so you skip radio testing. The design below misses most of that. Change it until it meets all of it.",
+        widget: { type: "prod-architecture", props: { radio: "wifi", sensor: "res", power: "aa" } },
         question: { type: "widget", goal: { maxBom1k: 9, preCertified: true, minMonths: 12, sensor: "cap" }, hint: "Wi-Fi drains a coin cell fast, 2 × AA costs more than the budget allows, and the chip-down radio is not pre-certified. Look at the 'Parts at 1,000 units' number." },
         explanation: "Only a pre-certified BLE module, a capacitive sensor and a coin cell fit: about $8.85 and roughly 21 months in this toy model. Notice how one requirement ruled out each tempting option: cost ruled out 2 × AA, battery life ruled out Wi-Fi, and 'pre-certified' ruled out the cheapest chip. Architecture is choosing among trade-offs, not picking the best part.",
       },
@@ -201,16 +201,16 @@ def is_measurable(requirement):
         body: "Chips come in thousands of varieties. For a coin-cell sensor that talks Bluetooth, which property should you look at **first**?",
         question: {
           type: "choice",
-          options: ["The highest clock speed", "Sleep current and built-in Bluetooth support", "The largest number of pins", "The most RAM"],
+          options: ["The highest clock speed on offer", "Sleep current and built-in Bluetooth", "The largest number of GPIO pins", "The most RAM and flash memory"],
           answer: 1,
           hint: "Go back to the requirements. What limits Sprout the most: raw speed, or how little power it uses while waiting?",
           feedback: {
             0: "Sprout reads two sensors every 15 minutes. It does not need speed, and a faster chip usually burns more power.",
             2: "Sprout needs a handful of pins. Extra pins cost money and do not help a battery product.",
-            3: "A small program and a few readings fit in a small RAM. More RAM does not help the requirement that matters here.",
+            3: "A small program and a few readings fit in a small memory. More RAM and flash do not help the requirement that matters here.",
           },
         },
-        explanation: "Choose by the requirement that bites hardest. For Sprout it is battery life, so sleep current dominates. Other checks come after: the peripherals you need (I²C for the sensors, ADC), memory big enough with room to grow, good tools, **long-term supply** (can you still buy it in five years?) and whether a second supplier makes something pin-compatible.",
+        explanation: "Choose by the requirement that bites hardest. For Sprout it is battery life, so sleep current dominates, and a built-in radio saves a second chip. Other checks come after: the peripherals you need (I²C for the sensors, ADC), memory big enough with room to grow, good tools, **long-term supply** (can you still buy it in five years?) and whether a second supplier makes something pin-compatible.",
       },
       {
         kind: "explain",
@@ -259,17 +259,17 @@ def is_measurable(requirement):
         question: {
           type: "choice",
           options: [
-            "Buying a big pile of the chip at the lowest price break",
-            "A faster clock speed so fewer chips are needed",
-            "Making the case out of a different plastic",
-            "A thin hardware abstraction layer in firmware and a pin-compatible alternative chip picked up front",
+            "Buying a big pile at the lowest price break",
+            "Ordering from two distributors, not one",
+            "A thin HAL and a pin-compatible second chip",
+            "A faster chip, so fewer of them are needed",
           ],
-          answer: 3,
+          answer: 2,
           hint: "Think about what you would have to rewrite if you had to switch, and whether the board could take a different part.",
           feedback: {
             0: "That helps with price, not with a shortage, and it ties up cash in stock for a part you may redesign anyway.",
-            1: "Clock speed has no effect on whether the chip can be bought.",
-            2: "The case is unrelated to the supply of the chip.",
+            1: "Two distributors sell the same chip from the same maker. When the maker runs short, both run dry.",
+            3: "Each Sprout needs exactly one MCU whatever its speed, and speed has no effect on whether the chip can be bought.",
           },
         },
         explanation: "Supply risk is part of architecture. Picking a part with a pin-compatible second source, and keeping the chip-specific code in a thin layer (the next-but-one lesson), means a shortage becomes a small change, not a redesign.",
@@ -310,7 +310,7 @@ def is_measurable(requirement):
         body: "Here are six risks for Sprout, with a likelihood and a cost-if-found-late (each out of 5). Use the arrows to put the risk to **prove first** at the top.",
         widget: { type: "prod-risk", props: {} },
         question: { type: "widget", goal: { correct: true }, hint: "Multiply likelihood by cost for each risk and sort from biggest to smallest. A risk that is likely *and* ruinous late goes first." },
-        explanation: "Battery sag (4 × 5 = 20) is first: likely, and a wrong battery choice changes the board, the case and the firmware. Moisture drift (16) is next. The case colour is *very* likely to be disliked (5/5) but costs almost nothing to change late (5), so it goes near the bottom. Prototype where the risk and the cost of being wrong multiply.",
+        explanation: "Battery sag (4 × 5 = 20) is first: likely, and a wrong battery choice changes the board, the case and the firmware. Moisture drift (16) is next. A small Rev A layout mistake is almost certain (5/5), but Rev A exists to find it and a fix is cheap (1/5), so it scores only 5. The case colour (4 × 1) goes last. Prototype where the risk and the cost of being wrong multiply.",
       },
       {
         kind: "question",
@@ -319,17 +319,17 @@ def is_measurable(requirement):
         question: {
           type: "choice",
           options: [
+            "A dev board on a coin cell, in a fridge",
             "A 3D-printed case in three colours",
-            "A finished four-layer PCB design",
-            "The phone app's pairing screen",
-            "A dev board with a coin cell and an oscilloscope, put in a fridge",
+            "A finished four-layer Sprout PCB",
+            "A spreadsheet model of the coin cell",
           ],
-          answer: 3,
+          answer: 0,
           hint: "Which one tests the battery under real conditions, with the least build effort?",
           feedback: {
-            0: "A case tells you about looks and fit. It does not tell you anything about the battery.",
-            1: "A board is slow and expensive to make, and the question can be answered long before one exists.",
-            2: "The app screen is about a different risk. This question is about the battery and power rail.",
+            1: "A case tells you about looks and fit. It does not tell you anything about the battery.",
+            2: "A board is slow and expensive to make, and the question can be answered long before one exists.",
+            3: "A model is only as good as its numbers, and a cold cell's internal resistance under pulses is exactly what you do not know yet. Measure it.",
           },
         },
         explanation: "A dev board that sends the same radio bursts, a real coin cell and a scope on the supply rail answers the question in an afternoon for almost nothing. If the rail dips too far, you learn the battery or the power design needs to change *before* the board exists.",
@@ -347,8 +347,8 @@ def is_measurable(requirement):
         kind: "question",
         title: "Who is being tested?",
         body: "Which stage is mainly about proving the **factory** can build the product well, repeatedly, on the real line with real fixtures?",
-        widget: { type: "prod-stages", props: {}, live: true },
-        question: { type: "choice", options: ["Prototype", "EVT", "PVT", "DVT"], answer: 2, hint: "The last stage before mass production is run on the production line itself.", feedback: { 0: "A prototype is one or a few boards built by hand. No factory is involved.", 1: "EVT asks whether the *design* works, using a small batch, often built by hand or by a prototype shop.", 3: "DVT asks whether the design meets the requirements and survives testing. The line comes after." } },
+        widget: { type: "prod-stages", props: { stage: "pvt" }, after: true },
+        question: { type: "choice", options: ["Prototype", "EVT", "DVT", "PVT"], answer: 3, hint: "The last stage before mass production is run on the production line itself.", feedback: { 0: "A prototype is one or a few boards built by hand. No factory is involved.", 1: "EVT asks whether the *design* works, using a small batch, often built by hand or by a prototype shop.", 2: "DVT asks whether the design meets the requirements and survives testing. The line comes after." } },
         explanation: "PVT, production validation, is the pilot run on the real line. It measures yield and proves the fixtures and process. EVT and DVT are mostly about whether the design is right; PVT is about whether the factory can make it right every time.",
       },
       {
@@ -368,16 +368,16 @@ def is_measurable(requirement):
           type: "choice",
           options: [
             "A test point on every power rail",
-            "A jumper in series with the battery for measuring current",
-            "No programming header, to save board area",
+            "The tightest layout the fab allows",
+            "A jumper in series with the battery",
+            "Programming pads left for Rev B",
             "A header or pads for the programmer",
-            "Removing the debug LED to save a cent",
           ],
-          answer: [0, 1, 3],
+          answer: [0, 2, 4],
           hint: "Which choices make it easier to see what the board is doing, load code, and measure current?",
           feedback: {
-            2: "Without a programming connection a single broken part can leave you unable to load firmware at all.",
-            4: "A cent is nothing against the time you lose when you cannot tell if firmware is running.",
+            1: "A tight layout leaves no room for probes, bodge wires or the spare pads you will want. Rev A is for learning; shrink the board later.",
+            3: "Without a programming connection on Rev A, a single broken part can leave you unable to load firmware at all.",
           },
         },
         explanation: "Rev A exists to learn things. Test points, a way to measure current and a programming header are cheap and turn 'it does not work' into 'it fails here'. You can leave them off a cost-reduced production board once you have learned what you needed.",
@@ -422,25 +422,25 @@ def is_measurable(requirement):
       {
         kind: "question",
         title: "Testing without hardware",
-        body: "Sprout's light-sensor **driver** calls `hal_i2c_read()`. You want to test the driver's maths (turn raw bytes into a lux number) without a board. What do you do?",
-        widget: { type: "prod-layers", props: { scenario: "host" }, live: true },
+        body: "Sprout's light-sensor **driver** calls `hal_i2c_read()`. You want to test the driver's maths (turn raw bytes into a lux number) without a board. What is the simplest way?",
+        widget: { type: "prod-layers", props: { scenario: "host" }, after: true },
         question: {
           type: "choice",
           options: [
-            "Buy a faster laptop that can run the chip's registers",
-            "Skip the driver tests, since only a real chip counts",
-            "Build the driver for the laptop with a fake HAL that returns scripted bytes",
-            "Rewrite the driver without the HAL",
+            "Only test the driver on the finished board",
+            "Build it for the laptop with a fake HAL",
+            "Emulate the chip's registers cycle by cycle",
+            "Rewrite the driver without the HAL calls",
           ],
-          answer: 2,
+          answer: 1,
           hint: "The driver only talks to the layer below it through an interface. What if something else sat behind that interface?",
           feedback: {
-            0: "A faster laptop does not have the chip's registers. The point is to avoid needing them.",
-            1: "The driver's maths is exactly what you can test without a chip, and bugs found early cost the least.",
+            0: "Possible, but slow and late. The driver's maths is exactly what you can test without a chip, and bugs found early cost the least.",
+            2: "Full chip emulators exist, but they are heavy work. The driver only sees the HAL, so a fake HAL that returns scripted bytes is enough.",
             3: "Removing the HAL would tie the driver to one chip, which is the opposite of what the layer is for.",
           },
         },
-        explanation: "Because the driver only calls the HAL's interface, you can put a **fake HAL** behind it on the laptop. The test hands it bytes and checks the lux value. The layer boundary is what makes tests that run in milliseconds possible. Only the HAL and the SDK need the real chip.",
+        explanation: "Because the driver only calls the HAL's interface, you can put a **fake HAL** behind it on the laptop: it returns scripted bytes, and the test checks the lux value. The layer boundary is what makes tests that run in milliseconds possible. Only the HAL and the SDK need the real chip.",
       },
       {
         kind: "explain",
@@ -456,7 +456,7 @@ def is_measurable(requirement):
         title: "No phone, no worries",
         body: "Set the phone to **Out of range**, keep the retry limit at **3 tries**, and step until Sprout **gives up** and goes back to sleep with its reading stored.",
         widget: { type: "prod-fsm", props: {} },
-        question: { type: "widget", goal: { gaveUp: true }, hint: "Choose 'Out of range', then press Step until the log says it gave up and the state returns to Sleep." },
+        question: { type: "widget", goal: { gaveUp: true, maxAttempts: 3 }, hint: "Choose 'Out of range', leave the retry limit at 3, then press Step until the log says it gave up and the state returns to Sleep." },
         explanation: "After three failed sends it stops trying, stores the sample and sleeps. A device must always have a **way out** of a failing situation. Otherwise one missing phone can keep the radio on, drain the battery and trap the firmware in a loop. You will see that happen in the debugging lesson.",
       },
       {
@@ -485,17 +485,17 @@ def is_measurable(requirement):
         question: {
           type: "choice",
           options: [
-            "Because it makes the boot faster",
-            "Because the chip can only reboot if a reason is stored",
-            "Because the phone app needs it to pair",
-            "Because a reboot you cannot explain is the hardest bug to find, and the chip can usually tell you which cause fired",
+            "It makes the next boot slightly faster",
+            "The chip can only reboot if a reason is stored",
+            "An unexplained reboot is very hard to trace",
+            "The phone app needs it before it can pair",
           ],
-          answer: 3,
+          answer: 2,
           hint: "Think about a device in someone's flat that reboots at 3 a.m. How would you know why?",
           feedback: {
             0: "Logging takes a little time, not saves it.",
             1: "The chip reboots on its own. The log just records the cause for you.",
-            2: "Pairing does not use the reset reason. It is for you, reading the device later.",
+            3: "Pairing does not use the reset reason. It is for you, reading the device later.",
           },
         },
         explanation: "Most MCUs have a register that records whether the last reset came from power-up, a brown-out, the watchdog, software or a pin. Logging it at boot turns 'it sometimes restarts' into 'it restarts from the watchdog, in the send state'. You will use exactly that in the debugging lesson.",
@@ -509,28 +509,51 @@ def is_measurable(requirement):
       },
       {
         kind: "code",
-        title: "Predict battery life from the duty cycle",
+        title: "What the retry limit costs in battery life",
         body: P(
-          "Write `battery_days(capacity_mah, sleep_ua, active_ma, active_s_per_hour)`. The device is **active** for `active_s_per_hour` seconds in each hour at `active_ma` milliamps, and **asleep** the rest of the time at `sleep_ua` microamps.",
-          "Average current (mA) = `active_ma × active_fraction + (sleep_ua / 1000) × (1 − active_fraction)`, where `active_fraction = active_s_per_hour / 3600`. Return the life in **days**: `capacity ÷ average current ÷ 24`.",
+          "*RTOS and power* in the embedded module turned a duty cycle into battery life. Here you go one step further and price the state machine itself, retries included, with the same numbers as the widget (`FSM` below: milliseconds and milliamps per state).",
+          "Write `cycle_charge(attempts)`: the charge in **mA·s** of one report cycle that makes `attempts` send attempts. A cycle wakes once, measures once, makes its send attempts with one back-off **between** each pair of attempts, then sleeps for the whole 900 s interval (the widget's simplification).",
+          "Then write `life_days(capacity_mah, away_share, max_attempts)`. In a share `away_share` of cycles the phone is away, so the device uses all `max_attempts`; in the rest the first send works. Average the charge per cycle, turn it into an average current over the 900 s, and return the battery life in days.",
         ),
         language: "python",
-        starter: `def battery_days(capacity_mah, sleep_ua, active_ma, active_s_per_hour):
-    # days the battery lasts for this duty cycle
-    return 0
+        starter: `FSM = {"wake": (2, 3.0), "measure": (100, 2.0), "send": (300, 9.0), "backoff": (2000, 0.008)}  # (ms, mA)
+SLEEP_MA = 0.008
+INTERVAL_S = 900
+
+def cycle_charge(attempts):
+    # your code here
+    return 0.0
+
+def life_days(capacity_mah, away_share, max_attempts):
+    # your code here
+    return 0.0
 `,
-        solution: `def battery_days(capacity_mah, sleep_ua, active_ma, active_s_per_hour):
-    active_fraction = active_s_per_hour / 3600
-    avg_ma = active_ma * active_fraction + (sleep_ua / 1000) * (1 - active_fraction)
+        solution: `FSM = {"wake": (2, 3.0), "measure": (100, 2.0), "send": (300, 9.0), "backoff": (2000, 0.008)}  # (ms, mA)
+SLEEP_MA = 0.008
+INTERVAL_S = 900
+
+def charge(state, times=1):
+    ms, ma = FSM[state]
+    return times * ma * ms / 1000
+
+def cycle_charge(attempts):
+    total = charge("wake") + charge("measure")
+    total += charge("send", attempts) + charge("backoff", attempts - 1)
+    total += SLEEP_MA * INTERVAL_S
+    return total
+
+def life_days(capacity_mah, away_share, max_attempts):
+    per_cycle = (1 - away_share) * cycle_charge(1) + away_share * cycle_charge(max_attempts)
+    avg_ma = per_cycle / INTERVAL_S
     return capacity_mah / avg_ma / 24
 `,
         tests: [
-          { id: "active", description: "200 mAh, no sleep current, 10 mA for 36 s each hour: average 0.1 mA, 83.3 days", assertionCode: `d = battery_days(200, 0, 10, 36)\nassert abs(d - 83.33) < 0.05, f"expected about 83.33 days, got {d}"` },
-          { id: "sleep", description: "Always asleep at 100 µA on 1,000 mAh: 416.7 days", assertionCode: `d = battery_days(1000, 100, 0, 0)\nassert abs(d - 416.67) < 0.05, f"expected about 416.67 days, got {d}"` },
-          { id: "sprout", description: "180 mAh, 8 µA sleep, 10 mA for 12 s each hour: about 181.6 days", assertionCode: `d = battery_days(180, 8, 10, 12)\nassert abs(d - 181.57) < 0.1, f"expected about 181.57 days, got {d}"` },
-          { id: "more", description: "More active time per hour means fewer days", assertionCode: `a = battery_days(180, 8, 10, 12)\nb = battery_days(180, 8, 10, 48)\nassert a > b > 0, f"4x the active time should cut the life, got {a} and {b}"` },
+          { id: "home", description: "Phone at home: one attempt costs about 10.1 mA·s", assertionCode: `c = cycle_charge(1)\nassert abs(c - 10.106) < 0.01, f"expected about 10.106 mA·s, got {c}"` },
+          { id: "retries", description: "Three attempts with two back-offs: about 15.5 mA·s; ten attempts: about 34.6", assertionCode: `c3 = cycle_charge(3)\nc10 = cycle_charge(10)\nassert abs(c3 - 15.538) < 0.01, f"expected about 15.538 mA·s, got {c3}"\nassert abs(c10 - 34.55) < 0.01, f"expected about 34.55 mA·s, got {c10}"` },
+          { id: "life", description: "Phone always home: 180 mAh lasts about 668 days", assertionCode: `d = life_days(180, 0, 3)\nassert abs(d - 667.92) < 0.5, f"expected about 668 days, got {d}"` },
+          { id: "away", description: "Phone away half the time: a limit of 10 gives about 302 days, a limit of 3 about 526", assertionCode: `d10 = life_days(180, 0.5, 10)\nd3 = life_days(180, 0.5, 3)\nassert abs(d10 - 302.31) < 0.5, f"expected about 302 days with 10 tries, got {d10}"\nassert abs(d3 - 526.44) < 0.5, f"expected about 526 days with 3 tries, got {d3}"` },
         ],
-        hints: ["First turn the active seconds into a fraction of an hour: `active_s_per_hour / 3600`.", "Add the two currents in mA (remember to divide `sleep_ua` by 1000), then divide the capacity by the average and by 24."],
+        hints: ["Each state's charge is its current in mA times its time in seconds (ms ÷ 1000). Count how many times each state happens in one cycle: `attempts` sends but only `attempts - 1` back-offs.", "For the life, mix the two kinds of cycle by their shares, divide by `INTERVAL_S` to get an average current in mA, then divide the capacity by it and by 24 hours."],
       },
       {
         kind: "recap",
@@ -584,17 +607,17 @@ def is_measurable(requirement):
         title: "The bench",
         body: P(
           "A **bench supply** lets you set a voltage *and a current limit*. If the board tries to draw more than the limit, the supply drops its voltage instead (called **constant-current mode**, shown as CC), and the board is protected. This is the same idea as the fuses and short circuits in *Sources and real-world limits* (*Electronics from zero: circuits*).",
-          "Below are two mystery boards. Set a limit, power on, read the supply's display, then probe. Use the resistance probes **with the power off** and the voltage, scope and debugger probes **with it on**. A board that behaves badly may show you the problem in the very first reading.",
+          "Below is a **healthy** board, so you know what good looks like before the mystery boards arrive. Set a limit, power on, read the supply's display, then probe. Use the resistance probes **with the power off** and the voltage, scope and debugger probes **with it on**. Note the current it draws, the rail voltage and the resistance from the rail to ground.",
         ),
-        widget: { type: "prod-bringup", props: { boards: ["good", "short"] } },
+        widget: { type: "prod-bringup", props: { boards: ["good"] } },
       },
       {
         kind: "question",
         title: "Find the short",
-        body: "One board is healthy and one has a **short** on its 3.3 V rail. Find the board with the short and submit the right diagnosis. Start with a low current limit.",
-        widget: { type: "prod-bringup", props: { boards: ["good", "short"] } },
-        question: { type: "widget", goal: { solved: ["short"] }, hint: "Power on with a low limit. A board in current limit with its voltage collapsed is a strong clue; confirm it with the resistance probe after powering off." },
-        explanation: "A short makes the supply hit its limit: the voltage collapses to a few millivolts and the current sits at the limit. The resistance from rail to ground (a fraction of an ohm) confirms it. Without a limit, the same short would try to pull amps and cook the board.",
+        body: "One board is healthy and one has a **short** on its 3.3 V rail. Find the board with the short and submit the right diagnosis. Do it **safely**: the check fails if you ever power the shorted board with a limit of 500 mA or more.",
+        widget: { type: "prod-bringup", props: { boards: ["short", "good"] } },
+        question: { type: "widget", goal: { solved: ["short"], safe: true }, hint: "Power on with a low limit (10 or 50 mA). A board in current limit with its voltage collapsed is a strong clue; confirm it with the resistance probe after powering off. If you already used a high limit, press Start again." },
+        explanation: "A short makes the supply hit its limit: the voltage collapses to a few millivolts and the current sits at the limit. The resistance from rail to ground (a fraction of an ohm) confirms it. Without a limit, the same short would try to pull amps and cook the board, which is why the safe habit is part of the goal.",
       },
       {
         kind: "question",
@@ -602,16 +625,16 @@ def is_measurable(requirement):
         body: "You expect a healthy Sprout board to draw about **3 mA** when running. What current limit should you set for the very first power-on?",
         question: {
           type: "choice",
-          options: ["No limit, so you can see the true current", "Something modest, such as 10 to 20 mA: above normal, far below damaging", "1 A, in case the board needs a lot", "Whatever the supply was last set to"],
-          answer: 1,
+          options: ["No limit, so you see the true current", "1 A, in case the board needs a lot", "Whatever the supply was last set to", "About 10 to 20 mA, a few times normal"],
+          answer: 3,
           hint: "You want enough headroom that a healthy board is not limited, but low enough that a fault cannot do damage.",
           feedback: {
             0: "The supply shows the current anyway. With no limit you are betting nothing is wrong.",
-            2: "1 A is hundreds of times what the board should draw. A short could dump watts into a tiny spot.",
-            3: "The previous setting could be anything, and it was set for a different board.",
+            1: "1 A is hundreds of times what the board should draw. A short could dump watts into a tiny spot.",
+            2: "The previous setting could be anything, and it was set for a different board.",
           },
         },
-        explanation: "A limit a few times above the expected current lets a good board run and stops a faulty one from burning. You can always raise the limit once you have seen how the board behaves.",
+        explanation: "A limit a few times above the expected current (10 to 20 mA here) lets a good board run and stops a faulty one from burning. You can always raise the limit once you have seen how the board behaves.",
       },
       {
         kind: "question",
@@ -634,10 +657,10 @@ def is_measurable(requirement):
       {
         kind: "question",
         title: "A silent chip",
-        body: "This board has good rails and a sensible current, yet the firmware never runs. Find out why. (A clue: what does the chip need before it can execute anything?)",
+        body: "This board has good rails and a sensible current, yet the firmware never gets past start-up. Find out why. (A clue: halt the chip and see *where* it is stuck.)",
         widget: { type: "prod-bringup", props: { boards: ["noclock", "good"] } },
-        question: { type: "widget", goal: { solved: ["noclock"] }, hint: "Probe the crystal on the scope and try connecting the debugger. Compare with the healthy board." },
-        explanation: "The crystal pin is a flat line: it never starts oscillating (a missing part, wrong load capacitors, or a bad joint are common causes). No clock means no instructions. Rails first, then the clock, then programming: that is the order in which a chip comes alive.",
+        question: { type: "widget", goal: { solved: ["noclock"] }, hint: "Probe the crystal on the scope and connect the debugger. Compare with the healthy board." },
+        explanation: "The crystal pin is a flat line: the crystal never starts (a missing part, wrong load capacitors, or a bad joint are common causes). Most modern MCUs boot on an **internal RC oscillator**, so the core does run, but the firmware waits forever in its clock setup for the crystal to report ready, which is where the debugger halts it. The Bluetooth radio needs that crystal anyway. Rails first, then the clock, then programming: that is the order in which a chip comes alive.",
       },
       {
         kind: "recap",

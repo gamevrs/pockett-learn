@@ -14,7 +14,7 @@ import { pcbLessonsD } from "./pcb-d.ts";
  * Widgets: register them in src/learn/widgets/pcb/index.ts with keys prefixed "pcb-".
  * Shared circuit kit (schematic symbols, DC and transient solvers, SI formatting): src/learn/widgets/elec-kit/.
  *
- * Lessons 1-2 live in pcb-a.ts, 3-5 in pcb-b.ts, 6-7 in pcb-c.ts and 8-9 in pcb-d.ts.
+ * Lessons 1-2 live in pcb-a.ts, 3-5 in pcb-b.ts, 6-7 in pcb-c.ts and 8, 10 (heat) and 9 in pcb-d.ts.
  */
 const lessons: ConceptLesson[] = [...pcbLessonsA, ...pcbLessonsB, ...pcbLessonsC, ...pcbLessonsD];
 

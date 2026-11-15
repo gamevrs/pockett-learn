@@ -62,7 +62,7 @@ const SENSORS: Record<SensorId, { title: string; sub: string; part: PartLine }> 
 };
 
 const POWERS: Record<PowerId, { title: string; sub: string; part: PartLine; mah: number }> = {
-  coin: { title: "Coin cell", sub: "Small and cheap. Weak at delivering sudden bursts of current.", part: { name: "Coin cell + holder", count: 1, breaks: [[1, 0.6], [1000, 0.35], [10000, 0.28]] }, mah: 225 },
+  coin: { title: "Coin cell", sub: "Small and cheap. Weak at sudden bursts of current, and needs a child-resistant cover.", part: { name: "Coin cell + holder", count: 1, breaks: [[1, 0.6], [1000, 0.35], [10000, 0.28]] }, mah: 225 },
   aa: { title: "2 × AA cells", sub: "Bigger, heavier, about ten times the energy. Handles bursts well.", part: { name: "AA holder + cells", count: 1, breaks: [[1, 0.9], [1000, 0.6], [10000, 0.48]] }, mah: 2500 },
   usb: { title: "USB-C power", sub: "No battery to run out, but it needs a cable and a 5 V to 3.3 V regulator.", part: { name: "USB-C + regulator", count: 1, breaks: [[1, 1.4], [1000, 0.95], [10000, 0.8]] }, mah: 0 },
 };

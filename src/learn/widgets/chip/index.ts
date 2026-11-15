@@ -11,6 +11,8 @@ import { HwSw, checkHwSw } from "./HwSw";
 import { Synth, checkSynth } from "./Synth";
 import { Sta, checkSta } from "./Sta";
 import { Power, checkPower } from "./Power";
+import { Domains, checkDomains } from "./Domains";
+import { Corners, checkCorners } from "./Corners";
 
 /**
  * Widgets for the "Designing chips: from RTL to tape-out" module. Every key MUST be prefixed "chip-" so it stays unique
@@ -34,4 +36,6 @@ export const CHIP_WIDGETS: WidgetRegistry = {
   "chip-synth": { Component: Synth, check: checkSynth },
   "chip-sta": { Component: Sta, check: checkSta },
   "chip-power": { Component: Power, check: checkPower },
+  "chip-domains": { Component: Domains, check: checkDomains },
+  "chip-corners": { Component: Corners, check: checkCorners },
 };

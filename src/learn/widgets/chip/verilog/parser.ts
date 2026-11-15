@@ -294,6 +294,7 @@ class Parser {
     const t = this.next();
     let star = false;
     const edges: { edge: "pos" | "neg"; sig: string; line: number; col: number }[] = [];
+    const levelSigs: { sig: string; line: number; col: number }[] = [];
     if (t.s === "always_comb") {
       star = true;
     } else {
@@ -321,7 +322,10 @@ class Parser {
             }
             const n = this.ident("a signal name");
             if (edge) edges.push({ edge, sig: n.s, line: n.line, col: n.col });
-            else levels++;
+            else {
+              levels++;
+              levelSigs.push({ sig: n.s, line: n.line, col: n.col });
+            }
             if (this.isKw("or") || this.isSym(",")) this.next();
             else break;
           }
@@ -333,7 +337,7 @@ class Parser {
     }
     if (t.s === "always_ff" && !edges.length) this.fail(t, "`always_ff` needs an edge, like `always_ff @(posedge clk)`.");
     const body = this.parseStmt();
-    return { k: "always", star, edges, body, kw: t.s, line: t.line, col: t.col };
+    return { k: "always", star, edges, ...(levelSigs.length && !edges.length ? { levels: levelSigs } : {}), body, kw: t.s, line: t.line, col: t.col };
   }
 
   // ───────────────────────────── statements ─────────────────────────────

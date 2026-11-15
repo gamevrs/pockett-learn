@@ -48,7 +48,7 @@ export interface RooflineState {
 const W = 360;
 const H = 200;
 const PL = 42;
-const PR = 10;
+const PR = 16;
 const PT = 12;
 const PB = 34;
 const AX0 = Math.log10(1 / 32);

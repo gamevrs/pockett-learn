@@ -7,7 +7,7 @@ import { Btn, Note, Readout, Sch, Seg, ToyNote, amps, ohms, watts } from "./ui";
 
 const LOADS = [
   { id: "lamp", label: "Lamp", r: 24 },
-  { id: "motor", label: "Motor", r: 6 },
+  { id: "motor", label: "Motor", r: 8 },
   { id: "stuck", label: "Stuck motor", r: 1 },
   { id: "short", label: "Short circuit", r: 0.02 },
 ] as const;

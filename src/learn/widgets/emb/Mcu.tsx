@@ -161,13 +161,13 @@ export function Mcu({ props, onChange, revealed }: WidgetProps<McuProps>) {
             <caption className="sr-only">Typical microcontroller against typical PC</caption>
             <thead>
               <tr className="text-ink">
-                <th scope="col" className="w-[26%] pb-1.5 pr-1 font-semibold">
+                <th scope="col" className="w-[24%] pb-1.5 pr-1 font-semibold">
                   Typical
                 </th>
-                <th scope="col" className="w-[38%] pb-1.5 pr-1 font-semibold">
+                <th scope="col" className="w-[44%] break-words pb-1.5 pr-1 font-semibold">
                   Microcontroller
                 </th>
-                <th scope="col" className="w-[36%] pb-1.5 font-semibold">
+                <th scope="col" className="w-[32%] pb-1.5 font-semibold">
                   PC
                 </th>
               </tr>

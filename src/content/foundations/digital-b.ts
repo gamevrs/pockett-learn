@@ -38,13 +38,13 @@ export const digitalLessonsB: ConceptLesson[] = [
         body: "The LOAD input is 1 and the data inputs change, but no clock edge has arrived. What does the register hold?",
         question: {
           type: "choice",
-          options: ["The new data, immediately", "A mix of old and new bits", "Nothing: it is cleared", "Its old value, until the next clock edge"],
-          answer: 3,
+          options: ["The new data, at once", "Its old value, until the next edge", "A mix of old and new bits", "Nothing: the register is cleared"],
+          answer: 1,
           hint: "A flip-flop only looks at its input at one instant. Which instant?",
           feedback: {
             0: "That would be a transparent latch. Flip-flops only update at the clock edge.",
-            1: "All flip-flops see the same edge at the same time, so the register changes all at once or not at all.",
-            2: "Nothing clears it. The loop inside each flip-flop keeps holding the old value.",
+            2: "All flip-flops see the same edge at the same time, so the register changes all at once or not at all.",
+            3: "Nothing clears it. The loop inside each flip-flop keeps holding the old value.",
           },
         },
         explanation: "Edge-triggered storage holds its value between clock edges, whatever D does. That is what lets the next stage of logic see a stable number for a whole clock period.",
@@ -87,8 +87,8 @@ export const digitalLessonsB: ConceptLesson[] = [
       {
         kind: "question",
         title: "How fast is Q2?",
-        body: "A 3-bit counter is clocked at **80 MHz**. How fast does its top output **Q2** run, in MHz? (The frequency of Q2 itself, one full period per cycle.)",
-        widget: { type: "digi-seq", props: { mode: "count", bits: 3 }, live: true },
+        body: "A 3-bit counter is clocked at **80 MHz**. How fast does its top output **Q2** run, in MHz? (The frequency of Q2 itself, one full period per cycle.) The counter opens after you answer.",
+        widget: { type: "digi-seq", props: { mode: "count", bits: 3 }, after: true },
         question: { type: "number", answer: 10, tolerance: 0.01, unit: "MHz", hint: "Q2 completes one full cycle every 8 clock ticks." },
         explanation: "Q2 goes through a full high-and-low cycle once every 2³ = 8 clocks, so its frequency is 80 MHz ÷ 8 = **10 MHz**. An n-bit counter's top bit divides the clock by 2ⁿ.",
       },
@@ -97,12 +97,13 @@ export const digitalLessonsB: ConceptLesson[] = [
         title: "A counter in code",
         body: P(
           "Write `counter_step(bits)`. `bits` is a list of 0s and 1s with the **least significant bit first**, e.g. `[1, 1, 0]` is binary 011 = 3. Return the list after **one clock edge**: add 1, wrapping to all zeros after all ones.",
-          "Do it the hardware way: a bit toggles when every bit below it is 1.",
+          "Do it the hardware way, the way the widget's bits flip: walk up from bit 0 and decide for each bit whether it toggles.",
         ),
         language: "python",
         starter: `def counter_step(bits):
     # bits[0] is the least significant bit
     # return the list after one clock edge
+    # your code here
     return bits
 `,
         solution: `def counter_step(bits):
@@ -161,12 +162,25 @@ export const digitalLessonsB: ConceptLesson[] = [
         explanation: "N-S green → N-S amber → E-W green: two clock edges with \"timer done\". With \"timer running\" the machine stays where it is. Notice that the lights depend only on which state you are in: that is a **Moore** machine, defined in a moment.",
       },
       {
-        kind: "explain",
+        kind: "question",
         title: "From diagram to gates",
         body: P(
-          "To build it, give each state a **binary code**. N states need ⌈log₂ N⌉ flip-flops: 4 states fit in 2 bits. With the codes 00, 01, 10, 11 in order, \"timer done\" simply adds 1 and wraps (a 2-bit counter from the last lesson), and \"timer running\" holds the value. The next-state logic is small enough to write as equations of the state bits and the input.",
+          "To build it, give each state a **binary code**. N states need ⌈log₂ N⌉ flip-flops: 4 states fit in 2 bits, S1 S0. With the codes 00, 01, 10, 11 in the order the lights go round, \"timer done\" (input d = 1) simply adds 1 and wraps, like the 2-bit counter from the last lesson, and \"timer running\" (d = 0) holds the value.",
           "Real designs choose encodings for speed or size. **One-hot** uses one flip-flop per state (only one is 1): more flip-flops, but the next-state logic is tiny and fast, which suits FPGAs. The process is always the same: **diagram → state table → encode → equations → gates**.",
+          "Which pair of equations is the next-state logic for the binary encoding? (S0' means the value S0 takes after the clock edge.)",
         ),
+        question: {
+          type: "choice",
+          options: ["S0' = S0 AND d;  S1' = S1 OR (S0 AND d)", "S0' = S0 XOR d;  S1' = S1 XOR (S0 AND d)", "S0' = NOT S0;  S1' = S1 XOR S0", "S0' = S0 XOR d;  S1' = S1 XOR d"],
+          answer: 1,
+          hint: "Write the state table for d = 1 (00 → 01 → 10 → 11 → 00) and for d = 0 (no change). Which bit flips on every move, and which flips only when the bit below it is 1?",
+          feedback: {
+            0: "With d = 1 in state 00, S0 AND d is 0, so the machine would never leave 00.",
+            2: "These equations ignore d: the machine would move on every clock edge, even while the timer is still running.",
+            3: "From 00 with d = 1 both bits flip at once, so the machine jumps straight to 11 and skips two states.",
+          },
+        },
+        explanation: "S0 flips on every move: **S0' = S0 XOR d**. S1 flips only when it moves *and* S0 is already 1 (01 → 10, 11 → 00), exactly like a counter's carry: **S1' = S1 XOR (S0 AND d)**. With d = 0 both XORs leave the bits alone, so the state holds. Two XOR gates and one AND, then two flip-flops, and the traffic light is built.",
       },
       {
         kind: "question",
@@ -209,7 +223,7 @@ export const digitalLessonsB: ConceptLesson[] = [
         body: "A Mealy and a Moore detector are both given the bits 1, 0, 1. Which is true?",
         question: {
           type: "choice",
-          options: ["The Moore output rises first, because it needs fewer states", "Both outputs rise in the same cycle, always", "The Mealy output can rise in the cycle where the last 1 is applied; the Moore output rises a cycle later", "Neither can detect overlapping sequences"],
+          options: ["The Moore output rises first: it has fewer states", "Both outputs rise in the same cycle", "The Mealy output rises a cycle earlier", "Neither can detect overlapping patterns"],
           answer: 2,
           hint: "A Mealy output is a function of the state and the input right now. A Moore output has to wait for the state register to change.",
           feedback: {
@@ -218,7 +232,7 @@ export const digitalLessonsB: ConceptLesson[] = [
             3: "Both versions here handle overlapping patterns like 10101, which contains 101 twice.",
           },
         },
-        explanation: "Mealy: output = f(state, input), so it can respond in the same cycle (and may glitch if the input glitches). Moore: output = f(state), so it is cleaner and changes only on clock edges, at the price of an extra state and a one-cycle delay. Designers pick whichever suits the system.",
+        explanation: "Mealy: output = f(state, input), so it can rise in the very cycle where the last 1 is applied (and may glitch if the input glitches). Moore: output = f(state), so it rises only after the clock edge has moved the state, one cycle later; it is cleaner and changes only on clock edges, at the price of an extra state. Designers pick whichever suits the system.",
       },
       {
         kind: "code",
@@ -273,9 +287,9 @@ export const digitalLessonsB: ConceptLesson[] = [
         body: P(
           "So far gates changed their outputs instantly. In reality every gate has a **propagation delay**: the time between an input change and the output following, tiny (tens of picoseconds in modern chips) but real. A flip-flop has one too: **clock-to-Q** (tcq), the time after the clock edge until Q shows the new value.",
           "Now take two flip-flops with logic between them. At the clock edge FF1 launches new data. It must travel through the gates and reach FF2 **before the next clock edge**, and early enough that FF2 can see it clearly: the **setup time** (tsu) is how long the data must be stable *before* the edge.",
-          "The picture shows FF1, four gates and FF2. The data can take two routes; the slower one is the **critical path**. The bar chart underneath is one clock period. Slide the clock period and watch the **setup slack**: the spare time, which must stay positive.",
+          "The picture shows FF1, four gates and FF2. The data can take two routes; the slower one is the **critical path**. The bar chart underneath is one clock period. Slide the clock period and watch the **setup slack**: the spare time, which must stay positive. (This circuit has slower gates than the one in the next step.)",
         ),
-        widget: { type: "digi-timing", props: { skew: false } },
+        widget: { type: "digi-timing", props: { skew: false, g: [0.5, 0.6, 0.3, 0.35] } },
       },
       {
         kind: "question",
@@ -295,15 +309,15 @@ export const digitalLessonsB: ConceptLesson[] = [
       {
         kind: "question",
         title: "Speed up the wrong path",
-        body: "Open the gate delays and make gate **G3** (on the *short* path) much faster. Does the maximum clock frequency go up?",
-        widget: { type: "digi-timing", props: { skew: false }, live: true },
+        body: "Suppose you make gate **G3** (on the *short* path) much faster. Does the maximum clock frequency go up? Answer first; the widget opens afterwards so you can open the gate delays and try it.",
+        widget: { type: "digi-timing", props: { skew: false }, after: true },
         question: {
           type: "choice",
-          options: ["Yes, every gate counts equally", "No: only the critical path sets the limit", "Yes, but only if the clock-to-Q also shrinks", "No: and the circuit would now fail setup"],
-          answer: 1,
+          options: ["No: only the critical path sets the limit", "Yes: every gate's delay counts equally", "Yes, but only if clock-to-Q shrinks too", "No, and the circuit now fails setup"],
+          answer: 0,
           hint: "Which route does the maximum frequency formula use: the longest or the shortest?",
           feedback: {
-            0: "The formula uses the slowest path only. Making a path that already finishes early faster changes nothing about the limit.",
+            1: "The formula uses the slowest path only. Making a path that already finishes early faster changes nothing about the limit.",
             2: "Clock-to-Q matters for every path, but the point here is which path sets the limit.",
             3: "A faster non-critical path cannot break setup; if anything, hold gets harder (next).",
           },
@@ -316,9 +330,9 @@ export const digitalLessonsB: ConceptLesson[] = [
         body: P(
           "There is a second danger. A flip-flop also needs its input to stay stable for a short time **after** the clock edge: the **hold time** (thold). The *new* data launched by the same edge must not arrive too early and overwrite the old value while FF2 is still looking at it. The fastest path is the one that matters here.",
           "Real clocks do not arrive everywhere at the same instant. **Clock skew** is the difference in arrival time between two flip-flops. If FF2's clock arrives **later** than FF1's, the data has extra time (setup gets easier) but the race for hold gets harder: hold slack = tcq + fastest path − thold − skew.",
-          "Now the skew slider is on. Hold slack does not depend on the clock period at all. This is why a hold violation cannot be fixed by slowing the clock.",
+          "Now the skew slider is on (and this circuit's short path is shorter than the next step's). Hold slack does not depend on the clock period at all. This is why a hold violation cannot be fixed by slowing the clock.",
         ),
-        widget: { type: "digi-timing", props: { skew: true } },
+        widget: { type: "digi-timing", props: { skew: true, g: [0.35, 0.45, 0.1, 0.15] } },
       },
       {
         kind: "question",
@@ -331,47 +345,51 @@ export const digitalLessonsB: ConceptLesson[] = [
       {
         kind: "question",
         title: "Fixing a hold violation",
-        body: "A chip has been manufactured and one path has a hold violation. Slowing the clock does not help. What does?",
+        body: "Static timing analysis, run on the design **before tape-out**, reports a hold violation on one path. Slowing the clock does not help. What does?",
         question: {
           type: "choice",
-          options: ["Slow the clock down even more", "Add delay (buffers) to the fast path, or reduce the skew", "Raise the supply voltage so the gates are faster", "Shorten the critical path"],
-          answer: 1,
+          options: ["Slow the clock down further", "Raise the supply so gates are faster", "Add delay buffers to the fast path", "Shorten the critical path"],
+          answer: 2,
           hint: "Hold is a race between the new data and the clock edge. Which side do you need to slow down?",
           feedback: {
             0: "Hold slack does not depend on the clock period: it compares delays from the same edge. A slower clock changes nothing.",
-            2: "Faster gates make the fast path faster, which makes hold worse, not better.",
+            1: "Faster gates make the fast path faster, which makes hold worse, not better.",
             3: "That helps setup, not hold. Hold is about the shortest path being too fast.",
           },
         },
-        explanation: "Hold fixes make the fast path **slower**: designers insert delay buffers on the short path, or rebalance the clock tree. Because it cannot be repaired by slowing the clock, a hold violation in a finished chip can make it useless, so design tools check hold on every path before tape-out (see *Static timing analysis* in the chip-design module).",
+        explanation: "Hold fixes make the fast path **slower**: designers insert delay buffers on the short path, or rebalance the clock tree to reduce the skew. Because a slower clock cannot repair it, a hold violation that escapes into silicon can make a chip useless (after manufacture the only levers left are the operating conditions, or a tunable clock delay if the design has one), so tools check hold on every path before tape-out (see *Static timing analysis* in the chip-design module).",
       },
       {
         kind: "code",
-        title: "Maximum frequency",
+        title: "Both checks in code",
         body: P(
-          "Write `max_freq_mhz(tcq, tlogic, tsu)` where the delays are in **nanoseconds**. It returns the maximum clock frequency in **MHz**: 1000 divided by the total delay.",
+          "Write `check_timing(period, tcq, tsu, thold, skew, longest, shortest)`. All values are in **nanoseconds**; `skew` is how much later FF2's clock arrives than FF1's, and `longest` and `shortest` are the slowest and fastest logic paths between the flops.",
+          "Return a tuple `(setup_slack, hold_slack)`, using the two relations from this lesson. A negative number is a violation.",
         ),
         language: "python",
-        starter: `def max_freq_mhz(tcq, tlogic, tsu):
-    # delays in ns, result in MHz
-    return 0
+        starter: `def check_timing(period, tcq, tsu, thold, skew, longest, shortest):
+    # return (setup_slack, hold_slack), all in ns
+    # your code here
+    return (0, 0)
 `,
-        solution: `def max_freq_mhz(tcq, tlogic, tsu):
-    return 1000 / (tcq + tlogic + tsu)
+        solution: `def check_timing(period, tcq, tsu, thold, skew, longest, shortest):
+    setup_slack = period + skew - (tcq + longest + tsu)
+    hold_slack = tcq + shortest - thold - skew
+    return (setup_slack, hold_slack)
 `,
         tests: [
-          { id: "simple", description: "0.5 + 1.2 + 0.3 ns gives 500 MHz", assertionCode: `assert abs(max_freq_mhz(0.5, 1.2, 0.3) - 500) < 1e-6, f"got {max_freq_mhz(0.5, 1.2, 0.3)}"` },
-          { id: "fast", description: "0.2 + 0.6 + 0.2 ns gives 1000 MHz", assertionCode: `assert abs(max_freq_mhz(0.2, 0.6, 0.2) - 1000) < 1e-6, f"got {max_freq_mhz(0.2, 0.6, 0.2)}"` },
-          { id: "slow", description: "1 + 3 + 1 ns gives 200 MHz", assertionCode: `assert abs(max_freq_mhz(1, 3, 1) - 200) < 1e-6, f"got {max_freq_mhz(1, 3, 1)}"` },
+          { id: "exact", description: "The 500 MHz path at a 2 ns clock: setup exactly met", assertionCode: `s, h = check_timing(2.0, 0.5, 0.3, 0.1, 0.0, 1.2, 0.2)\nassert abs(s) < 1e-9 and abs(h - 0.6) < 1e-9, f"got {(s, h)}"` },
+          { id: "skew", description: "0.4 ns of skew helps setup and costs hold", assertionCode: `s, h = check_timing(2.0, 0.5, 0.3, 0.1, 0.4, 1.2, 0.2)\nassert abs(s - 0.4) < 1e-9 and abs(h - 0.2) < 1e-9, f"got {(s, h)}"` },
+          { id: "hold-fails", description: "Too much skew breaks hold, at any period", assertionCode: `for T in (2.0, 5.0):\n    s, h = check_timing(T, 0.5, 0.3, 0.1, 0.8, 1.2, 0.1)\n    assert abs(h + 0.3) < 1e-9, f"hold slack at T={T}: got {h}"\nassert abs(check_timing(5.0, 0.5, 0.3, 0.1, 0.8, 1.2, 0.1)[0] - 3.8) < 1e-9` },
         ],
-        hints: ["Add the three delays to get the minimum period in ns.", "1 ns period is 1000 MHz, so the frequency in MHz is 1000 / period_ns."],
+        hints: ["Setup compares when the data arrives (tcq + longest) plus tsu with when the capture edge arrives (period + skew).", "Hold compares the earliest new data (tcq + shortest) with thold after the late capture edge (skew). The period does not appear in it."],
       },
       {
         kind: "recap",
         points: [
           "Every gate and flip-flop has a **delay**. The slowest path from flip-flop to flip-flop is the **critical path**.",
-          "**Setup**: data must arrive at least tsu before the capture edge. So period ≥ tcq + tlogic + tsu (− skew), and fmax = 1 / that. Only the critical path matters.",
-          "**Hold**: new data must not arrive within thold of the edge. It depends on the *fastest* path and skew, not on the clock period, so you fix it with extra delay, not a slower clock.",
+          "**Setup**: data must arrive at least tsu before the capture edge. Setup slack = period + skew − (tcq + tlogic + tsu), and fmax = 1 / (tcq + tlogic + tsu − skew). Only the critical path matters.",
+          "**Hold**: new data must not arrive within thold of the edge. Hold slack = tcq + fastest path − thold − skew: no period in it, so you fix it with extra delay, not a slower clock.",
           "**Skew** helps one check and hurts the other. Timing tools (static timing analysis) check every path of a chip for both.",
         ],
       },
@@ -392,18 +410,17 @@ export const digitalLessonsB: ConceptLesson[] = [
         title: "When setup is violated",
         body: P(
           "The previous lesson assumed data changes only well away from the clock edge. But some signals come from *outside* the clock: a button press, another chip with its own clock, a sensor. They are **asynchronous**, and sooner or later one will change **inside the flip-flop's setup-and-hold window**.",
-          "Then the flip-flop's internal loop is left balanced between 0 and 1, like a ball on top of a hill. It is **metastable**: its output may sit at an in-between voltage for a random time before it falls to 0 or 1, and nobody can say *which* it will pick or *when*.",
-          "Slide the data edge across the clock edge. Outside the window the result is clean. Inside, clock it several times (the orange band) and look at how long the output hovers.",
+          "Inside that window the datasheet no longer guarantees anything: the flop may capture the old value or the new one. The window is a safety margin, though. Only in a much narrower slice of it, called the **aperture Tw** (tens of picoseconds, typically), does the data edge arrive at just the wrong moment and leave the flip-flop's internal loop balanced between 0 and 1, like a ball on top of a hill. Then it is **metastable**: its output may sit at an in-between voltage for a random time before it falls to 0 or 1, and nobody can say *which* it will pick or *when*.",
+          "In the next step you slide a data edge across a clock edge and clock it many times to see this happen.",
         ),
-        widget: { type: "digi-meta", props: {} },
       },
       {
         kind: "question",
         title: "Land in the window",
-        body: "Place the data edge **inside the window** and clock it at least once so that the flip-flop goes metastable.",
+        body: "Slide the data edge across the clock edge: outside the orange window the result is clean. Place it **inside the window** and keep clocking until the flip-flop goes **metastable** at least once.",
         widget: { type: "digi-meta", props: {} },
-        question: { type: "widget", goal: { inWindow: true, minMeta: 1 }, hint: "The window runs from about 0.3 ns before the clock edge to 0.1 ns after it. Put the slider there, then press Clock it." },
-        explanation: "Inside the window the flip-flop cannot decide. The time it takes to resolve is random with an **exponential** tail: the chance of still hovering after time t falls as e^(−t/τ), where τ is a time constant of the circuit. It is never exactly zero, however long you wait.",
+        question: { type: "widget", goal: { inWindow: true, minMeta: 1 }, hint: "The window runs from about 0.3 ns before the clock edge to 0.1 ns after it. Put the slider there, then press Clock it 100 times: only a few samples in a hundred land in the narrow aperture." },
+        explanation: "Most samples inside the window simply picked the old or the new value; a few went metastable, because only the narrow aperture Tw (here 30 ps of a 400 ps window) catches the flop undecided. The time a metastable flop takes to resolve is random with an **exponential** tail: the chance of still hovering after time t falls as e^(−t/τ), where τ is a time constant of the circuit (30 ps in both widgets of this lesson). It is never exactly zero, however long you wait.",
       },
       {
         kind: "explain",
@@ -411,9 +428,8 @@ export const digitalLessonsB: ConceptLesson[] = [
         body: P(
           "Metastability **cannot be eliminated**: any circuit that must choose between two values for an input that may change at any time can be caught undecided. What we *can* do is give it **time to settle** before anyone uses the output, which makes failure exponentially less likely.",
           "The standard recipe is a **two-flop synchroniser**: the asynchronous signal goes into a first flip-flop whose output is *not used for anything else*, then into a second. If the first one goes metastable, it usually settles during the clock period before the second samples it.",
-          "Reliability is measured as **MTBF**, the mean time between failures: **MTBF = e^(t/τ) / (Tw · f_clk · f_data)**, where t is the settling time available, τ and Tw are properties of the flip-flop, and the two frequencies set how often an edge can land in the window. Try the stages and the clock speed. (The numbers are illustrative.)",
+          "Reliability is measured as **MTBF**, the mean time between failures: **MTBF = e^(t/τ) / (Tw · f_clk · f_data)**, where t is the settling time available, τ (the resolution time constant) and Tw (the aperture) are properties of the flip-flop, and the two frequencies set how often a data edge can land in the aperture. Tw · f_clk · f_data is the rate of metastable events; e^(−t/τ) is the share still unresolved when the next stage looks. The next step lets you try the stages and the clock speed, with the same τ = Tw = 30 ps as before (illustrative numbers).",
         ),
-        widget: { type: "digi-mtbf", props: {} },
       },
       {
         kind: "question",
@@ -438,16 +454,16 @@ export const digitalLessonsB: ConceptLesson[] = [
         body: "Why do asynchronous FIFOs keep their pointers in **Gray code** when sending them to the other clock domain?",
         question: {
           type: "choice",
-          options: ["Gray code uses fewer bits than binary", "Only one bit changes per step, so a mistimed sample reads the old or the new value, never garbage", "Gray code makes the clock faster", "Gray code removes metastability entirely"],
-          answer: 1,
+          options: ["Gray code needs fewer bits than binary", "It lets you skip the synchroniser flops", "It removes metastability entirely", "Only one bit changes between counts"],
+          answer: 3,
           hint: "Think about what goes wrong when several bits change at once and the receiver samples part-way through.",
           feedback: {
             0: "Gray code uses exactly as many bits as plain binary. Its benefit is elsewhere.",
-            2: "Gray code has no effect on clock speed.",
-            3: "Nothing eliminates metastability. Gray code just guarantees that a bit caught mid-change gives a valid neighbouring count.",
+            1: "Each pointer bit still goes through a synchroniser. Gray code only makes a bit caught mid-change harmless.",
+            2: "Nothing eliminates metastability. Gray code just guarantees that a bit caught mid-change gives a valid neighbouring count.",
           },
         },
-        explanation: "If only one bit changes, a bit that is caught mid-change resolves to the old or the new value, and either is a legitimate pointer (one step apart). With binary, several bits flipping at once could be sampled in a mix, giving a pointer far from the truth. Metastability itself is still handled by the synchronisers.",
+        explanation: "If only one bit changes per step, a bit that is caught mid-change resolves to the old or the new value, and either is a legitimate pointer (one step apart), never garbage. With binary, several bits flipping at once could be sampled in a mix, giving a pointer far from the truth. Metastability itself is still handled by the synchronisers.",
       },
       {
         kind: "question",
@@ -484,7 +500,7 @@ export const digitalLessonsB: ConceptLesson[] = [
         tests: [
           { id: "bounce", description: "Ignores the short blips before a real press", assertionCode: `assert debounce([0, 1, 0, 1, 1, 1, 1], 3) == [0, 0, 0, 0, 0, 1, 1], f"got {debounce([0, 1, 0, 1, 1, 1, 1], 3)}"` },
           { id: "glitch", description: "A short glitch never changes the output", assertionCode: `assert debounce([1, 0, 1, 0, 1, 1, 1, 1], 3) == [1, 1, 1, 1, 1, 1, 1, 1], f"got {debounce([1, 0, 1, 0, 1, 1, 1, 1], 3)}"` },
-          { id: "clean", description: "A clean step arrives n readings late", assertionCode: `assert debounce([0, 0, 0, 1, 1, 1, 1], 2) == [0, 0, 0, 0, 1, 1, 1], f"got {debounce([0, 0, 0, 1, 1, 1, 1], 2)}"` },
+          { id: "clean", description: "A clean step appears once n readings in a row agree (n − 1 readings late)", assertionCode: `assert debounce([0, 0, 0, 1, 1, 1, 1], 2) == [0, 0, 0, 0, 1, 1, 1], f"got {debounce([0, 0, 0, 1, 1, 1, 1], 2)}"` },
         ],
         hints: ["Count how many readings in a row equal the latest one. Reset the count to 1 whenever the reading changes.", "Only update the output when the reading differs from it AND the count has reached n."],
       },
@@ -493,6 +509,10 @@ export const digitalLessonsB: ConceptLesson[] = [
         title: "In practice",
         body: P(
           "On real projects the habits are simple. **Every** signal that crosses between clocks, or comes from the outside world, gets a synchroniser or a handshake: no exceptions. Design tools help: **static timing analysis** checks setup and hold, and separate **clock-domain-crossing (CDC) checks** (offered by commercial EDA vendors, and partly by open tools such as Yosys and Verilator linters) flag any crossing that lacks one. Libraries often provide ready-made synchroniser cells.",
+          "In a hardware description language the two-flop synchroniser is six lines. This is Verilog, the language of the chip-design module:",
+          "```verilog\nmodule sync2(input clk, input async_in, output reg sync_out);\n  reg meta;                    // first flop: may go metastable, feeds nothing else\n  always @(posedge clk) begin\n    meta     <= async_in;\n    sync_out <= meta;          // second flop: a whole clock period later\n  end\nendmodule\n```",
+          "You can simulate it with a free simulator such as Icarus Verilog or Verilator and run it on a low-cost FPGA board with an open toolchain (Yosys and nextpnr, as examples). *FPGA hands-on: from RTL to a board*, the last lesson of the chip-design module, does exactly that.",
+
           "To look at the real thing, put an **oscilloscope** on the button (trigger on the first edge, zoom in on the bounce) or a **logic analyser** on a bus and count how many extra edges appear. You will find bounce times vary from well under a millisecond to tens of milliseconds, so check your own part. In firmware the same debounce idea reappears as a timer-based counter (see *GPIO in depth* in the Embedded module).",
           "The cost is honest: each synchroniser stage adds a clock of latency and some area, and a failure caused by metastability is rare, random and nearly impossible to reproduce, which is exactly why it is dangerous. The cheapest fix is always the one made at design time.",
         ),
@@ -500,7 +520,7 @@ export const digitalLessonsB: ConceptLesson[] = [
       {
         kind: "recap",
         points: [
-          "A data edge inside the **setup/hold window** can leave a flip-flop **metastable**: an in-between level that resolves to 0 or 1 after a random time with an exponential tail.",
+          "Inside the **setup/hold window** a flip-flop's result is not guaranteed; in a much narrower slice of it, the aperture **Tw**, it can go **metastable**: an in-between level that resolves to 0 or 1 after a random time with an exponential tail (time constant τ).",
           "Metastability can't be eliminated, only made improbable: **MTBF = e^(t/τ) / (Tw · f_clk · f_data)**. Give it settling time with a **two-flop synchroniser** (more stages or a slower clock for more margin).",
           "Single bits use synchronisers; **multi-bit** values need a handshake or **Gray code** (one bit changes per step), as in an **asynchronous FIFO**.",
           "Buttons are asynchronous and **bounce**: debounce by requiring stability for longer than the bounce, then synchronise. In practice: check every crossing with CDC tools, and measure real signals with a scope or logic analyser.",

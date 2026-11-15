@@ -175,7 +175,7 @@ export function LedBench({ props, onChange, status, goal }: WidgetProps<LedBench
       {goalI !== null && <p className="mt-1 text-center text-xs text-ink-3">Goal: about {mA(goalI)}.</p>}
 
       <div className="mt-3">
-        <ToyNote>Toy model: the LED is a fixed-drop switch (real ones glow gradually from about 1.5 V and the drop creeps up with current and temperature), the battery is ideal, and the brightness is just current ÷ {LED_TYPICAL_MA} mA.</ToyNote>
+        <ToyNote>Toy model: the LED is a fixed-drop switch (real ones glow gradually from about 1.5 V and the drop creeps up with current and temperature), the battery is ideal apart from a {NO_RESISTOR_OHMS} Ω stand-in for its internal resistance and wiring when no resistor is fitted, and the brightness is just current ÷ {LED_TYPICAL_MA} mA.</ToyNote>
       </div>
     </div>
   );

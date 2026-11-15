@@ -16,7 +16,7 @@ export const memoryLessonsB: ConceptLesson[] = [
   {
     id: "fnd-mem-5-find",
     title: "How a cache finds data",
-    summary: "Splitting an address into tag, index and offset. Direct-mapped versus set-associative caches, hits, misses and LRU eviction.",
+    summary: "Splitting an address into tag, index and offset. Direct-mapped versus set-associative caches, LRU eviction, and write-back versus write-through.",
     minutes: 9,
     xp: 55,
     level: "Intermediate",
@@ -48,7 +48,7 @@ export const memoryLessonsB: ConceptLesson[] = [
         kind: "question",
         title: "Which set?",
         body: "In the cache below (64-byte lines, 64 sets), which **set number** does address `0x1234` map to?",
-        widget: { type: "memsys-addr", props: { lineBytes: 64, setBits: 6, ways: 8, addr: 0x1234, lockShape: true } },
+        widget: { type: "memsys-addr", props: { lineBytes: 64, setBits: 6, ways: 8, addr: 0x1234, lockShape: true }, after: true },
         question: { type: "number", answer: 8, tolerance: 0, unit: "set", hint: "Drop the lowest 6 bits (the offset), then keep the next 6 bits." },
         explanation: "0x1234 is `0001 0010 0011 0100` in binary. The low 6 bits (`110100`, = 52) are the offset. The next 6 bits (`001000`) are the index: **set 8**. What is left (`0001`) is the tag.",
       },
@@ -58,7 +58,7 @@ export const memoryLessonsB: ConceptLesson[] = [
         body: P(
           "How many slots does a set have? That is the **associativity**, and it is a trade-off.",
           "- **Direct-mapped** (1 way): each line has exactly one possible slot. Simple and fast to check, but two lines that map to the same set keep kicking each other out.\n- **N-way set-associative**: each set has N slots, and a line may sit in any of them. Hardware checks all N tags at once. Real L1 caches are often 8-way or 12-way; L2 and L3 use more.\n- **Fully associative**: one set holds everything; any line can go anywhere. Flexible, but checking every tag is costly, so it is used only for small things.",
-          "The cache below holds 8 lines of 16 bytes. Lines **A** and **B** live at addresses that map to the same set in the direct-mapped layout. Tap A, then B, then A again. Then change *Ways per set* to 2 and try again.",
+          "The cache below holds 8 lines of 16 bytes. Lines **A** and **B** live at addresses that map to the same set in the direct-mapped layout. Tap A, then B, then A again. Then try the other *Ways per set* settings and watch what changes.",
         ),
         widget: {
           type: "memsys-cache",
@@ -124,9 +124,22 @@ export const memoryLessonsB: ConceptLesson[] = [
         explanation: "The order of use is B (second read), then A (third read). **B** is the least recently used, so it makes way for C. Had the list been A, B, B, the answer would flip to A. Tracking \"who was used last\" is why each set keeps a little extra LRU state.",
       },
       {
+        kind: "question",
+        title: "Writes: now or later?",
+        body: P(
+          "So far every access was a read. A **write** changes the cache's copy, and then RAM's copy is out of date. There are two classic answers:",
+          "- **Write-through**: every write goes to the cache *and* on to RAM at once. RAM is always up to date, but every write costs RAM traffic.\n- **Write-back**: the write changes only the cache and sets the line's **dirty bit** (\"changed since it was fetched\"). RAM is written only when a dirty line is **evicted**. Many writes to one line cost a single write to RAM. Almost all CPU caches today are write-back.",
+          "Both usually **allocate on a write miss**: the line is fetched first, then changed. (CPUs also queue stores in a **store buffer** before they reach L1; it returns in the memory-ordering lesson.)",
+          "A 2-slot LRU cache, write-back, starts empty. The program does: **write A, write A, write A, write A, read B, write B, read C, write A**. How many times is **RAM written**?",
+        ),
+        widget: { type: "memsys-writes", props: { policy: "back" }, after: true },
+        question: { type: "number", answer: 2, tolerance: 0, unit: "writes", hint: "Under write-back RAM is written only when a dirty line is evicted. Find the evictions: which line is least recently used each time a third line arrives?" },
+        explanation: "Only **2**. The four writes to A just set its dirty bit. *Read C* needs a slot; A is least recently used and dirty, so it is written back (1). The last *write A* misses and evicts B, dirty from *write B* (2). A is dirty again at the end, so RAM's copy of A is stale until it is evicted. Write-through would have written RAM on all **6** writes: switch the widget to compare.",
+      },
+      {
         kind: "code",
         title: "Split an address",
-        body: "Write `split_address(addr, offset_bits, index_bits)` that returns the tuple `(tag, index, offset)`.\n\nShifts and masks do it: `addr & ((1 << n) - 1)` keeps the low `n` bits, and `addr >> n` drops them.",
+        body: "Write `split_address(addr, offset_bits, index_bits)` that returns the tuple `(tag, index, offset)`.\n\nShifts and masks do it: shifting right by `n` drops the low `n` bits, and AND-ing with a mask of `n` one-bits keeps only them.",
         language: "python",
         starter: `def split_address(addr, offset_bits, index_bits):
     # return (tag, index, offset)
@@ -153,6 +166,7 @@ export const memoryLessonsB: ConceptLesson[] = [
           "Offset bits = log₂(line size); index bits = log₂(number of sets); the tag is the rest.",
           "**Direct-mapped** = 1 way (fast, but lines collide). **N-way set-associative** = N slots per set. **Fully associative** = one big set.",
           "When a set is full, hardware evicts the **least recently used** line (or a close approximation).",
+          "**Write-through** sends every write on to RAM; **write-back** marks the line **dirty** and writes RAM only when the line is evicted, which is what CPU caches do.",
         ],
       },
     ],
@@ -174,9 +188,9 @@ export const memoryLessonsB: ConceptLesson[] = [
           "A miss is a miss to the CPU, but to the engineer there are three causes, and each has a different cure.",
           "- **Compulsory** (or *cold*): the **first time** a line is ever touched. It cannot be in the cache yet. No cache can avoid these.\n- **Capacity**: the cache is simply **too small** for what the program keeps using. Lines are thrown out and then needed again.\n- **Conflict**: the cache has room, but **too many lines want the same set**, so they push each other out.",
           "A handy way to remember: *first time*, *too much*, *too crowded*.",
-          "Below is a cache of 8 lines (16 bytes each) and ten named lines A to J. Tap lines and watch the counters. In the **direct-mapped** setting, A and I map to the same set (so do B and J); try A, I, A, I.",
+          "Below is a cache of 8 lines (16 bytes each) and ten named lines A to J. It starts **2-way** (4 sets of 2 slots). Each chip shows the set its line maps to. Tap lines and watch the three counters, then try 1 way and 8 ways.",
         ),
-        widget: { type: "memsys-cache", props: { lines: 8, lineBytes: 16, ways: 1, chooseWays: true, showKinds: true, palette: LETTERS } },
+        widget: { type: "memsys-cache", props: { lines: 8, lineBytes: 16, ways: 2, chooseWays: true, showKinds: true, palette: LETTERS } },
       },
       {
         kind: "question",
@@ -254,20 +268,20 @@ export const memoryLessonsB: ConceptLesson[] = [
         question: {
           type: "choice",
           options: [
-            "The prefetcher is broken for large strides",
-            "Every address 4096 apart has the same index bits, so they all map to one set and fight over its 8 slots",
-            "4096 bytes is bigger than a cache line, so the CPU refuses to cache it",
-            "The data is too large for L1",
+            "All the addresses map to the same set",
+            "The prefetcher cannot follow large strides",
+            "Each 4 KiB step crosses into a new page",
+            "The data is too large for the L1 cache",
           ],
-          answer: 1,
+          answer: 0,
           hint: "64 sets × 64-byte lines = 4096 bytes. What happens to the index bits when you add exactly 4096?",
           feedback: {
-            0: "The cause is where the lines land, not the prefetcher.",
-            2: "Lines of any address are cached; the stride only decides which sets they use.",
+            1: "The cause is where the lines land, not the prefetcher.",
+            2: "It does, but new pages cost TLB lookups, not cache misses. The clue is that most of the cache is empty.",
             3: "Only a few KiB are touched, far less than 32 KiB. The cache is mostly empty, which is the clue.",
           },
         },
-        explanation: "The index uses address bits 6 to 11, and adding 4096 changes only bits 12 and up. So **every access lands in the same set**, which holds just 8 lines: conflict misses with 7/8 of the cache idle. The fix is to pad (use a stride like 4096 + 64) or restructure the loop.",
+        explanation: "The index uses address bits 6 to 11, and adding 4096 changes only bits 12 and up. So **every access lands in the same set**, which holds just 8 lines: conflict misses while the other 63 of the 64 sets (over 98% of the cache) sit empty. The fix is to pad (use a stride like 4096 + 64) or restructure the loop.",
       },
       {
         kind: "recap",
@@ -296,15 +310,15 @@ export const memoryLessonsB: ConceptLesson[] = [
         body: P(
           "Memory hardware likes data to sit at addresses that are a **multiple of its size**: a 4-byte int at 0, 4, 8, 12…; an 8-byte double at 0, 8, 16…. That is **alignment**. A misaligned int could straddle two words, or even two cache lines, so it takes two fetches instead of one. On some CPUs that is slower; on others it is an error.",
           "So the compiler places each field of a struct at an address that is a multiple of its own size, and fills the gaps with unused **padding** bytes. The whole struct is also rounded up so that in an array every element starts aligned.",
-          "Below is a C struct with four fields: `char a; double b; char c; int d;`. Each coloured box is a field; dashed red boxes are padding. Look at where each field starts.",
+          "Below is a small C struct with three fields: `char a; int b; char c;`. Each coloured box is a field; dashed red boxes are padding. Look at where each field starts, and why the whole thing is 12 bytes for 6 bytes of data. You can add and remove fields to experiment.",
         ),
-        widget: { type: "memsys-struct", props: { fields: ["char", "double", "char", "int"] } },
+        widget: { type: "memsys-struct", props: { fields: ["char", "int", "char"] } },
       },
       {
         kind: "question",
         title: "How big is it?",
-        body: "What is `sizeof` for the struct `{ char a; double b; char c; int d; }` on a typical 64-bit machine? Use the widget to check yourself.",
-        widget: { type: "memsys-struct", props: { fields: ["char", "double", "char", "int"], fixed: true } },
+        body: "What is `sizeof` for the struct `{ char a; double b; char c; int d; }` on a typical 64-bit machine? (The widget appears once you answer, so you can check.)",
+        widget: { type: "memsys-struct", props: { fields: ["char", "double", "char", "int"], fixed: true }, after: true },
         question: { type: "number", answer: 24, tolerance: 0, unit: "bytes", hint: "Add the sizes, but put each field at a multiple of its own size, and round the total up to a multiple of 8." },
         explanation: "`a` sits at 0, then 7 bytes of padding so `b` starts at 8; `b` fills 8 to 15; `c` is at 16; 3 bytes of padding put `d` at 20; `d` ends at 24. The fields add up to only 14 bytes, but the struct is **24**: 10 bytes (more than 40%) are padding.",
       },
@@ -344,7 +358,7 @@ static_assert(sizeof(Tight) == 16, "layout changed");
         starter: `SIZES = {"char": 1, "short": 2, "int": 4, "double": 8, "ptr": 8}
 
 def struct_size(types):
-    # place each field at a multiple of its size, then round the total up
+    # your code here
     return sum(SIZES[t] for t in types)
 `,
         solution: `SIZES = {"char": 1, "short": 2, "int": 4, "double": 8, "ptr": 8}
@@ -374,9 +388,9 @@ def struct_size(types):
         body: P(
           "Layout is also about *which values sit next to each other*. Say you have 16 particles, each with eight 4-byte fields: `x y z vx vy vz mass id`.",
           "- **Array of structs (AoS)**: particle 0's eight fields, then particle 1's eight fields, and so on. Natural to write.\n- **Struct of arrays (SoA)**: all 16 `x` values, then all 16 `y` values, and so on. Each field has its own array.",
-          "Now a loop that only reads `x` (say, to find the leftmost particle). Tap the fields your loop reads and switch the layout. Each row below is one 64-byte cache line, and outlined rows are lines the loop has to fetch.",
+          "Say your loop reads only some of the fields. The widget starts with a loop that reads `x` and `vx`. Tap the fields your loop reads and switch the layout. Each row below is one 64-byte cache line, and outlined rows are lines the loop has to fetch.",
         ),
-        widget: { type: "memsys-layout", props: { layout: "aos", fields: ["x"] } },
+        widget: { type: "memsys-layout", props: { layout: "aos", fields: ["x", "vx"] } },
       },
       {
         kind: "question",
@@ -400,15 +414,15 @@ def struct_size(types):
           options: [
             "Summing one field over a million elements",
             "Counting how many elements have x > 0",
-            "Updating each particle's position from its own velocity and mass, one particle at a time, all fields together",
-            "Finding the largest mass",
+            "Finding the largest mass in the array",
+            "Updating each particle using all its fields",
           ],
-          answer: 2,
+          answer: 3,
           hint: "AoS keeps one element's fields together. Which loop wants everything about one element at once?",
           feedback: {
             0: "That reads a single field: exactly the case where struct-of-arrays wins.",
             1: "That reads one field across all elements, the same SoA-friendly shape.",
-            3: "One field again (mass) across all elements: SoA fetches less.",
+            2: "One field again (mass) across all elements: SoA fetches less.",
           },
         },
         explanation: "If every step uses most of one element's fields, an AoS element is one or two lines and all of it is useful. If steps use one field across many elements, SoA wins. Real code often mixes: pick the layout for the **hot loop**. Measuring beats guessing.",
@@ -442,7 +456,7 @@ def struct_size(types):
           "Memory is divided into fixed-size blocks. A block of virtual addresses is a **page** (4 KiB is the usual size). A block of RAM of the same size is a **frame**. Each process has a **page table** saying which frame (if any) holds each of its pages.",
           "In the toy below, addresses are 16 bits: the top 4 are the **page number**, the low 12 are the **offset** inside the page. Switch between processes A and B with the same address and see where each one lands.",
         ),
-        widget: { type: "memsys-pagetable", props: { proc: "A", addr: 0x1abc } },
+        widget: { type: "memsys-pagetable", props: { proc: "A", addr: 0x3abc } },
       },
       {
         kind: "question",
@@ -510,16 +524,16 @@ physical address =  [ frame number | offset ]
           type: "choice",
           options: [
             "Kill the program with a segmentation fault",
-            "Give it a free frame (zero-filled), update the page table and retry the instruction",
-            "Copy the program into a different process",
-            "Ignore the access and carry on to the next instruction",
+            "Skip the access and run the next instruction",
+            "Map a zero-filled frame and retry the instruction",
+            "Read the page from the program file on disk",
           ],
-          answer: 1,
+          answer: 2,
           hint: "Only accesses to memory the program has no right to end in a segmentation fault.",
           feedback: {
             0: "That is for addresses outside any valid region. This one is valid, just not backed by a frame yet.",
-            2: "Processes do not trade code. The fix is a frame for the missing page.",
-            3: "Skipping the instruction would corrupt the program. The OS makes the access work, then retries it.",
+            1: "Skipping the instruction would corrupt the program. The OS makes the access work, then retries it.",
+            3: "That is how code pages arrive. A fresh array has no copy on disk; it only needs a clean frame.",
           },
         },
         explanation: "This lazy trick is called **demand paging**: asking for a gigabyte costs almost nothing until you actually touch the pages. The OS hands out frames one fault at a time. A true segmentation fault is only for addresses the program had no right to use.",
@@ -527,7 +541,7 @@ physical address =  [ frame number | offset ]
       {
         kind: "code",
         title: "A translator",
-        body: "Write `translate(page_table, vaddr, page_size=4096)`. `page_table` is a dict from page number to frame number. Return the **physical address**, or `None` if the page is not in the table (a page fault).\n\nPage number = `vaddr // page_size`; offset = `vaddr % page_size`; physical = `frame * page_size + offset`.",
+        body: "Write `translate(page_table, vaddr, page_size=4096)`. `page_table` is a dict from page number to frame number. Return the **physical address**, or `None` if the page is not in the table (a page fault).\n\nSplit the address into a page number and an offset, swap the page number for its frame, and keep the offset as it is.",
         language: "python",
         starter: `def translate(page_table, vaddr, page_size=4096):
     # return the physical address, or None on a page fault
@@ -546,7 +560,7 @@ physical address =  [ frame number | offset ]
           { id: "fault", description: "Page 5 is not mapped: None", assertionCode: `assert translate({0: 4, 1: 9}, 0x5000) is None, "an unmapped page must return None"` },
           { id: "frame0", description: "Frame 0 is a real frame, not a missing page", assertionCode: `assert translate({3: 0}, 0x3123) == 0x123, f"got {translate({3: 0}, 0x3123)}; frame 0 is valid"` },
         ],
-        hints: ["Use `in` to test whether the page is mapped; do not test the frame for truthiness, because frame 0 is a valid frame.", "Keep the offset and add it to frame * page_size."],
+        hints: ["Page number = `vaddr // page_size`; offset = `vaddr % page_size`.", "Use `in` to test whether the page is mapped; do not test the frame for truthiness, because frame 0 is a valid frame.", "Keep the offset and add it to frame * page_size."],
       },
       {
         kind: "question",
@@ -555,15 +569,15 @@ physical address =  [ frame number | offset ]
         question: {
           type: "choice",
           options: [
+            "Faster access: translation makes every read quicker",
             "Protection: one process cannot read another's memory",
-            "Faster memory access: translating every address makes reads quicker",
             "Lazy allocation: pages get frames only when touched",
-            "Sharing: two processes can map the same frame (for example, a shared library)",
+            "Sharing: two processes can map the same frame",
           ],
-          answer: 1,
+          answer: 0,
           hint: "Translation is extra work on every access. Does extra work make things quicker?",
           feedback: {
-            0: "This is one of the main reasons for virtual memory.",
+            1: "This is one of the main reasons for virtual memory.",
             2: "Demand paging is a direct consequence of translating through a table.",
             3: "Pointing two page tables at one frame is exactly how shared libraries save RAM.",
           },

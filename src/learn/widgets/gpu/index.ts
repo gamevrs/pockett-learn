@@ -1,10 +1,12 @@
 import type { WidgetRegistry } from "@/learn/widget";
+import { Banks, checkBanks } from "./Banks";
 import { checkCoalesce, Coalesce } from "./Coalesce";
 import { checkFormats, Formats } from "./Formats";
 import { checkGridMap, GridMap } from "./GridMap";
 import { checkOccupancy, Occupancy } from "./Occupancy";
 import { PipelineExplainer } from "./PipelineExplainer";
 import { checkRace, Race } from "./Race";
+import { checkReduce, Reduce } from "./Reduce";
 import { checkRoofline, Roofline } from "./Roofline";
 import { checkStreams, Streams } from "./Streams";
 import { checkTiled, Tiled } from "./Tiled";
@@ -32,4 +34,6 @@ export const GPU_WIDGETS: WidgetRegistry = {
   "gpu-roofline": { Component: Roofline, check: checkRoofline },
   "gpu-formats": { Component: Formats, check: checkFormats },
   "gpu-streams": { Component: Streams, check: checkStreams },
+  "gpu-banks": { Component: Banks, check: checkBanks },
+  "gpu-reduce": { Component: Reduce, check: checkReduce },
 };
