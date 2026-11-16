@@ -13,7 +13,9 @@ export type EmbedMessage =
   | { type: 'navigate'; path: string }
   | { type: 'external'; url: string }
   | { type: 'close' }
-  | { type: 'auth'; event: 'signedIn' | 'signedOut' };
+  | { type: 'auth'; event: 'signedIn' | 'signedOut' }
+  /** Supabase rotated the refresh token inside the page: the app keeps the new pair (its old one is spent). */
+  | { type: 'session'; session: { access_token: string; refresh_token: string; expires_at?: number } };
 
 const str = (v: unknown, max = 500): v is string => typeof v === 'string' && v.length <= max;
 const int = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < 10_000;
@@ -48,6 +50,11 @@ export function parseEmbedMessage(raw: string): EmbedMessage | null {
       return { type: 'close' };
     case 'auth':
       return m.event === 'signedIn' || m.event === 'signedOut' ? { type: 'auth', event: m.event } : null;
+    case 'session': {
+      const s = m.session as Record<string, unknown> | null;
+      if (!s || typeof s !== 'object' || !str(s.access_token, 8000) || !str(s.refresh_token, 2000)) return null;
+      return { type: 'session', session: { access_token: s.access_token, refresh_token: s.refresh_token, ...(typeof s.expires_at === 'number' ? { expires_at: s.expires_at } : {}) } };
+    }
     default:
       return null;
   }

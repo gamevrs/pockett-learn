@@ -1,5 +1,5 @@
 // Writes src/fixtures/catalog.json: the app's catalog, in the exact shape of GET /api/app/catalog
-// (contract §1), built from the site's own content. The app bundles it as the first-launch catalog
+// (contract §1, as src/lib/app/catalog.ts builds it), from the site's own content. The app bundles it as the first-launch catalog
 // (so Learn works offline on the very first open) and the unit tests read it.
 //   node scripts/make-catalog-fixture.mjs        (from mobile/)
 // Loads the real content through the site's resolve hook (../scripts/ts-alias-hooks.mjs) so "@/..." works in Node.
@@ -28,13 +28,14 @@ const foundations = {
   parts: FOUNDATIONS.parts.map((p) => ({
     id: p.id,
     title: p.title,
-    blurb: p.blurb,
     moduleIds: FOUNDATIONS.modules.filter((m) => m.part === p.id).map((m) => m.id),
   })),
   modules: FOUNDATIONS.modules.map((m) => ({
     id: m.id,
     title: m.title,
     blurb: m.blurb,
+    icon: m.icon,
+    part: m.part,
     lessons: m.lessons.map((l) => ({
       id: l.id,
       title: l.title,
@@ -54,17 +55,20 @@ const courses = PROJECTS.map((p) => ({
   kind: "course",
   language: p.language ?? "python",
   level: p.difficulty,
-  ...(p.track ? { track: p.track } : {}),
+  emoji: p.emoji,
+  accent: p.accent,
+  hours: p.hours,
+  ...(p.track ? { group: p.track } : {}),
   modules: p.chapters.map((c) => ({
-    id: `${p.slug}/${c.id}`,
+    id: c.id,
     title: c.title,
     blurb: c.blurb,
-    lessons: c.lessons.map((l) => ({ id: l.id, title: l.title, level: p.difficulty, minutes: l.minutes, xp: l.xp, path: `/projects/${p.slug}/${l.id}` })),
+    lessons: c.lessons.map((l) => ({ id: l.id, title: l.title, minutes: l.minutes, xp: l.xp, path: `/projects/${p.slug}/${l.id}` })),
   })),
 }));
 
 const tracks = [foundations, ...courses];
-const version = createHash("sha256").update(JSON.stringify(tracks)).digest("hex").slice(0, 12);
+const version = createHash("sha256").update(JSON.stringify(tracks)).digest("hex").slice(0, 16);
 const catalog = { version, generatedAt: new Date().toISOString(), tracks, playground: { path: "/playground" } };
 
 const out = path.join(HERE, "../src/fixtures/catalog.json");

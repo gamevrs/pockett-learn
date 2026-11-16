@@ -1,4 +1,4 @@
-import { Stack, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback } from 'react';
 import { Linking } from 'react-native';
@@ -7,11 +7,23 @@ import { useNow } from '~/components/learning';
 import { enableReminder } from '~/components/reminder-permission';
 import { TimeRow } from '~/components/TimeRow';
 import { relativeDay } from '~/lib/format';
+import { lessonLinkTarget } from '~/lib/links';
+import { SITE_URL } from '~/lib/site';
 import { inboxItems, useInbox } from '~/state/inbox';
 import { askPermission, usePermission } from '~/state/notifications';
 import { useSettings } from '~/state/settings';
 import { useTheme } from '~/theme';
 import { EmptyState, ListRow, ListSection, ListSwitchRow, Screen } from '~/ui';
+
+/** An announcement's link: a lesson opens in the app, Learn and Home go to their tab, anything else in the in-app browser. */
+function openLink(url: string) {
+  const lesson = lessonLinkTarget(url);
+  if (lesson) return router.push(lesson as Href);
+  const path = url.startsWith('/') ? url.split(/[?#]/)[0] : null;
+  if (path === '/learn' || path === '/projects') return router.navigate('/learn');
+  if (path === '/' || path === '/dashboard') return router.navigate('/');
+  WebBrowser.openBrowserAsync(path ? `${SITE_URL}${url}` : url);
+}
 
 /**
  * Notifications: whether the phone lets Pockett send them, the two reminders, and the inbox (news from Pockett and
@@ -65,8 +77,8 @@ export default function Notifications() {
               detail={`${item.body} · ${relativeDay(item.date, now)}`}
               numberOfLines={3}
               value={unread.has(item.id) ? 'New' : null}
-              trailing={item.url ? 'external' : 'none'}
-              onPress={item.url ? () => WebBrowser.openBrowserAsync(item.url!) : undefined}
+              trailing={item.url ? (item.url.startsWith('/') ? 'chevron' : 'external') : 'none'}
+              onPress={item.url ? () => openLink(item.url!) : undefined}
               last={i === items.length - 1}
             />
           ))}

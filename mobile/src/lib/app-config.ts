@@ -6,6 +6,7 @@ export interface Announcement {
   id: string;
   title: string;
   body: string;
+  /** A full URL (opened in the in-app browser) or a site path (opened in the app when it can be). */
   url?: string;
   /** ISO date. */
   date: string;
@@ -31,7 +32,7 @@ export function parseAppConfig(raw: unknown): AppConfig | null {
       if (!a || typeof a !== 'object') continue;
       const x = a as Record<string, unknown>;
       if (typeof x.id !== 'string' || typeof x.title !== 'string' || typeof x.body !== 'string' || typeof x.date !== 'string') continue;
-      announcements.push({ id: x.id, title: x.title, body: x.body, date: x.date, ...(typeof x.url === 'string' && /^https?:\/\//.test(x.url) ? { url: x.url } : {}) });
+      announcements.push({ id: x.id, title: x.title, body: x.body, date: x.date, ...(typeof x.url === 'string' && (/^https?:\/\//.test(x.url) || (x.url.startsWith('/') && !x.url.startsWith('//'))) ? { url: x.url } : {}) });
     }
   }
   return { minVersion, latestVersion: version(c.latestVersion) ?? minVersion, announcements };

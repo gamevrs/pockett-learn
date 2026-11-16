@@ -38,7 +38,8 @@ export interface CatalogTrack {
   kind: 'foundations' | 'course';
   language?: string;
   level?: Level;
-  /** Optional: a cross-language path the course belongs to ("ai"). */
+  /** Optional: a cross-language path the course belongs to ("ai"); the site sends `group`. */
+  group?: string;
   track?: string;
   parts?: CatalogPart[];
   modules: CatalogModule[];
@@ -91,7 +92,7 @@ export function indexCatalog(catalog: Catalog): CatalogIndex {
   for (const track of catalog.tracks) {
     const list: CatalogLesson[] = [];
     for (const module of track.modules) {
-      modules.set(module.id, { module, track });
+      modules.set(moduleKey(track, module), { module, track });
       for (const lesson of module.lessons) {
         const ref = { lesson, track, module, index: list.length };
         list.push(lesson);
@@ -102,6 +103,14 @@ export function indexCatalog(catalog: Catalog): CatalogIndex {
     order.set(track.id, list);
   }
   return { catalog, byId, byPath, order, modules };
+}
+
+/**
+ * A module's key in the index and in routes: a Foundations module's own id (unique across the track), or
+ * <course>/<chapter> for a course's chapter (chapter ids repeat across courses).
+ */
+export function moduleKey(track: CatalogTrack, module: CatalogModule): string {
+  return track.kind === 'foundations' || module.id.startsWith(`${track.id}/`) ? module.id : `${track.id}/${module.id}`;
 }
 
 function normalizePath(path: string): string {
@@ -196,7 +205,8 @@ export function languageName(id: string | undefined): string {
 
 /** A course on the AI path (the `track` field when the catalog has it, else the site's ai- slugs). */
 export function isAiCourse(track: CatalogTrack): boolean {
-  return track.kind === 'course' && (track.track === 'ai' || (track.track === undefined && track.id.startsWith('ai-')));
+  const group = track.group ?? track.track;
+  return track.kind === 'course' && (group === 'ai' || (group === undefined && track.id.startsWith('ai-')));
 }
 
 /**

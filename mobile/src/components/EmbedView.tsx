@@ -94,6 +94,16 @@ export const EmbedView = forwardRef<EmbedHandle, { path: string; onMessage: (msg
     const msg = parseEmbedMessage(e.nativeEvent.data);
     if (!msg) return;
     if (msg.type === 'ready') setPhase('ready');
+    if (msg.type === 'session') {
+      // The page refreshed the session and spent the app's refresh token: keep the new pair.
+      supabase.auth.setSession({ access_token: msg.session.access_token, refresh_token: msg.session.refresh_token }).catch(() => {});
+    }
+    if (msg.type === 'auth' && msg.event === 'signedOut' && useSession.getState().session) {
+      // The page could not use the app's session. If the app can't refresh it either, it has ended: sign out here.
+      supabase.auth.refreshSession().then(({ error }) => {
+        if (error) supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+      });
+    }
     if (msg.type === 'progress') {
       useProgress.getState().fromPage(msg.data);
       if (useProgress.getState().resetPending) useProgress.getState().resetHandled();
