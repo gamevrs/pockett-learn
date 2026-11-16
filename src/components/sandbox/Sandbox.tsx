@@ -12,6 +12,8 @@ import { ServiceNotice } from "@/components/workspace/ServiceNotice";
 import { consoleEmptyText } from "@/components/workspace/console-hint";
 import { useHydrated } from "@/lib/hooks";
 import { useShortcuts } from "@/lib/ui/platform";
+import { useEmbed } from "@/components/embed/EmbedContext";
+import { postToApp } from "@/lib/embed/host";
 
 type SandboxLanguage = Extract<LanguageId, "python" | "javascript" | "sql">;
 const SANDBOX_LANGUAGES: SandboxLanguage[] = ["python", "javascript", "sql"];
@@ -83,6 +85,12 @@ function SandboxInner() {
   const engine = useRuntimeState(language);
   const engineFailed = needsEngineDownload(language) && engine.phase === "failed";
   const engineLoading = needsEngineDownload(language) && engine.phase === "loading";
+  const embed = useEmbed();
+
+  // the phone app's header (nothing is sent in a browser)
+  useEffect(() => {
+    postToApp({ type: "ready", lessonId: "playground", title: "Playground" });
+  }, []);
 
   // Start downloading the engine the moment the sandbox opens (or the language changes), not on an idle moment,
   // so the first Run is usually instant and otherwise shows real progress.
@@ -141,12 +149,17 @@ function SandboxInner() {
   }, [code, language]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">
-      <p className="eyebrow">Sandbox</p>
-      <h1 className="font-display mt-2 text-[2.25rem] sm:text-[2.75rem]">Code sandbox</h1>
-      <p className="mt-3 max-w-xl text-ink-2">No lessons, no tests. Just you and a real engine.</p>
+    <div className={`mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 ${embed ? "py-4" : "py-10"}`}>
+      {/* in the phone app its own header names the screen */}
+      {!embed && (
+        <>
+          <p className="eyebrow">Sandbox</p>
+          <h1 className="font-display mt-2 text-[2.25rem] sm:text-[2.75rem]">Code sandbox</h1>
+          <p className="mt-3 max-w-xl text-ink-2">No lessons, no tests. Just you and a real engine.</p>
+        </>
+      )}
 
-      <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label="Language">
+      <div className={`flex flex-wrap gap-2 ${embed ? "" : "mt-6"}`} role="group" aria-label="Language">
         {SANDBOX_LANGUAGES.map((id) => (
           <button
             key={id}

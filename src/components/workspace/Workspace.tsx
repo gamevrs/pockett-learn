@@ -31,6 +31,8 @@ import { usesCodeFrame } from "@/engine/frame/protocol";
 import { sound } from "@/lib/sound/sound";
 import { haptic } from "@/lib/native/app";
 import { NativeShareButton } from "@/components/native/NativeShareButton";
+import { useEmbed } from "@/components/embed/EmbedContext";
+import { postToApp } from "@/lib/embed/host";
 import { SoundControl } from "@/components/audio/SoundControl";
 import { fireCelebrationConfetti } from "@/lib/ui/confetti";
 import { useHydrated } from "@/lib/hooks";
@@ -71,6 +73,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
   const language = languageOf(project);
   const lang = languageInfo(language);
   const progress = useProgress();
+  const embed = useEmbed();
   const lessons = flattenLessons(project);
   const done = Boolean(progress.completed[lesson.id]);
 
@@ -216,6 +219,12 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
     return () => clearTimeout(t);
   }, [code, lesson.id, pristine]);
 
+  // the phone app's header: a project lesson is one "step" of its project (nothing is sent in a browser)
+  useEffect(() => {
+    postToApp({ type: "ready", lessonId: lesson.id, title: lesson.title });
+    postToApp({ type: "step", index, total, title: lesson.title });
+  }, [lesson.id, lesson.title, index, total]);
+
   /** Run = try the code (output + live stage). Submit = also grade it and complete the lesson. */
   async function execute(mode: "run" | "submit") {
     if (busy.current) {
@@ -297,8 +306,10 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
       setResults(nextResults);
 
       const allPassed = nextResults.length > 0 && nextResults.every((r) => r.passed);
+      postToApp({ type: "answer", correct: allPassed });
       if (allPassed) {
         const res = completeLesson(lesson.id, lesson.xp, code);
+        postToApp({ type: "lessonComplete", lessonId: lesson.id, xp: res.xpGained, firstTime: res.firstTime, totalXp: res.totalXp });
         sound.playSuccess();
         haptic("complete");
         if (res.leveledUp) setTimeout(() => sound.playLevelUp(), 450);
@@ -432,14 +443,17 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
       {/* header */}
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-3 sm:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <Link
-            href={`/projects/${project.slug}`}
-            aria-label={`Back to ${project.title}`}
-            title={`Back to ${project.title}`}
-            className="relative before:absolute before:-inset-1.5 before:content-[''] grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink"
-          >
-            <X className="h-4 w-4" />
-          </Link>
+          {/* in the phone app, its own header has the way back */}
+          {!embed && (
+            <Link
+              href={`/projects/${project.slug}`}
+              aria-label={`Back to ${project.title}`}
+              title={`Back to ${project.title}`}
+              className="relative before:absolute before:-inset-1.5 before:content-[''] grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink"
+            >
+              <X className="h-4 w-4" />
+            </Link>
+          )}
           <div className="min-w-0">
             <p className="truncate text-sm font-medium leading-tight">{lesson.title}</p>
             <p className="truncate text-xs text-ink-3">
