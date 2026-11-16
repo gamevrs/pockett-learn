@@ -123,8 +123,8 @@ config through a config plugin or `android/gradle.properties` on the build machi
 ### What the owner provides
 
 **Apple**
-1. The bundle id `com.gameverse.pockett` with the **Associated Domains** and **Push Notifications** capabilities
-   (reminders are local, but the entitlement keeps the notification permission prompt standard).
+1. The bundle id `com.gameverse.pockett` with the **Associated Domains** capability. No Push Notifications: reminders
+   are local, so `app.json` sets `enableRemoteNotifications: false` and the app carries no `aps-environment`.
 2. An App Store Connect record: name "Pockett", category Education, age rating (no objectionable content; unrestricted
    web access: no, other sites open in the in-app Safari view). Put the app's numeric id into `UpdateGate.tsx`'s
    store link once it exists.
