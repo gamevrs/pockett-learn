@@ -2,7 +2,7 @@
 //   node scripts/test-sync-merge.mjs
 process.env.NODE_NO_WARNINGS = "1";
 import assert from "node:assert/strict";
-import { mergeProgress } from "../src/data/progress/merge.ts";
+import { mergeProgress, mergeProgressStates } from "../src/data/progress/merge.ts";
 
 const XP = { a: 50, b: 60, c: 80 };
 const xpOf = (id) => XP[id] ?? 0;
@@ -105,5 +105,29 @@ check("audio: newest explicit choice wins, volume clamped", () => {
     assert.equal(m.xp, 50 + f2.xp);
   });
 }
+
+// the phone app hands its own progress object to the lesson pages it hosts (src/lib/embed/boot.ts)
+check("app progress into a device: union, newest code and draft win, xp recomputed, counts take the max", () => {
+  const local = { ...base, xp: 50, streak: 1, bestStreak: 2, lastActiveDate: "2026-10-20",
+    completed: { a: { ...done("2026-10-20T09:00:00Z", "old-a", 2), updatedAt: "2026-10-20T09:00:00Z" } },
+    drafts: { c: "local-draft" }, draftsAt: { c: "2026-10-25T00:00:00Z" }, attempts: { a: 2, c: 5 }, hintsSeen: { c: 1, x: 3 } };
+  const app = { ...base, xp: 110, streak: 4, bestStreak: 4, lastActiveDate: "2026-10-24",
+    completed: { a: { ...done("2026-10-22T09:00:00Z", "new-a", 1), updatedAt: "2026-10-22T09:00:00Z" }, b: done("2026-10-24T09:00:00Z", "B") },
+    drafts: { c: "app-draft", d: "app-only" }, draftsAt: { c: "2026-10-21T00:00:00Z", d: "2026-10-24T00:00:00Z" }, attempts: { c: 7 }, hintsSeen: { c: 2 },
+    audio: { enabled: true, volume: 0.3, at: "2026-10-24T00:00:00Z" } };
+  const m = mergeProgressStates(local, app, xpOf);
+  assert.deepEqual(Object.keys(m.completed).sort(), ["a", "b"]);
+  assert.equal(m.completed.a.code, "new-a"); assert.equal(m.completed.a.at, "2026-10-20T09:00:00Z"); assert.equal(m.completed.a.attempts, 2);
+  assert.equal(m.xp, 110);
+  assert.equal(m.drafts.c, "local-draft"); assert.equal(m.drafts.d, "app-only");
+  assert.equal(m.streak, 4); assert.equal(m.lastActiveDate, "2026-10-24"); assert.equal(m.bestStreak, 4);
+  assert.equal(m.attempts.c, 7); assert.equal(m.attempts.a, 2); assert.equal(m.hintsSeen.c, 2); assert.equal(m.hintsSeen.x, 3);
+  assert.equal(m.audio.enabled, true);
+});
+check("app progress merge is idempotent (merging the same copy twice changes nothing)", () => {
+  const app = { ...base, completed: { a: done("2026-10-22T09:00:00Z", "A") }, drafts: { b: "B" }, draftsAt: { b: "2026-10-22T00:00:00Z" } };
+  const once = mergeProgressStates(base, app, xpOf);
+  assert.deepEqual(mergeProgressStates(once, app, xpOf), once);
+});
 
 console.log(`\n${n} merge checks passed`);
