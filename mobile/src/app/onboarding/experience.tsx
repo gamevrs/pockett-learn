@@ -59,7 +59,7 @@ export default function ExperienceStep() {
           />
         ))}
       </ListSection>
-      {start && path ? <Notice icon="play">{`You'll start ${path.title} at "${start.lesson.title}".`}</Notice> : null}
+      {start && path ? <Notice icon="play">{`Your first lesson: "${start.lesson.title}" in ${path.title}.`}</Notice> : null}
     </OnboardingPage>
   );
 }

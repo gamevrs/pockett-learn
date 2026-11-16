@@ -25,3 +25,30 @@ export function lessonLinkTarget(link: string): string | null {
   if (project) return `/lesson/${encodeURIComponent(decodeURIComponent(project[2]))}?path=${encodeURIComponent(path)}`;
   return null;
 }
+
+/**
+ * Where a site path a page asked to open (`navigate`, an announcement) goes in the app: a lesson to the Lesson
+ * screen, a course to its page in Learn, the Foundations and project hubs to Learn, the dashboard to Home, the
+ * playground to the Playground. Null: not an app screen (open it in the in-app browser).
+ */
+export type AppTarget =
+  | { kind: 'lesson'; id: string; path: string }
+  | { kind: 'course'; id: string }
+  | { kind: 'tab'; tab: '/' | '/learn' | '/progress' | '/account' }
+  | { kind: 'playground' };
+
+export function appTargetForPath(sitePath: string): AppTarget | null {
+  let path = sitePath.split(/[?#]/)[0].replace(/\/+$/, '') || '/';
+  if (path.startsWith('/embed/')) path = path.slice('/embed'.length);
+  const learn = /^\/learn\/([^/]+)$/.exec(path);
+  if (learn) return { kind: 'lesson', id: decodeURIComponent(learn[1]), path };
+  const lesson = /^\/projects\/([^/]+)\/([^/]+)$/.exec(path);
+  if (lesson) return { kind: 'lesson', id: decodeURIComponent(lesson[2]), path };
+  const course = /^\/projects\/([^/]+)$/.exec(path);
+  if (course) return { kind: 'course', id: decodeURIComponent(course[1]) };
+  if (path === '/learn' || path === '/projects') return { kind: 'tab', tab: '/learn' };
+  if (path === '/' || path === '/dashboard') return { kind: 'tab', tab: '/' };
+  if (path === '/account') return { kind: 'tab', tab: '/account' };
+  if (path === '/playground') return { kind: 'playground' };
+  return null;
+}

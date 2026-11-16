@@ -10,11 +10,12 @@ import { EmbedView, type EmbedHandle } from '~/components/EmbedView';
 import { HeaderIconButton } from '~/components/HeaderIconButton';
 import { useToday } from '~/components/learning';
 import { HeaderMenu } from '~/components/LessonMenu';
+import { openSitePath } from '~/components/open-site-path';
 import { lessonForPath } from '~/lib/catalog';
 import type { EmbedMessage } from '~/lib/bridge';
 import { currentStreak } from '~/lib/progress';
 import { followingLesson } from '~/lib/recommend';
-import { APP_VERSION, PLATFORM, SITE_URL, SUPPORT_EMAIL } from '~/lib/site';
+import { APP_VERSION, PLATFORM, SUPPORT_EMAIL } from '~/lib/site';
 import { useCatalog } from '~/state/catalog';
 import { useProgress } from '~/state/progress';
 import { useSettings } from '~/state/settings';
@@ -37,13 +38,15 @@ export default function LessonScreen() {
   const embed = useRef<EmbedHandle>(null);
   const [title, setTitle] = useState(ref?.lesson.title ?? '');
   const [step, setStep] = useState<{ index: number; total: number } | null>(null);
+  // Where the lesson opened: a project lesson's one `step` is its place in the project, not progress inside it.
+  const [firstStep, setFirstStep] = useState<number | null>(null);
   const [complete, setComplete] = useState<{ xp: number } | null>(null);
   const progress = useProgress((s) => s.progress);
   const now = new Date();
   const today = useToday(now);
   const next = followingLesson(index, id);
 
-  const underway = !!step && step.index > 0 && !complete;
+  const underway = !!step && firstStep !== null && step.index !== firstStep && !complete;
   const close = useCallback(() => {
     const leave = () => (router.canGoBack() ? router.back() : router.replace('/'));
     if (!underway) return leave();
@@ -70,19 +73,19 @@ export default function LessonScreen() {
         break;
       case 'step':
         setStep({ index: msg.index, total: msg.total });
+        setFirstStep((f) => (f === null ? msg.index : f));
         break;
       case 'answer':
         if (haptics) Haptics.notificationAsync(msg.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
         break;
       case 'lessonComplete':
+        // React StrictMode in a development site posts some messages twice: celebrate once.
+        if (complete) break;
         if (haptics) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setComplete({ xp: msg.firstTime === false ? 0 : msg.xp || ref?.lesson.xp || 0 });
         break;
       case 'navigate': {
-        const target = lessonForPath(index, msg.path);
-        if (target) openLessonInPlace(target.lesson.id);
-        else if (msg.path.startsWith('/playground')) router.replace('/playground');
-        else WebBrowser.openBrowserAsync(`${SITE_URL}${msg.path}`);
+        openSitePath(msg.path, { fromModal: true });
         break;
       }
       case 'external':
@@ -98,9 +101,8 @@ export default function LessonScreen() {
   };
 
   const onNavigateAway = (url: string) => {
-    const target = lessonForPath(index, url);
-    if (target && target.lesson.id !== id) openLessonInPlace(target.lesson.id);
-    else if (!target) WebBrowser.openBrowserAsync(url);
+    const u = new URL(url);
+    if (lessonForPath(index, url)?.lesson.id !== id) openSitePath(`${u.pathname}${u.search}`, { fromModal: true });
     return false;
   };
 
@@ -121,6 +123,7 @@ export default function LessonScreen() {
         text: 'Restart',
         onPress: () => {
           setStep(null);
+          setFirstStep(null);
           setComplete(null);
           embed.current?.reload();
         },
@@ -136,6 +139,7 @@ export default function LessonScreen() {
           headerStyle: { backgroundColor: colors.background },
           headerLeft: complete ? () => null : () => <HeaderIconButton icon="close" label="Close lesson" onPress={close} testID="lesson-close" />,
           headerBackVisible: false,
+          ...(complete ? { headerRight: () => null } : {}),
         }}
       />
       {complete ? null : (

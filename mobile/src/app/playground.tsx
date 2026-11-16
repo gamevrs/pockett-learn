@@ -5,15 +5,13 @@ import { BackHandler, StyleSheet, View } from 'react-native';
 
 import { EmbedView } from '~/components/EmbedView';
 import { HeaderIconButton } from '~/components/HeaderIconButton';
-import { lessonForPath } from '~/lib/catalog';
-import { SITE_URL } from '~/lib/site';
-import { useCatalog, useCatalogStore } from '~/state/catalog';
+import { openSitePath } from '~/components/open-site-path';
+import { useCatalogStore } from '~/state/catalog';
 import { useTheme } from '~/theme';
 
 /** The playground: the site's code workspace under a native header, for writing and running code freely. */
 export default function Playground() {
   const { colors } = useTheme();
-  const index = useCatalog();
   const path = useCatalogStore((s) => s.catalog.playground?.path ?? '/playground');
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -41,11 +39,7 @@ export default function Playground() {
         onMessage={(msg) => {
           if (msg.type === 'external') WebBrowser.openBrowserAsync(msg.url);
           if (msg.type === 'close') close();
-          if (msg.type === 'navigate') {
-            const target = lessonForPath(index, msg.path);
-            if (target) router.replace({ pathname: '/lesson/[id]', params: { id: target.lesson.id } });
-            else WebBrowser.openBrowserAsync(`${SITE_URL}${msg.path}`);
-          }
+          if (msg.type === 'navigate') openSitePath(msg.path, { fromModal: true });
         }}
         onNavigateAway={(url) => {
           WebBrowser.openBrowserAsync(url);

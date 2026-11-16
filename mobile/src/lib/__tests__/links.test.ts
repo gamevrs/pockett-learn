@@ -1,4 +1,4 @@
-import { lessonLinkTarget } from '../links';
+import { appTargetForPath, lessonLinkTarget } from '../links';
 
 describe('lessonLinkTarget', () => {
   it('opens Foundations and project lessons from the site and the scheme', () => {
@@ -13,5 +13,18 @@ describe('lessonLinkTarget', () => {
     expect(lessonLinkTarget('https://evil.example/learn/x')).toBeNull();
     expect(lessonLinkTarget('/account')).toBeNull();
     expect(lessonLinkTarget('pockett://')).toBeNull();
+  });
+});
+
+describe('appTargetForPath', () => {
+  it('maps every site path a page can ask for', () => {
+    expect(appTargetForPath('/learn/fnd-bits-2-counting')).toEqual({ kind: 'lesson', id: 'fnd-bits-2-counting', path: '/learn/fnd-bits-2-counting' });
+    expect(appTargetForPath('/projects/garage/garage-3-engine')).toMatchObject({ kind: 'lesson', id: 'garage-3-engine' });
+    expect(appTargetForPath('/projects/garage')).toEqual({ kind: 'course', id: 'garage' });
+    expect(appTargetForPath('/projects')).toEqual({ kind: 'tab', tab: '/learn' });
+    expect(appTargetForPath('/learn/')).toEqual({ kind: 'tab', tab: '/learn' });
+    expect(appTargetForPath('/dashboard')).toEqual({ kind: 'tab', tab: '/' });
+    expect(appTargetForPath('/playground?x=1')).toEqual({ kind: 'playground' });
+    expect(appTargetForPath('/privacy')).toBeNull();
   });
 });

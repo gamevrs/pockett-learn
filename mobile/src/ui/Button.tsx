@@ -63,7 +63,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: { minHeight: height.touch, borderRadius: radius.pill, paddingHorizontal: space.xl, paddingVertical: space.sm, alignItems: 'center', justifyContent: 'center', alignSelf: 'stretch' },
-  compact: { alignSelf: 'flex-start' },
+  compact: { alignSelf: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   disabled: { opacity: 0.4 },
 });
