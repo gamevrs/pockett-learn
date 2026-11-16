@@ -118,6 +118,17 @@
   background: var(--surface-2);
   color: var(--ink);
 }
+/* The one destructive action on a screen, e.g. confirming an account deletion: filled with the status red, page-colour text
+   (5.9:1 light, 7.4:1 dark). */
+.btn-danger {
+  background: var(--bad);
+  border-color: var(--bad);
+  color: var(--bg);
+}
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--bad) 86%, var(--ink));
+  border-color: color-mix(in srgb, var(--bad) 86%, var(--ink));
+}
 
 .input {
   width: 100%;

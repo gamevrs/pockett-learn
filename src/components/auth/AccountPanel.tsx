@@ -7,15 +7,21 @@ import { displayNameOf, sendPasswordReset, signIn, signOut, signUp, updatePasswo
 import { flushSync, syncNow, useSyncStatus } from "@/data/progress/sync";
 import { levelFor, useProgress } from "@/data/progress/store";
 import { AppSettings } from "@/components/native/AppSettings";
+import { AccountDeleted, DeleteAccount } from "./DeleteAccount";
 
 type Mode = "signin" | "signup" | "forgot";
 
 export function AccountPanel() {
   const auth = useAuth();
+  /** Set right after the account is deleted: whether this device kept its copy of the progress. */
+  const [deleted, setDeleted] = useState<{ keptLocal: boolean } | null>(null);
+  const signedIn = auth.status === "signed-in" && !auth.recovering;
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-14 sm:py-20">
-      {auth.status === "loading" ? (
+      {deleted && !signedIn ? (
+        <AccountDeleted keptLocal={deleted.keptLocal} onDone={() => setDeleted(null)} />
+      ) : auth.status === "loading" ? (
         <div className="grid place-items-center py-24 text-ink-3">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
@@ -27,6 +33,7 @@ export function AccountPanel() {
         <AuthForms />
       )}
       <AppSettings />
+      {signedIn && <DeleteAccount onDeleted={(keptLocal) => setDeleted({ keptLocal })} />}
     </div>
   );
 }
