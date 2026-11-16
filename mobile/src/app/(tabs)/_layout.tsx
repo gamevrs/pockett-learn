@@ -25,7 +25,7 @@ export default function TabsLayout() {
       rippleColor={colors.tonalPressed}
       labelStyle={{ default: { color: colors.textTertiary }, selected: { color: colors.text } }}
       labelVisibilityMode="labeled"
-      minimizeBehavior="onScrollDown">
+      minimizeBehavior="never">
       <NativeTabs.Trigger name="(home)">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />

@@ -76,7 +76,7 @@ export default function LessonScreen() {
         break;
       case 'lessonComplete':
         if (haptics) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setComplete({ xp: msg.xp || ref?.lesson.xp || 0 });
+        setComplete({ xp: msg.firstTime === false ? 0 : msg.xp || ref?.lesson.xp || 0 });
         break;
       case 'navigate': {
         const target = lessonForPath(index, msg.path);
@@ -134,7 +134,7 @@ export default function LessonScreen() {
           title: complete ? '' : title,
           headerTransparent: false,
           headerStyle: { backgroundColor: colors.background },
-          headerLeft: () => <HeaderIconButton icon="close" label="Close lesson" onPress={close} testID="lesson-close" />,
+          headerLeft: complete ? () => null : () => <HeaderIconButton icon="close" label="Close lesson" onPress={close} testID="lesson-close" />,
           headerBackVisible: false,
         }}
       />
@@ -157,7 +157,7 @@ export default function LessonScreen() {
           </Text>
         </View>
       ) : null}
-      {ref || pathParam || id ? (
+      {ref || pathParam ? (
         <EmbedView ref={embed} path={path} onMessage={onMessage} onNavigateAway={onNavigateAway} loadingLabel="Opening lesson" testID="lesson-web" />
       ) : (
         <EmptyState icon="learn" title="Lesson not found" body="This lesson isn't in Pockett any more." />

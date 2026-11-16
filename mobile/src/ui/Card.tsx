@@ -27,7 +27,12 @@ export function Card({
 }) {
   const { colors, scheme } = useTheme();
   const base = [styles.card, { backgroundColor: tint ? colors.tint : colors.surface, borderColor: colors.line }, elevation(scheme), style];
-  if (!onPress) return <View style={base}>{children}</View>;
+  if (!onPress)
+    return (
+      <View style={base} testID={testID}>
+        {children}
+      </View>
+    );
   return (
     <Pressable
       accessibilityRole="button"

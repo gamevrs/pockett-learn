@@ -34,6 +34,7 @@ export default function GoalStep() {
               Haptics.selectionAsync();
               s.set({ dailyGoal: o.value });
             }}
+            testID={`goal-${o.value}`}
             accessibilityLabel={`${o.label} a day${s.dailyGoal === o.value ? ', chosen' : ''}`}
             last={i === CHOICES.dailyGoal.options.length - 1}
           />

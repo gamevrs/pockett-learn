@@ -32,6 +32,7 @@ export default function Interests() {
         detail={p.kind === 'part' ? undefined : p.blurb}
         accessory={<Icon name={on ? 'done' : 'todo'} size={iconSize.md} color={on ? colors.brand : colors.lineStrong} />}
         onPress={() => toggle(p.id)}
+        testID={`interest-${p.id}`}
         accessibilityLabel={`${p.title}${on ? ', chosen' : ''}`}
         last={last}
       />

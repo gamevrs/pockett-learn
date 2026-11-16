@@ -53,6 +53,7 @@ export default function ExperienceStep() {
             detail={l.detail}
             accessory={<Icon name={experience === l.value ? 'done' : 'todo'} size={iconSize.md} color={experience === l.value ? colors.brand : colors.lineStrong} />}
             onPress={() => choose(l.value)}
+            testID={`experience-${l.value}`}
             accessibilityLabel={`${l.label}${experience === l.value ? ', chosen' : ''}`}
             last={i === LEVELS.length - 1}
           />

@@ -10,7 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
+import { LogBox, StyleSheet } from 'react-native';
 
 import { AppEffects } from '~/components/AppEffects';
 import { UpdateGate } from '~/components/UpdateGate';
@@ -19,6 +19,9 @@ import { useHydrated } from '~/state/hydration';
 import { startSession } from '~/state/session';
 import { useSettings } from '~/state/settings';
 import { useApplyAppearance, useTheme } from '~/theme';
+
+// Development warnings go to the Metro console, not over the screen.
+if (__DEV__) LogBox.ignoreAllLogs();
 
 SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ fade: true, duration: 200 });

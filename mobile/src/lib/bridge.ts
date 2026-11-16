@@ -8,7 +8,7 @@ export type EmbedMessage =
   | { type: 'ready'; lessonId: string; title: string }
   | { type: 'step'; index: number; total: number; title: string }
   | { type: 'answer'; correct: boolean }
-  | { type: 'lessonComplete'; lessonId: string; xp: number }
+  | { type: 'lessonComplete'; lessonId: string; xp: number; firstTime?: boolean }
   | { type: 'progress'; data: ProgressState }
   | { type: 'navigate'; path: string }
   | { type: 'external'; url: string }
@@ -37,7 +37,7 @@ export function parseEmbedMessage(raw: string): EmbedMessage | null {
     case 'answer':
       return typeof m.correct === 'boolean' ? { type: 'answer', correct: m.correct } : null;
     case 'lessonComplete':
-      return str(m.lessonId) ? { type: 'lessonComplete', lessonId: m.lessonId, xp: int(m.xp) ? m.xp : 0 } : null;
+      return str(m.lessonId) ? { type: 'lessonComplete', lessonId: m.lessonId, xp: int(m.xp) ? m.xp : 0, ...(typeof m.firstTime === 'boolean' ? { firstTime: m.firstTime } : {}) } : null;
     case 'progress': {
       const data = parseProgress(m.data);
       return data ? { type: 'progress', data } : null;

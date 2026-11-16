@@ -70,7 +70,7 @@ export function ListRow({ icon, iconColor, leading, label, detail, value, traili
             {label}
           </Text>
           {detail ? (
-            <Text variant="label" tone="tertiary" numberOfLines={2}>
+            <Text variant="label" tone="tertiary" numberOfLines={Math.max(2, numberOfLines)}>
               {detail}
             </Text>
           ) : null}

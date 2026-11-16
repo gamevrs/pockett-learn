@@ -1,6 +1,7 @@
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { AchievementRow, featuredAchievements } from '~/components/AchievementRow';
 import { GoalBars, Heatmap } from '~/components/charts';
 import { useNow } from '~/components/learning';
 import { GroupRow } from '~/components/rows';
@@ -40,6 +41,7 @@ export default function ProgressScreen() {
     .filter(({ c }) => c.done > 0);
   const badges = achievements(progress, index);
   const earned = badges.filter((b) => b.earned).length;
+  const featured = featuredAchievements(badges);
 
   return (
     <>
@@ -105,19 +107,11 @@ export default function ProgressScreen() {
           </ListSection>
         ) : null}
 
-        <ListSection title="Achievements" aside={<Text variant="label" tone="tertiary">{`${earned} of ${badges.length}`}</Text>}>
-          {badges.map((b, i) => (
-            <ListRow
-              key={b.id}
-              leading={<Icon name={b.earned ? 'trophy' : 'lock'} size={iconSize.md} color={b.earned ? colors.brand : colors.textTertiary} />}
-              label={b.title}
-              detail={b.earned ? b.earnedText : b.detail}
-              value={b.earned ? 'Earned' : `${Math.floor(b.progress * 100)}%`}
-              trailing="none"
-              last={i === badges.length - 1}
-              accessibilityLabel={`${b.title}. ${b.earned ? 'Earned.' : `${Math.floor(b.progress * 100)}% of the way. ${b.detail}.`}`}
-            />
+        <ListSection title="Achievements" aside={<Text variant="label" tone="tertiary">{`${earned} of ${badges.length} earned`}</Text>}>
+          {featured.map((b) => (
+            <AchievementRow key={b.id} a={b} />
           ))}
+          <ListRow label="All achievements" onPress={() => router.push('/progress/achievements')} last />
         </ListSection>
       </Screen>
     </>

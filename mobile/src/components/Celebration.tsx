@@ -47,9 +47,9 @@ export function Celebration({
         </Animated.View>
         <Animated.View entering={FadeIn.delay(300)} style={styles.stats}>
           <View style={styles.stat} accessible accessibilityLabel={`${xp} XP earned`}>
-            <Text variant="display" tone="brand">{`+${xp}`}</Text>
+            <Text variant="display" tone={xp ? 'brand' : 'tertiary'}>{`+${xp}`}</Text>
             <Text variant="label" tone="tertiary">
-              XP earned
+              {xp ? 'XP earned' : 'XP (done before)'}
             </Text>
           </View>
           <View style={styles.stat} accessible accessibilityLabel={`Streak: ${streak} ${streak === 1 ? 'day' : 'days'}`}>

@@ -61,9 +61,9 @@ export default function Notifications() {
       <ListSection>{permissionRow}</ListSection>
 
       <ListSection title="Reminders" footer="Reminders skip any day you have already finished a lesson.">
-        <ListSwitchRow label="Daily reminder" detail="A nudge to do your daily lesson" value={s.dailyReminder} onValueChange={(v) => (v ? enableReminder('dailyReminder').then(refresh) : s.set({ dailyReminder: false }))} />
+        <ListSwitchRow icon="bell" label="Daily reminder" detail="A nudge to do your daily lesson" value={s.dailyReminder} onValueChange={(v) => (v ? enableReminder('dailyReminder').then(refresh) : s.set({ dailyReminder: false }))} />
         <TimeRow value={s.reminderTime} onChange={(m) => s.set({ reminderTime: m })} disabled={!s.dailyReminder} />
-        <ListSwitchRow label="Streak reminder" detail="At 8 pm on a day your streak would end" value={s.streakReminder} onValueChange={(v) => (v ? enableReminder('streakReminder').then(refresh) : s.set({ streakReminder: false }))} last />
+        <ListSwitchRow icon="streak" label="Streak reminder" detail="At 8 pm on a day your streak would end" value={s.streakReminder} onValueChange={(v) => (v ? enableReminder('streakReminder').then(refresh) : s.set({ streakReminder: false }))} last />
       </ListSection>
 
       {items.length ? (
