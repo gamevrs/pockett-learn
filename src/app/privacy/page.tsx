@@ -182,7 +182,7 @@ const sections: LegalSection[] = [
         <ul>
           <li>
             <strong>Account and progress data</strong> is kept while your account is open. When you delete your account (see
-            Your rights and choices), we delete it from our database.
+            Your rights and choices), it is deleted from our database straight away.
           </li>
           <li>
             <strong>Code sent to the C#, C++ and Go runner</strong> is not stored after the run finishes.
@@ -224,9 +224,15 @@ const sections: LegalSection[] = [
             Clear this site&rsquo;s data in your browser settings to remove them.
           </li>
           <li>
-            <strong>Access, correct, export or delete.</strong> Email {mail} from the address on your account to ask for a copy
-            of your data, to correct it, or to delete your account and everything linked to it. We will verify it is you, and
-            we aim to respond within 30 days.
+            <strong>Delete your account.</strong> Signed in, open Account (on the website, or the Account tab in the iOS and
+            Android apps) and choose <em>Delete account</em> at the bottom. After you confirm with your password, your account,
+            completed lessons, saved code and drafts, XP and streak are deleted from our servers at once and you are signed
+            out. Progress saved in that browser or app stays on the device unless you also choose to remove it there. You can
+            also email {mail} from the address on your account and we will delete it for you.
+          </li>
+          <li>
+            <strong>Access, correct or export.</strong> Email {mail} from the address on your account to ask for a copy of your
+            data or to correct it. We will verify it is you, and we aim to respond within 30 days.
           </li>
           <li>
             <strong>Object or restrict.</strong> You can object to, or ask us to restrict, certain processing by emailing us.

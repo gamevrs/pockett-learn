@@ -47,6 +47,7 @@ it, and `.vercelignore`, the root `tsconfig.json` and `eslint.config.mjs` all le
 |---|---|---|
 | Bottom tab bar (Home, Learn, Projects, Sandbox, Account): translucent bar on iOS, Material 3 bar with a pill on Android; hidden while the keyboard is up and in full-screen lesson/editor views | | `components/native/AppTabBar.tsx`, `.app-tabbar` in `globals.css` |
 | Account tab gains what the navbar/footer held: your progress, theme, sound, daily reminder, brand, privacy, terms | | `components/native/AppSettings.tsx` |
+| Delete account (the same as on the web): at the bottom of the signed-in Account tab | | `components/auth/DeleteAccount.tsx`, `data/auth/delete-account.ts`, `supabase/migrations/0005_delete_own_account.sql` |
 | Status bar text follows the site theme; on Android the bars' backdrop follows it too | `AppChromePlugin.java` | `NativeBridge.tsx` |
 | Safe areas (notch, home indicator, Android system bars) | `SystemBars.insetsHandling: css` | `.native-app` rules in `globals.css` |
 | Android back: history first, then leave the app | `MainActivity.java` (`App.disableBackButtonHandler: true`) | |
@@ -154,7 +155,9 @@ Bump `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION` (Xcode) and `versionName`/`ve
    in the browser. Check with `adb shell pm get-app-links com.gameverse.pockett` (state `verified`).
 4. Data safety form (same facts as Apple's): email (and optional name) collected for account management; app activity
    (lesson progress) and user content (code) collected for app functionality, only with an account; data encrypted in
-   transit; users can request deletion; no data shared with third parties for advertising; no ads.
+   transit; users can delete their account and its data in the app, and on the web (the **delete account URL** Play asks
+   for is `https://www.pockett.ai/account`: sign in, then Delete account); no data shared with third parties for
+   advertising; no ads.
 5. Content rating questionnaire (education, no user-to-user interaction), target audience 13+ (the site is not directed
    to children under 13), store listing, screenshots (phone, 7" and 10" tablet).
 
@@ -184,10 +187,15 @@ beyond the site:
 Say so in the review notes, with a demo account. If review still pushes back, the next steps are offline lessons (cache
 the Foundations content in the app) and a home-screen widget for the streak.
 
-**Guideline 5.1.1(v), account deletion: must fix before submitting.** The app lets people create an account, so it
-must also let them delete it from inside the app. Today `/privacy` says to email us. Add a "Delete account" action to
-the Account page (a server route using the Supabase service role to delete the user and their progress) before the
-first submission; Google Play asks for the same (an in-app path and a web URL).
+**Guideline 5.1.1(v), account deletion.** Account tab ▸ **Delete account** (bottom of the page, signed in; the same on
+the website at `/account`). The learner re-enters their password and types DELETE; the site then calls
+`public.delete_my_account()` (`supabase/migrations/0005_delete_own_account.sql`), a security-definer function callable by
+signed-in users only, which deletes their drafts, completions, profile and the `auth.users` row (and with it every
+session) in one transaction, and the app signs out. No service-role key is involved. Progress saved on the phone stays
+there unless they switch on "Also remove progress saved on this device". **Apply migration 0005 to the production
+project before submitting**: until it is, the dialog says deletion isn't switched on and points to the support email.
+Mention the path in the review notes; Google Play's account deletion form takes the in-app path and
+`https://www.pockett.ai/account`.
 
 **Guideline 2.1** (completeness): the reviewer must be able to sign in; provide a demo account in App Review
 Information.
