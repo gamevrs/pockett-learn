@@ -14,6 +14,8 @@ import { completeLesson, currentStreak, useProgress, type CompletionResult } fro
 import { Prose } from "@/components/ui/Prose";
 import { CodeEditor } from "@/components/workspace/CodeEditor";
 import { sound } from "@/lib/sound/sound";
+import { haptic } from "@/lib/native/app";
+import { NativeShareButton } from "@/components/native/NativeShareButton";
 import { fireCelebrationConfetti } from "@/lib/ui/confetti";
 import { clearStep, saveStep, savedStep } from "@/learn/position";
 import { WidgetCard } from "./WidgetCard";
@@ -57,6 +59,7 @@ function Player({ ctx }: { ctx: ConceptContext }) {
     const res = completeLesson(lesson.id, lesson.xp, "");
     clearStep(lesson.id);
     sound.playSuccess();
+    haptic("complete");
     if (res.firstTime) fireCelebrationConfetti();
     setDone(res);
   };
@@ -81,7 +84,7 @@ function Player({ ctx }: { ctx: ConceptContext }) {
   }, [dirty, done]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-bg">
+    <div className="app-safe fixed inset-0 z-[60] flex flex-col bg-bg">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 sm:px-4">
         <Link
           href="/learn"
@@ -102,6 +105,7 @@ function Player({ ctx }: { ctx: ConceptContext }) {
             <span key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < index || done ? "bg-primary" : i === index ? "bg-ink-3" : "bg-surface-2"}`} />
           ))}
         </div>
+        <NativeShareButton title={lesson.title} path={`/learn/${lesson.id}`} />
         <span className="hidden items-center gap-3 text-xs font-medium tabular-nums text-ink-2 sm:flex">
           <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-brand" />{progress.xp}</span>
           <span className="flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-brand" />{currentStreak(progress)}</span>
@@ -227,9 +231,11 @@ function StepFrame({
     setAttempts((n) => n + 1);
     if (ok) {
       sound.playSuccess();
+      haptic("correct");
       setStatus("correct");
     } else {
       sound.playError();
+      haptic("wrong");
       setStatus("wrong");
     }
   };
@@ -245,9 +251,11 @@ function StepFrame({
       setAttempts((n) => n + 1);
       if (graded.allPassed) {
         sound.playSuccess();
+        haptic("correct");
         setStatus("correct");
       } else {
         sound.playError();
+        haptic("wrong");
         setStatus("wrong");
       }
     } catch (e) {

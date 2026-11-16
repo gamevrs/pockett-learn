@@ -87,7 +87,7 @@ export function Navbar() {
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 z-50 px-4 pt-3 sm:px-6"
+      className="app-hide sticky top-0 z-50 px-4 pt-3 sm:px-6"
       onBlur={(e) => {
         // keyboard focus leaving the header (menu included) dismisses the menu
         if (open && e.relatedTarget && !headerRef.current?.contains(e.relatedTarget as Node)) setOpenFor(null);

@@ -6,6 +6,7 @@ import type { LanguageId, LessonCheck } from "@/engine/types";
 import { Prose } from "@/components/ui/Prose";
 import { QuestionInput, answerText, hasAnswer, initialAnswer, isCorrect, type Answer } from "@/components/learn/QuestionInput";
 import { sound } from "@/lib/sound/sound";
+import { haptic } from "@/lib/native/app";
 
 type Status = "idle" | "correct" | "wrong" | "revealed";
 
@@ -71,10 +72,12 @@ function CheckCard({
   const submit = () => {
     if (isCorrect(question, answer)) {
       sound.playSuccess();
+      haptic("correct");
       setStatus("correct");
       onSettled(true);
     } else {
       sound.playError();
+      haptic("wrong");
       setMisses((n) => n + 1);
       setStatus("wrong");
     }

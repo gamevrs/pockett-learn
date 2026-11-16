@@ -29,6 +29,8 @@ import { ProjectStage } from "@/components/stage/ProjectStage";
 import { expectStage } from "@/engine/frame/client";
 import { usesCodeFrame } from "@/engine/frame/protocol";
 import { sound } from "@/lib/sound/sound";
+import { haptic } from "@/lib/native/app";
+import { NativeShareButton } from "@/components/native/NativeShareButton";
 import { SoundControl } from "@/components/audio/SoundControl";
 import { fireCelebrationConfetti } from "@/lib/ui/confetti";
 import { useHydrated } from "@/lib/hooks";
@@ -298,6 +300,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
       if (allPassed) {
         const res = completeLesson(lesson.id, lesson.xp, code);
         sound.playSuccess();
+        haptic("complete");
         if (res.leveledUp) setTimeout(() => sound.playLevelUp(), 450);
         if (res.firstTime) {
           fireCelebrationConfetti();
@@ -307,6 +310,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
         setMobileTab("stage");
       } else {
         if (!out.error) sound.playError();
+        haptic("wrong");
         setMiss({ passed: nextResults.filter((r) => r.passed).length, total: nextResults.length });
         setMobileTab("checks");
       }
@@ -423,7 +427,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex flex-col bg-bg"
+      className="app-safe fixed inset-0 z-[60] flex flex-col bg-bg"
     >
       {/* header */}
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-3 sm:px-4">
@@ -461,6 +465,7 @@ function WorkspaceInner({ ctx }: { ctx: LessonContext }) {
             <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5 text-brand" />{progress.xp}</span>
             <span className="flex items-center gap-1"><Flame className="h-3.5 w-3.5 text-brand" />{currentStreak(progress)}</span>
           </span>
+          <NativeShareButton title={`${lesson.title} · ${project.title}`} path={lessonPath(lesson.id)} />
           <div className="hidden sm:block">
             <SoundControl variant="header" />
           </div>
