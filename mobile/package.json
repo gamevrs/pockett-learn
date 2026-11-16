@@ -1,0 +1,33 @@
+{
+  "name": "pockett-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Native iOS and Android shell for pockett.ai (Capacitor). Not part of the Next.js build.",
+  "scripts": {
+    "sync": "cap sync",
+    "assets": "node scripts/make-asset-sources.mjs && capacitor-assets generate --ios --android --assetPath assets --iconBackgroundColor '#0a0a0a' --iconBackgroundColorDark '#0a0a0a' --splashBackgroundColor '#f6f5f1' --splashBackgroundColorDark '#0a0a0a'",
+    "ios": "cap run ios",
+    "android": "cap run android",
+    "open:ios": "cap open ios",
+    "open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.2",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.2",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.6.2",
+    "@capacitor/keyboard": "8.0.6",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/network": "8.0.1",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "4.0.0",
+    "@capacitor/cli": "8.6.2",
+    "typescript": "5.9.3"
+  }
+}

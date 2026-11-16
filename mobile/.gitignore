@@ -1,0 +1,9 @@
+node_modules/
+# written by capacitor.config.ts from src/offline.html on every sync (holds the server URL, which may be a local override)
+www/offline.html
+# signing material never goes in the repo
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+keystore.properties
