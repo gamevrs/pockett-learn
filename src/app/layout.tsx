@@ -34,8 +34,9 @@ export const viewport: Viewport = {
   ],
 };
 
-// Runs before first paint: dark unless the visitor explicitly chose light.
-const themeScript = `(function(){try{var s=localStorage.getItem('pockett_theme_mode');if(s!=='light'){document.documentElement.classList.add('dark')}}catch(e){document.documentElement.classList.add('dark')}})();`;
+// Runs before first paint: dark unless the visitor explicitly chose light. The /embed pages (inside the phone app) follow
+// the app instead: the theme it injected (window.__POCKETT_APP__, set before this runs), else ?theme=, else as above.
+const themeScript = `(function(){var d=document.documentElement;try{var p=location.pathname;if(p==='/embed'||p.indexOf('/embed/')===0){var a=window.__POCKETT_APP__,t=a&&(a.theme==='dark'||a.theme==='light')?a.theme:new URLSearchParams(location.search).get('theme');if(t==='dark'||t==='light'){if(t==='dark')d.classList.add('dark');return}}var s=localStorage.getItem('pockett_theme_mode');if(s!=='light'){d.classList.add('dark')}}catch(e){d.classList.add('dark')}})();`;
 
 // Runs before first paint, and only does anything inside the iOS/Android app (mobile/), where Capacitor has already
 // injected window.Capacitor: marks <html> so globals.css can pad for the notch and home indicator, lets the page draw

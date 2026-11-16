@@ -18,6 +18,8 @@ import { haptic } from "@/lib/native/app";
 import { NativeShareButton } from "@/components/native/NativeShareButton";
 import { fireCelebrationConfetti } from "@/lib/ui/confetti";
 import { clearStep, saveStep, savedStep } from "@/learn/position";
+import { useEmbed } from "@/components/embed/EmbedContext";
+import { postToApp } from "@/lib/embed/host";
 import { WidgetCard } from "./WidgetCard";
 import { answerText, hasAnswer, initialAnswer, isCorrect, QuestionInput, wrongAnswerHelp, type Answer } from "./QuestionInput";
 
@@ -48,6 +50,15 @@ function Player({ ctx }: { ctx: ConceptContext }) {
   const [dirty, setDirty] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const step = lesson.steps[index];
+  const embed = useEmbed();
+
+  // the phone app's header (its title and progress bar) follows the player; nothing is sent in a browser
+  useEffect(() => {
+    postToApp({ type: "ready", lessonId: lesson.id, title: lesson.title });
+  }, [lesson.id, lesson.title]);
+  useEffect(() => {
+    if (!done) postToApp({ type: "step", index, total, title: step.title ?? lesson.title });
+  }, [index, total, step.title, lesson.title, done]);
 
   const goTo = (n: number) => {
     setIndex(n);
@@ -58,6 +69,7 @@ function Player({ ctx }: { ctx: ConceptContext }) {
   const finish = () => {
     const res = completeLesson(lesson.id, lesson.xp, "");
     clearStep(lesson.id);
+    postToApp({ type: "lessonComplete", lessonId: lesson.id, xp: res.xpGained, firstTime: res.firstTime, totalXp: res.totalXp });
     sound.playSuccess();
     haptic("complete");
     if (res.firstTime) fireCelebrationConfetti();
@@ -86,7 +98,8 @@ function Player({ ctx }: { ctx: ConceptContext }) {
   return (
     <div className="app-safe fixed inset-0 z-[60] flex flex-col bg-bg">
       <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 sm:px-4">
-        <Link
+        {/* in the phone app, its own header has the way back */}
+        {!embed && <Link
           href="/learn"
           aria-label="Back to Foundations"
           title="Back to Foundations"
@@ -99,7 +112,7 @@ function Player({ ctx }: { ctx: ConceptContext }) {
           className="relative before:absolute before:-inset-1.5 before:content-[''] grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-2 hover:bg-surface-2 hover:text-ink"
         >
           <X className="h-4 w-4" />
-        </Link>
+        </Link>}
         <div className="flex flex-1 items-center gap-1" aria-label={`Step ${Math.min(index + 1, total)} of ${total}`}>
           {lesson.steps.map((_, i) => (
             <span key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i < index || done ? "bg-primary" : i === index ? "bg-ink-3" : "bg-surface-2"}`} />
@@ -229,6 +242,7 @@ function StepFrame({
     const q = step.question;
     const ok = q.type === "widget" ? Boolean(widgetDef?.check?.(widgetState, q.goal)) : isCorrect(q, answer);
     setAttempts((n) => n + 1);
+    postToApp({ type: "answer", correct: ok });
     if (ok) {
       sound.playSuccess();
       haptic("correct");
@@ -249,6 +263,7 @@ function StepFrame({
       const error = graded.error ? `${graded.error.type}: ${graded.error.message}${graded.error.line ? ` (line ${graded.error.line})` : ""}` : null;
       setCodeResult({ results: graded.results, stdout: graded.stdout, error });
       setAttempts((n) => n + 1);
+      postToApp({ type: "answer", correct: graded.allPassed });
       if (graded.allPassed) {
         sound.playSuccess();
         haptic("correct");
@@ -533,6 +548,7 @@ function goalOf(step: Step): string | undefined {
 
 function Completion({ ctx, result }: { ctx: ConceptContext; result: CompletionResult }) {
   const { lesson, next } = ctx;
+  const embed = useEmbed();
   return (
     <main className="min-h-0 flex-1 overflow-y-auto">
       <div className="pop-in mx-auto flex w-full max-w-md flex-col items-center px-4 py-16 text-center">
@@ -564,9 +580,16 @@ function Completion({ ctx, result }: { ctx: ConceptContext; result: CompletionRe
               Put it to work in a project <ArrowRight className="h-4 w-4" />
             </Link>
           )}
-          <Link href="/learn" className="btn !h-12 w-full">
-            Back to Foundations
-          </Link>
+          {embed ? (
+            // the lesson's own way out: the phone app closes the lesson and shows where the learner came from
+            <button type="button" onClick={() => postToApp({ type: "close" })} className="btn !h-12 w-full">
+              Back to Foundations
+            </button>
+          ) : (
+            <Link href="/learn" className="btn !h-12 w-full">
+              Back to Foundations
+            </Link>
+          )}
         </div>
       </div>
     </main>

@@ -93,3 +93,42 @@ export function mergeProgress(
     audio: mergeAudio(local.audio, profile),
   };
 }
+
+/**
+ * Merge a whole progress object from somewhere else (the phone app hands its copy to the lesson pages it hosts, see
+ * src/lib/embed) into this device's, with exactly the rules used for the cloud: the other copy is turned into the rows
+ * the cloud would hold and run through mergeProgress. Attempts and hints, which the cloud keeps only next to drafts,
+ * take the larger count. Pure, like the rest of this file.
+ */
+export function mergeProgressStates(local: ProgressState, other: ProgressState, xpOf: (lessonId: string) => number): ProgressState {
+  const completions: CompletionRow[] = Object.entries(other.completed ?? {}).map(([id, c]) => ({
+    lesson_id: id,
+    project_slug: "",
+    code: typeof c.code === "string" ? c.code : "",
+    attempts: Number.isFinite(c.attempts) ? c.attempts : 1,
+    completed_at: c.at,
+    updated_at: c.updatedAt ?? c.at,
+  }));
+  const drafts: DraftRow[] = Object.entries(other.drafts ?? {}).map(([id, code]) => ({
+    lesson_id: id,
+    code,
+    hints_seen: other.hintsSeen?.[id] ?? 0,
+    updated_at: other.draftsAt?.[id],
+  }));
+  const profile: ProfileRow = {
+    xp: other.xp,
+    streak: other.streak,
+    best_streak: other.bestStreak,
+    last_active_date: other.lastActiveDate,
+    audio_enabled: other.audio?.enabled,
+    audio_volume: other.audio?.volume,
+    audio_updated_at: other.audio?.at ?? null,
+  };
+  const merged = mergeProgress(local, profile, completions, drafts, xpOf);
+  const larger = (a: Record<string, number>, b: Record<string, number> | undefined) => {
+    const out = { ...a };
+    for (const [id, n] of Object.entries(b ?? {})) if (typeof n === "number" && Number.isFinite(n)) out[id] = Math.max(out[id] ?? 0, n);
+    return out;
+  };
+  return { ...merged, attempts: larger(merged.attempts, other.attempts), hintsSeen: larger(merged.hintsSeen, other.hintsSeen) };
+}
