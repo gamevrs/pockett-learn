@@ -1,33 +1,74 @@
 {
   "name": "pockett-mobile",
   "version": "1.0.0",
-  "private": true,
-  "description": "Native iOS and Android shell for pockett.ai (Capacitor). Not part of the Next.js build.",
-  "scripts": {
-    "sync": "cap sync",
-    "assets": "node scripts/make-asset-sources.mjs && capacitor-assets generate --ios --android --assetPath assets --iconBackgroundColor '#0a0a0a' --iconBackgroundColorDark '#0a0a0a' --splashBackgroundColor '#f6f5f1' --splashBackgroundColorDark '#0a0a0a'",
-    "ios": "cap run ios",
-    "android": "cap run android",
-    "open:ios": "cap open ios",
-    "open:android": "cap open android"
-  },
+  "main": "expo-router/entry",
   "dependencies": {
-    "@capacitor/android": "8.6.2",
-    "@capacitor/app": "8.1.2",
-    "@capacitor/browser": "8.0.5",
-    "@capacitor/core": "8.6.2",
-    "@capacitor/haptics": "8.0.2",
-    "@capacitor/ios": "8.6.2",
-    "@capacitor/keyboard": "8.0.6",
-    "@capacitor/local-notifications": "8.3.1",
-    "@capacitor/network": "8.0.1",
-    "@capacitor/share": "8.0.3",
-    "@capacitor/splash-screen": "8.0.2",
-    "@capacitor/status-bar": "8.0.4"
+    "@expo-google-fonts/geist": "^0.4.2",
+    "@expo-google-fonts/geist-mono": "^0.4.3",
+    "@expo-google-fonts/source-serif-4": "^0.4.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "9.2.1",
+    "@supabase/supabase-js": "^2.119.0",
+    "expo": "~58.0.25",
+    "expo-application": "~58.1.2",
+    "expo-constants": "~58.0.16",
+    "expo-font": "~58.0.12",
+    "expo-haptics": "~58.0.8",
+    "expo-image": "~58.0.18",
+    "expo-linking": "~58.0.17",
+    "expo-localization": "~58.0.5",
+    "expo-mail-composer": "~58.0.4",
+    "expo-network": "~58.0.5",
+    "expo-notifications": "~58.1.9",
+    "expo-router": "~58.0.31",
+    "expo-secure-store": "~58.0.3",
+    "expo-sharing": "~58.0.23",
+    "expo-splash-screen": "~58.0.14",
+    "expo-status-bar": "~58.0.5",
+    "expo-symbols": "~58.0.5",
+    "expo-system-ui": "~58.0.7",
+    "expo-web-browser": "~58.0.8",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-gesture-handler": "~3.3.0",
+    "react-native-reanimated": "4.7.1",
+    "react-native-safe-area-context": "~5.11.1",
+    "react-native-screens": "~4.30.1",
+    "react-native-svg": "15.16.0",
+    "react-native-url-polyfill": "^4.0.0",
+    "react-native-webview": "14.0.1",
+    "react-native-worklets": "0.13.0",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
-    "@capacitor/assets": "4.0.0",
-    "@capacitor/cli": "8.6.2",
-    "typescript": "5.9.3"
+    "@types/jest": "^30.0.0",
+    "@types/react": "~19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "^58.0.4",
+    "jest": "^30.5.2",
+    "jest-expo": "^58.0.14",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start --dev-client",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "prebuild": "expo prebuild --clean",
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "catalog:fixture": "node scripts/make-catalog-fixture.mjs"
+  },
+  "private": true,
+  "description": "Pockett for iOS and Android: a native Expo app; lesson content is hosted from pockett.ai/embed. Not part of the Next.js build.",
+  "jest": {
+    "preset": "jest-expo",
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
+    "moduleNameMapper": {
+      "^~/(.*)$": "<rootDir>/src/$1",
+      "^@site/(.*)$": "<rootDir>/../src/$1"
+    }
   }
 }
