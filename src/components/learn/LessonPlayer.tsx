@@ -97,8 +97,9 @@ function Player({ ctx }: { ctx: ConceptContext }) {
 
   return (
     <div className="app-safe fixed inset-0 z-[60] flex flex-col bg-bg">
-      <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 sm:px-4">
-        {/* in the phone app, its own header has the way back */}
+      {/* in the phone app its own header has the way back and draws the step bar (from the step messages), so this one is
+          not shown there; it stays in the page, hidden, for the step count it carries */}
+      <header className={embed ? "hidden" : "flex h-14 shrink-0 items-center gap-3 border-b border-line bg-surface px-3 sm:px-4"}>
         {!embed && <Link
           href="/learn"
           aria-label="Back to Foundations"

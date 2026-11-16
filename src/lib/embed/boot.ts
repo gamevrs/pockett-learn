@@ -15,11 +15,14 @@ import { appHost, postToApp, type AppHost } from "./host";
  *
  *  - progress: merged into this web view's pockett_progress_v2 with the site's own rules (newest wins, nothing lost)
  *  - session: the app owns sign-in. The web view's own stored session is dropped and the app's is set, so CloudSync
- *    syncs progress for exactly the account the app is signed in to (or for nobody, as a guest)
+ *    syncs progress for exactly the account the app is signed in to (or for nobody, as a guest). When the person
+ *    changes (sign-out, another account), the web view's progress is cleared first, as the site does on sign-out
  *  - theme: applied by the head script in app/layout.tsx, before first paint
  */
 
 const AUTH_STORAGE_KEY = "pockett_auth"; // src/data/supabase/client.ts
+/** Whose progress this web view holds: the signed-in account's id, or "guest". */
+const OWNER_KEY = "pockett_embed_owner";
 
 let booted = false;
 
@@ -95,6 +98,18 @@ function applySession(session: AppHost["session"] | undefined) {
     .catch(() => postToApp({ type: "auth", event: "signedOut" }));
 }
 
+/** The account a session belongs to (the token's `sub`; unverified, only used to notice a different person), or "guest". */
+function ownerOf(session: AppHost["session"] | undefined): string {
+  try {
+    const part = session?.access_token?.split(".")[1];
+    if (!part) return "guest";
+    const claims = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/"))) as { sub?: unknown };
+    return typeof claims.sub === "string" ? claims.sub : "guest";
+  } catch {
+    return "guest";
+  }
+}
+
 export function bootEmbed() {
   if (booted || typeof window === "undefined") return;
   booted = true;
@@ -103,6 +118,12 @@ export function bootEmbed() {
   try {
     // the app is the only source of sign-in: whatever this web view remembers from before must not sync anywhere
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    // a different person than last time (signed out, or another account): this web view's progress was theirs, drop it
+    // before merging, as the site does on sign-out (data/progress/sync.ts)
+    const owner = ownerOf(app.session);
+    const before = localStorage.getItem(OWNER_KEY);
+    if (before !== null && before !== owner) replaceProgress({ ...EMPTY_PROGRESS, audio: getProgress().audio });
+    localStorage.setItem(OWNER_KEY, owner);
   } catch {
     /* storage blocked: nothing was stored either */
   }
