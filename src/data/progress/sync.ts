@@ -74,6 +74,70 @@ let running = 0;
 /** False once the profiles.audio_* columns turn out not to exist yet (migration 0004 not applied): audio then stays device-local. */
 let audioColumns = true;
 
+// ───────── account deletion ─────────
+//
+// deleteAccount() (src/data/auth/delete-account.ts) brackets the delete with these. While it runs nothing is pushed:
+// the rows are about to go, and an upsert landing after the delete would only fail on the missing profile. The sign-out
+// that follows normally clears this device (see onAuth); when the person chose to keep their progress here, it doesn't.
+// The choice is also written to localStorage for a short while, because every other open tab of the site receives the
+// same sign-out and would otherwise clear the shared storage itself.
+
+let deleting = false;
+const KEEP_KEY = "pockett_keep_progress_on_sign_out";
+const KEEP_FOR_MS = 2 * 60 * 1000;
+
+export function beginAccountDeletion() {
+  deleting = true;
+  if (timer) {
+    clearTimeout(timer);
+    timer = null;
+  }
+}
+
+/** The delete failed: nothing changed on the server, so carry on syncing. */
+export function cancelAccountDeletion() {
+  deleting = false;
+  schedulePush();
+}
+
+/** The account is gone. Call right before signing out. */
+export function accountDeleted(keepLocal: boolean) {
+  try {
+    if (keepLocal) localStorage.setItem(KEEP_KEY, String(Date.now()));
+    else localStorage.removeItem(KEEP_KEY);
+  } catch {
+    /* storage blocked: there is no saved progress to keep or clear either */
+  }
+}
+
+/** Call after the sign-out has gone through. */
+export function endAccountDeletion() {
+  deleting = false;
+}
+
+function keepProgressOnSignOut(): boolean {
+  try {
+    const at = Number(localStorage.getItem(KEEP_KEY));
+    if (at && Date.now() - at < KEEP_FOR_MS) return true;
+    localStorage.removeItem(KEEP_KEY);
+  } catch {
+    /* storage blocked */
+  }
+  return false;
+}
+
+function forgetKeepProgress() {
+  try {
+    localStorage.removeItem(KEEP_KEY);
+  } catch {
+    /* storage blocked */
+  }
+}
+
+/** The profile row is gone, so the account was deleted (here or on another device) while this session was open. */
+class AccountGone extends Error {}
+const FK_VIOLATION = "23503"; // an upsert into lesson_completions/lesson_drafts whose profile no longer exists
+
 async function pull(sb: SupabaseClient, uid: string) {
   setSync({ status: "syncing", error: null });
   await loadFoundations();
@@ -88,6 +152,9 @@ async function pull(sb: SupabaseClient, uid: string) {
   if (err) throw err;
   audioColumns = !a.error;
   if (uid !== userId) return; // signed out / switched account meanwhile
+  // every account gets a profile row the moment it is created (handle_new_user), so none means the account was deleted:
+  // don't merge this device into it or push anything, just end the session (see run)
+  if (!p.data) throw new AccountGone("This account no longer exists.");
   const merged = mergeProgress(getProgress(), (p.data ? { ...p.data, ...(a.data ?? {}) } : null) as ProfileRow | null, (c.data ?? []) as CompletionRow[], (d.data ?? []) as DraftRow[], (id) => LESSONS.get(id)?.xp ?? 0);
   synced = null; // force a full push of the merged state
   replaceProgress(merged);
@@ -162,11 +229,17 @@ async function push(sb: SupabaseClient, uid: string) {
 function run(task: (sb: SupabaseClient, uid: string) => Promise<void>) {
   const sb = getSupabase();
   const uid = userId;
-  if (!sb || !uid) return;
+  if (!sb || !uid || deleting) return;
   running++;
   task(sb, uid)
     .catch((err: unknown) => {
-      if (uid === userId) setSync({ status: "error", error: (err as { message?: string })?.message ?? "Sync failed" });
+      if (uid !== userId || deleting) return;
+      if (err instanceof AccountGone || (err as { code?: string })?.code === FK_VIOLATION) {
+        // deleted from another device: its tokens stop refreshing soon anyway; sign out now instead of failing every sync
+        void sb.auth.signOut({ scope: "local" }).catch(() => {});
+        return;
+      }
+      setSync({ status: "error", error: (err as { message?: string })?.message ?? "Sync failed" });
     })
     .finally(() => {
       running--;
@@ -174,7 +247,7 @@ function run(task: (sb: SupabaseClient, uid: string) => Promise<void>) {
 }
 
 function schedulePush() {
-  if (!userId || !ready) return;
+  if (!userId || !ready || deleting) return;
   if (timer) clearTimeout(timer);
   timer = setTimeout(() => {
     timer = null;
@@ -195,10 +268,12 @@ function onAuth() {
   if (!next) {
     setSync(OFF);
     // The progress on this device belonged to the account that just left (and is safe in the
-    // cloud), so clear it: the next person to sign in here must not inherit it.
-    if (signedOut) resetAllProgress();
+    // cloud), so clear it: the next person to sign in here must not inherit it. The one exception: the account was
+    // just deleted and its owner chose to keep their progress on this device.
+    if (signedOut && !keepProgressOnSignOut()) resetAllProgress();
     return;
   }
+  forgetKeepProgress(); // a new sign-in ends the deleted account's "keep my progress here" window
   // defer: Supabase recommends not awaiting other auth calls inside the auth callback
   setTimeout(() => run(pull), 0);
 }
@@ -243,7 +318,7 @@ export function syncNow() {
 export async function flushSync() {
   const sb = getSupabase();
   const uid = userId;
-  if (!sb || !uid || !ready) return;
+  if (!sb || !uid || !ready || deleting) return;
   if (timer) {
     clearTimeout(timer);
     timer = null;
