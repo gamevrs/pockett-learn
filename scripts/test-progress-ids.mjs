@@ -85,6 +85,24 @@ check("lookup covers every lesson with the right project_slug and a positive int
   assert.ok(all.filter((l) => l.source === "foundations").every((l) => l.slug === "foundations"));
 });
 
+// (3) the phone app's catalog (/api/app/catalog) lists exactly these lessons, with their xp and real paths
+{
+  const { buildCatalog, catalogLessonIds } = await import(pathToFileURL(path.join(REPO, "src/lib/app/catalog.ts")).href);
+  const cat = buildCatalog("2026-01-01T00:00:00.000Z");
+  check("app catalog: every synced lesson exactly once, same xp, path of the real page", () => {
+    const ids = catalogLessonIds(cat);
+    assert.equal(new Set(ids).size, ids.length, "duplicate ids in the catalog");
+    assert.deepEqual([...ids].sort(), all.map((l) => l.id).sort());
+    for (const t of cat.tracks) for (const m of t.modules) for (const l of m.lessons) {
+      assert.equal(l.xp, byId.get(l.id).xp, `xp of ${l.id}`);
+      const want = t.kind === "foundations" ? `/learn/${l.id}` : `/projects/${t.id}/${l.id}`;
+      assert.equal(l.path, want);
+      if (t.kind === "course") assert.equal(byId.get(l.id).slug, t.id);
+    }
+    assert.equal(buildCatalog("other date").version, cat.version, "version is a hash of the content only");
+  });
+}
+
 const groups = new Map();
 for (const l of all) (groups.get(l.slug) ?? groups.set(l.slug, []).get(l.slug)).push(l);
 // Foundations modules: fnd-<module>-<n>-...
