@@ -45,6 +45,7 @@ export const ICONS = {
   cloudOff: { ios: 'icloud.slash', android: 'cloud_off' },
   sync: { ios: 'arrow.triangle.2.circlepath', android: 'sync' },
   external: { ios: 'arrow.up.right.square', android: 'open_in_new' },
+  globe: { ios: 'globe', android: 'language' },
   doc: { ios: 'doc.text', android: 'description' },
   brand: { ios: 'paintpalette', android: 'palette' },
   person: { ios: 'person', android: 'person' },

@@ -26,7 +26,7 @@ export default function About() {
         <ListRow icon="lock" label="Privacy policy" trailing="external" onPress={() => open(LINKS.privacy)} />
         <ListRow icon="doc" label="Terms of use" trailing="external" onPress={() => open(LINKS.terms)} />
         <ListRow icon="brand" label="Brand" trailing="external" onPress={() => open(LINKS.brand)} />
-        <ListRow icon="external" label="pockett.ai" trailing="external" onPress={() => open(LINKS.site)} last />
+        <ListRow icon="globe" label="pockett.ai" trailing="external" onPress={() => open(LINKS.site)} last />
       </ListSection>
       <ListSection>
         <ListRow icon="mail" label="Contact us" detail={SUPPORT_EMAIL} onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)} last />
