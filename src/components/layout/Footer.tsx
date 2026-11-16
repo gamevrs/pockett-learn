@@ -20,7 +20,7 @@ const LINK = "inline-flex min-h-10 min-w-10 items-center whitespace-nowrap hover
 
 export function Footer() {
   return (
-    <footer className="border-t border-line">
+    <footer className="app-hide border-t border-line">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1.5fr]">
         <div>
           <Link href="/" prefetch={false} aria-label="pockett home" className="inline-flex min-h-10 items-center">

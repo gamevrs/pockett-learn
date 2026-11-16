@@ -6,6 +6,7 @@ import { CheckCircle2, Cloud, CloudOff, KeyRound, Loader2, LogOut, Mail, Refresh
 import { displayNameOf, sendPasswordReset, signIn, signOut, signUp, updatePassword, useAuth } from "@/data/auth/store";
 import { flushSync, syncNow, useSyncStatus } from "@/data/progress/sync";
 import { levelFor, useProgress } from "@/data/progress/store";
+import { AppSettings } from "@/components/native/AppSettings";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -25,6 +26,7 @@ export function AccountPanel() {
       ) : (
         <AuthForms />
       )}
+      <AppSettings />
     </div>
   );
 }
