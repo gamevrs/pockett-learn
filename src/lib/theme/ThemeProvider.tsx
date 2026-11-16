@@ -23,6 +23,16 @@ function subscribe(listener: () => void) {
 const getSnapshot = (): Theme => (document.documentElement.classList.contains("dark") ? "dark" : "light");
 const getServerSnapshot = (): Theme => "dark";
 
+/**
+ * Show a theme without remembering it as the visitor's choice: the phone app's web view follows the app's setting
+ * (src/components/embed/EmbedBridge.tsx), which must not overwrite what this browser chose for the website.
+ */
+export function showTheme(theme: Theme) {
+  if (getSnapshot() === theme) return;
+  document.documentElement.classList.toggle("dark", theme === "dark");
+  listeners.forEach((l) => l());
+}
+
 const ThemeContext = createContext<ThemeContextType>({ theme: "dark", toggleTheme: () => {} });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
