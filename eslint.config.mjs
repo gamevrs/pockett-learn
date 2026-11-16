@@ -12,7 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // the native app shell has its own package.json and toolchain (mobile/README.md)
+    // the native app (Expo) has its own package.json, toolchain and eslint config (mobile/README.md)
     "mobile/**",
     // Git worktrees and other agent state; never lint these.
     ".claude/**",
