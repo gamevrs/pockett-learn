@@ -28,6 +28,20 @@ import { dataModule } from "./data.ts";
 import { shippingModule } from "./shipping.ts";
 import { securityModule } from "./security.ts";
 import { aiSystemsModule } from "./ai-systems.ts";
+import { ivArraysModule } from "./iv-arrays.ts";
+import { ivPointersModule } from "./iv-pointers.ts";
+import { ivSortingModule } from "./iv-sorting.ts";
+import { ivTreesModule } from "./iv-trees.ts";
+import { ivGraphsModule } from "./iv-graphs.ts";
+import { ivDpModule } from "./iv-dp.ts";
+import { ivMathModule } from "./iv-math.ts";
+import { ivStringsModule } from "./iv-strings.ts";
+import { ivRangesModule } from "./iv-ranges.ts";
+import { ivDatabaseModule } from "./iv-database.ts";
+import { ivShellModule } from "./iv-shell.ts";
+import { ivConcurrencyModule } from "./iv-concurrency.ts";
+import { ivJavascriptModule } from "./iv-javascript.ts";
+import { ivPandasModule } from "./iv-pandas.ts";
 
 /** The Foundations track: from a single bit to design patterns, every step interactive. */
 export const FOUNDATIONS: Track = {
@@ -84,6 +98,20 @@ export const FOUNDATIONS: Track = {
     dsaModule,
     oopModule,
     patternsModule,
+    ivArraysModule,
+    ivPointersModule,
+    ivSortingModule,
+    ivTreesModule,
+    ivGraphsModule,
+    ivDpModule,
+    ivMathModule,
+    ivStringsModule,
+    ivRangesModule,
+    ivDatabaseModule,
+    ivShellModule,
+    ivConcurrencyModule,
+    ivJavascriptModule,
+    ivPandasModule,
     reliabilityModule,
     trafficModule,
     cachingModule,
