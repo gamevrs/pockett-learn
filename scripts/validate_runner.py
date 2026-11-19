@@ -41,7 +41,9 @@ for case in cases:
         continue
     ns = {"__name__": "__main__"}
     exec(prelude, ns)
-    run = json.loads(ns["_run_user"](case["source"]))
+    # a code step's hidden setup (Python only here; SQL setup runs in the SQL worker)
+    setup = json.loads(ns["_run_setup"](case["setup"])) if case.get("setup") else {"error": None}
+    run = {"stdout": "", "error": setup["error"]} if setup["error"] else json.loads(ns["_run_user"](case["source"]))
     entry = {"label": case["label"], "error": run["error"], "results": []}
     if not run["error"]:
         for t in case["tests"]:

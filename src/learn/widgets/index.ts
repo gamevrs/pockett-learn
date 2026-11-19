@@ -29,6 +29,7 @@ import { PROD_WIDGETS } from "./prod";
 import { SEMI_WIDGETS } from "./semi";
 import { CHIP_WIDGETS } from "./chip";
 import { EXPLAIN_WIDGETS } from "./explain";
+import { IV_WIDGETS } from "./iv";
 
 /** Every widget a concept lesson can use, keyed by WidgetSpec.type. One registry per module. */
 export const WIDGETS: WidgetRegistry = {
@@ -62,6 +63,7 @@ export const WIDGETS: WidgetRegistry = {
   ...SEMI_WIDGETS,
   ...CHIP_WIDGETS,
   ...EXPLAIN_WIDGETS,
+  ...IV_WIDGETS,
 };
 
 export function getWidget(type: string): WidgetDef | undefined {

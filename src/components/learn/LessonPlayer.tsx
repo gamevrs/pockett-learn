@@ -211,6 +211,8 @@ function StepFrame({
   const [code, setCode] = useState(() => (step.kind === "code" ? step.starter : ""));
   const [codeResult, setCodeResult] = useState<{ results: TestResult[]; stdout: string; error: string | null } | null>(null);
   const [running, setRunning] = useState(false);
+  // what the engine is doing during a slow first run ("Loading pandas…")
+  const [runStatus, setRunStatus] = useState<string | null>(null);
   const [hintsShown, setHintsShown] = useState(0);
   const primaryRef = useRef<() => void>(() => {});
 
@@ -260,7 +262,7 @@ function StepFrame({
     setRunning(true);
     try {
       const rt = await loadRuntime(step.language);
-      const graded = await rt.grade(code, step.tests);
+      const graded = await rt.grade(code, step.tests, { packages: step.packages, setup: step.setup, onStatus: setRunStatus });
       const error = graded.error ? `${graded.error.type}: ${graded.error.message}${graded.error.line ? ` (line ${graded.error.line})` : ""}` : null;
       setCodeResult({ results: graded.results, stdout: graded.stdout, error });
       setAttempts((n) => n + 1);
@@ -279,6 +281,7 @@ function StepFrame({
       setStatus("wrong");
     } finally {
       setRunning(false);
+      setRunStatus(null);
     }
   };
 
@@ -414,6 +417,11 @@ function StepFrame({
                       <CodeEditor value={code} onChange={setCode} onRun={() => void runCode()} onSubmit={() => void runCode()} language={languageInfo(step.language).monaco} errorLine={null} revealKey={seed} />
                     </div>
                   </div>
+                  {running && runStatus && (
+                    <p className="px-1 text-sm text-ink-3" aria-live="polite">
+                      {runStatus}
+                    </p>
+                  )}
                   {codeResult && (
                     <div className="card p-4 text-sm">
                       <ul className="grid gap-1.5">

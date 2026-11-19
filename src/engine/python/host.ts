@@ -161,6 +161,10 @@ async function ensurePackages(py: PyodideInstance, packages: string[] | undefine
     }
   }
   await Promise.all(wanted.map((name) => loadingPackages.get(name)));
+  if (wanted.some((name) => WARM_IMPORTS[name] && !warmed.has(name))) {
+    onStatus?.(`Starting ${wanted.filter((name) => WARM_IMPORTS[name]).join(", ")}…`);
+    warmImports(py, wanted);
+  }
 }
 
 /** Fire-and-forget warm-up so the first Run feels instant. */
@@ -178,7 +182,19 @@ export function preloadPython(eager = false) {
  * that stops a runaway loop quickly.
  */
 function runLimitFor(packages?: string[]): number {
+  if (packages?.includes("pandas")) return 15;
   return packages?.includes("numpy") ? 10 : 4;
+}
+
+/** Packages whose first import is slow (pandas takes seconds on a phone): imported once, outside the watchdog. */
+const WARM_IMPORTS: Record<string, string> = { pandas: "import pandas", numpy: "import numpy" };
+const warmed = new Set<string>();
+function warmImports(py: PyodideInstance, packages: string[]) {
+  for (const name of packages) {
+    if (!WARM_IMPORTS[name] || warmed.has(name)) continue;
+    py.runPython(WARM_IMPORTS[name]);
+    warmed.add(name);
+  }
 }
 
 /** A fresh, isolated namespace with the engine prelude installed. */
@@ -193,6 +209,7 @@ function createNamespace(py: PyodideInstance, runLimit = 4) {
   const call = fn("_call");
   const hasHook = fn("_has_hook");
   const runTest = fn("_run_test");
+  const runSetup = fn("_run_setup");
 
   const mod: PyModule = {
     run_user: (source) => runUser(source, runLimit) as string,
@@ -201,7 +218,7 @@ function createNamespace(py: PyodideInstance, runLimit = 4) {
     has_hook: (path) => Boolean(hasHook(path)),
     run_test: (code, stdout) => runTest(code, stdout) as string,
     dispose: () => {
-      for (const proxy of [runUser, snapshot, call, hasHook, runTest, ns]) {
+      for (const proxy of [runUser, snapshot, call, hasHook, runTest, runSetup, ns]) {
         try {
           proxy.destroy();
         } catch {
@@ -210,17 +227,28 @@ function createNamespace(py: PyodideInstance, runLimit = 4) {
       }
     },
   };
-  return mod;
+  /** Hidden lesson setup, run in the same namespace before the learner's code (compiled as its own file, so line numbers stay right). */
+  const setup = (source: string | undefined): RunError | null =>
+    source ? (JSON.parse(runSetup(source, Math.max(runLimit, 10)) as string) as { error: RunError | null }).error : null;
+  return { mod, setup };
 }
 
-export async function runProgram(source: string, onStatus?: StatusListener, packages?: string[]): Promise<RunOutcome> {
+/** Runs the hidden setup, then the learner's code. */
+function runWithSetup(ns: ReturnType<typeof createNamespace>, source: string, setup?: string): { stdout: string; error: RunError | null } {
+  const failed = ns.setup(setup);
+  if (failed) return { stdout: "", error: failed };
+  return JSON.parse(ns.mod.run_user(source)) as { stdout: string; error: RunError | null };
+}
+
+export async function runProgram(source: string, onStatus?: StatusListener, packages?: string[], setup?: string): Promise<RunOutcome> {
   const started = performance.now();
   const py = await loadPyodideOnce(onStatus);
   await ensurePackages(py, packages, onStatus);
   onStatus?.("Running your code…");
-  const mod = createNamespace(py, runLimitFor(packages));
+  const ns = createNamespace(py, runLimitFor(packages));
+  const mod = ns.mod;
   try {
-    const res = JSON.parse(mod.run_user(source)) as { stdout: string; error: RunError | null };
+    const res = runWithSetup(ns, source, setup);
     const durationMs = Math.round(performance.now() - started);
     if (res.error) {
       mod.dispose();
@@ -241,14 +269,16 @@ export async function gradeProgram(
   tests: TestCase[],
   onStatus?: StatusListener,
   packages?: string[],
+  setup?: string,
 ): Promise<GradeOutcome> {
   const started = performance.now();
   const py = await loadPyodideOnce(onStatus);
   await ensurePackages(py, packages, onStatus);
   onStatus?.("Grading…");
-  const mod = createNamespace(py, runLimitFor(packages));
+  const ns = createNamespace(py, runLimitFor(packages));
+  const mod = ns.mod;
   try {
-    const res = JSON.parse(mod.run_user(source)) as { stdout: string; error: RunError | null };
+    const res = runWithSetup(ns, source, setup);
     if (res.error) {
       return {
         stdout: res.stdout,

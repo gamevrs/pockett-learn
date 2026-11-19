@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { PROJECTS } from "@/content";
 import { FOUNDATIONS } from "@/content/foundations";
+import { visibleParts } from "@/learn/types";
 import { languageOf, type Difficulty, type LanguageId } from "@/engine/types";
 
 /**
@@ -60,7 +61,7 @@ function foundationsTrack(): CatalogTrack {
     title: FOUNDATIONS.title,
     blurb: FOUNDATIONS.tagline,
     kind: "foundations",
-    parts: FOUNDATIONS.parts.map((p) => ({ id: p.id, title: p.title, moduleIds: FOUNDATIONS.modules.filter((m) => m.part === p.id).map((m) => m.id) })),
+    parts: visibleParts(FOUNDATIONS).map((p) => ({ id: p.id, title: p.title, moduleIds: FOUNDATIONS.modules.filter((m) => m.part === p.id).map((m) => m.id) })),
     modules: FOUNDATIONS.modules.map((m) => ({
       id: m.id,
       title: m.title,

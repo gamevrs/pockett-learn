@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Check, Clock } from "lucide-react";
 import { FOUNDATIONS } from "@/content/foundations";
 import { TIERS, type Difficulty } from "@/engine/types";
-import { trackLessons, type Module } from "@/learn/types";
+import { trackLessons, visibleParts, type Module } from "@/learn/types";
 import { ModuleIcon } from "@/learn/module-icons";
 import { useProgress } from "@/data/progress/store";
 
@@ -15,7 +15,7 @@ export function FoundationsHub() {
   const done = lessons.filter((l) => progress.completed[l.id]).length;
   const pct = lessons.length ? Math.round((done / lessons.length) * 100) : 0;
   const nextLesson = lessons.find((l) => !progress.completed[l.id]) ?? null;
-  const parts = FOUNDATIONS.parts.map((part) => {
+  const parts = visibleParts(FOUNDATIONS).map((part) => {
     const modules = FOUNDATIONS.modules.filter((m) => m.part === part.id);
     const partLessons = modules.flatMap((m) => m.lessons);
     return {

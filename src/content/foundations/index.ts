@@ -28,6 +28,20 @@ import { dataModule } from "./data.ts";
 import { shippingModule } from "./shipping.ts";
 import { securityModule } from "./security.ts";
 import { aiSystemsModule } from "./ai-systems.ts";
+import { ivArraysModule } from "./iv-arrays.ts";
+import { ivPointersModule } from "./iv-pointers.ts";
+import { ivSortingModule } from "./iv-sorting.ts";
+import { ivTreesModule } from "./iv-trees.ts";
+import { ivGraphsModule } from "./iv-graphs.ts";
+import { ivDpModule } from "./iv-dp.ts";
+import { ivMathModule } from "./iv-math.ts";
+import { ivStringsModule } from "./iv-strings.ts";
+import { ivRangesModule } from "./iv-ranges.ts";
+import { ivDatabaseModule } from "./iv-database.ts";
+import { ivShellModule } from "./iv-shell.ts";
+import { ivConcurrencyModule } from "./iv-concurrency.ts";
+import { ivJavascriptModule } from "./iv-javascript.ts";
+import { ivPandasModule } from "./iv-pandas.ts";
 
 /** The Foundations track: from a single bit to design patterns, every step interactive. */
 export const FOUNDATIONS: Track = {
@@ -54,6 +68,12 @@ export const FOUNDATIONS: Track = {
       blurb: "Why silicon conducts, how a transistor switches, how a chip is drawn in code, checked, laid out and manufactured, then packaged and tested.",
     },
     { id: "building", title: "Building well: data structures, OOP and patterns", blurb: "Learn how to organise data, shape code into objects, and reuse ideas that good programmers have trusted for years." },
+    {
+      id: "interview",
+      title: "Interview practice: every coding-interview topic",
+      blurb:
+        "Every topic coding interviews ask about, from arrays and two pointers to graphs, dynamic programming and SQL. Watch each idea run step by step, predict the next move, then write the solution yourself and have it checked.",
+    },
     { id: "systems", title: "How production systems work", blurb: "Timeouts, retries, rate limits, caches, databases, deploys, observability, security and AI systems: what it takes for software to survive real traffic." },
   ],
   modules: [
@@ -78,6 +98,20 @@ export const FOUNDATIONS: Track = {
     dsaModule,
     oopModule,
     patternsModule,
+    ivArraysModule,
+    ivPointersModule,
+    ivSortingModule,
+    ivTreesModule,
+    ivGraphsModule,
+    ivDpModule,
+    ivMathModule,
+    ivStringsModule,
+    ivRangesModule,
+    ivDatabaseModule,
+    ivShellModule,
+    ivConcurrencyModule,
+    ivJavascriptModule,
+    ivPandasModule,
     reliabilityModule,
     trafficModule,
     cachingModule,

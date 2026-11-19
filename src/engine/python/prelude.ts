@@ -66,6 +66,20 @@ def _run_user(source, limit=4.0):
         error = _describe(exc, "main.py")
     return _json.dumps({"stdout": buffer.getvalue(), "error": error})
 
+def _run_setup(source, limit=10.0):
+    """A lesson's hidden setup (e.g. building a DataFrame), run before the learner's code. Its output is hidden."""
+    error = None
+    try:
+        code = compile(source, "setup.py", "exec")
+        with _ctx.redirect_stdout(_io.StringIO()), _ctx.redirect_stderr(_io.StringIO()):
+            _guarded(lambda: exec(code, globals()), limit)
+    except BaseException as exc:
+        error = _describe(exc, "setup.py")
+        error["message"] = "The lesson's hidden setup failed: " + error["type"] + ": " + error["message"]
+        error["type"] = "SetupError"
+        error["line"] = None
+    return _json.dumps({"error": error})
+
 def _snapshot():
     skip = {"__name__", "__builtins__", "__doc__"}
     variables = {}
