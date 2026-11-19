@@ -1,6 +1,8 @@
 import type { ConceptLesson, Module } from "../../learn/types.ts";
+import { ivRangesLessonsA } from "./iv-ranges-a.ts";
+import { ivRangesLessonsB } from "./iv-ranges-b.ts";
 
-const lessons: ConceptLesson[] = [];
+const lessons: ConceptLesson[] = [...ivRangesLessonsA, ...ivRangesLessonsB];
 
 export const ivRangesModule: Module = {
   id: "iv-ranges",

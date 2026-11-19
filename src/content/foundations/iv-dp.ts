@@ -1,6 +1,8 @@
 import type { ConceptLesson, Module } from "../../learn/types.ts";
+import { ivDpLessonsA } from "./iv-dp-a.ts";
+import { ivDpLessonsB } from "./iv-dp-b.ts";
 
-const lessons: ConceptLesson[] = [];
+const lessons: ConceptLesson[] = [...ivDpLessonsA, ...ivDpLessonsB];
 
 export const ivDpModule: Module = {
   id: "iv-dp",

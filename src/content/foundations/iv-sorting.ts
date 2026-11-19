@@ -1,6 +1,6 @@
-import type { ConceptLesson, Module } from "../../learn/types.ts";
-
-const lessons: ConceptLesson[] = [];
+import type { Module } from "../../learn/types.ts";
+import { ivSortingLessonsA } from "./iv-sorting-a.ts";
+import { ivSortingLessonsB } from "./iv-sorting-b.ts";
 
 export const ivSortingModule: Module = {
   id: "iv-sorting",
@@ -8,5 +8,5 @@ export const ivSortingModule: Module = {
   title: "Sorting, searching and divide and conquer",
   blurb: "Merge sort, quickselect, counting, bucket and radix sort, binary search, divide and conquer and sweep lines.",
   icon: "gauge",
-  lessons,
+  lessons: [...ivSortingLessonsA, ...ivSortingLessonsB],
 };

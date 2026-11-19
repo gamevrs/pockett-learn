@@ -1,6 +1,6 @@
-import type { ConceptLesson, Module } from "../../learn/types.ts";
-
-const lessons: ConceptLesson[] = [];
+import type { Module } from "../../learn/types.ts";
+import { mathLessonsA } from "./iv-math-a.ts";
+import { mathLessonsB } from "./iv-math-b.ts";
 
 export const ivMathModule: Module = {
   id: "iv-math",
@@ -8,5 +8,5 @@ export const ivMathModule: Module = {
   title: "Maths for coding interviews",
   blurb: "Number theory, bit tricks, combinatorics, geometry, probability, randomized algorithms, sampling and brainteasers.",
   icon: "atom",
-  lessons,
+  lessons: [...mathLessonsA, ...mathLessonsB],
 };
