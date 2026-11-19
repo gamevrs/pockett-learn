@@ -63,6 +63,14 @@ export type Step =
       solution: string;
       tests: TestCase[];
       hints?: string[];
+      /** Python only: Pyodide packages to load before the code runs, e.g. ["pandas"] (loaded once per page). */
+      packages?: string[];
+      /**
+       * Hidden source that runs before the learner's code. SQL: the schema and seed rows (like Project.setup).
+       * Python: code run in the same namespace first (its output is hidden, the learner's line numbers stay
+       * correct), e.g. building a DataFrame the learner then works on. Not supported for JavaScript.
+       */
+      setup?: string;
     }
   /** Closing summary of the lesson's key ideas. */
   | { kind: "recap"; title?: string; points: string[] };
@@ -107,6 +115,11 @@ export interface Track {
   /** Parts group modules into parallel paths; modules are listed in part order. */
   parts: TrackPart[];
   modules: Module[];
+}
+
+/** The parts that have at least one module. A part announced before its lessons exist stays hidden everywhere. */
+export function visibleParts(track: Track): TrackPart[] {
+  return track.parts.filter((p) => track.modules.some((m) => m.part === p.id));
 }
 
 export function trackLessons(track: Track): ConceptLesson[] {

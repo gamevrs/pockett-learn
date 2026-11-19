@@ -1,6 +1,7 @@
 // Validates every project's lessons against the real engines (Python, JavaScript, SQL) and, with
 // RUNNER_BASE_URL set, the pockett runner (C#, C++, Go, Rust).
-//   node scripts/validate-content.mjs [slug]
+//   node scripts/validate-content.mjs [slug] [lessonFilter]
+//   node scripts/validate-content.mjs foundations fnd-iv-   (only Foundations lessons whose id contains "fnd-iv-")
 //   RUNNER_BASE_URL=https://www.pockett.ai node scripts/validate-content.mjs csharp-basics
 // Server-language lessons call ${RUNNER_BASE_URL}/api/run (throttled to stay under its rate limit,
 // retried on 429/5xx) and are judged with the browser runtime's own rules (remote-output.ts).
@@ -27,6 +28,13 @@ import { readFileSync, existsSync } from "node:fs";
 import { parseOutput, prepareSource, runChecks, shiftResult, toError } from "../src/engine/runtimes/remote-output.ts";
 import { FOUNDATIONS } from "../src/content/foundations/index.ts";
 import { friendlyFailure } from "../src/engine/runtimes/friendly.ts";
+import { register } from "node:module";
+
+// widget modules import each other without extensions (as the app does); the repo's resolve hook handles that
+register(new URL("./ts-alias-hooks.mjs", import.meta.url).href);
+const { traceProblems } = await import("../src/learn/widgets/iv/model.ts");
+const { checkTerminal, TERMINAL_GOAL_KEYS } = await import("../src/learn/widgets/unix/goals.ts");
+const { createShell, run: runShell, shellState, BASE_TIME } = await import("../src/learn/widgets/unix/shell.ts");
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const only = process.argv[2];
@@ -133,7 +141,8 @@ if (!only || only === "foundations") {
     else if (pi < lastPart) problems.push(`foundations/${mod.id}: module order interleaves parts (part "${mod.part}" comes after a later part)`);
     else lastPart = pi;
   }
-  for (const p of partIds) if (!FOUNDATIONS.modules.some((m) => m.part === p)) problems.push(`foundations: part "${p}" has no modules`);
+  // a part with no modules yet is hidden everywhere (visibleParts in src/learn/types.ts); flag it so it is not forgotten
+  for (const p of partIds) if (!FOUNDATIONS.modules.some((m) => m.part === p)) warn.push(`foundations: part "${p}" has no modules yet (hidden until it has one)`);
   for (const mod of FOUNDATIONS.modules) {
     // optional lesson levels: a known tier, never going backwards within a module
     let lastTier = -1;
@@ -182,6 +191,30 @@ if (!only || only === "foundations") {
         const stag = `${tag} step ${si + 1}`;
         const widget = (st.kind === "explain" || st.kind === "question") && st.widget;
         if (widget && !widgetTypes.has(widget.type)) problems.push(`${stag}: unknown widget "${widget.type}"`);
+        // iv-trace: frames must be consistent (pointers inside the array, picks answerable, ...)
+        if (widget && widget.type === "iv-trace") {
+          for (const p of traceProblems(widget.props)) problems.push(`${stag}: ${p}`);
+          const goal = st.kind === "question" && st.question.type === "widget" ? st.question.goal : null;
+          if (goal?.picked && !(widget.props?.frames ?? []).some((f) => f.pick)) problems.push(`${stag}: goal { picked: true } but no frame has a pick`);
+          if (goal && !["seenAll", "picked", "frame"].some((k) => k in goal)) problems.push(`${stag}: iv-trace goals are { seenAll: true }, { picked: true } or { frame: N }`);
+        }
+        // unix-terminal: goal keys must exist, and the step's `solution` commands must reach the goal
+        if (widget && widget.type === "unix-terminal" && st.kind === "question" && st.question.type === "widget") {
+          const goal = st.question.goal ?? {};
+          for (const k of Object.keys(goal)) if (!TERMINAL_GOAL_KEYS.includes(k)) problems.push(`${stag}: unknown terminal goal "${k}" (known: ${TERMINAL_GOAL_KEYS.join(", ")})`);
+          const pr = widget.props ?? {};
+          if (Array.isArray(pr.solution) && pr.solution.length) {
+            let sh = createShell({ files: pr.files, cwd: pr.cwd, user: pr.user, host: pr.host, groups: pr.groups, env: pr.env, procs: pr.procs, commands: null, history: pr.history });
+            for (const line of pr.preRun ?? []) sh = runShell(sh, line, BASE_TIME).shell;
+            sh = { ...sh, typed: 0, allowed: pr.commands ?? null };
+            // a foreground sleep would wait for real time in the widget; the validator cannot follow it
+            for (const line of pr.solution) if (!sh.fg) sh = runShell(sh, line, BASE_TIME).shell;
+            if (!sh.fg && !checkTerminal(shellState(sh, BASE_TIME), goal)) {
+              const last = shellState(sh, BASE_TIME).last;
+              problems.push(`${stag}: running the terminal's solution (${pr.solution.join(" ⏎ ")}) does not reach the goal ${JSON.stringify(goal)}; last output: ${JSON.stringify(last.output.slice(0, 200))}`);
+            }
+          }
+        }
         if (st.kind === "question") {
           const q = st.question;
           if (!st.explanation) problems.push(`${stag}: question without an explanation`);
@@ -217,8 +250,16 @@ if (!only || only === "foundations") {
         }
         if (st.kind === "code") {
           if (st.tests.length < 2) problems.push(`${stag}: code step needs at least 2 tests`);
-          cases.push({ label: `${stag}::solution`, language: st.language, setup: "", source: st.solution, tests: st.tests, expect: "pass" });
-          cases.push({ label: `${stag}::starter`, language: st.language, setup: "", source: st.starter, tests: st.tests, expect: "fail" });
+          // packages are Pyodide packages (Python only); setup is hidden source run first (SQL schema, or Python code)
+          if (st.packages !== undefined && (!Array.isArray(st.packages) || st.packages.some((p) => typeof p !== "string" || !p))) problems.push(`${stag}: packages must be a list of package names`);
+          if (st.packages?.length && st.language !== "python") problems.push(`${stag}: packages only apply to Python code steps`);
+          if (st.setup !== undefined && typeof st.setup !== "string") problems.push(`${stag}: setup must be a string`);
+          if (typeof st.setup === "string" && st.language !== "sql" && st.language !== "python") problems.push(`${stag}: setup only works for SQL and Python code steps`);
+          if (lessonFilter && !lesson.id.includes(lessonFilter)) return;
+          const setup = typeof st.setup === "string" ? st.setup : "";
+          const packages = Array.isArray(st.packages) ? st.packages : [];
+          cases.push({ label: `${stag}::solution`, language: st.language, setup, packages, source: st.solution, tests: st.tests, expect: "pass" });
+          cases.push({ label: `${stag}::starter`, language: st.language, setup, packages, source: st.starter, tests: st.tests, expect: "fail" });
         }
       });
     }
@@ -229,10 +270,30 @@ if (!only || only === "foundations") {
 // the exact engine code the browser uses.
 const pyCases = cases.filter((c) => c.language === "python");
 const pyResults = [];
+
+/**
+ * The browser runs Pyodide 0.26 (Python 3.12), so lessons may use 3.10+ syntax (`int | None`). Use $PYTHON if set,
+ * otherwise the first of python3.12, python3.13, python3.11, python3.10, python3 that is at least 3.10 (falling back to python3).
+ */
+function pickPython() {
+  if (process.env.PYTHON) return process.env.PYTHON;
+  if (process.platform === "win32") return "python";
+  for (const bin of ["python3.12", "python3.13", "python3.11", "python3.10", "python3"]) {
+    const r = spawnSync(bin, ["-c", "import sys;print(sys.version_info >= (3, 10))"], { encoding: "utf8" });
+    if (r.status === 0 && r.stdout.trim() === "True") return bin;
+  }
+  return "python3";
+}
+const pythonBin = pyCases.length ? pickPython() : "python3";
+/** Pyodide packages CPython does not bundle, and the pip requirement that matches them closely enough locally. */
+const PIP_NAMES = { pandas: "pandas>=2.2,<3", numpy: "numpy" };
+function canImport(name) {
+  const probe = "import site,sys;sys.path.append(site.getusersitepackages())\nimport importlib;importlib.import_module(sys.argv[1])";
+  return spawnSync(pythonBin, ["-I", "-c", probe, name], { encoding: "utf8" }).status === 0;
+}
 if (pyCases.length) {
   // "micropip:name==1.2.3" packages are pure-Python PyPI wheels (installed with micropip in the
   // browser). Locally the exact version must be installed too, so install it if it is missing.
-  const pythonBin = process.platform === "win32" ? "python" : "python3";
   const wheelSpecs = [...new Set(pyCases.flatMap((c) => c.packages ?? []).filter((p) => p.startsWith("micropip:")).map((p) => p.slice("micropip:".length)))];
   const installedVersion = (name) => {
     const probe = "import site,sys;sys.path.append(site.getusersitepackages())\nfrom importlib.metadata import version\nprint(version(sys.argv[1]))";
@@ -249,12 +310,22 @@ if (pyCases.length) {
       warn.push(`could not install ${spec} locally (${(r.stderr || "").trim().split("\n").pop()}); run it yourself: ${cmd}. Cases that need it are skipped.`);
     }
   }
+  // Plain Pyodide packages that CPython does not bundle (e.g. "pandas") are pip-installed locally if missing.
+  for (const name of new Set(pyCases.flatMap((c) => c.packages ?? []).filter((p) => PIP_NAMES[p]))) {
+    if (canImport(name)) continue;
+    const cmd = `${pythonBin} -m pip install --user "${PIP_NAMES[name]}"`;
+    console.log(`validator: ${name} is not importable locally; running: ${cmd}`);
+    const r = spawnSync(pythonBin, ["-m", "pip", "install", "--user", "--quiet", "--disable-pip-version-check", PIP_NAMES[name]], { encoding: "utf8" });
+    if (r.status !== 0 || !canImport(name)) {
+      warn.push(`could not install ${name} locally (${(r.stderr || "").trim().split("\n").pop()}); run it yourself: ${cmd}. Cases that need it are skipped.`);
+    }
+  }
   const tmp = mkdtempSync(join(tmpdir(), "pockett-validate-"));
   const casesFile = join(tmp, "cases.json");
   const preludeFile = join(tmp, "prelude.py");
   writeFileSync(casesFile, JSON.stringify(pyCases));
   writeFileSync(preludeFile, ENGINE_PRELUDE);
-  const py = spawnSync(process.platform === "win32" ? "python" : "python3", ["-I", join(here, "validate_runner.py"), casesFile, preludeFile], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  const py = spawnSync(pythonBin, ["-I", join(here, "validate_runner.py"), casesFile, preludeFile], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   if (py.status !== 0) {
     console.error(py.stderr || py.stdout);
     process.exit(1);

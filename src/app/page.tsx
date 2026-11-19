@@ -9,7 +9,7 @@ import { ProjectCard, UpcomingCard } from "@/components/projects/ProjectCard";
 import { FeatureIcon } from "@/components/ui/icons";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { FOUNDATIONS } from "@/content/foundations";
-import { trackLessons } from "@/learn/types";
+import { trackLessons, visibleParts } from "@/learn/types";
 import { ModuleIcon } from "@/learn/module-icons";
 
 const LESSON_COUNT = PROJECTS.reduce((n, p) => n + flattenLessons(p).length, 0) + trackLessons(FOUNDATIONS).length;
@@ -191,7 +191,7 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="mt-10 grid gap-5 lg:grid-cols-2">
-          {FOUNDATIONS.parts.map((part, pi) => (
+          {visibleParts(FOUNDATIONS).map((part, pi) => (
             <div key={part.id} className="card p-6">
               <p className="eyebrow">Part {pi + 1}</p>
               <p className="mt-2 text-xl font-semibold tracking-tight">{part.title}</p>

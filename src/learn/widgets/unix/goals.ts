@@ -12,6 +12,8 @@ import { parseMode, modeString, type TerminalState } from "./shell";
  * - executable: ["~/run.sh"]               the owner may run it
  * - output: "3"                            the last command printed exactly this (trailing space ignored)
  * - outputIncludes: "ERROR" | [...]        the last output includes each text
+ * - outputMatches: "^the 4\\nis 3"         regex the last output must match (trailing spaces on each line and
+ *                                          trailing newlines are dropped first, as for `output`)
  * - lastCommand: "^grep .*\\|"            regex the last command must match
  * - historyMatches: ["^ls", "^cd"]         each regex must match a command typed in this terminal
  * - code: 0                                exit status of the last command
@@ -33,6 +35,7 @@ export type TerminalGoal = Partial<{
   executable: string[];
   output: string;
   outputIncludes: string | string[];
+  outputMatches: string;
   lastCommand: string;
   historyMatches: string[];
   code: number;
@@ -44,9 +47,10 @@ export type TerminalGoal = Partial<{
   maxCommands: number;
 }>;
 
-const KNOWN = [
+/** Every goal key the terminal understands (the validator rejects others). */
+export const TERMINAL_GOAL_KEYS = [
   "cwd", "exists", "missing", "dirs", "files", "content", "contains", "mode", "executable", "output", "outputIncludes",
-  "lastCommand", "historyMatches", "code", "env", "envIncludes", "killed", "running", "notRunning", "maxCommands",
+  "outputMatches", "lastCommand", "historyMatches", "code", "env", "envIncludes", "killed", "running", "notRunning", "maxCommands",
 ];
 
 const trimLines = (s: string) => s.replace(/\r/g, "").split("\n").map((l) => l.replace(/\s+$/, "")).join("\n").replace(/\n+$/, "");
@@ -56,7 +60,7 @@ export function checkTerminal(state: unknown, goal: Record<string, unknown>): bo
   const s = state as TerminalState | undefined;
   if (!s || !s.files) return false;
   const g = goal as TerminalGoal;
-  if (!KNOWN.some((k) => k in goal)) return false;
+  if (!TERMINAL_GOAL_KEYS.some((k) => k in goal)) return false;
   const abs = (p: string) => {
     const full = p === "~" ? s.home : p.startsWith("~/") ? s.home + p.slice(1) : p;
     return full.length > 1 ? full.replace(/\/$/, "") : full;
@@ -87,6 +91,7 @@ export function checkTerminal(state: unknown, goal: Record<string, unknown>): bo
     const wants = Array.isArray(g.outputIncludes) ? g.outputIncludes : [g.outputIncludes];
     if (wants.some((w) => !s.last.output.includes(w))) return false;
   }
+  if (g.outputMatches !== undefined && !re(g.outputMatches)?.test(trimLines(s.last.output))) return false;
   if (g.lastCommand !== undefined && !re(g.lastCommand)?.test(s.last.command)) return false;
   if (g.historyMatches?.some((src) => !s.history.some((h) => re(src)?.test(h)))) return false;
   if (g.code !== undefined && s.last.code !== g.code) return false;

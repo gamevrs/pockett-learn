@@ -4,8 +4,11 @@
  * The file system is a flat map from absolute path to entry. A shell state is plain data, so the
  * widget can clone it, report it to goal checks, and reset it. `run()` executes one command line
  * (lists with ; && ||, pipelines, redirections, background jobs, globbing, $VARS, scripts) and
- * returns what to print. Error messages follow bash and GNU coreutils.
+ * returns what to print. Error messages follow bash and GNU coreutils. The text tools (tr, sed, cut, awk, paste,
+ * rev, tac, seq, printf) live in text-tools.ts.
  */
+
+import { posixToJs, TEXT_TOOLS, type ToolIo } from "./text-tools";
 
 // ───────────────────────────── Data ─────────────────────────────
 
@@ -107,6 +110,7 @@ const BIN_SIZES: Record<string, number> = {
   cp: 141832, mv: 137752, rm: 59912, head: 43328, tail: 64288, wc: 47744, grep: 186144, sort: 104952, uniq: 43488,
   chmod: 64448, whoami: 35144, id: 39424, groups: 35184, ps: 145608, kill: 30952, sleep: 35128, which: 1072, env: 48536,
   printenv: 31008, date: 104968, hostname: 22760, clear: 14568, uname: 35192, true: 26944, false: 26944, tee: 39432, man: 125168,
+  tr: 51520, sed: 117304, cut: 47552, awk: 719448, xargs: 64760, paste: 39384, rev: 14592, seq: 51424, tac: 39424, printf: 51520,
 };
 
 export type FileSpecValue = string | null | { content?: string; mode?: string | number; owner?: string; group?: string; dir?: boolean };
@@ -978,8 +982,18 @@ export const HELP: Record<string, [string, string]> = {
   head: ["head [-n N] [FILE]...", "Print the first 10 lines (or N lines) of each file."],
   tail: ["tail [-n N] [FILE]...", "Print the last 10 lines (or N lines) of each file. `-n +N` starts at line N."],
   wc: ["wc [-l] [-w] [-c] [FILE]...", "Count lines, words and bytes.\n  -l  lines only\n  -w  words only\n  -c  bytes only"],
-  grep: ["grep [-i] [-v] [-n] [-c] [-r] [-E] [-F] PATTERN [FILE]...", "Print the lines that match PATTERN.\n  -i  ignore upper/lower case\n  -v  print lines that do NOT match\n  -n  show line numbers\n  -c  count matching lines\n  -r  search directories recursively\n  -E  extended regular expressions\n  -F  PATTERN is plain text"],
-  sort: ["sort [-r] [-n] [-u] [FILE]...", "Sort lines.\n  -r  reverse\n  -n  compare as numbers\n  -u  drop repeated lines"],
+  grep: ["grep [-i] [-v] [-n] [-c] [-o] [-w] [-r] [-E] [-F] PATTERN [FILE]...", "Print the lines that match PATTERN.\n  -i  ignore upper/lower case\n  -v  print lines that do NOT match\n  -n  show line numbers\n  -c  count matching lines\n  -o  print only the matching parts\n  -w  match whole words only\n  -r  search directories recursively\n  -E  extended regular expressions\n  -F  PATTERN is plain text"],
+  sort: ["sort [-r] [-n] [-u] [-k N[,M]] [-t SEP] [FILE]...", "Sort lines.\n  -r  reverse\n  -n  compare as numbers\n  -u  drop repeated lines\n  -k  sort by field N (to field M), e.g. -k2,2n\n  -t  fields are separated by SEP instead of blanks\n  -s  stable: keep equal lines in their original order\n  -f  ignore upper/lower case"],
+  tr: ["tr [-c] [-d] [-s] SET1 [SET2]", "Translate, squeeze or delete characters from standard input. Sets: abc, a-z, [:upper:], \\n.\n  -d  delete the characters in SET1\n  -s  squeeze runs of a repeated character into one\n  -c  use every character NOT in SET1"],
+  sed: ["sed [-n] [-E] [-i] [-e SCRIPT]... [SCRIPT] [FILE]...", "Edit a stream of lines with a small script, e.g. 's/old/new/g', '10p', '2,4d', '/re/p'.\n  -n  print only what the script prints (p)\n  -E  extended regular expressions\n  -e  add a script (can be repeated)\n  -i  edit the files in place"],
+  cut: ["cut -d SEP -f LIST | -c LIST [FILE]...", "Print selected fields or characters of each line.\n  -d  field separator (default: tab)\n  -f  fields, e.g. 1,3 or 2-4 or 3-\n  -c  character positions\n  -s  skip lines without the separator"],
+  awk: ["awk [-F SEP] [-v VAR=VALUE] 'PROGRAM' [FILE]...", "Pattern scanning: for each line that matches a pattern, run an action. $1 $2 … are fields, NF their count, NR the line number. e.g. awk '{print $2}', awk -F, 'NR>1 {s += $3} END {print s}'.\n  -F  field separator (a character or regex)\n  -v  set a variable before the program starts"],
+  xargs: ["xargs [-n N] [-I STR] [COMMAND [ARG]...]", "Run COMMAND with arguments read from standard input (default: echo).\n  -n  at most N arguments per run\n  -I  run once per input line, replacing STR in the arguments"],
+  paste: ["paste [-s] [-d LIST] [FILE]...", "Join lines of files side by side, separated by tabs.\n  -d  use the characters in LIST as separators\n  -s  join all lines of each file into one line"],
+  rev: ["rev [FILE]...", "Reverse the characters of every line."],
+  tac: ["tac [FILE]...", "Print lines in reverse order (last line first)."],
+  seq: ["seq [-s SEP] [-w] [FIRST [STEP]] LAST", "Print numbers from FIRST (default 1) to LAST, counting by STEP.\n  -s  separator (default: newline)\n  -w  pad with zeros to equal width"],
+  printf: ["printf FORMAT [ARGUMENT]...", "Print ARGUMENTs formatted by FORMAT, like C's printf: %s %d %5.2f %x, with \\n for a newline."],
   uniq: ["uniq [-c] [-d] [-u] [FILE]", "Collapse runs of identical neighbouring lines into one. Sort first to catch all repeats.\n  -c  prefix each line with how many times it repeated\n  -d  only print repeated lines\n  -u  only print lines that never repeat"],
   chmod: ["chmod [-R] MODE FILE...", "Change permissions. MODE is octal (755) or symbolic (u+x, go-w, a=r, u=rwx,g=rx,o=).\n  -R  change directories and everything in them"],
   whoami: ["whoami", "Print your user name."],
@@ -1375,7 +1389,11 @@ function program(c: Call, bin: string): number {
     out(c, `Usage: ${help[0]}\n${help[1]}\n`);
     return 0;
   }
+  const tool = TEXT_TOOLS[bin];
+  if (tool) return tool(toolIo(c, bin));
   switch (bin) {
+    case "xargs":
+      return xargs(c);
     case "bash":
     case "sh": {
       if (c.argv.length === 0) return 0;
@@ -1558,31 +1576,8 @@ function program(c: Call, bin: string): number {
       return wc(c);
     case "grep":
       return grep(c);
-    case "sort": {
-      const p = opts(c.argv, "rnuf");
-      if (p.bad) return badOption(c, p, 2);
-      let text = "";
-      let code = 0;
-      for (const f of p.rest.length ? p.rest : ["-"]) {
-        const t = f === "-" ? c.io.stdin ?? "" : readFile(c, f, "plain");
-        if (t === null) {
-          code = 2;
-          continue;
-        }
-        text += t.endsWith("\n") || t === "" ? t : t + "\n";
-      }
-      if (code) return code;
-      let lines = splitLines(text);
-      const num = (s: string) => {
-        const m = /^\s*(-?\d+(\.\d+)?)/.exec(s);
-        return m ? Number(m[1]) : 0;
-      };
-      const cmp = p.flags.has("n") ? (a: string, b: string) => num(a) - num(b) || lineCompare(a, b) : lineCompare;
-      lines.sort((a, b) => (p.flags.has("r") ? -cmp(a, b) : cmp(a, b)));
-      if (p.flags.has("u")) lines = lines.filter((l, i) => i === 0 || cmp(lines[i - 1], l) !== 0);
-      out(c, lines.map((l) => l + "\n").join(""));
-      return 0;
-    }
+    case "sort":
+      return sort(c);
     case "uniq": {
       const p = opts(c.argv, "cdui");
       if (p.bad) return badOption(c, p);
@@ -2004,6 +1999,201 @@ function rm(c: Call): number {
   return code;
 }
 
+/** The view of the shell a text tool gets: its arguments, standard input, and file access with GNU-style errors. */
+function toolIo(c: Call, bin: string): ToolIo {
+  const { sh, rc } = c;
+  return {
+    name: bin,
+    argv: c.argv,
+    stdin: c.io.stdin,
+    read: (path) => (path === "-" ? c.io.stdin ?? "" : readFile({ ...c, name: bin }, path)),
+    write: (path, content) => {
+      const w = walk(sh, path);
+      if (!w.ok || !w.entry || w.entry.kind === "dir") {
+        err(c, `${bin}: couldn't edit ${path}: ${!w.ok ? MSG[w.err] : w.entry ? "not a regular file" : MSG.ENOENT}`);
+        return false;
+      }
+      if (!can(sh, w.entry, W)) {
+        err(c, `${bin}: couldn't open file ${path}: Permission denied`);
+        return false;
+      }
+      w.entry.content = content;
+      w.entry.mtime = rc.now;
+      return true;
+    },
+    out: (t) => out(c, t),
+    err: (l) => err(c, l),
+  };
+}
+
+interface SortKey {
+  start: number;
+  end: number | null;
+  opts: string;
+}
+
+/** sort with GNU's key fields: -k N[,M][bfnr] (repeatable) and -t SEP. */
+function sort(c: Call): number {
+  const flags = new Set<string>();
+  const keys: SortKey[] = [];
+  let sep: string | null = null;
+  const files: string[] = [];
+  const a = c.argv;
+  const bad = (msg: string) => {
+    err(c, `sort: ${msg}`);
+    err(c, tryHelp("sort"));
+    return 2;
+  };
+  for (let i = 0; i < a.length; i++) {
+    const arg = a[i];
+    if (arg === "--") {
+      files.push(...a.slice(i + 1));
+      break;
+    }
+    if (arg === "--help") {
+      out(c, `Usage: ${HELP.sort[0]}\n${HELP.sort[1]}\n`);
+      return 0;
+    }
+    if (arg.startsWith("--")) return bad(`unrecognized option '${arg}'`);
+    if (!arg.startsWith("-") || arg === "-") {
+      files.push(arg);
+      continue;
+    }
+    for (let j = 1; j < arg.length; j++) {
+      const ch = arg[j];
+      if (ch === "k" || ch === "t") {
+        const v = j + 1 < arg.length ? arg.slice(j + 1) : a[++i];
+        if (v === undefined) return bad(`option requires an argument -- '${ch}'`);
+        if (ch === "t") {
+          if (v.length !== 1) return bad(`multi-character tab '${v}'`);
+          sep = v;
+        } else {
+          const m = /^(\d+)(?:\.\d+)?([bdfginr]*)(?:,(\d+)(?:\.\d+)?([bdfginr]*))?$/.exec(v);
+          if (!m || Number(m[1]) < 1) return bad(`invalid number at field start: invalid count at start of '${v}'`);
+          keys.push({ start: Number(m[1]), end: m[3] ? Number(m[3]) : null, opts: (m[2] ?? "") + (m[4] ?? "") });
+        }
+        break;
+      }
+      if (!"rnufsbg".includes(ch)) return bad(`invalid option -- '${ch}'`);
+      flags.add(ch === "g" ? "n" : ch);
+    }
+  }
+  let text = "";
+  let code = 0;
+  for (const f of files.length ? files : ["-"]) {
+    const t = f === "-" ? c.io.stdin ?? "" : readFile(c, f, "plain");
+    if (t === null) {
+      code = 2;
+      continue;
+    }
+    text += t.endsWith("\n") || t === "" ? t : t + "\n";
+  }
+  if (code) return code;
+  let lines = splitLines(text);
+  const num = (s: string) => {
+    const m = /^\s*(-?\d+(\.\d+)?)/.exec(s);
+    return m ? Number(m[1]) : 0;
+  };
+  // without -t a field is a run of non-blanks together with the blanks before it, as in GNU sort
+  const fieldsOf = (line: string) => (sep !== null ? line.split(sep) : line.match(/\s*\S+/g) ?? []);
+  const keyOf = (line: string, k: SortKey) => {
+    const fs = fieldsOf(line);
+    const picked = fs.slice(k.start - 1, k.end === null ? fs.length : k.end);
+    return picked.join(sep ?? "");
+  };
+  const compareBy = (x: string, y: string, o: string) => {
+    if (o.includes("n")) return num(x) - num(y);
+    if (sep === null || o.includes("b")) {
+      x = x.replace(/^\s+/, "");
+      y = y.replace(/^\s+/, "");
+    }
+    return lineCompare(x, y);
+  };
+  const global = [...flags].filter((f) => "bfnr".includes(f)).join("");
+  const keyed = (x: string, y: string) => {
+    for (const k of keys) {
+      const o = /[bfnr]/.test(k.opts) ? k.opts : global;
+      const r = compareBy(keyOf(x, k), keyOf(y, k), o);
+      if (r) return o.includes("r") ? -r : r;
+    }
+    return 0;
+  };
+  const primary = keys.length ? keyed : (x: string, y: string) => (flags.has("n") ? num(x) - num(y) : 0);
+  const reverse = flags.has("r");
+  // the last resort (unless -s): compare whole lines
+  const cmp = (x: string, y: string) => {
+    const r = keys.length ? primary(x, y) : reverse ? -primary(x, y) : primary(x, y);
+    if (r || flags.has("s")) return r;
+    return reverse ? -lineCompare(x, y) : lineCompare(x, y);
+  };
+  lines.sort(cmp);
+  if (flags.has("u")) lines = lines.filter((l, i) => i === 0 || (keys.length ? primary(lines[i - 1], l) : flags.has("n") ? num(lines[i - 1]) - num(l) : lineCompare(lines[i - 1], l)) !== 0);
+  out(c, lines.map((l) => l + "\n").join(""));
+  return 0;
+}
+
+/** xargs: build command lines from standard input. Words are split on blanks; quotes and backslashes group them. */
+function xargs(c: Call): number {
+  const p = opts(c.argv.slice(0, firstOperand(c.argv, "nIdL")), "rt0", "nIdL");
+  if (p.bad) return badOption(c, p);
+  const cmd = c.argv.slice(firstOperand(c.argv, "nIdL"));
+  const input = c.io.stdin ?? "";
+  const words: string[] = [];
+  if (p.vals.I !== undefined || p.vals.L !== undefined) {
+    for (const line of splitLines(input)) if (line.trim()) words.push(p.vals.I !== undefined ? line.replace(/^\s+/, "") : line);
+  } else if (p.flags.has("0") || p.vals.d !== undefined) {
+    const d = p.flags.has("0") ? "\0" : p.vals.d === "\\n" ? "\n" : (p.vals.d as string);
+    words.push(...input.split(d).filter((w, i, all) => w !== "" || i < all.length - 1));
+  } else {
+    const re = /(?:'([^']*)'|"([^"]*)"|\\(.)|(\S))/g;
+    let cur: string | null = null;
+    let last = 0;
+    for (const m of input.matchAll(re)) {
+      if (cur !== null && /\s/.test(input.slice(last, m.index))) {
+        words.push(cur);
+        cur = null;
+      }
+      cur = (cur ?? "") + (m[1] ?? m[2] ?? m[3] ?? m[4]);
+      last = (m.index ?? 0) + m[0].length;
+    }
+    if (cur !== null) words.push(cur);
+  }
+  const base = cmd.length ? cmd : ["echo"];
+  const runs: string[][] = [];
+  if (p.vals.I !== undefined) {
+    const rep = p.vals.I;
+    for (const w of words) runs.push(base.map((arg) => arg.split(rep).join(w)));
+  } else {
+    const n = p.vals.n !== undefined ? Number(p.vals.n) : p.vals.L !== undefined ? Number(p.vals.L) : Infinity;
+    if (!(n >= 1)) {
+      err(c, `xargs: invalid number "${p.vals.n ?? p.vals.L}" for -${p.vals.n !== undefined ? "n" : "L"} option`);
+      return 1;
+    }
+    for (let i = 0; i < words.length; i += n === Infinity ? Math.max(1, words.length) : n) runs.push([...base, ...words.slice(i, i + (n === Infinity ? words.length : n))]);
+    // like GNU xargs, the command still runs once when there is no input (unless -r)
+    if (runs.length === 0 && !p.flags.has("r")) runs.push(base);
+  }
+  let code = 0;
+  for (const argv of runs) {
+    if (p.flags.has("t")) err(c, argv.join(" "));
+    const r = dispatch({ ...c, name: argv[0], argv: argv.slice(1), io: { ...c.io, stdin: "" }, solo: false });
+    if (r === 127 || r === 126) return r;
+    if (r !== 0) code = 123;
+  }
+  return code;
+}
+
+/** Index of the first argument that is not an option (or an option's value). */
+function firstOperand(args: string[], valued: string): number {
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === "--") return i + 1;
+    if (!a.startsWith("-") || a === "-") return i;
+    if (valued.includes(a[a.length - 1]) && a.length === 2) i++;
+  }
+  return args.length;
+}
+
 function headTail(c: Call, bin: string): number {
   const p = opts(c.argv, "qv", "nc", true);
   if (p.bad) return badOption(c, p);
@@ -2061,24 +2251,8 @@ function wc(c: Call): number {
 }
 
 function toRegex(pattern: string, mode: "basic" | "extended" | "fixed", ignoreCase: boolean): RegExp | null {
-  let src = pattern;
-  if (mode === "fixed") src = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  else if (mode === "basic") {
-    // in a basic regex + ? | ( ) { } are plain characters, and \+ \? \| \( \) are the special ones
-    let s = "";
-    for (let i = 0; i < pattern.length; i++) {
-      const ch = pattern[i];
-      if (ch === "\\" && i + 1 < pattern.length && "+?|(){}".includes(pattern[i + 1])) {
-        s += pattern[i + 1];
-        i++;
-      } else if ("+?|(){}".includes(ch)) s += "\\" + ch;
-      else if (ch === "\\" && i + 1 < pattern.length) {
-        s += ch + pattern[i + 1];
-        i++;
-      } else s += ch;
-    }
-    src = s;
-  }
+  // fixed: plain text; basic and extended: POSIX regexes (see posixToJs for the differences from JavaScript)
+  const src = mode === "fixed" ? pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : posixToJs(pattern, mode);
   try {
     return new RegExp(src, ignoreCase ? "gi" : "g");
   } catch {
@@ -2088,7 +2262,7 @@ function toRegex(pattern: string, mode: "basic" | "extended" | "fixed", ignoreCa
 
 function grep(c: Call): number {
   const { sh } = c;
-  const p = opts(c.argv, "ivncrREFlwoH", "e");
+  const p = opts(c.argv, "ivncrREFlwoHqs", "e");
   if (p.flags.has("help")) {
     out(c, `Usage: ${HELP.grep[0]}\n${HELP.grep[1]}\n`);
     return 0;
@@ -2193,7 +2367,8 @@ function grep(c: Call): number {
       rich.push({ text: inp.name + "\n", tone: "path" });
     }
   }
-  out(c, text, rich);
+  // -q: quiet, only the exit status tells whether anything matched
+  if (!p.flags.has("q")) out(c, text, rich);
   if (code) return 2;
   return matched ? 0 : 1;
 }

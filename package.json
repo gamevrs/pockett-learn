@@ -15,6 +15,7 @@
     "test:elec": "node scripts/test-elec-kit.mjs",
     "test:runner": "node scripts/runner/test.mjs",
     "test:app-links": "node scripts/test-app-links.mjs",
+    "test:shell": "node scripts/test-shell.mjs",
     "ui:check": "node scripts/ui-check.mjs"
   },
   "dependencies": {

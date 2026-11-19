@@ -54,6 +54,12 @@ export const FOUNDATIONS: Track = {
       blurb: "Why silicon conducts, how a transistor switches, how a chip is drawn in code, checked, laid out and manufactured, then packaged and tested.",
     },
     { id: "building", title: "Building well: data structures, OOP and patterns", blurb: "Learn how to organise data, shape code into objects, and reuse ideas that good programmers have trusted for years." },
+    {
+      id: "interview",
+      title: "Interview practice: every coding-interview topic",
+      blurb:
+        "Every topic coding interviews ask about, from arrays and two pointers to graphs, dynamic programming and SQL. Watch each idea run step by step, predict the next move, then write the solution yourself and have it checked.",
+    },
     { id: "systems", title: "How production systems work", blurb: "Timeouts, retries, rate limits, caches, databases, deploys, observability, security and AI systems: what it takes for software to survive real traffic." },
   ],
   modules: [
