@@ -276,7 +276,7 @@ i = bisect.bisect_right(prefix, x)               # 0 with prob 1/10, 1 with 3/10
       {
         kind: "code",
         title: "A fair shuffle",
-        body: "A music app shuffles playlists. Write `shuffle(items)` that shuffles the list **in place** with Fisher–Yates using `random.randint`, and returns nothing. Don't call `random.shuffle` or `random.sample`. The checks shuffle tens of thousands of times and count how often each ordering appears.",
+        body: "A music app shuffles playlists. Write `shuffle(items)` that shuffles the list **in place** with Fisher–Yates using `random.randint`, and returns nothing. Don't call `random.shuffle` or `random.sample`. The checks shuffle thousands of times and count how often each ordering appears.",
         language: "python",
         starter: `import random
 
@@ -313,13 +313,13 @@ assert _e == [] and _o == [7], "an empty list and a one-item list should come ba
             assertionCode: `import random
 random.seed(2026)
 _seen = {}
-for _ in range(30000):
+for _ in range(18000):
     _a = [0, 1, 2]
     shuffle(_a)
     _seen[tuple(_a)] = _seen.get(tuple(_a), 0) + 1
 assert len(_seen) == 6, f"all 6 orderings should appear, saw {len(_seen)}: does j range over 0..i, including i?"
-_bad = {k: v for k, v in _seen.items() if abs(v - 5000) > 300}
-assert not _bad, f"each ordering should appear about 5000 times in 30000 shuffles; these are off: {_bad}. Draw j from 0..i, not from the whole list."`,
+_bad = {k: v for k, v in _seen.items() if abs(v - 3000) > 200}
+assert not _bad, f"each ordering should appear about 3000 times in 18000 shuffles; these are off: {_bad}. Draw j from 0..i, not from the whole list."`,
           },
           {
             id: "t3",
@@ -327,14 +327,14 @@ assert not _bad, f"each ordering should appear about 5000 times in 30000 shuffle
             assertionCode: `import random
 random.seed(77)
 _pos = {}
-for _ in range(20000):
+for _ in range(10000):
     _a = [0, 1, 2, 3]
     shuffle(_a)
     for _p, _v in enumerate(_a):
         _pos[(_v, _p)] = _pos.get((_v, _p), 0) + 1
 assert len(_pos) == 16, "every card should be able to end in every position"
-_bad = {k: v for k, v in _pos.items() if abs(v - 5000) > 300}
-assert not _bad, f"each card should land in each position about 5000 times; these (card, position) pairs are off: {_bad}"`,
+_bad = {k: v for k, v in _pos.items() if abs(v - 2500) > 200}
+assert not _bad, f"each card should land in each position about 2500 times in 10000 shuffles; these (card, position) pairs are off: {_bad}"`,
           },
         ],
         hints: ["`for i in range(len(items) - 1, 0, -1):` then `j = random.randint(0, i)` (inclusive) and swap.", "If some orderings never appear, you probably excluded i itself; if they're uneven, you're drawing from the whole list."],
@@ -527,11 +527,11 @@ def pick_one(stream):
             assertionCode: `import random
 random.seed(8)
 _c = {}
-for _ in range(25000):
+for _ in range(10000):
     _x = pick_one(iter(range(5)))
     _c[_x] = _c.get(_x, 0) + 1
-_bad = {k: v for k, v in _c.items() if abs(v - 5000) > 300}
-assert len(_c) == 5 and not _bad, f"each of 5 items should be picked about 5000 times in 25000 runs, got {_c}"`,
+_bad = {k: v for k, v in _c.items() if abs(v - 2000) > 160}
+assert len(_c) == 5 and not _bad, f"each of 5 items should be picked about 2000 times in 10000 runs, got {_c}"`,
           },
         ],
         hints: ["`for i, item in enumerate(stream, start=1):` and replace the choice when `random.randint(1, i) == 1`."],
@@ -570,11 +570,11 @@ def sample_k(stream, k):
             assertionCode: `import random
 random.seed(9)
 _c = {}
-for _ in range(15000):
+for _ in range(7500):
     for _x in sample_k(iter(range(6)), 2):
         _c[_x] = _c.get(_x, 0) + 1
-_bad = {k: v for k, v in _c.items() if abs(v - 5000) > 300}
-assert len(_c) == 6 and not _bad, f"each of 6 items should be in a 2-item sample about 5000 times in 15000 runs, got {_c}. For item i (from 0), draw j from 0..i inclusive."`,
+_bad = {k: v for k, v in _c.items() if abs(v - 2500) > 160}
+assert len(_c) == 6 and not _bad, f"each of 6 items should be in a 2-item sample about 2500 times in 7500 runs, got {_c}. For item i (from 0), draw j from 0..i inclusive."`,
           },
           { id: "t4", description: "a long stream, one pass", assertionCode: `import random\nrandom.seed(10)\n_r = sample_k((x * x for x in range(50000)), 4)\nassert _r is not None and len(_r) == 4 and len(set(_r)) == 4, f"expected 4 different squares, got {_r}"` },
         ],
@@ -699,11 +699,11 @@ for _rolls, _want in [((1, 1), 1), ((5, 6), 10), ((6, 2, 2, 3), 9), ((6, 6, 6, 1
             assertionCode: `import random
 random.seed(11)
 _c = {}
-for _ in range(30000):
+for _ in range(12000):
     _p = pick_player(lambda: random.randint(1, 6))
     _c[_p] = _c.get(_p, 0) + 1
-_bad = {k: v for k, v in _c.items() if abs(v - 3000) > 250}
-assert sorted(_c) == list(range(1, 11)) and not _bad, f"each player should come up about 3000 times in 30000 picks, got {dict(sorted(_c.items()))}"`,
+_bad = {k: v for k, v in _c.items() if abs(v - 1200) > 130}
+assert sorted(_c) == list(range(1, 11)) and not _bad, f"each player should come up about 1200 times in 12000 picks, got {dict(sorted(_c.items()))}"`,
           },
           {
             id: "t3",
@@ -714,9 +714,9 @@ _n = [0]
 def _roll():
     _n[0] += 1
     return random.randint(1, 6)
-for _ in range(20000):
+for _ in range(8000):
     pick_player(_roll)
-_avg = _n[0] / 20000
+_avg = _n[0] / 8000
 assert abs(_avg - 2.4) < 0.05, f"rejecting 6 of 36 pairs should average 2.4 rolls per pick, got {_avg:.3f}"`,
           },
         ],

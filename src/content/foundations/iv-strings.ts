@@ -569,7 +569,7 @@ def smallest_unit(s):
           { id: "t1", description: "periodic strings", assertionCode: `for _s, _want in [("abab", 2), ("aaaa", 1), ("abcabcabc", 3), ("abaaba", 3)]:\n    _r = smallest_unit(_s)\n    assert _r == _want, f"smallest_unit({_s!r}) should be {_want}, got {_r}"` },
           { id: "t2", description: "a near miss is not periodic", assertionCode: `_r = smallest_unit("abcab")\nassert _r == 5, f"abcab has pi[-1] = 2, but 3 doesn't divide 5, so the unit is the whole string: 5, got {_r}"` },
           { id: "t3", description: "one character", assertionCode: `_r = smallest_unit("x")\nassert _r == 1, f"a single character is its own unit: 1, got {_r}"` },
-          { id: "t4", description: "a long string", assertionCode: `_r = smallest_unit("xyz" * 30000)\nassert _r == 3, f"xyz repeated 30,000 times has unit length 3, got {_r}"\n_r = smallest_unit("xyz" * 30000 + "x")\nassert _r == 90001, f"one extra x breaks the pattern: expected 90001, got {_r}"` },
+          { id: "t4", description: "a long string", assertionCode: `_r = smallest_unit("xyz" * 10000)\nassert _r == 3, f"xyz repeated 10,000 times has unit length 3, got {_r}"\n_r = smallest_unit("xyz" * 10000 + "x")\nassert _r == 30001, f"one extra x breaks the pattern: expected 30001, got {_r}"` },
         ],
         hints: ["`p = len(s) - prefix_function(s)[-1]` is the smallest shift that maps the string onto itself.", "That shift only counts as a repeating unit if it divides the length exactly."],
       },

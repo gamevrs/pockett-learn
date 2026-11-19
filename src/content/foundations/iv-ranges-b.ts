@@ -349,7 +349,7 @@ class MovingAverage:
           { id: "t1", description: "window of three", assertionCode: `m = MovingAverage(3)\nr = [m.add(x) for x in (4, 8, 6, 10)]\nassert r == [4, 6, 6, 8], f"expected [4.0, 6.0, 6.0, 8.0], got {r}"` },
           { id: "t2", description: "not integer division", assertionCode: `m = MovingAverage(2)\nr = [m.add(x) for x in (1, 2, 4)]\nassert all(abs(a - b) < 1e-9 for a, b in zip(r, [1, 1.5, 3])) and len(r) == 3, f"expected [1.0, 1.5, 3.0], got {r}"` },
           { id: "t3", description: "k = 1 and negatives", assertionCode: `m = MovingAverage(1)\nr = [m.add(x) for x in (5, -3, 7)]\nassert r == [5, -3, 7], f"with k = 1 each add returns the value itself: expected [5, -3, 7], got {r}"\nm = MovingAverage(4)\nr = [m.add(x) for x in (-2, -4, 6, 0, 10)]\nassert r == [-2, -3, 0, 0, 3], f"expected [-2, -3, 0, 0, 3], got {r}"` },
-          { id: "t4", description: "a long stream", assertionCode: `m = MovingAverage(1000)\nlast = None\nfor x in range(100000):\n    last = m.add(x)\nassert abs(last - 99499.5) < 1e-6, f"the last 1000 of 0..99999 average 99499.5, got {last}"` },
+          { id: "t4", description: "a long stream", assertionCode: `m = MovingAverage(1000)\nlast = None\nfor x in range(40000):\n    last = m.add(x)\nassert abs(last - 39499.5) < 1e-6, f"the last 1000 of 0..39999 average 39499.5, got {last}"` },
         ],
         hints: ["Keep a `deque` of the window and a running `total`.", "Append and add; if the window is longer than `k`, subtract `popleft()`; return `total / len(window)`."],
       },

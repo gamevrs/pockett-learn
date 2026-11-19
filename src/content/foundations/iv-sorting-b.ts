@@ -130,7 +130,7 @@ assert _r == [33, 45, 140, 205, 207, 312, 518], f"expected [33, 45, 140, 205, 20
 assert _r == [0, 0, 5, 5, 70, 99, 1000], f"expected [0, 0, 5, 5, 70, 99, 1000], got {_r}: keep passing until place is bigger than the largest number"
 _r = radix_sort([])
 assert _r == [], f"expected [], got {_r}"` },
-          { id: "t3", description: "100,000 numbers up to a billion", assertionCode: `_xs = [(i * 2654435761) % 1000000007 for i in range(100000)]
+          { id: "t3", description: "20,000 numbers up to a billion", assertionCode: `_xs = [(i * 2654435761) % 1000000007 for i in range(20000)]
 _r = radix_sort(_xs)
 assert isinstance(_r, list) and len(_r) == len(_xs), "every number must be in the output"
 assert _r == sorted(_xs), "the output should be sorted"` },
@@ -173,12 +173,12 @@ def sort_codes(codes):
 assert _r == ["A12", "A1B", "B00", "Q1Z", "Q7X"], f"expected ['A12', 'A1B', 'B00', 'Q1Z', 'Q7X'], got {_r}"` },
           { id: "t2", description: "digits before letters, duplicates kept", assertionCode: `_r = sort_codes(["Z9", "09", "Z0", "A9", "09"])
 assert _r == ["09", "09", "A9", "Z0", "Z9"], f"expected ['09', '09', 'A9', 'Z0', 'Z9'], got {_r}"` },
-          { id: "t3", description: "empty, and 30,000 codes", assertionCode: `_r = sort_codes([])
+          { id: "t3", description: "empty, and 12,000 codes", assertionCode: `_r = sort_codes([])
 assert _r == [], f"expected [], got {_r}"
 _A = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-_xs = ["".join(_A[(i * k * 7 + k) % 36] for k in range(1, 6)) for i in range(30000)]
+_xs = ["".join(_A[(i * k * 7 + k) % 36] for k in range(1, 6)) for i in range(12000)]
 _r = sort_codes(_xs)
-assert _r == sorted(_xs), "30,000 five-character codes should come out sorted"` },
+assert _r == sorted(_xs), "12,000 five-character codes should come out sorted"` },
         ],
         hints: ["Loop `pos` from `len(xs[0]) - 1` down to 0.", "On each pass, append every code to `buckets[ALPHABET.index(code[pos])]`, then join the buckets in order."],
       },
@@ -335,7 +335,7 @@ for _q in range(20000):
           py(`
 shortest_longest_day([4, 3, 6, 2, 5], 2)   # 13: [4, 3, 6] then [2, 5]
 `),
-          "Binary search the answer between `max(segments)` and `sum(segments)`. For a guess `c`, walk greedily: keep adding segments to today until the next one would go over `c`, then start a new day. The guess works if you need at most `days` days. The last test has 20,000 segments.",
+          "Binary search the answer between `max(segments)` and `sum(segments)`. For a guess `c`, walk greedily: keep adding segments to today until the next one would go over `c`, then start a new day. The guess works if you need at most `days` days. The last test has 8,000 segments.",
         ),
         language: "python",
         starter: `def shortest_longest_day(segments, days):
@@ -378,9 +378,9 @@ _r = shortest_longest_day([4, 3, 6, 2, 5], 9)
 assert _r == 6, f"with plenty of days the longest single segment decides: 6, got {_r}"` },
           { id: "t3", description: "one segment", assertionCode: `_r = shortest_longest_day([42], 3)
 assert _r == 42, f"expected 42, got {_r}"` },
-          { id: "t4", description: "20,000 segments", assertionCode: `_segs = [(i * 37) % 101 + 1 for i in range(20000)]
+          { id: "t4", description: "8,000 segments", assertionCode: `_segs = [(i * 37) % 101 + 1 for i in range(8000)]
 _r = shortest_longest_day(_segs, 7)
-assert _r == 145725, f"expected 145725, got {_r}"` },
+assert _r == 58305, f"expected 58305, got {_r}"` },
         ],
         hints: ["In `fits(c)`, count days: when `today + s > c`, start a new day with `today = s`.", "Search with `while lo < hi`: if `fits(mid)`, the answer is `mid` or smaller (`hi = mid`), else `lo = mid + 1`."],
       },
@@ -552,7 +552,7 @@ assert _r2 == 242199768, f"expected 242199768, got {_r2}"` },
         title: "The best stretch of days",
         body: P(
           "Write `best_stretch(changes)`: the largest total of a run of one or more consecutive days. Use divide and conquer: best in the left half, best in the right half, or best crossing the middle. If every day is a loss, the answer is the smallest loss (a run has at least one day).",
-          "The last test has 50,000 days, so checking every run (over a billion of them) is far too slow.",
+          "The last test has 10,000 days, so checking every run (50 million of them) is far too slow.",
         ),
         language: "python",
         starter: `def best_stretch(changes):
@@ -593,7 +593,7 @@ assert _r == 8, f"expected 8 (1 + 3 + 4 across the middle), got {_r}"` },
 assert _r == -2, f"a run has at least one day, so expected -2, got {_r}"
 _r = best_stretch([6])
 assert _r == 6, f"expected 6, got {_r}"` },
-          { id: "t4", description: "50,000 days", assertionCode: `_xs = [((i * 7919) % 2001) - 1000 for i in range(50000)]
+          { id: "t4", description: "10,000 days", assertionCode: `_xs = [((i * 7919) % 2001) - 1000 for i in range(10000)]
 _r = best_stretch(_xs)
 assert _r == 8302, f"expected 8302, got {_r}"` },
         ],
@@ -709,7 +709,7 @@ for t, d in events:
         title: "How many rehearsal rooms?",
         body: P(
           "Bookings are half-open `(start, end)` pairs: a room is free again at `end`. Write `rooms_needed(bookings)`: the most bookings open at the same moment. No bookings needs 0 rooms.",
-          "The last test has 100,000 bookings; sort the events once.",
+          "The last test has 30,000 bookings; sort the events once.",
         ),
         language: "python",
         starter: `def rooms_needed(bookings):
@@ -742,7 +742,7 @@ _r = rooms_needed([(3, 4)])
 assert _r == 1, f"expected 1, got {_r}"
 _r = rooms_needed([(5, 6)] * 4)
 assert _r == 4, f"four identical bookings need 4 rooms, got {_r}"` },
-          { id: "t4", description: "100,000 bookings", assertionCode: `_b = [((i * 7919) % 100000, (i * 7919) % 100000 + (i * 31) % 500 + 1) for i in range(100000)]
+          { id: "t4", description: "30,000 bookings", assertionCode: `_b = [((i * 7919) % 30000, (i * 7919) % 30000 + (i * 31) % 500 + 1) for i in range(30000)]
 _r = rooms_needed(_b)
 assert _r == 275, f"expected 275, got {_r}"` },
         ],

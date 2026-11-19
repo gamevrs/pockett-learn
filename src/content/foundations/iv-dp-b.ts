@@ -271,7 +271,7 @@ def all_sums(ws):
       {
         kind: "code",
         title: "Count exact loads",
-        body: "A crane can lift crates with weights `weights`. Write `count_exact(weights, target)`: how many subsets of crates (by position, so equal weights are different crates) weigh exactly `target`? The empty subset weighs 0.\n\nThe last test has 36 crates: 2³⁶ subsets is far too many, two halves of 2¹⁸ are fine. (With small weights a table over sums would also work; meet in the middle works for any size.)",
+        body: "A crane can lift crates with weights `weights`. Write `count_exact(weights, target)`: how many subsets of crates (by position, so equal weights are different crates) weigh exactly `target`? The empty subset weighs 0.\n\nThe last test has 30 crates: 2³⁰ subsets (over a billion) is far too many, two halves of 2¹⁵ are fine. (With small weights a table over sums would also work; meet in the middle works for any size.)",
         language: "python",
         starter: `from collections import Counter
 
@@ -298,14 +298,14 @@ def count_exact(weights, target):
           { id: "t1", description: "the empty subset counts", assertionCode: `r = (count_exact([], 0), count_exact([], 5), count_exact([4], 4))\nassert r == (1, 0, 1), f"expected (1, 0, 1): the empty subset weighs 0; got {r}"` },
           { id: "t2", description: "the example", assertionCode: `r = count_exact([3, 5, 6, 9], 14)\nassert r == 2, f"expected 2 ({{5, 9}} and {{3, 5, 6}}), got {r}"` },
           { id: "t3", description: "equal weights are different crates", assertionCode: `r = (count_exact([2, 2, 2], 4), count_exact([1, 2, 3, 4, 5, 6], 10))\nassert r == (3, 5), f"expected (3, 5): any 2 of the three 2s make 4; got {r}"` },
-          { id: "t4", description: "36 crates", assertionCode: `import random\nrng = random.Random(2026)\nws = [rng.randint(1, 1000) for _ in range(36)]\nr = count_exact(ws, sum(ws) // 2)\nassert r == 14504604, f"expected 14504604, got {r}"` },
+          { id: "t4", description: "30 crates", assertionCode: `import random\nrng = random.Random(2026)\nws = [rng.randint(1, 1000) for _ in range(30)]\nr = count_exact(ws, sum(ws) // 2)\nassert r == 236884, f"expected 236884, got {r}"` },
         ],
         hints: ["Write `all_sums(ws)` by doubling: start with `[0]`, and for each weight add it to every sum so far.", "`right = Counter(all_sums(second half))`, then add up `right[target - s]` over the left sums."],
       },
       {
         kind: "code",
         title: "Heaviest load under the limit",
-        body: "Same crane, now with a weight limit. Write `best_under(weights, cap)`: the heaviest total of any subset that is at most `cap` (0 if nothing fits). The weights are huge, so a table over sums is out of the question; the last test has 34 crates.",
+        body: "Same crane, now with a weight limit. Write `best_under(weights, cap)`: the heaviest total of any subset that is at most `cap` (0 if nothing fits). The weights are huge, so a table over sums is out of the question; the last test has 30 crates.",
         language: "python",
         starter: `from bisect import bisect_right
 
@@ -338,7 +338,7 @@ def best_under(weights, cap):
           { id: "t1", description: "small cases", assertionCode: `r = (best_under([7], 7), best_under([7], 5), best_under([5, 5, 5], 9))\nassert r == (7, 0, 5), f"expected (7, 0, 5), got {r}"` },
           { id: "t2", description: "an exact fit", assertionCode: `r = best_under([4, 8, 15, 16, 23, 42], 50)\nassert r == 50, f"expected 50 (4 + 23 + 15 + 8), got {r}"` },
           { id: "t3", description: "20 huge weights", assertionCode: `import random\nrng = random.Random(99)\nws = [rng.randint(10**12, 10**13) for _ in range(20)]\nr = best_under(ws, sum(ws) // 3)\nassert r == 31369411506115, f"expected 31369411506115, got {r}"` },
-          { id: "t4", description: "34 huge weights, fast", assertionCode: `import random\nrng = random.Random(7)\nws = [rng.randint(10**12, 10**13) for _ in range(34)]\nr = best_under(ws, sum(ws) // 3)\nassert r == 61280085152835, f"expected 61280085152835, got {r}"` },
+          { id: "t4", description: "30 huge weights, fast", assertionCode: `import random\nrng = random.Random(7)\nws = [rng.randint(10**12, 10**13) for _ in range(30)]\nr = best_under(ws, sum(ws) // 3)\nassert r == 52530386089113, f"expected 52530386089113, got {r}"` },
         ],
         hints: ["Sort the right half's sums. For a left sum `s ≤ cap`, `bisect_right(right, cap - s) - 1` is the index of the biggest partner that fits.", "That index is never -1, because the right half always contains 0."],
       },

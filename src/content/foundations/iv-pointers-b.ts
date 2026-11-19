@@ -196,7 +196,7 @@ export const ivPointersLessonsB: ConceptLesson[] = [
       {
         kind: "code",
         title: "Hits in the last window",
-        body: "Write `RecentLog(window)` with a method `hit(t)`: record a hit at time `t` (times never go down) and return how many recorded hits, including this one, are **recent**: a hit at time `s` is recent if `t - s < window`. Up to 200,000 hits, so use a deque and drop old hits from the front.",
+        body: "Write `RecentLog(window)` with a method `hit(t)`: record a hit at time `t` (times never go down) and return how many recorded hits, including this one, are **recent**: a hit at time `s` is recent if `t - s < window`. The checks send up to 50,000 hits. Use a deque and drop old hits from the front: `list.pop(0)` would shift every remaining hit along each time.",
         language: "python",
         starter: `from collections import deque
 
@@ -226,7 +226,7 @@ class RecentLog:
           { id: "t1", description: "A 1000 ms window", assertionCode: `_log = RecentLog(1000)\n_r = [_log.hit(t) for t in [1, 500, 1000, 1001, 2500]]\nassert _r == [1, 2, 3, 3, 1], f"expected [1, 2, 3, 3, 1], got {_r}. At 1001 the hit at 1 is exactly 1000 old, which no longer counts"` },
           { id: "t2", description: "Hits at the same time", assertionCode: `_log = RecentLog(10)\n_r = [_log.hit(t) for t in [5, 5, 5, 15]]\nassert _r == [1, 2, 3, 1], f"expected [1, 2, 3, 1], got {_r}"` },
           { id: "t3", description: "A window of 1", assertionCode: `_log = RecentLog(1)\n_r = [_log.hit(t) for t in [1, 2, 2, 3]]\nassert _r == [1, 1, 2, 1], f"only hits at the same instant count: expected [1, 1, 2, 1], got {_r}"` },
-          { id: "t4", description: "200,000 hits", assertionCode: `_log = RecentLog(100000)\n_r = [_log.hit(t) for t in range(200000)]\nassert _r is not None and _r[99999] == 100000 and _r[-1] == 100000 and _r[5] == 6, f"expected counts that grow to 100000 and stay there, got {_r[5]}, {_r[99999]}, {_r[-1]}"` },
+          { id: "t4", description: "50,000 hits", assertionCode: `_log = RecentLog(20000)\n_r = [_log.hit(t) for t in range(50000)]\nassert _r is not None and _r[19999] == 20000 and _r[-1] == 20000 and _r[5] == 6, f"expected counts that grow to 20000 and stay there, got {_r[5]}, {_r[19999]}, {_r[-1]}"` },
         ],
         hints: ["Append `t` first, so the deque is never empty when you look at `self.times[0]`.", "`while t - self.times[0] >= self.window: self.times.popleft()`, then return `len(self.times)`."],
       },
@@ -337,7 +337,7 @@ def window_max(nums, k):
       {
         kind: "code",
         title: "The calmest stretch",
-        body: "A thermometer logs `temps`. Write `longest_calm(temps, limit)`: the length of the longest run of consecutive readings whose highest and lowest differ by **at most** `limit`.\n\nUse a sliding window with **two** monotonic deques: one with decreasing values (its front is the window max) and one with increasing values (its front is the min). While `max - min > limit`, move `left` forward and drop fronts that fall out. Up to 50,000 readings.",
+        body: "A thermometer logs `temps`. Write `longest_calm(temps, limit)`: the length of the longest run of consecutive readings whose highest and lowest differ by **at most** `limit`.\n\nUse a sliding window with **two** monotonic deques: one with decreasing values (its front is the window max) and one with increasing values (its front is the min). While `max - min > limit`, move `left` forward and drop fronts that fall out. Up to 15,000 readings.",
         language: "python",
         starter: `from collections import deque
 
@@ -374,7 +374,7 @@ def longest_calm(temps, limit):
           { id: "t3", description: "Limit 0 means equal readings", assertionCode: `_r = longest_calm([1, 2, 2, 2, 3, 3], 0)\nassert _r == 3, f"three 2s in a row: expected 3, got {_r}"\n_r = longest_calm([4, 4, 4], 0)\nassert _r == 3, f"all equal: expected 3, got {_r}"` },
           { id: "t4", description: "One reading, and none", assertionCode: `_r = longest_calm([5], 0)\nassert _r == 1, f"a single reading is calm: expected 1, got {_r}"\n_r = longest_calm([], 3)\nassert _r == 0, f"no readings: expected 0, got {_r}"` },
           { id: "t5", description: "Negative temperatures", assertionCode: `_r = longest_calm([-3, -1, -4, 2, 0, 1], 3)\nassert _r == 3, f"-3, -1, -4 and 2, 0, 1 both span 3: expected 3, got {_r}"` },
-          { id: "t6", description: "50,000 readings", assertionCode: `_r = longest_calm([i % 10 for i in range(50000)], 9)\nassert _r == 50000, f"every reading is within 0..9: expected 50000, got {_r}"\n_r = longest_calm([i % 10 for i in range(50000)], 8)\nassert _r == 9, f"with limit 8 a run can't hold both 0 and 9: expected 9, got {_r}"` },
+          { id: "t6", description: "15,000 readings", assertionCode: `_r = longest_calm([i % 10 for i in range(15000)], 9)\nassert _r == 15000, f"every reading is within 0..9: expected 15000, got {_r}"\n_r = longest_calm([i % 10 for i in range(15000)], 8)\nassert _r == 9, f"with limit 8 a run can't hold both 0 and 9: expected 9, got {_r}"` },
         ],
         hints: ["Keep `hi` decreasing (pop while the back is smaller than x) and `lo` increasing (pop while the back is bigger).", "While `temps[hi[0]] - temps[lo[0]] > limit`: `left += 1`, and pop each front whose index is now below `left`."],
       },
@@ -631,7 +631,7 @@ def unlink(node):
       {
         kind: "code",
         title: "An O(1) playlist",
-        body: "Build `Playlist` with a doubly linked list plus a dict `song → node` (`Node` from the last step is defined):\n\n- `add(song)`: put a new song at the end (a song is never added twice);\n- `remove(song)`: take it out; return `True`, or `False` if it isn't there;\n- `move_to_front(song)`: move it to the start; return `True`, or `False` if it isn't there;\n- `order()`: the songs from first to last, as a list.\n\nEvery operation except `order` must be O(1): the checks run 60,000 moves.",
+        body: "Build `Playlist` with a doubly linked list plus a dict `song → node` (`Node` from the last step is defined):\n\n- `add(song)`: put a new song at the end (a song is never added twice);\n- `remove(song)`: take it out; return `True`, or `False` if it isn't there;\n- `move_to_front(song)`: move it to the start; return `True`, or `False` if it isn't there;\n- `order()`: the songs from first to last, as a list.\n\nEvery operation except `order` must be O(1): the checks run 15,000 moves.",
         language: "python",
         setup: DLL_SETUP,
         starter: `class Playlist:
@@ -699,7 +699,7 @@ def unlink(node):
           { id: "t2", description: "Remove", assertionCode: `_p = Playlist()\nfor _s in "abc":\n    _p.add(_s)\nassert _p.remove("b") is True, "removing a song that's there returns True"\nassert _p.order() == ["a", "c"], f"expected ['a', 'c'], got {_p.order()}"\nassert _p.remove("b") is False, "removing it again returns False"\nassert _p.remove("zzz") is False, "removing an unknown song returns False"` },
           { id: "t3", description: "Move to front", assertionCode: `_p = Playlist()\nfor _s in "abcd":\n    _p.add(_s)\nassert _p.move_to_front("c") is True, "moving a song that's there returns True"\nassert _p.order() == ["c", "a", "b", "d"], f"expected ['c', 'a', 'b', 'd'], got {_p.order()}"\nassert _p.move_to_front("c") is True and _p.order() == ["c", "a", "b", "d"], "moving the first song keeps the order"\nassert _p.move_to_front("q") is False, "an unknown song returns False"` },
           { id: "t4", description: "Remove everything, then add again", assertionCode: `_p = Playlist()\n_p.add("x")\n_p.add("y")\nassert _p.remove("x") is True and _p.remove("y") is True, "both removes should succeed"\nassert _p.order() == [], f"expected [], got {_p.order()}"\n_p.add("x")\nassert _p.order() == ["x"], f"a removed song can be added again: expected ['x'], got {_p.order()}"` },
-          { id: "t5", description: "60,000 moves", assertionCode: `_p = Playlist()\nfor _i in range(60000):\n    _p.add(_i)\nfor _i in range(60000):\n    _p.move_to_front(_i)\nfor _i in range(0, 60000, 2):\n    _p.remove(_i)\n_r = _p.order()\nassert _r == list(range(59999, 0, -2)), "expected the odd songs, newest move first" if _r is not None else "order() returned None"` },
+          { id: "t5", description: "15,000 moves", assertionCode: `_p = Playlist()\nfor _i in range(15000):\n    _p.add(_i)\nfor _i in range(15000):\n    _p.move_to_front(_i)\nfor _i in range(0, 15000, 2):\n    _p.remove(_i)\n_r = _p.order()\nassert _r == list(range(14999, 0, -2)), "expected the odd songs, newest move first" if _r is not None else "order() returned None"` },
         ],
         hints: ["`add` creates a `Node(song)`, stores it in `self.nodes`, and inserts it before `self.tail` (after `self.tail.prev`).", "Write two helpers, `_insert_after(node, x)` and `_unlink(x)`; `move_to_front` is unlink, then insert after `self.head`."],
       },

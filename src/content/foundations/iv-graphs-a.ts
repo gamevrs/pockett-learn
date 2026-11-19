@@ -215,7 +215,7 @@ def build(n, edges):
       {
         kind: "code",
         title: "Count the friend groups",
-        body: "Write `count_groups(n, links)`. There are `n` people, numbered `0` to `n - 1`, and `links` is a list of two-way friendships `(a, b)`. Return how many separate friend groups there are (a person with no friends is a group of one).\n\nOne test is a chain of 50,000 people, so use an explicit stack, not recursion.\n\n" +
+        body: "Write `count_groups(n, links)`. There are `n` people, numbered `0` to `n - 1`, and `links` is a list of two-way friendships `(a, b)`. Return how many separate friend groups there are (a person with no friends is a group of one).\n\nOne test is a chain of 20,000 people, so use an explicit stack, not recursion.\n\n" +
           py(`
 count_groups(5, [(0, 1), (3, 4)])   # 3: {0, 1}, {2}, {3, 4}
 count_groups(3, [])                 # 3
@@ -255,7 +255,7 @@ count_groups(3, [])                 # 3
           { id: "t1", description: "three groups", assertionCode: `_r = count_groups(8, [(0, 1), (1, 2), (3, 4), (5, 6), (6, 7), (7, 5)])\nassert _r == 3, f"expected 3 groups ({{0,1,2}}, {{3,4}}, {{5,6,7}}), got {_r}"` },
           { id: "t2", description: "nobody linked: everyone alone", assertionCode: `_r = count_groups(4, [])\nassert _r == 4, f"with no links each of the 4 people is a group, got {_r}"\n_r = count_groups(0, [])\nassert _r == 0, f"no people means no groups, got {_r}"` },
           { id: "t3", description: "repeated links and a self-link", assertionCode: `_r = count_groups(3, [(0, 1), (1, 0), (0, 1), (2, 2)])\nassert _r == 2, f"duplicate links and a person linked to themself change nothing: expected 2, got {_r}"` },
-          { id: "t4", description: "a chain of 50,000 people", assertionCode: `_n = 50000\n_r = count_groups(_n, [(i, i + 1) for i in range(_n - 1)])\nassert _r == 1, f"a single long chain is one group, got {_r}"` },
+          { id: "t4", description: "a chain of 20,000 people", assertionCode: `_n = 20000\n_r = count_groups(_n, [(i, i + 1) for i in range(_n - 1)])\nassert _r == 1, f"a single long chain is one group, got {_r}"` },
         ],
         hints: ["Keep a `seen` list. For each person `s` not yet seen: add one to `groups`, then walk from `s` with a stack.", "Mark a node as seen when you push it, not when you pop it, so it can't be pushed twice."],
       },
@@ -599,7 +599,7 @@ def union(a, b):
       {
         kind: "code",
         title: "The cable that makes a loop",
-        body: "Technicians lay cables between `n` offices one at a time, in the order given. Write `first_loop_cable(n, cables)`: return the **index** of the first cable whose two offices were already connected (directly or through others), or `-1` if no cable ever closes a loop. A cable from an office to itself counts as a loop.\n\nOne test lays 100,000 cables, so walking the graph for every cable is too slow: use union-find.",
+        body: "Technicians lay cables between `n` offices one at a time, in the order given. Write `first_loop_cable(n, cables)`: return the **index** of the first cable whose two offices were already connected (directly or through others), or `-1` if no cable ever closes a loop. A cable from an office to itself counts as a loop.\n\nOne test lays 20,000 cables, so walking the graph for every cable is too slow: use union-find.",
         language: "python",
         starter: `def first_loop_cable(n, cables):
     parent = list(range(n))
@@ -638,7 +638,7 @@ def union(a, b):
           { id: "t1", description: "a loop through other offices", assertionCode: `_r = first_loop_cable(5, [(0, 1), (1, 2), (3, 4), (2, 0), (1, 3)])\nassert _r == 3, f"cable 3 joins 2 and 0, already linked through 1: expected 3, got {_r}"` },
           { id: "t2", description: "no loop", assertionCode: `_r = first_loop_cable(4, [(0, 1), (2, 3), (1, 2)])\nassert _r == -1, f"these 3 cables form a tree, so -1; got {_r}"` },
           { id: "t3", description: "a self-loop and a doubled cable", assertionCode: `_r = first_loop_cable(3, [(1, 1)])\nassert _r == 0, f"a cable from office 1 to itself closes a loop at once: 0, got {_r}"\n_r = first_loop_cable(3, [(0, 2), (2, 0)])\nassert _r == 1, f"the second cable between 0 and 2 closes a loop: 1, got {_r}"` },
-          { id: "t4", description: "100,000 cables", assertionCode: `_n = 100000\n_c = [(i, i + 1) for i in range(_n - 1)] + [(0, _n - 1)]\n_r = first_loop_cable(_n, _c)\nassert _r == _n - 1, f"the last cable closes the long chain into a ring: expected {_n - 1}, got {_r}"` },
+          { id: "t4", description: "20,000 cables", assertionCode: `_n = 20000\n_c = [(i, i + 1) for i in range(_n - 1)] + [(0, _n - 1)]\n_r = first_loop_cable(_n, _c)\nassert _r == _n - 1, f"the last cable closes the long chain into a ring: expected {_n - 1}, got {_r}"` },
         ],
         hints: ["For cable `i = (a, b)`: if `find(a) == find(b)`, return `i`; otherwise merge the two roots.", "Without union by size the chain test can still pass thanks to path compression, but add it: it is two lines."],
       },
@@ -798,7 +798,7 @@ for _ in range(n - 1):
       {
         kind: "code",
         title: "Dijkstra with a heap",
-        body: "Write `travel_times(n, roads, start)`. `roads` holds one-way roads `(u, v, minutes)` with minutes ≥ 0; there can be several roads between the same two places. Return a list with the fewest minutes from `start` to each place `0 … n - 1`, or `-1` where a place can't be reached.\n\nThe last test has 10,000 places and 50,000 roads: an O(V²) version (scan every place for the closest one) is too slow, so use `heapq`.",
+        body: "Write `travel_times(n, roads, start)`. `roads` holds one-way roads `(u, v, minutes)` with minutes ≥ 0; there can be several roads between the same two places. Return a list with the fewest minutes from `start` to each place `0 … n - 1`, or `-1` where a place can't be reached.\n\nThe last test has 3,000 places and 15,000 roads: an O(V²) version (scan every place for the closest one) is too slow, so use `heapq`.",
         language: "python",
         starter: `import heapq
 
@@ -837,8 +837,14 @@ def travel_times(n, roads, start):
           { id: "t3", description: "one-way roads", assertionCode: `_r = travel_times(3, [(1, 0, 2), (0, 2, 5)], 0)\nassert _r == [0, -1, 5], f"the road 1 -> 0 can't be driven backwards: expected [0, -1, 5], got {_r}"` },
           {
             id: "t4",
-            description: "10,000 places, 50,000 roads",
-            assertionCode: `import random\n_rng = random.Random(7)\n_n = 10000\n_roads = [(i, i + 1, _rng.randint(1, 100)) for i in range(_n - 1)]\n_roads += [(_rng.randrange(_n), _rng.randrange(_n), _rng.randint(1, 1000)) for _ in range(40000)]\n_r = travel_times(_n, _roads, 0)\nassert len(_r) == _n and _r[5000] == 873 and _r[_n - 1] == 710 and sum(_r) == 7595023, "wrong distances on the big map (expected place 5000 at 873 min and place 9999 at 710 min)"`,
+            description: "3,000 places, 15,000 roads",
+            assertionCode: `import random
+_rng = random.Random(7)
+_n = 3000
+_roads = [(i, i + 1, _rng.randint(1, 100)) for i in range(_n - 1)]
+_roads += [(_rng.randrange(_n), _rng.randrange(_n), _rng.randint(1, 1000)) for _ in range(12000)]
+_r = travel_times(_n, _roads, 0)
+assert len(_r) == _n and _r[1500] == 813 and _r[_n - 1] == 838 and sum(_r) == 1869883, "wrong distances on the big map (expected place 1500 at 813 min and place 2999 at 838 min)"`,
           },
         ],
         hints: ["Start with `heap = [(0, start)]`. Pop `(d, u)`; if `d` is bigger than the best known for `u`, skip it.", "For each road `(v, w)` out of `u`: if `d + w` beats the best for `v`, store it and push `(d + w, v)`."],

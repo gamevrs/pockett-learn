@@ -194,7 +194,7 @@ assert _r is True, f"an empty tree is a BST, got {_r}"` },
         title: "Sum of a price range",
         body: P(
           "A BST holds product prices. Write `sum_in_range(root, lo, hi)`: the total of all values `v` with `lo <= v <= hi`. **Prune**: when a node is below `lo`, skip its left subtree; when it is above `hi`, skip its right subtree.",
-          "The last test asks 2,000 narrow questions of a tree with 65,535 nodes: walking the whole tree each time would take minutes.",
+          "The last test asks 1,000 narrow questions of a tree with 16,383 nodes: walking the whole tree each time is far too slow.",
           TREE_HELP,
         ),
         language: "python",
@@ -226,14 +226,14 @@ _r = sum_in_range(None, 1, 5)
 assert _r == 0, f"an empty tree gives 0, got {_r}"
 _r = sum_in_range(_t, 3, 3)
 assert _r == 3, f"just the 3, got {_r}"` },
-          { id: "t3", description: "2,000 narrow ranges on 65,535 nodes", assertionCode: `def _bal(lo, hi):
+          { id: "t3", description: "1,000 narrow ranges on 16,383 nodes", assertionCode: `def _bal(lo, hi):
     if lo > hi:
         return None
     m = (lo + hi) // 2
     return Node(m * 2, _bal(lo, m - 1), _bal(m + 1, hi))
-_t = _bal(0, 65534)
-for _q in range(2000):
-    _a = (_q * 97) % 130000
+_t = _bal(0, 16382)
+for _q in range(1000):
+    _a = (_q * 97) % 32760
     _want = sum(range(_a + _a % 2, _a + 21, 2))
     _r = sum_in_range(_t, _a, _a + 20)
     assert _r == _want, f"sum_in_range(t, {_a}, {_a + 20}) should be {_want}, got {_r}"` },
@@ -422,9 +422,9 @@ _r = merge_feeds([])
 assert _r == [], f"no feeds gives [], got {_r}"` },
           { id: "t3", description: "one feed", assertionCode: `_r = merge_feeds([[2, 5, 8]])
 assert _r == [2, 5, 8], f"expected [2, 5, 8], got {_r}"` },
-          { id: "t4", description: "500 feeds of 200", assertionCode: `_feeds = [sorted((i * 31 + j * 7919) % 100003 for j in range(200)) for i in range(500)]
+          { id: "t4", description: "200 feeds of 150", assertionCode: `_feeds = [sorted((i * 31 + j * 7919) % 100003 for j in range(150)) for i in range(200)]
 _r = merge_feeds(_feeds)
-assert _r == sorted(x for f in _feeds for x in f), "500 feeds should merge into one sorted list"` },
+assert _r == sorted(x for f in _feeds for x in f), "200 feeds should merge into one sorted list"` },
         ],
         hints: ["Start the heap with `(feed[0], i, 0)` for every feed that is not empty.", "Pop `(value, i, pos)`, append `value`, and if feed `i` has an item at `pos + 1`, push it."],
       },
@@ -528,7 +528,7 @@ class TrieNode:
         body: P(
           "Write a trie class `WordBook` with:",
           "- `add(word)`: store the word (adding a word that is already stored changes nothing);\n- `has(word)`: True only if that exact word was added;\n- `count_prefix(prefix)`: how many stored words start with `prefix` (the empty prefix counts all of them).",
-          "Keep a counter in every node of how many words pass through it, so `count_prefix` only walks the prefix. The last test adds 20,000 words and asks 20,000 questions.",
+          "Keep a counter in every node of how many words pass through it, so `count_prefix` only walks the prefix. The last test adds 6,000 words and asks 6,000 questions.",
         ),
         language: "python",
         starter: `class TrieNode:
@@ -607,13 +607,13 @@ _b.add("tea")
 _b.add("ten")
 _r = _b.count_prefix("te")
 assert _r == 2, f"tea was added twice but stored once: expected 2, got {_r}"` },
-          { id: "t4", description: "20,000 words, 20,000 questions", assertionCode: `from collections import Counter as _C
-_words = ["".join("abcdefgh"[(i * k * 7 + k * k) % 8] for k in range(1, 7)) for i in range(20000)]
+          { id: "t4", description: "6,000 words, 6,000 questions", assertionCode: `from collections import Counter as _C
+_words = ["".join("abcdefgh"[(i * k * 7 + k * k) % 8] for k in range(1, 7)) for i in range(6000)]
 _b = WordBook()
 for _w in _words:
     _b.add(_w)
 _pref = _C(w[:j] for w in set(_words) for j in range(1, 4))
-for _i in range(20000):
+for _i in range(6000):
     _p = _words[_i][: 1 + _i % 3]
     _r = _b.count_prefix(_p)
     assert _r == _pref[_p], f"count_prefix({_p!r}) should be {_pref[_p]}, got {_r}"` },

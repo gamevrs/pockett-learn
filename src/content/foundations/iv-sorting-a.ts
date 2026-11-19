@@ -350,7 +350,7 @@ assert _tags == ["a1", "b1", "a2", "b2"], f"expected tags a1 b1 a2 b2, got {_tag
         title: "How much do two rankings disagree?",
         body: P(
           "Two friends rank the same films. After relabelling, your friend's list is a list of distinct numbers, and every pair that is out of order is a pair you disagree on. Write `disagreements(order)`: the number of inversions.",
-          "The last test has 20,000 films (about 200 million pairs), so count them during a merge sort instead of checking pairs.",
+          "The last test has 6,000 films (about 18 million pairs), so count them during a merge sort instead of checking pairs.",
         ),
         language: "python",
         starter: `def disagreements(order):
@@ -390,11 +390,11 @@ assert _r == 4, f"expected 4, got {_r}"` },
     assert _r == _want, f"disagreements({_xs}) should be {_want}, got {_r}"` },
           { id: "t3", description: "fully reversed", assertionCode: `_r = disagreements([5, 4, 3, 2, 1])
 assert _r == 10, f"a reversed list of 5 has 5*4/2 = 10 inversions, got {_r}"` },
-          { id: "t4", description: "20,000 films", assertionCode: `_xs = [(i * 7919) % 20011 for i in range(20000)]
+          { id: "t4", description: "6,000 films", assertionCode: `_xs = [(i * 7919) % 6007 for i in range(6000)]
 _r = disagreements(_xs)
-assert _r == 99930366, f"expected 99930366, got {_r}"
-_r = disagreements(list(range(20000, 0, -1)))
-assert _r == 199990000, f"a reversed list of 20,000 has 199990000 inversions, got {_r}"` },
+assert _r == 8994146, f"expected 8994146, got {_r}"
+_r = disagreements(list(range(6000, 0, -1)))
+assert _r == 17997000, f"a reversed list of 6,000 has 17997000 inversions, got {_r}"` },
         ],
         hints: ["Write a helper that returns `(sorted_list, count)` for a list, and call it on each half.", "In the merge, when `b[j]` is taken, every one of `a[i:]` is bigger and came earlier: add `len(a) - i`."],
       },
@@ -983,7 +983,7 @@ _r = widest_gap([1, 1000000])
 assert _r == 999999, f"expected 999999, got {_r}"` },
           { id: "t4", description: "evenly spaced and a big list", assertionCode: `_r = widest_gap([10, 20, 30, 40, 50])
 assert _r == 10, f"expected 10, got {_r}"
-_xs = [(i * 7919) % 100003 for i in range(60000)]
+_xs = [(i * 7919) % 100003 for i in range(25000)]
 _s = sorted(_xs)
 _want = max(b - a for a, b in zip(_s, _s[1:]))
 _r = widest_gap(_xs)

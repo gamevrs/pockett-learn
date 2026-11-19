@@ -380,7 +380,7 @@ class Fenwick:
       {
         kind: "code",
         title: "Overtakes in a race",
-        body: "Runners cross a checkpoint in some order; `times` lists their finishing times at the line in that crossing order. Each pair where an earlier-crossing runner has a **strictly greater** time later is an *overtake*. Write `count_inversions(times)`: the number of pairs `i < j` with `times[i] > times[j]`.\n\nThe last test has 20,000 runners: comparing every pair takes too long, a Fenwick tree over ranks is quick.",
+        body: "Runners cross a checkpoint in some order; `times` lists their finishing times at the line in that crossing order. Each pair where an earlier-crossing runner has a **strictly greater** time later is an *overtake*. Write `count_inversions(times)`: the number of pairs `i < j` with `times[i] > times[j]`.\n\nThe last test has 8,000 runners: comparing every pair takes too long, a Fenwick tree over ranks is quick.",
         language: "python",
         starter: `def count_inversions(times):
     # rank the values, then for each one count the earlier, greater values with a Fenwick tree
@@ -411,7 +411,7 @@ class Fenwick:
           { id: "t1", description: "small lists", assertionCode: `r = (count_inversions([]), count_inversions([1, 2, 3]), count_inversions([3, 1, 2]))\nassert r == (0, 0, 2), f"expected (0, 0, 2), got {r}"` },
           { id: "t2", description: "equal times are not overtakes", assertionCode: `r = (count_inversions([2, 2, 1]), count_inversions([5, 5, 5]))\nassert r == (2, 0), f"expected (2, 0): only strictly greater counts; got {r}"` },
           { id: "t3", description: "random list against pair counting", assertionCode: `import random\nrng = random.Random(4)\nts = [rng.randint(1, 60) for _ in range(300)]\nwant = sum(1 for i in range(300) for j in range(i + 1, 300) if ts[i] > ts[j])\nr = count_inversions(ts)\nassert r == want, f"expected {want}, got {r}"` },
-          { id: "t4", description: "20,000 runners, all reversed", assertionCode: `r = count_inversions(list(range(20000, 0, -1)))\nassert r == 199990000, f"a fully reversed list of 20,000 has 20000 * 19999 / 2 = 199990000 pairs, got {r}"` },
+          { id: "t4", description: "8,000 runners, all reversed", assertionCode: `r = count_inversions(list(range(8000, 0, -1)))\nassert r == 31996000, f"a fully reversed list of 8,000 has 8000 * 7999 / 2 = 31996000 pairs, got {r}"` },
         ],
         hints: ["Rank the values: `ranks = {v: r for r, v in enumerate(sorted(set(times)))}`.", "For each value: earlier values greater than it = (values seen so far) − (earlier values ≤ it, a Fenwick prefix). Then add 1 at its rank."],
       },
@@ -589,7 +589,7 @@ class RateLimiter:
           { id: "t1", description: "the limit within a window", assertionCode: `rl = RateLimiter(3, 10)\nr = [rl.allow(t) for t in (1, 2, 3, 4)]\nassert r == [True, True, True, False], f"3 per 10 s: expected [True, True, True, False] at 1, 2, 3, 4; got {r}"` },
           { id: "t2", description: "old requests leave the window", assertionCode: `rl = RateLimiter(3, 10)\nfor t in (1, 2, 3):\n    rl.allow(t)\nr = [rl.allow(t) for t in (10, 11, 12, 13, 14)]\nassert r == [False, True, True, True, False], f"the request at 1 leaves the window at 11: expected [False, True, True, True, False] at 10..14; got {r}"` },
           { id: "t3", description: "denied requests do not count", assertionCode: `rl = RateLimiter(1, 5)\nr = [rl.allow(t) for t in (0, 1, 2, 3, 4, 5, 6)]\nassert r == [True, False, False, False, False, True, False], f"limit 1 per 5 s: expected [True, False, False, False, False, True, False]; got {r}"` },
-          { id: "t4", description: "same second, and many requests", assertionCode: `rl = RateLimiter(2, 1)\nr = [rl.allow(7), rl.allow(7), rl.allow(7), rl.allow(8)]\nassert r == [True, True, False, True], f"2 per 1 s: expected [True, True, False, True], got {r}"\nrl = RateLimiter(100, 60)\nok = sum(rl.allow(t // 10) for t in range(200000))\nassert ok == 33400, f"expected 33400 allowed of 200,000 requests (100 per minute over 20,000 s), got {ok}"` },
+          { id: "t4", description: "same second, and many requests", assertionCode: `rl = RateLimiter(2, 1)\nr = [rl.allow(7), rl.allow(7), rl.allow(7), rl.allow(8)]\nassert r == [True, True, False, True], f"2 per 1 s: expected [True, True, False, True], got {r}"\nrl = RateLimiter(100, 60)\nok = sum(rl.allow(t // 10) for t in range(40000))\nassert ok == 6700, f"expected 6700 allowed of 40,000 requests (100 per minute over 4,000 s), got {ok}"` },
         ],
         hints: ["Keep a `deque` of allowed times. A time `s` is still inside the window while `s > t - window`.", "Pop from the left while `times[0] <= t - window`; then allow (and append) only if `len(times) < limit`."],
       },

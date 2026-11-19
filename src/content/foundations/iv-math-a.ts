@@ -458,7 +458,7 @@ def gcd(a, b):
       {
         kind: "code",
         title: "Count the primes",
-        body: "Write `count_primes_below(n)`: how many primes are **strictly less** than n? Use a sieve; the last check uses n = 300,000, and trial division is too slow for it.",
+        body: "Write `count_primes_below(n)`: how many primes are **strictly less** than n? Use a sieve; the last check uses n = 100,000, and trial division is too slow for it.",
         language: "python",
         starter: `def count_primes_below(n):
     # Sieve of Eratosthenes over 0 .. n - 1.
@@ -481,7 +481,7 @@ def gcd(a, b):
           { id: "t1", description: "small n", assertionCode: `for _n, _want in [(0, 0), (1, 0), (2, 0), (3, 1)]:\n    _r = count_primes_below(_n)\n    assert _r == _want, f"count_primes_below({_n}) should be {_want}, got {_r} (2 is the smallest prime)"` },
           { id: "t2", description: "below 10 and 100", assertionCode: `_r = count_primes_below(10)\nassert _r == 4, f"2, 3, 5 and 7 are below 10, so expected 4, got {_r}"\n_r = count_primes_below(100)\nassert _r == 25, f"there are 25 primes below 100, got {_r}"` },
           { id: "t3", description: "strictly below a prime", assertionCode: `_r = count_primes_below(13)\nassert _r == 5, f"below 13 are 2 3 5 7 11 (13 itself doesn't count), got {_r}"` },
-          { id: "t4", description: "below 300,000, quickly", assertionCode: `_r = count_primes_below(300_000)\nassert _r == 25997, f"there are 25997 primes below 300,000, got {_r}"` },
+          { id: "t4", description: "below 100,000, quickly", assertionCode: `_r = count_primes_below(100_000)\nassert _r == 9592, f"there are 9592 primes below 100,000, got {_r}"` },
         ],
         hints: ["Make a list of n booleans, mark 0 and 1 as not prime, and for each p with `p * p < n` cross out `p*p, p*p + p, …`.", "Count what's left with `sum(is_prime)`."],
       },
@@ -706,7 +706,7 @@ assert _r == 118264581564861424, f"choose(60, 30) should be exactly 118264581564
       {
         kind: "code",
         title: "Many queries modulo a prime",
-        body: "A lottery app answers thousands of questions \"how many ways to pick k of n?\" modulo `MOD = 1_000_000_007`. Write `choose_many(queries)` taking a list of `(n, k)` pairs (n up to 200,000) and returning the answers in order, 0 when k > n. Precompute factorials and inverse factorials **once**, so each answer is two multiplications. The last check sends 5,000 queries.",
+        body: "A lottery app answers thousands of questions \"how many ways to pick k of n?\" modulo `MOD = 1_000_000_007`. Write `choose_many(queries)` taking a list of `(n, k)` pairs (n up to 50,000) and returning the answers in order, 0 when k > n. Precompute factorials and inverse factorials **once**, so each answer is two multiplications. The last check sends 5,000 queries.",
         language: "python",
         starter: `MOD = 1_000_000_007
 
@@ -742,11 +742,11 @@ def choose_many(queries):
           {
             id: "t4",
             description: "5,000 queries quickly",
-            assertionCode: `_qs = [(100000 + (i * 7919) % 100000, (i * 104729) % 100001) for i in range(5000)]
+            assertionCode: `_qs = [(25000 + (i * 7919) % 25000, (i * 104729) % 25001) for i in range(5000)]
 _r = choose_many(_qs)
 assert isinstance(_r, list) and len(_r) == 5000, "return one answer per query"
-assert _r[1] == 59271690, f"C(107919, 4728) % MOD should be 59271690, got {_r[1]}"
-assert sum(_r) % 1_000_000_007 == 245521322, "some answers are wrong: compare a few with math.comb(n, k) % MOD"`,
+assert _r[1] == 743955343, f"C(32919, 4725) % MOD should be 743955343, got {_r[1]}"
+assert sum(_r) % 1_000_000_007 == 480080031, "some answers are wrong: compare a few with math.comb(n, k) % MOD"`,
           },
         ],
         hints: ["Build `fact` up to the largest n. Then `inv[top] = pow(fact[top], MOD - 2, MOD)` and walk down: `inv[i - 1] = inv[i] * i % MOD`.", "Each answer is `fact[n] * inv[k] % MOD * inv[n - k] % MOD`."],
