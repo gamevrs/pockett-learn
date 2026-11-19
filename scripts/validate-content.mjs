@@ -111,6 +111,22 @@ for (const file of files) {
 
 // A number or text box needs to be told WHAT to type. Its text must ask a question ("?") or open a sentence with an
 // answer verb ("Find …", "Work out …", "Type …"); a statement followed by an empty box leaves the learner guessing.
+/** The keys each Foundations step kind reads (Step in src/learn/types.ts); anything else is a typo the player ignores. */
+const STEP_KEYS = {
+  explain: ["kind", "title", "body", "widget"],
+  question: ["kind", "title", "body", "widget", "question", "explanation"],
+  code: ["kind", "title", "body", "language", "starter", "solution", "tests", "hints", "packages", "setup"],
+  recap: ["kind", "title", "points"],
+};
+/** Per question type, the keys besides `type` and `hint` (Question in src/learn/types.ts). */
+const QUESTION_KEYS = {
+  choice: ["options", "answer", "feedback"],
+  number: ["answer", "tolerance", "unit"],
+  text: ["answer", "placeholder"],
+  order: ["items"],
+  widget: ["goal", "prompt"],
+};
+const WIDGET_SPEC_KEYS = ["type", "props", "live", "after"];
 const ANSWER_VERB = new RegExp(String.raw`(?:^|[.!?:;,][*_\x60)"']*\s+|\n)\s*[*_\x60(~"'\[]*(?:find|type|enter|write|count|work out|calculate|predict|estimate|say|name|give|tell|read|add up|multiply|divide|convert|translate|compute|figure out|decide|guess)\b`, "i");
 
 // ── Foundations (concept lessons) ──
@@ -189,6 +205,25 @@ if (!only || only === "foundations") {
       if (interactive < Math.ceil(lesson.steps.length / 2)) warn.push(`${tag}: fewer than half the steps are interactive`);
       lesson.steps.forEach((st, si) => {
         const stag = `${tag} step ${si + 1}`;
+        // Unknown keys are silently ignored by the player (a step-level `hint` on a question never shows: it belongs
+        // inside `question`), so every key must be one the step kind actually reads (Step in src/learn/types.ts).
+        const allowed = STEP_KEYS[st.kind];
+        if (!allowed) problems.push(`${stag}: unknown step kind "${st.kind}"`);
+        else {
+          for (const k of Object.keys(st)) {
+            if (allowed.includes(k)) continue;
+            if (k === "hint" && st.kind === "question") problems.push(`${stag}: \`hint\` must be inside \`question\` (question.hint), not on the step`);
+            else problems.push(`${stag}: unknown key "${k}" on a ${st.kind} step (known: ${allowed.join(", ")})`);
+          }
+          if (st.kind === "question" && st.question && typeof st.question === "object") {
+            const qAllowed = QUESTION_KEYS[st.question.type];
+            if (!qAllowed) problems.push(`${stag}: unknown question type "${st.question.type}"`);
+            else for (const k of Object.keys(st.question)) if (!qAllowed.includes(k) && k !== "type" && k !== "hint") problems.push(`${stag}: unknown key "${k}" on a ${st.question.type} question (known: ${["type", "hint", ...qAllowed].join(", ")})`);
+          }
+          if ((st.kind === "explain" || st.kind === "question") && st.widget && typeof st.widget === "object") {
+            for (const k of Object.keys(st.widget)) if (!WIDGET_SPEC_KEYS.includes(k)) problems.push(`${stag}: unknown key "${k}" on the widget (known: ${WIDGET_SPEC_KEYS.join(", ")}; widget settings go in props)`);
+          }
+        }
         const widget = (st.kind === "explain" || st.kind === "question") && st.widget;
         if (widget && !widgetTypes.has(widget.type)) problems.push(`${stag}: unknown widget "${widget.type}"`);
         // iv-trace: frames must be consistent (pointers inside the array, picks answerable, ...)
