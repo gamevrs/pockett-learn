@@ -226,13 +226,13 @@ function ArrayView({ frame, pickable, mark, onPick }: { frame: ResolvedFrame; pi
           const m = inside ? mark(i) : null;
           const cls = tone({ active: hi.has(i), done: done.has(i), mark: m });
           const body = (
-            <span className={`grid h-10 min-w-10 place-items-center rounded-lg border px-1.5 font-mono text-sm tabular-nums motion-safe:transition-colors ${inside ? cls : "border-dashed border-line text-ink-3"}`}>
+            <span className={`grid h-10 min-w-10 place-items-center whitespace-nowrap rounded-lg border px-1.5 font-mono text-sm tabular-nums motion-safe:transition-colors ${inside ? cls : "border-dashed border-line text-ink-3"}`}>
               {inside ? fmtCell(arr[i]) : ""}
             </span>
           );
           return (
-            <div key={i} role="listitem" className={`flex min-w-10 flex-col items-stretch rounded-lg px-0.5 pt-0.5 ${inRange ? "bg-brand-soft" : ""}`}>
-              <span className="mb-0.5 text-center font-mono text-[0.65rem] text-ink-3">{inside ? i : ""}</span>
+            <div key={i} role="listitem" className={`flex min-w-10 shrink-0 flex-col items-stretch rounded-lg px-0.5 pt-0.5 ${inRange ? "bg-brand-soft" : ""}`}>
+              <span className="mb-0.5 text-center font-mono text-[0.7rem] text-ink-3">{inside ? i : ""}</span>
               {inside && pickable ? (
                 <button type="button" onClick={() => onPick(i)} className="rounded-lg ring-2 ring-[var(--brand)]/40 ring-offset-1 ring-offset-[var(--surface)]" aria-label={`Pick index ${i}, value ${fmtCell(arr[i]) || "empty"}`} data-answer>
                   {body}
@@ -262,12 +262,12 @@ function GridView({ frame, pickable, mark, onPick }: { frame: ResolvedFrame; pic
   for (const c of frame.cells ?? []) tones.set(`${c.r},${c.c}`, c.tone);
   return (
     <div className="overflow-x-auto pb-1">
-      <div className="grid w-max gap-1" style={{ gridTemplateColumns: `repeat(${cols}, 2.5rem)` }} role="grid" aria-label="Grid">
+      <div className="grid w-max gap-1" style={{ gridTemplateColumns: `repeat(${cols}, minmax(2.5rem, max-content))` }} role="grid" aria-label="Grid">
         {grid.map((row, r) =>
           row.map((v, c) => {
             const k = `${r},${c}`;
             const t = tones.get(k);
-            const cls = `grid h-10 w-10 place-items-center rounded-md border font-mono text-sm tabular-nums motion-safe:transition-colors ${tone({ active: t === "active", done: t === "done", path: t === "path", wall: t === "wall", mark: mark(k) })}`;
+            const cls = `grid h-10 min-w-10 place-items-center whitespace-nowrap rounded-md border px-1 font-mono text-sm tabular-nums motion-safe:transition-colors ${tone({ active: t === "active", done: t === "done", path: t === "path", wall: t === "wall", mark: mark(k) })}`;
             return pickable ? (
               <button key={k} type="button" role="gridcell" className={`${cls} ring-2 ring-[var(--brand)]/30`} onClick={() => onPick(k)} aria-label={`Pick row ${r}, column ${c}`} data-answer>
                 {fmtCell(v)}
@@ -302,11 +302,23 @@ function layoutTree(nodes: TreeNode[]) {
     seen.add(n.id);
     const ch = kids.get(n.id) ?? [];
     if (binary) {
+      // Leaves take one column each and a parent sits over its children, so a full tree is as wide as its leaves
+      // (a 15-node segment tree needs 8 columns, not 15). A lone child sits half a column to its side of the parent,
+      // with half a column of slack after it, so neighbouring subtrees never touch.
       const left = ch.find((c) => c.side === "L");
       const right = ch.find((c) => c.side !== "L" && c !== left);
+      if (!left && !right) {
+        pos.set(n.id, { x: col++, y: depth });
+        return;
+      }
       if (left) place(left, depth + 1);
-      pos.set(n.id, { x: col++, y: depth });
+      if (!left) col += 0.5;
       if (right) place(right, depth + 1);
+      const lx = left ? pos.get(left.id)?.x : undefined;
+      const rx = right ? pos.get(right.id)?.x : undefined;
+      const x = lx !== undefined && rx !== undefined ? (lx + rx) / 2 : lx !== undefined ? lx + 0.5 : rx !== undefined ? rx - 0.5 : col++;
+      pos.set(n.id, { x, y: depth });
+      if (!right) col += 0.5;
       return;
     }
     if (ch.length === 0) {
@@ -328,14 +340,16 @@ function TreeView({ frame, pickable, mark, onPick }: { frame: ResolvedFrame; pic
   const { pos, width, depth } = layoutTree(tree.nodes);
   const active = new Set(tree.active ?? []);
   const done = new Set(tree.done ?? []);
-  const U = 12; // one column / one level in viewBox units
+  // one column in viewBox units: 12, or wider when a node label needs a pill (e.g. "count (a)") so neighbours never touch
+  const U = Math.max(12, ...tree.nodes.map((n) => nodeWidth(n.label, 4.4) + 2.5));
+  const LV = 12; // one level
   const W = width * U;
-  const H = depth * U * 1.15 + 2;
+  const H = depth * LV * 1.15 + 2;
   const X = (x: number) => x * U + U / 2;
-  const Y = (y: number) => y * U * 1.15 + U / 2 + 1;
+  const Y = (y: number) => y * LV * 1.15 + LV / 2 + 1;
   return (
     <div className="overflow-x-auto rounded-xl border border-line bg-surface-2">
-      <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block h-auto" style={{ width: "100%", minWidth: width * 40, maxWidth: width * 72, maxHeight: depth * 90 }} role="img" aria-label="Tree">
+      <svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block h-auto" style={{ width: "100%", minWidth: (width * 40 * U) / 12, maxWidth: (width * 72 * U) / 12, maxHeight: depth * 90 }} role="img" aria-label="Tree">
         {tree.nodes.map((n) => {
           const p = pos.get(n.id);
           const q = n.parent ? pos.get(n.parent) : undefined;
@@ -365,7 +379,15 @@ function TreeView({ frame, pickable, mark, onPick }: { frame: ResolvedFrame; pic
   );
 }
 
-/** One circle with a label, used by the tree and the graph. */
+/** Labels longer than this are drawn in a pill instead of a circle. */
+const PILL_AFTER = 3;
+const PILL_FONT = 2.8;
+/** Width in viewBox units of a node with this label: the circle, or a pill wide enough for the text (monospace). */
+function nodeWidth(label: string, r: number) {
+  return label.length > PILL_AFTER ? Math.max(2 * r, label.length * 0.62 * PILL_FONT + 2.6) : 2 * r;
+}
+
+/** One circle (or a pill, for a long label) with a label, used by the tree and the graph. */
 function SvgNode({
   x,
   y,
@@ -388,11 +410,14 @@ function SvgNode({
   const fill = state.mark === "right" ? "var(--good)" : state.mark === "wrong" ? "var(--bad)" : state.active ? "var(--primary)" : state.done ? "var(--surface-2)" : "var(--surface)";
   const stroke = state.mark ? "transparent" : state.active ? "var(--brand)" : pickable ? "var(--brand)" : "var(--line-strong)";
   const ink = state.mark ? "var(--bg)" : state.active ? "var(--primary-ink)" : state.done ? "var(--ink-3)" : "var(--ink)";
-  const size = label.length > 3 ? 2.6 : label.length > 2 ? 3 : 3.6;
+  const pill = label.length > PILL_AFTER;
+  const size = pill ? PILL_FONT : label.length > 2 ? 3 : 3.6;
+  const w = nodeWidth(label, r);
+  const shape = { fill, stroke, strokeWidth: pickable ? 0.8 : 0.55, strokeDasharray: pickable && !state.mark ? "1.4 0.9" : undefined, className: "motion-safe:transition-colors" };
   const g = (
     <>
-      <circle cx={x} cy={y} r={r * 1.55} fill="transparent" />
-      <circle cx={x} cy={y} r={r} fill={fill} stroke={stroke} strokeWidth={pickable ? 0.8 : 0.55} strokeDasharray={pickable && !state.mark ? "1.4 0.9" : undefined} className="motion-safe:transition-colors" />
+      {pill ? <rect x={x - w / 2 - r * 0.55} y={y - r * 1.55} width={w + r * 1.1} height={r * 3.1} fill="transparent" /> : <circle cx={x} cy={y} r={r * 1.55} fill="transparent" />}
+      {pill ? <rect x={x - w / 2} y={y - r} width={w} height={2 * r} rx={r} {...shape} /> : <circle cx={x} cy={y} r={r} {...shape} />}
       <text x={x} y={y + size * 0.36} textAnchor="middle" fontSize={size} fontWeight={700} fontFamily="var(--font-mono)" fill={ink}>
         {label}
       </text>
@@ -498,7 +523,7 @@ function StackView({ stack }: { stack: TraceStack }) {
           {items.map((v, i) => (
             <li key={i} className={`flex items-center justify-between gap-2 rounded-md border px-2 py-1 font-mono text-sm ${i === 0 ? "border-[var(--brand)]/50 bg-tint" : "border-line bg-surface-2"}`}>
               <span>{fmtCell(v)}</span>
-              {i === 0 && <span className="font-sans text-[0.65rem] text-ink-3">top</span>}
+              {i === 0 && <span className="font-sans text-[0.7rem] text-ink-3">top</span>}
             </li>
           ))}
         </ol>
@@ -509,7 +534,7 @@ function StackView({ stack }: { stack: TraceStack }) {
               {fmtCell(v)}
             </li>
           ))}
-          <li className="self-center px-1 text-[0.65rem] text-ink-3">{kind === "queue" ? "← front" : "← root"}</li>
+          <li className="self-center px-1 text-[0.7rem] text-ink-3">{kind === "queue" ? "← front" : "← root"}</li>
         </ol>
       )}
     </div>
