@@ -76,6 +76,7 @@ next(); // 2
         widget: {
           type: "iv-trace",
           props: {
+            lang: "javascript",
             title: "Two closures, two scopes",
             frames: [
               { tree: { nodes: [SCOPES[0]], active: ["g"] }, code: COUNTER_CODE, line: 5, vars: { "a's count": "-", "b's count": "-" }, note: "The script runs in the global scope." },
@@ -268,6 +269,7 @@ setTimeout(() => player.hello(), 0); // fine
         widget: {
           type: "iv-trace",
           props: {
+            lang: "javascript",
             title: "Four calls of the same function",
             frames: [
               { array: ["cat", "dog", "none"], code: THIS_CODE, line: 2, note: "`who` simply returns `this`. Each tap below asks which object comes back." },
@@ -423,6 +425,7 @@ prices.filter((p) => p >= 10)        // [12, 30]
         widget: {
           type: "iv-trace",
           props: {
+            lang: "text",
             title: "Largest element with reduce",
             frames: [
               { array: [4, 7, 1, 8], code: REDUCE_CODE, line: 1, highlight: [0], vars: { acc: 4 }, note: "No initial value, so `acc` starts as the first element, **4**." },
@@ -598,6 +601,7 @@ function memoize(fn) {
         widget: {
           type: "iv-trace",
           props: {
+            lang: "python",
             title: "Memoized fib(5)",
             frames: [
               { tree: { nodes: FIB_TREE, active: ["5", "4", "3", "2"] }, code: MEMO_CODE, line: 4, vars: { memo: "{}" }, note: "`fib(5)` calls `fib(4)`, which calls `fib(3)`, which calls `fib(2)`: always the left child first." },

@@ -55,6 +55,10 @@ export interface TracePick {
 
 export type PickTarget = "array" | "grid" | "tree" | "graph";
 
+/** How a trace's `code` is highlighted. "text" is plain (pseudo-code). */
+export type TraceLang = "python" | "javascript" | "sql" | "shell" | "text";
+export const TRACE_LANGS: readonly TraceLang[] = ["python", "javascript", "sql", "shell", "text"];
+
 export interface TraceFrame {
   array?: Cell[];
   /** Labelled arrows under array cells: { lo: 0, hi: 7 }. */
@@ -73,6 +77,8 @@ export interface TraceFrame {
   code?: string[];
   /** 1-based line of `code` to highlight. */
   line?: number;
+  /** Highlighting for this frame's `code` (carries over like `code`); defaults to the trace's `lang`. */
+  lang?: TraceLang;
   /** What is happening in this frame. Mini-markdown (`code`, **bold**). */
   note: string;
   /** Stop here until the learner taps the right cell or node. */
@@ -81,6 +87,8 @@ export interface TraceFrame {
 
 export interface TraceProps {
   title?: string;
+  /** Highlighting for the frames' `code`. Default "python". */
+  lang?: TraceLang;
   frames: TraceFrame[];
   /** Optional instruction shown above the trace (e.g. "Step through, then answer below."). */
   ask?: { prompt: string };
@@ -116,6 +124,7 @@ export function resolveFrames(frames: TraceFrame[]): ResolvedFrame[] {
       if (r.stacks === undefined) r.stacks = prev.stacks;
       if (r.vars === undefined) r.vars = prev.vars;
       if (r.code === undefined) r.code = prev.code;
+      if (r.lang === undefined) r.lang = prev.lang;
     }
     const tree = _tree ?? (prev?.tree ? {} : undefined);
     if (tree) {
@@ -154,9 +163,11 @@ export function traceProblems(props: unknown): string[] {
   const problems: string[] = [];
   const p = props as Partial<TraceProps> | undefined;
   if (!p || !Array.isArray(p.frames) || p.frames.length === 0) return ["iv-trace needs a non-empty `frames` list"];
+  if (p.lang !== undefined && !TRACE_LANGS.includes(p.lang)) problems.push(`lang "${p.lang}" must be one of ${TRACE_LANGS.join(", ")}`);
   const frames = resolveFrames(p.frames);
   frames.forEach((f, i) => {
     const at = `frame ${i + 1}`;
+    if (f.lang !== undefined && !TRACE_LANGS.includes(f.lang)) problems.push(`${at}: lang "${f.lang}" must be one of ${TRACE_LANGS.join(", ")}`);
     if (typeof f.note !== "string" || !f.note.trim()) problems.push(`${at}: every frame needs a note`);
     const n = f.array?.length ?? 0;
     for (const [name, idx] of Object.entries(f.pointers ?? {})) {

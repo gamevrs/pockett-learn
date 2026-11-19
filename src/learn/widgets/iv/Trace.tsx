@@ -178,7 +178,7 @@ export function Trace({ props, onChange, status, revealed }: WidgetProps<TracePr
         <div className="mt-3 flex flex-wrap items-start gap-3">
           {frame.stacks?.map((st, i) => <StackView key={`${st.label}-${i}`} stack={st} />)}
           {hasVars && <VarsView vars={frame.vars!} />}
-          {hasCode && <CodePane className="min-w-0 basis-full lg:basis-[24rem] lg:flex-[2_1_24rem]" code={frame.code!.join("\n")} highlight={frame.line ? [frame.line - 1] : []} />}
+          {hasCode && <CodePane className="min-w-0 basis-full lg:basis-[24rem] lg:flex-[2_1_24rem]" code={frame.code!.join("\n")} highlight={frame.line ? [frame.line - 1] : []} language={frame.lang ?? props.lang ?? "python"} />}
         </div>
       )}
     </div>

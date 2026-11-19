@@ -105,7 +105,22 @@ export function Segmented<T extends string>({
 export const CODE_SURFACE = "rounded-xl border border-white/10 bg-[#0a0a0a] text-[#e5e5e5]";
 
 /** A small dark Python code pane with optional highlighted lines (0-based). */
-export function CodePane({ code, highlight = [], title, className = "" }: { code: string; highlight?: number[]; title?: React.ReactNode; className?: string }) {
+/** "text" shows the code plain (pseudo-code); anything else is a CodeBlock language. */
+export type PaneLanguage = NonNullable<React.ComponentProps<typeof CodeBlock>["language"]> | "text";
+
+export function CodePane({
+  code,
+  highlight = [],
+  title,
+  className = "",
+  language = "python",
+}: {
+  code: string;
+  highlight?: number[];
+  title?: React.ReactNode;
+  className?: string;
+  language?: PaneLanguage;
+}) {
   const lines = code.replace(/\n$/, "").split("\n");
   return (
     <div className={`min-w-0 overflow-hidden ${CODE_SURFACE} ${className}`}>
@@ -115,7 +130,7 @@ export function CodePane({ code, highlight = [], title, className = "" }: { code
           const on = highlight.includes(i);
           return (
             <div key={i} className={`border-l-2 pl-2.5 pr-3 ${on ? "border-[#c5ee8a] bg-[#c5ee8a]/[0.12]" : "border-transparent"}`}>
-              {line === "" ? " " : <CodeBlock code={line} language="python" />}
+              {line === "" ? " " : language === "text" ? <code className="text-[#e5e5e5]">{line}</code> : <CodeBlock code={line} language={language} />}
             </div>
           );
         })}

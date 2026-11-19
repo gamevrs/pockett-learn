@@ -78,6 +78,7 @@ SELECT name, COALESCE(ref, 0) AS ref FROM members;  -- NULL shown as 0
         widget: {
           type: "iv-trace",
           props: {
+            lang: "sql",
             title: "WHERE ref <> 2, row by row",
             frames: [
               { grid: MEMBERS_GRID, code: MEMBERS_CODE, line: 3, cells: row3(1, "active"), vars: { test: "NULL <> 2", result: "UNKNOWN" }, note: "Ana has no referrer. `NULL <> 2` is not TRUE, it is **UNKNOWN**." },
@@ -253,6 +254,7 @@ LEFT JOIN books b ON b.author_id = a.id;
         widget: {
           type: "iv-trace",
           props: {
+            lang: "sql",
             title: "pets LEFT JOIN owners",
             frames: [
               { grid: PETS_GRID, code: PETS_CODE, vars: OWNERS_VARS, array: [], line: 3, note: "The left table drives: every pet will produce at least one output row." },
@@ -432,6 +434,7 @@ ORDER BY m.name;
         widget: {
           type: "iv-trace",
           props: {
+            lang: "sql",
             title: "GROUP BY shop HAVING SUM(amt) >= 50",
             frames: [
               { grid: ORDERS_GRID, code: ORDERS_CODE, line: 3, cells: row3(1, "active"), vars: { N: 30 }, note: "Row 1 starts bucket **N** with 30." },
@@ -615,6 +618,7 @@ WHERE spend > (SELECT AVG(spend) FROM totals);
         widget: {
           type: "iv-trace",
           props: {
+            lang: "sql",
             title: "pay above the department average",
             frames: [
               { grid: STAFF_GRID, code: STAFF_CODE, line: 4, cells: row3(1, "active"), vars: { dept: "ops", avg: 60, pay: 50 }, note: "Ana is in ops. The inner query averages ops: (50 + 70) / 2 = 60. 50 is not more: dropped." },

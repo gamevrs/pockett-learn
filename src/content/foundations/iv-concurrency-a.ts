@@ -96,6 +96,7 @@ console.log(balance);           // 120, not 130
         widget: {
           type: "iv-trace",
           props: {
+            lang: "javascript",
             title: "deposit(10) and deposit(20) at the same time",
             frames: [
               { graph: { ...TWO_WORKERS, active: ["A"] }, code: DEPOSIT_CODE, line: 2, vars: { balance: 100, "A.current": 100, "B.current": "-" }, stacks: [{ label: "paused at await", items: [], kind: "queue" }], note: "A starts and reads `balance`: **100**." },
@@ -281,6 +282,7 @@ console.log("end");
         widget: {
           type: "iv-trace",
           props: {
+            lang: "javascript",
             title: "Sync, microtasks, then timers",
             frames: [
               { graph: { ...LETTERS, done: ["A"] }, code: LOOP_CODE, line: 1, array: ["A", null, null, null, null], stacks: [{ label: "microtasks", items: [], kind: "queue" }, { label: "timers", items: [], kind: "queue" }], note: "Line 1 runs right away: **A** prints." },
@@ -645,6 +647,7 @@ try {
         widget: {
           type: "iv-trace",
           props: {
+            lang: "javascript",
             title: "A mutex with a waiting queue",
             frames: [
               { graph: { ...LOCK, active: ["A"], activeEdges: [["A", "M"]] }, code: RUN_CODE, line: 2, stacks: [{ label: "waiting for M", items: [], kind: "queue" }], vars: { locked: true, holder: "A" }, note: "A calls `lock()`. M is free, so A goes straight in." },

@@ -175,6 +175,7 @@ const lessons: ConceptLesson[] = [
         widget: {
           type: "iv-trace",
           props: {
+            lang: "shell",
             title: "Testing ^[A-Z]{2}-[0-9]{4}$",
             frames: [
               { array: ["ab-1234", "AB-12345", "XAB-1234", "QZ-0815", "AB-12x4"], code: ["grep -E '^[A-Z]{2}-[0-9]{4}$'"], line: 1, note: "Five candidates. The pattern reads: start, 2 capitals, a dash, 4 digits, end.", pick: { prompt: "Which one matches the whole pattern?", answer: 3 } },
@@ -291,6 +292,7 @@ tr -s ' ' '\\n' < words.txt  |  sort  |  uniq -c  |  sort -rn  |  head -3
         widget: {
           type: "iv-trace",
           props: {
+            lang: "shell",
             title: "Counting b a b c a b",
             frames: [
               { array: ["b", "a", "b", "c", "a", "b"], code: ["tr -s ' ' '\\n'", "sort", "uniq -c", "sort -rn"], line: 1, note: "After `tr`: one word per line." },
@@ -448,6 +450,7 @@ sort -t, -k3,3nr scores.csv                                      # sort by colum
         widget: {
           type: "iv-trace",
           props: {
+            lang: "shell",
             title: "Rows become columns",
             frames: [
               { grid: MATRIX_GRID, cells: [], code: TRANSPOSE_CODE, line: 1, vars: { NR: 0 }, note: "Three lines of four fields each." },

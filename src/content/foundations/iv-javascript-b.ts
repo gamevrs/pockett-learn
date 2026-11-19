@@ -448,6 +448,7 @@ withVat(2, 5);                      // 12
         widget: {
           type: "iv-trace",
           props: {
+            lang: "javascript",
             title: "pipe and compose",
             frames: [
               { array: ["trim", "lower", "dashes"], code: COMPOSE_CODE, line: 1, vars: { value: '"  Hello World "' }, note: "`pipe` lists the steps in the order they run." },
@@ -613,6 +614,7 @@ copy.self === copy;            // true: the cycle is copied, not followed foreve
         widget: {
           type: "iv-trace",
           props: {
+            lang: "text",
             title: "Depth-first comparison",
             frames: [
               { tree: { nodes: EQ_TREE, active: ["r"] }, code: EQ_CODE, line: 3, note: "Both sides are objects with the keys `user` and `n`. Go into the keys in order." },

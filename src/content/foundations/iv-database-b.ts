@@ -84,6 +84,7 @@ FROM ledger;
         widget: {
           type: "iv-trace",
           props: {
+            lang: "sql",
             title: "LAG(n) and SUM(n) over the days",
             frames: [
               { grid: stepsGrid([]), code: STEPS_CODE, line: 1, note: "The window is the whole table, walked in `day` order." },
@@ -253,6 +254,7 @@ WHERE r <= 3;
         widget: {
           type: "iv-trace",
           props: {
+            lang: "sql",
             title: "DENSE_RANK per genre, keep dr ≤ 2",
             frames: [
               { grid: songsGrid([]), code: SONGS_CODE, line: 3, note: "Two partitions, pop and rock, each sorted by plays `n`, highest first." },
@@ -434,6 +436,7 @@ GROUP BY team;
         widget: {
           type: "iv-trace",
           props: {
+            lang: "sql",
             title: "rows become columns",
             frames: [
               { grid: SALES_GRID, code: SALES_CODE, array: ["Jan tea 0", "Jan pie 0", "Feb tea 0", "Feb pie 0"], line: 5, note: "GROUP BY makes one output row per month; each CASE makes a column." },
@@ -616,6 +619,7 @@ SELECT i FROM n;       -- 1, 2, 3, 4, 5
         widget: {
           type: "iv-trace",
           props: {
+            lang: "sql",
             title: "everything under docs",
             frames: [
               { tree: { nodes: FOLDER_NODES, active: ["docs"] }, code: FOLDER_CODE, line: 2, array: ["docs 0"], vars: { round: 0, new: "docs" }, note: "The anchor finds `docs` at depth 0." },
